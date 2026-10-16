@@ -73,122 +73,161 @@
     ],
     "budgetsParNiveau": {
       "essentiel": {
-        "totalEuros": 2672,
-        "parPersonneEuros": 668,
+        "totalCentimes": 262240,
+        "parPersonneCentimes": 65560,
+        "logements": [
+          "Apartamentos Los Cristianos"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins"
+        ],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Apartamentos Los Cristianos",
-              "calcul": "138 € × 7 nuits",
-              "euros": 966.0
+              "calcul": "7 nuits × 138 €",
+              "centimes": 96600
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Bordeaux – Tenerife (min de la fourchette)",
-              "calcul": "210 € × 4 personnes",
-              "euros": 840.0
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 210 €",
+              "centimes": 84000
             },
             {
-              "prestation": "Transferts aéroport (min de la fourchette)",
-              "calcul": "20 € × 4 personnes",
-              "euros": 80.0
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 20 €",
+              "centimes": 8000
             }
           ],
           "activites": [
             {
               "prestation": "Observation des baleines et dauphins",
-              "calcul": "54 € × 4 personnes",
-              "euros": 216.0
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
             }
           ],
-          "coutPrestationsEuros": 2102.0,
-          "margeEuros": 420.4,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 210200,
+          "margeCentimes": 42040,
+          "fraisDeDossierCentimes": 10000
         }
       },
       "equilibre": {
-        "totalEuros": 3416,
-        "parPersonneEuros": 854,
+        "totalCentimes": 336640,
+        "parPersonneCentimes": 84160,
+        "logements": [
+          "Apartamentos Los Cristianos"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins"
+        ],
+        "transportAu": "milieu de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Apartamentos Los Cristianos",
-              "calcul": "138 € × 7 nuits",
-              "euros": 966.0
+              "calcul": "7 nuits × 138 €",
+              "centimes": 96600
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Bordeaux – Tenerife (milieu de la fourchette)",
-              "calcul": "350 € × 4 personnes",
-              "euros": 1400.0
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 350 €",
+              "centimes": 140000
             },
             {
-              "prestation": "Transferts aéroport (milieu de la fourchette)",
-              "calcul": "35 € × 4 personnes",
-              "euros": 140.0
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 35 €",
+              "centimes": 14000
             }
           ],
           "activites": [
             {
               "prestation": "Observation des baleines et dauphins",
-              "calcul": "54 € × 4 personnes",
-              "euros": 216.0
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
             }
           ],
-          "coutPrestationsEuros": 2722.0,
-          "margeEuros": 544.4,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 272200,
+          "margeCentimes": 54440,
+          "fraisDeDossierCentimes": 10000
         }
       },
       "confort": {
-        "totalEuros": 5104,
-        "parPersonneEuros": 1276,
+        "totalCentimes": 505360,
+        "parPersonneCentimes": 126340,
+        "logements": [
+          "Canaries Beach Resort, chambre familiale"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins",
+          "Randonnée guidée au Teide"
+        ],
+        "transportAu": "maximum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Canaries Beach Resort, chambre familiale",
-              "calcul": "228 € × 7 nuits",
-              "euros": 1596.0
+              "calcul": "7 nuits × 228 €",
+              "centimes": 159600
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Bordeaux – Tenerife (max de la fourchette)",
-              "calcul": "490 € × 4 personnes",
-              "euros": 1960.0
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 490 €",
+              "centimes": 196000
             },
             {
-              "prestation": "Transferts aéroport (max de la fourchette)",
-              "calcul": "50 € × 4 personnes",
-              "euros": 200.0
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 50 €",
+              "centimes": 20000
             }
           ],
           "activites": [
             {
               "prestation": "Observation des baleines et dauphins",
-              "calcul": "54 € × 4 personnes",
-              "euros": 216.0
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
             },
             {
               "prestation": "Randonnée guidée au Teide",
-              "calcul": "78 € × 2 personnes",
-              "euros": 156.0
+              "calcul": "2 participants × 78 €",
+              "centimes": 15600
             }
           ],
-          "coutPrestationsEuros": 4128.0,
-          "margeEuros": 825.6,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 412800,
+          "margeCentimes": 82560,
+          "fraisDeDossierCentimes": 10000
         }
       }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 7,
+          "logements": [
+            "Apartamentos Los Cristianos",
+            "Canaries Beach Resort, chambre familiale"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Observation des baleines et dauphins"
+      ],
+      "activitesOptionnelles": [
+        "Randonnée guidée au Teide"
+      ]
     }
   },
   "formule": {
-    "version": "provisoire",
-    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
-    "fraisDeDossierEuros": 150,
-    "tolerance": 0.15,
-    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 100,
+    "tolerance": 0
   }
 }

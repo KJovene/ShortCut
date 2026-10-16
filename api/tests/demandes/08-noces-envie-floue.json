@@ -70,122 +70,158 @@
     ],
     "budgetsParNiveau": {
       "essentiel": {
-        "totalEuros": 4374,
-        "parPersonneEuros": 2187,
+        "totalCentimes": 429000,
+        "parPersonneCentimes": 214500,
+        "logements": [
+          "Seminyak Beach Resort"
+        ],
+        "activites": [],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Seminyak Beach Resort",
-              "calcul": "170 € × 10 nuits",
-              "euros": 1700.0
+              "calcul": "10 nuits × 170 €",
+              "centimes": 170000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Bordeaux – Ubud (min de la fourchette)",
-              "calcul": "850 € × 2 personnes",
-              "euros": 1700.0
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 850 €",
+              "centimes": 170000
             },
             {
-              "prestation": "Transferts aéroport (min de la fourchette)",
-              "calcul": "25 € × 2 personnes",
-              "euros": 50.0
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 25 €",
+              "centimes": 5000
             }
           ],
-          "activites": [
-            {
-              "prestation": "Massage balinais en duo",
-              "calcul": "35 € × 2 personnes",
-              "euros": 70.0
-            }
-          ],
-          "coutPrestationsEuros": 3520.0,
-          "margeEuros": 704.0,
-          "fraisDeDossierEuros": 150
+          "activites": [],
+          "coutPrestationsCentimes": 345000,
+          "margeCentimes": 69000,
+          "fraisDeDossierCentimes": 15000
         }
       },
       "equilibre": {
-        "totalEuros": 5895,
-        "parPersonneEuros": 2948,
+        "totalCentimes": 538800,
+        "parPersonneCentimes": 269400,
+        "logements": [
+          "Seminyak Beach Resort"
+        ],
+        "activites": [
+          "Massage balinais en duo",
+          "Lever de soleil au mont Batur"
+        ],
+        "transportAu": "milieu de la fourchette",
         "detail": {
           "hebergements": [
             {
-              "prestation": "Villa Ubud Rizières, piscine privée",
-              "calcul": "260 € × 10 nuits",
-              "euros": 2600.0
+              "prestation": "Seminyak Beach Resort",
+              "calcul": "10 nuits × 170 €",
+              "centimes": 170000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Bordeaux – Ubud (bas de la fourchette)",
-              "calcul": "1025 € × 2 personnes",
-              "euros": 2050.0
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 1 200 €",
+              "centimes": 240000
             },
             {
-              "prestation": "Transferts aéroport (bas de la fourchette)",
-              "calcul": "33.75 € × 2 personnes",
-              "euros": 67.5
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 42,50 €",
+              "centimes": 8500
             }
           ],
           "activites": [
             {
               "prestation": "Massage balinais en duo",
-              "calcul": "35 € × 2 personnes",
-              "euros": 70.0
-            }
-          ],
-          "coutPrestationsEuros": 4787.5,
-          "margeEuros": 957.5,
-          "fraisDeDossierEuros": 150
-        }
-      },
-      "confort": {
-        "totalEuros": 7350,
-        "parPersonneEuros": 3675,
-        "detail": {
-          "hebergements": [
-            {
-              "prestation": "Villa Ubud Rizières, piscine privée",
-              "calcul": "260 € × 10 nuits",
-              "euros": 2600.0
-            }
-          ],
-          "transports": [
-            {
-              "prestation": "Vol aller-retour Bordeaux – Ubud (max de la fourchette)",
-              "calcul": "1550 € × 2 personnes",
-              "euros": 3100.0
-            },
-            {
-              "prestation": "Transferts aéroport (max de la fourchette)",
-              "calcul": "60 € × 2 personnes",
-              "euros": 120.0
-            }
-          ],
-          "activites": [
-            {
-              "prestation": "Massage balinais en duo",
-              "calcul": "35 € × 2 personnes",
-              "euros": 70.0
+              "calcul": "2 participants × 35 €",
+              "centimes": 7000
             },
             {
               "prestation": "Lever de soleil au mont Batur",
-              "calcul": "55 € × 2 personnes",
-              "euros": 110.0
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
             }
           ],
-          "coutPrestationsEuros": 6000.0,
-          "margeEuros": 1200.0,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 436500,
+          "margeCentimes": 87300,
+          "fraisDeDossierCentimes": 15000
+        }
+      },
+      "confort": {
+        "totalCentimes": 735000,
+        "parPersonneCentimes": 367500,
+        "logements": [
+          "Villa Ubud Rizières, piscine privée"
+        ],
+        "activites": [
+          "Massage balinais en duo",
+          "Lever de soleil au mont Batur"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Villa Ubud Rizières, piscine privée",
+              "calcul": "10 nuits × 260 €",
+              "centimes": 260000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 1 550 €",
+              "centimes": 310000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 60 €",
+              "centimes": 12000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Massage balinais en duo",
+              "calcul": "2 participants × 35 €",
+              "centimes": 7000
+            },
+            {
+              "prestation": "Lever de soleil au mont Batur",
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
+            }
+          ],
+          "coutPrestationsCentimes": 600000,
+          "margeCentimes": 120000,
+          "fraisDeDossierCentimes": 15000
         }
       }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 10,
+          "logements": [
+            "Seminyak Beach Resort",
+            "Villa Ubud Rizières, piscine privée"
+          ]
+        }
+      ],
+      "activitesDemandees": [],
+      "activitesOptionnelles": [
+        "Massage balinais en duo",
+        "Lever de soleil au mont Batur"
+      ]
     }
   },
   "formule": {
-    "version": "provisoire",
-    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
     "fraisDeDossierEuros": 150,
-    "tolerance": 0.15,
-    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+    "tolerance": 0
   }
 }

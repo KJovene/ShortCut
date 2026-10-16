@@ -63,122 +63,167 @@
     ],
     "budgetsParNiveau": {
       "essentiel": {
-        "totalEuros": 12570,
-        "parPersonneEuros": 359,
+        "totalCentimes": 1262000,
+        "parPersonneCentimes": 36057,
+        "logements": [
+          "Auberge Termini, dortoirs groupes"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum"
+        ],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Auberge Termini, dortoirs groupes",
-              "calcul": "1100 € × 4 nuits",
-              "euros": 4400.0
+              "calcul": "4 nuits × 1 100 €",
+              "centimes": 440000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Rome (min de la fourchette)",
-              "calcul": "90 € × 35 personnes",
-              "euros": 3150.0
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 90 €",
+              "centimes": 315000
             },
             {
-              "prestation": "Transferts aéroport (min de la fourchette)",
-              "calcul": "25 € × 35 personnes",
-              "euros": 875.0
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 25 €",
+              "centimes": 87500
             }
           ],
           "activites": [
             {
               "prestation": "Visite guidée du Colisée et du Forum",
-              "calcul": "55 € × 35 personnes",
-              "euros": 1925.0
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
             }
           ],
-          "coutPrestationsEuros": 10350.0,
-          "margeEuros": 2070.0,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 1035000,
+          "margeCentimes": 207000,
+          "fraisDeDossierCentimes": 20000
         }
       },
       "equilibre": {
-        "totalEuros": 14670,
-        "parPersonneEuros": 419,
+        "totalCentimes": 1556000,
+        "parPersonneCentimes": 44457,
+        "logements": [
+          "Auberge Termini, dortoirs groupes"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum",
+          "Cours de pâtes fraîches"
+        ],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Auberge Termini, dortoirs groupes",
-              "calcul": "1100 € × 4 nuits",
-              "euros": 4400.0
+              "calcul": "4 nuits × 1 100 €",
+              "centimes": 440000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Rome (bas de la fourchette)",
-              "calcul": "132.5 € × 35 personnes",
-              "euros": 4637.5
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 90 €",
+              "centimes": 315000
             },
             {
-              "prestation": "Transferts aéroport (bas de la fourchette)",
-              "calcul": "32.5 € × 35 personnes",
-              "euros": 1137.5
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 25 €",
+              "centimes": 87500
             }
           ],
           "activites": [
             {
               "prestation": "Visite guidée du Colisée et du Forum",
-              "calcul": "55 € × 35 personnes",
-              "euros": 1925.0
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
+            },
+            {
+              "prestation": "Cours de pâtes fraîches",
+              "calcul": "35 participants × 70 €",
+              "centimes": 245000
             }
           ],
-          "coutPrestationsEuros": 12100.0,
-          "margeEuros": 2420.0,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 1280000,
+          "margeCentimes": 256000,
+          "fraisDeDossierCentimes": 20000
         }
       },
       "confort": {
-        "totalEuros": 34470,
-        "parPersonneEuros": 985,
+        "totalCentimes": 3452000,
+        "parPersonneCentimes": 98629,
+        "logements": [
+          "Roma Congressi Hotel"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum",
+          "Cours de pâtes fraîches"
+        ],
+        "transportAu": "maximum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Roma Congressi Hotel",
-              "calcul": "3300 € × 4 nuits",
-              "euros": 13200.0
+              "calcul": "4 nuits × 3 300 €",
+              "centimes": 1320000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Rome (max de la fourchette)",
-              "calcul": "260 € × 35 personnes",
-              "euros": 9100.0
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 260 €",
+              "centimes": 910000
             },
             {
-              "prestation": "Transferts aéroport (max de la fourchette)",
-              "calcul": "55 € × 35 personnes",
-              "euros": 1925.0
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 55 €",
+              "centimes": 192500
             }
           ],
           "activites": [
             {
               "prestation": "Visite guidée du Colisée et du Forum",
-              "calcul": "55 € × 35 personnes",
-              "euros": 1925.0
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
             },
             {
               "prestation": "Cours de pâtes fraîches",
-              "calcul": "70 € × 35 personnes",
-              "euros": 2450.0
+              "calcul": "35 participants × 70 €",
+              "centimes": 245000
             }
           ],
-          "coutPrestationsEuros": 28600.0,
-          "margeEuros": 5720.0,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 2860000,
+          "margeCentimes": 572000,
+          "fraisDeDossierCentimes": 20000
         }
       }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 4,
+          "logements": [
+            "Auberge Termini, dortoirs groupes",
+            "Roma Congressi Hotel"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Visite guidée du Colisée et du Forum"
+      ],
+      "activitesOptionnelles": [
+        "Cours de pâtes fraîches"
+      ]
     }
   },
   "formule": {
-    "version": "provisoire",
-    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
-    "fraisDeDossierEuros": 150,
-    "tolerance": 0.15,
-    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 200,
+    "tolerance": 0
   }
 }

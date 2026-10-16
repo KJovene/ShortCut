@@ -38,6 +38,17 @@ final class DemandesTestTest extends TestCase
      * @param array<string, mixed> $demande
      */
     #[DataProvider('fournirDemandes')]
+    public function testLesFraisDeDossierSuiventLeBaremeParTypeDeVoyage(string $fichier, array $demande): void
+    {
+        $bareme = ['sejour' => 100, 'noces' => 150, 'circuit' => 150, 'groupe' => 200, 'entreprise' => 200];
+
+        self::assertSame($bareme[$demande['typeDeVoyage']], $demande['formule']['fraisDeDossierEuros'], $fichier);
+    }
+
+    /**
+     * @param array<string, mixed> $demande
+     */
+    #[DataProvider('fournirDemandes')]
     public function testLaDemandeEstCoherenteAvecLeCatalogue(string $fichier, array $demande): void
     {
         self::assertSame(self::CHAMPS_EXIGENCES, array_keys($demande['exigencesAttendues']), $fichier);
@@ -50,7 +61,14 @@ final class DemandesTestTest extends TestCase
         }
 
         $prestations = self::nomsDesPrestations();
-        $cites = [...$attendu['logementsCompatibles'], ...array_column($attendu['exclusions'], 'prestation')];
+        $candidats = $attendu['candidats'];
+        $cites = [
+            ...$attendu['logementsCompatibles'],
+            ...array_column($attendu['exclusions'], 'prestation'),
+            ...array_merge(...array_column($candidats['etapes'], 'logements')),
+            ...$candidats['activitesDemandees'],
+            ...$candidats['activitesOptionnelles'],
+        ];
         foreach ($attendu['budgetsParNiveau'] ?? [] as $niveau) {
             $cites = [...$cites, ...array_column($niveau['detail']['hebergements'], 'prestation'), ...array_column($niveau['detail']['activites'], 'prestation')];
         }
@@ -75,16 +93,25 @@ final class DemandesTestTest extends TestCase
         }
 
         self::assertNotNull($niveaux, $fichier);
-        self::assertLessThanOrEqual($niveaux['equilibre']['totalEuros'], $niveaux['essentiel']['totalEuros'], $fichier);
-        self::assertLessThanOrEqual($niveaux['confort']['totalEuros'], $niveaux['equilibre']['totalEuros'], $fichier);
+        self::assertLessThanOrEqual($niveaux['equilibre']['totalCentimes'], $niveaux['essentiel']['totalCentimes'], $fichier);
+        self::assertLessThanOrEqual($niveaux['confort']['totalCentimes'], $niveaux['equilibre']['totalCentimes'], $fichier);
+
+        foreach ($niveaux as $nom => $niveau) {
+            $detail = $niveau['detail'];
+            $cout = array_sum(array_column([...$detail['hebergements'], ...$detail['transports'], ...$detail['activites']], 'centimes'));
+            self::assertSame($cout, $detail['coutPrestationsCentimes'], $fichier.' '.$nom);
+            self::assertSame((int) round($cout * 0.2), $detail['margeCentimes'], $fichier.' '.$nom.' : marge de 20 %');
+            self::assertSame($demande['formule']['fraisDeDossierEuros'] * 100, $detail['fraisDeDossierCentimes'], $fichier.' '.$nom);
+            self::assertSame($cout + $detail['margeCentimes'] + $detail['fraisDeDossierCentimes'], $niveau['totalCentimes'], $fichier.' '.$nom);
+        }
 
         $exigences = $demande['exigencesAttendues'];
-        $cle = $exigences['budgetParPersonne'] ? 'parPersonneEuros' : 'totalEuros';
+        $cle = $exigences['budgetParPersonne'] ? 'parPersonneCentimes' : 'totalCentimes';
         if ($attendu['budgetInsuffisant']) {
-            self::assertGreaterThan($exigences['budgetEuros'], $niveaux['essentiel'][$cle], $fichier.' : même l\'essentiel dépasse le budget');
+            self::assertGreaterThan($exigences['budgetEuros'] * 100, $niveaux['essentiel'][$cle], $fichier.' : même l\'essentiel dépasse le budget');
             self::assertNotEmpty($attendu['arbitragesAttendus'] ?? [], $fichier);
         } elseif (null !== $exigences['budgetEuros']) {
-            self::assertLessThanOrEqual($exigences['budgetEuros'], $niveaux['equilibre'][$cle], $fichier.' : l\'équilibré tient dans le budget');
+            self::assertLessThanOrEqual($exigences['budgetEuros'] * 100, $niveaux['equilibre'][$cle], $fichier.' : l\'équilibré tient dans le budget');
         }
     }
 

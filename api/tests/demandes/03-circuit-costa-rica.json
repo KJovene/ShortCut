@@ -63,157 +63,219 @@
     ],
     "budgetsParNiveau": {
       "essentiel": {
-        "totalEuros": 5968,
-        "parPersonneEuros": 1989,
+        "totalCentimes": 624840,
+        "parPersonneCentimes": 208280,
+        "logements": [
+          "Lodge Arenal Volcán",
+          "Ecolodge Monteverde",
+          "Cabinas Drake Bay"
+        ],
+        "activites": [
+          "Kayak sur le lac Arenal",
+          "Balade nocturne dans la forêt de Monteverde"
+        ],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Lodge Arenal Volcán",
-              "calcul": "192 € × 4 nuits",
-              "euros": 768.0
+              "calcul": "4 nuits × 192 €",
+              "centimes": 76800
             },
             {
               "prestation": "Ecolodge Monteverde",
-              "calcul": "144 € × 4 nuits × 2 unités",
-              "euros": 1152.0
+              "calcul": "4 nuits × 144 € × 2 unités",
+              "centimes": 115200
             },
             {
               "prestation": "Cabinas Drake Bay",
-              "calcul": "168 € × 4 nuits",
-              "euros": 672.0
+              "calcul": "4 nuits × 168 €",
+              "centimes": 67200
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Paris – La Fortuna (min de la fourchette)",
-              "calcul": "650 € × 3 personnes",
-              "euros": 1950.0
+              "prestation": "Vol aller-retour Paris – La Fortuna",
+              "calcul": "3 voyageurs × 650 €",
+              "centimes": 195000
             },
             {
-              "prestation": "Transferts aéroport (min de la fourchette)",
-              "calcul": "60 € × 3 personnes",
-              "euros": 180.0
+              "prestation": "Transferts aéroport – hébergement à La Fortuna",
+              "calcul": "3 voyageurs × 60 €",
+              "centimes": 18000
             }
           ],
           "activites": [
             {
+              "prestation": "Kayak sur le lac Arenal",
+              "calcul": "3 participants × 78 €",
+              "centimes": 23400
+            },
+            {
               "prestation": "Balade nocturne dans la forêt de Monteverde",
-              "calcul": "42 € × 3 personnes",
-              "euros": 126.0
+              "calcul": "3 participants × 42 €",
+              "centimes": 12600
             }
           ],
-          "coutPrestationsEuros": 4848.0,
-          "margeEuros": 969.6,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 508200,
+          "margeCentimes": 101640,
+          "fraisDeDossierCentimes": 15000
         }
       },
       "equilibre": {
-        "totalEuros": 7562,
-        "parPersonneEuros": 2521,
+        "totalCentimes": 756240,
+        "parPersonneCentimes": 252080,
+        "logements": [
+          "Lodge Arenal Volcán",
+          "Ecolodge Monteverde",
+          "Cabinas Drake Bay"
+        ],
+        "activites": [
+          "Kayak sur le lac Arenal",
+          "Balade nocturne dans la forêt de Monteverde"
+        ],
+        "transportAu": "milieu de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Lodge Arenal Volcán",
-              "calcul": "192 € × 4 nuits",
-              "euros": 768.0
+              "calcul": "4 nuits × 192 €",
+              "centimes": 76800
             },
             {
               "prestation": "Ecolodge Monteverde",
-              "calcul": "144 € × 4 nuits × 2 unités",
-              "euros": 1152.0
+              "calcul": "4 nuits × 144 € × 2 unités",
+              "centimes": 115200
             },
             {
               "prestation": "Cabinas Drake Bay",
-              "calcul": "168 € × 4 nuits",
-              "euros": 672.0
+              "calcul": "4 nuits × 168 €",
+              "centimes": 67200
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Paris – La Fortuna (milieu de la fourchette)",
-              "calcul": "975 € × 3 personnes",
-              "euros": 2925.0
+              "prestation": "Vol aller-retour Paris – La Fortuna",
+              "calcul": "3 voyageurs × 975 €",
+              "centimes": 292500
             },
             {
-              "prestation": "Transferts aéroport (milieu de la fourchette)",
-              "calcul": "100 € × 3 personnes",
-              "euros": 300.0
+              "prestation": "Transferts aéroport – hébergement à La Fortuna",
+              "calcul": "3 voyageurs × 100 €",
+              "centimes": 30000
             }
           ],
           "activites": [
             {
-              "prestation": "Balade nocturne dans la forêt de Monteverde",
-              "calcul": "42 € × 3 personnes",
-              "euros": 126.0
+              "prestation": "Kayak sur le lac Arenal",
+              "calcul": "3 participants × 78 €",
+              "centimes": 23400
             },
             {
-              "prestation": "Kayak sur le lac Arenal",
-              "calcul": "78 € × 3 personnes",
-              "euros": 234.0
+              "prestation": "Balade nocturne dans la forêt de Monteverde",
+              "calcul": "3 participants × 42 €",
+              "centimes": 12600
             }
           ],
-          "coutPrestationsEuros": 6177.0,
-          "margeEuros": 1235.4,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 617700,
+          "margeCentimes": 123540,
+          "fraisDeDossierCentimes": 15000
         }
       },
       "confort": {
-        "totalEuros": 8876,
-        "parPersonneEuros": 2959,
+        "totalCentimes": 887640,
+        "parPersonneCentimes": 295880,
+        "logements": [
+          "Lodge Arenal Volcán",
+          "Ecolodge Monteverde",
+          "Cabinas Drake Bay"
+        ],
+        "activites": [
+          "Kayak sur le lac Arenal",
+          "Balade nocturne dans la forêt de Monteverde"
+        ],
+        "transportAu": "maximum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Lodge Arenal Volcán",
-              "calcul": "192 € × 4 nuits",
-              "euros": 768.0
+              "calcul": "4 nuits × 192 €",
+              "centimes": 76800
             },
             {
               "prestation": "Ecolodge Monteverde",
-              "calcul": "144 € × 4 nuits × 2 unités",
-              "euros": 1152.0
+              "calcul": "4 nuits × 144 € × 2 unités",
+              "centimes": 115200
             },
             {
               "prestation": "Cabinas Drake Bay",
-              "calcul": "168 € × 4 nuits",
-              "euros": 672.0
+              "calcul": "4 nuits × 168 €",
+              "centimes": 67200
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Paris – La Fortuna (max de la fourchette)",
-              "calcul": "1300 € × 3 personnes",
-              "euros": 3900.0
+              "prestation": "Vol aller-retour Paris – La Fortuna",
+              "calcul": "3 voyageurs × 1 300 €",
+              "centimes": 390000
             },
             {
-              "prestation": "Transferts aéroport (max de la fourchette)",
-              "calcul": "140 € × 3 personnes",
-              "euros": 420.0
+              "prestation": "Transferts aéroport – hébergement à La Fortuna",
+              "calcul": "3 voyageurs × 140 €",
+              "centimes": 42000
             }
           ],
           "activites": [
             {
-              "prestation": "Balade nocturne dans la forêt de Monteverde",
-              "calcul": "42 € × 3 personnes",
-              "euros": 126.0
+              "prestation": "Kayak sur le lac Arenal",
+              "calcul": "3 participants × 78 €",
+              "centimes": 23400
             },
             {
-              "prestation": "Kayak sur le lac Arenal",
-              "calcul": "78 € × 3 personnes",
-              "euros": 234.0
+              "prestation": "Balade nocturne dans la forêt de Monteverde",
+              "calcul": "3 participants × 42 €",
+              "centimes": 12600
             }
           ],
-          "coutPrestationsEuros": 7272.0,
-          "margeEuros": 1454.4,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 727200,
+          "margeCentimes": 145440,
+          "fraisDeDossierCentimes": 15000
         }
       }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 4,
+          "logements": [
+            "Lodge Arenal Volcán"
+          ]
+        },
+        {
+          "nuits": 4,
+          "logements": [
+            "Ecolodge Monteverde"
+          ]
+        },
+        {
+          "nuits": 4,
+          "logements": [
+            "Cabinas Drake Bay"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Kayak sur le lac Arenal",
+        "Balade nocturne dans la forêt de Monteverde"
+      ],
+      "activitesOptionnelles": []
     }
   },
   "formule": {
-    "version": "provisoire",
-    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
     "fraisDeDossierEuros": 150,
-    "tolerance": 0.15,
-    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+    "tolerance": 0
   }
 }

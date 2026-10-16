@@ -62,121 +62,141 @@
     "pointsDeControle": [
       "Le chatbot demande le type de besoin (plain-pied, ascenseur, fauteuil).",
       "Seuls des logements et activités marqués accessibles sont proposés.",
-      "L'atelier pastéis de nata est proposé."
+      "L'atelier pastéis de nata est suggéré (niveau confort) : il ne tient pas dans le budget au niveau équilibré."
     ],
     "budgetsParNiveau": {
       "essentiel": {
-        "totalEuros": 1062,
-        "parPersonneEuros": 531,
+        "totalCentimes": 88000,
+        "parPersonneCentimes": 44000,
+        "logements": [
+          "Hôtel Alfama Vista, chambre double"
+        ],
+        "activites": [],
+        "transportAu": "minimum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Hôtel Alfama Vista, chambre double",
-              "calcul": "110 € × 3 nuits",
-              "euros": 330.0
+              "calcul": "3 nuits × 110 €",
+              "centimes": 33000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Lisbonne (min de la fourchette)",
-              "calcul": "140 € × 2 personnes",
-              "euros": 280.0
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 140 €",
+              "centimes": 28000
             },
             {
-              "prestation": "Transferts aéroport (min de la fourchette)",
-              "calcul": "20 € × 2 personnes",
-              "euros": 40.0
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 20 €",
+              "centimes": 4000
             }
           ],
-          "activites": [
-            {
-              "prestation": "Atelier pastéis de nata",
-              "calcul": "55 € × 2 personnes",
-              "euros": 110.0
-            }
-          ],
-          "coutPrestationsEuros": 760.0,
-          "margeEuros": 152.0,
-          "fraisDeDossierEuros": 150
+          "activites": [],
+          "coutPrestationsCentimes": 65000,
+          "margeCentimes": 13000,
+          "fraisDeDossierCentimes": 10000
         }
       },
       "equilibre": {
-        "totalEuros": 1209,
-        "parPersonneEuros": 604,
+        "totalCentimes": 117400,
+        "parPersonneCentimes": 58700,
+        "logements": [
+          "Hôtel Alfama Vista, chambre double"
+        ],
+        "activites": [],
+        "transportAu": "milieu de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Hôtel Alfama Vista, chambre double",
-              "calcul": "110 € × 3 nuits",
-              "euros": 330.0
+              "calcul": "3 nuits × 110 €",
+              "centimes": 33000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Lisbonne (bas de la fourchette)",
-              "calcul": "195 € × 2 personnes",
-              "euros": 390.0
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 250 €",
+              "centimes": 50000
             },
             {
-              "prestation": "Transferts aéroport (bas de la fourchette)",
-              "calcul": "26.25 € × 2 personnes",
-              "euros": 52.5
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 32,50 €",
+              "centimes": 6500
             }
           ],
-          "activites": [
-            {
-              "prestation": "Atelier pastéis de nata",
-              "calcul": "55 € × 2 personnes",
-              "euros": 110.0
-            }
-          ],
-          "coutPrestationsEuros": 882.5,
-          "margeEuros": 176.5,
-          "fraisDeDossierEuros": 150
+          "activites": [],
+          "coutPrestationsCentimes": 89500,
+          "margeCentimes": 17900,
+          "fraisDeDossierCentimes": 10000
         }
       },
       "confort": {
-        "totalEuros": 2298,
-        "parPersonneEuros": 1149,
+        "totalCentimes": 224800,
+        "parPersonneCentimes": 112400,
+        "logements": [
+          "Tejo Palace, suite vue fleuve"
+        ],
+        "activites": [
+          "Atelier pastéis de nata"
+        ],
+        "transportAu": "maximum de la fourchette",
         "detail": {
           "hebergements": [
             {
               "prestation": "Tejo Palace, suite vue fleuve",
-              "calcul": "290 € × 3 nuits",
-              "euros": 870.0
+              "calcul": "3 nuits × 290 €",
+              "centimes": 87000
             }
           ],
           "transports": [
             {
-              "prestation": "Vol aller-retour Lyon – Lisbonne (max de la fourchette)",
-              "calcul": "360 € × 2 personnes",
-              "euros": 720.0
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 360 €",
+              "centimes": 72000
             },
             {
-              "prestation": "Transferts aéroport (max de la fourchette)",
-              "calcul": "45 € × 2 personnes",
-              "euros": 90.0
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 45 €",
+              "centimes": 9000
             }
           ],
           "activites": [
             {
               "prestation": "Atelier pastéis de nata",
-              "calcul": "55 € × 2 personnes",
-              "euros": 110.0
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
             }
           ],
-          "coutPrestationsEuros": 1790.0,
-          "margeEuros": 358.0,
-          "fraisDeDossierEuros": 150
+          "coutPrestationsCentimes": 179000,
+          "margeCentimes": 35800,
+          "fraisDeDossierCentimes": 10000
         }
       }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 3,
+          "logements": [
+            "Hôtel Alfama Vista, chambre double",
+            "Tejo Palace, suite vue fleuve"
+          ]
+        }
+      ],
+      "activitesDemandees": [],
+      "activitesOptionnelles": [
+        "Atelier pastéis de nata"
+      ]
     }
   },
   "formule": {
-    "version": "provisoire",
-    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
-    "fraisDeDossierEuros": 150,
-    "tolerance": 0.15,
-    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 100,
+    "tolerance": 0
   }
 }

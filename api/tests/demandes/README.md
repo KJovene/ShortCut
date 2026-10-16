@@ -26,16 +26,14 @@ Chaque fichier suit `demande.schema.json` :
 
 ## Budgets attendus
 
-Les budgets sont calculés à partir du jeu de démo (#174) avec une **formule provisoire**, en attendant `docs/chiffrage.md` (#176) et la règle des frais de dossier (#165) :
+Les budgets sont calculés à partir du jeu de démo (#174) avec la formule de [`docs/chiffrage.md`](../../../docs/chiffrage.md), **au centime près** (`formule.tolerance` vaut 0) :
 
 ```text
-budget = (hébergements + transports + activités) × 1,20 + 150 € de frais de dossier
+total = (hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage
 ```
 
-- **Essentiel** : la combinaison la moins chère, vols au bas de la fourchette.
-- **Équilibré** : la meilleure combinaison qui tient dans le budget du client.
-- **Confort** : logement supérieur, vols au haut de la fourchette, activités en plus.
+- `attendu.candidats` : les étapes et logements compatibles, les activités demandées et les suggestions, à partir desquels les trois niveaux sont choisis.
+- `attendu.budgetsParNiveau` : pour chaque niveau, les logements et activités retenus, la position dans la fourchette de transport et le détail poste par poste, en centimes.
+- Cas 10 : `attendu.versionInitiale` donne aussi les budgets de la première version (55 personnes depuis Paris).
 
-Une proposition est jugée correcte si son total est à 15 % près du budget de référence (`formule.tolerance`). Une fois la formule définitive écrite, il faudra recalculer ces budgets à l'euro près.
-
-`tests/DemandesTestTest.php` vérifie que les fichiers restent cohérents avec le catalogue de démo : types de voyage, cas particuliers, noms des prestations, ordre des niveaux et respect du budget.
+`tests/DemandesTestTest.php` vérifie que les fichiers restent cohérents avec le catalogue de démo et avec la formule : types de voyage, cas difficiles, noms des prestations, ordre des niveaux, somme des postes, marge, frais de dossier et respect du budget.
