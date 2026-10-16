@@ -73,6 +73,53 @@ make fix     # corriger automatiquement le style (PHP-CS-Fixer et Prettier)
 `make check` lance le style et les types (`make lint`), PHPStan (`make stan`), les tests PHPUnit et Vitest (`make test`) et le build du site.
 Avant les premiers tests qui utilisent la base, préparer la base de test avec `make db-test`.
 
+## Modèle de données
+
+Les entités sont dans `api/src/Entity`, les enums dans `api/src/Enum`. Conventions :
+
+- **Montants en centimes** (entiers) : `budgetCentimes`, `prixCentimes`, `totalCentimes`…
+- **Périodes** : `debut` et `fin` en dates (`date_immutable`), avec une contrainte qui refuse une fin avant le début.
+- **Listes libres** (envies, équipements, photos, hypothèses…) en colonnes JSON.
+- Tarifs et climat gardent `saisiPar` et `modifieLe` pour repérer les périodes à mettre à jour.
+
+```mermaid
+erDiagram
+    CLIENT ||--o{ DEMANDE : fait
+    UTILISATEUR |o--o{ DEMANDE : "suit (conseiller)"
+    DEMANDE ||--|| CONVERSATION : a
+    DEMANDE ||--o{ PROPOSITION : "a (versions)"
+    UTILISATEUR |o--o{ PROPOSITION : confirme
+    PROPOSITION ||--o{ LIGNE_DE_PRESTATION : contient
+    LIGNE_DE_PRESTATION }o--o| PRESTATION : "logement ou activité"
+    LIGNE_DE_PRESTATION }o--o| PRESTATAIRE : "transport ou guide"
+    DESTINATION ||--o{ PERIODE_CLIMATIQUE : a
+    DESTINATION ||--o{ PRESTATION : propose
+    PRESTATAIRE ||--o{ PRESTATION : fournit
+    PRESTATION ||--o{ TARIF_PAR_PERIODE : a
+    DEMANDE |o--o{ JOURNAL_IA : trace
+```
+
+| Entité | Rôle | Champs principaux |
+| --- | --- | --- |
+| `Client` | Personne qui écrit au chatbot | prénom, nom, e-mail, téléphone, préférences |
+| `Demande` | Fiche remplie par l'agent Conversation | type de voyage, lieu ou zone, dates et flexibilité, nombre de jours, températures min et max, adultes, enfants et âges, budget (total ou par personne, transport inclus), envies, contraintes, statut, conseiller |
+| `Conversation` | Messages entre le client et le chatbot | jeton anonyme du navigateur, messages, début, fin, reprise par un conseiller |
+| `Proposition` | Une version de proposition | version, type (première ou confirmée), statut, lien public, programme jour par jour, niveau de budget détaillé, totaux des trois niveaux, frais de dossier, hypothèses, confirmée par et le |
+| `LigneDePrestation` | Poste chiffré d'une proposition | type (logement, transport, activité, guide), libellé, dates, quantité, prix estimé, prix confirmé |
+| `Destination` | Destination du catalogue | pays, région, ville, slug, temps de trajet par ville de départ, points forts, description, photo, publiée, mise en avant |
+| `PeriodeClimatique` | Climat d'une destination sur une période | début, fin, température moyenne, pluie |
+| `Prestataire` | Hébergeur, transporteur, guide ou activités | nom, type, contact, conditions d'annulation, fourchettes de prix des transports |
+| `Prestation` | Logement ou activité | type, nom, catégorie, capacité, équipements, accessibilité, durée, âge minimum, envies, photos |
+| `TarifParPeriode` | Prix d'une prestation sur une période | début, fin, prix, unité (par nuit ou par personne), séjour minimum |
+| `RegleDePrix` | Règles de prix de l'agence | marge (20 %), frais de dossier minimum (100 €) et maximum (200 €) |
+| `PageDuSite` | Contenu modifiable d'une page du site | titre, slug, contenu, photos, titre et description pour le référencement, publiée, ordre dans le menu |
+| `Utilisateur` | Conseiller ou administrateur du backoffice | e-mail, nom, rôle, mot de passe |
+| `JournalIA` | Trace de chaque appel à un agent IA | agent, demande, modèle, entrée, sortie, tokens consommés |
+
+Index sur les champs filtrés : statut et conseiller des demandes, pays et publication des destinations, destination et type des prestations, capacité, et périodes (`destination` ou `prestation`, `debut`, `fin`) des climats et des tarifs.
+
+Après une modification d'entité : `make migration`, relire le fichier créé dans `api/migrations/`, puis `make migrate`.
+
 ## Organisation du site
 
 - `src/routes/` : une route par fichier (TanStack Router). `src/routeTree.gen.ts` est généré automatiquement par le plugin Vite, ne pas le modifier à la main.
