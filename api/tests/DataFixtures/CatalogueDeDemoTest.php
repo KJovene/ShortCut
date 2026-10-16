@@ -47,7 +47,7 @@ final class CatalogueDeDemoTest extends KernelTestCase
         self::assertCount(15, $this->em->getRepository(Prestataire::class)->findAll());
         self::assertCount(30, $this->logements());
         self::assertCount(20, $this->em->getRepository(Prestation::class)->findBy(['type' => TypePrestation::Activite]));
-        self::assertCount(3, $this->em->getRepository(Utilisateur::class)->findAll());
+        self::assertCount(4, $this->em->getRepository(Utilisateur::class)->findAll());
 
         foreach ($this->em->getRepository(Destination::class)->findAll() as $destination) {
             self::assertCount(12, $destination->getPeriodesClimatiques(), $destination->getVille() ?? '');

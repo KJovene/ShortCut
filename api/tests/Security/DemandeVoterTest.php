@@ -73,6 +73,16 @@ final class DemandeVoterTest extends KernelTestCase
         self::assertFalse($this->peut($this->autreConseiller, DemandeVoter::ATTRIBUER, $this->demandeDuConseiller));
     }
 
+    public function testUnClientInscritNAccedeAAucuneDemandeDuBackoffice(): void
+    {
+        $client = $this->utilisateur('camille@example.com', Role::Client);
+
+        self::assertFalse($this->peut($client, DemandeVoter::VOIR, $this->demandeNonAttribuee));
+        self::assertFalse($this->peut($client, DemandeVoter::ATTRIBUER, $this->demandeNonAttribuee));
+        self::assertFalse($this->peut($client, DemandeVoter::VOIR, $this->demandeDuConseiller));
+        self::assertFalse($this->peut($client, 'ROLE_CONSEILLER'));
+    }
+
     public function testLAdministrateurAccedeAToutesLesDemandesEtHeriteDuRoleConseiller(): void
     {
         self::assertTrue($this->peut($this->admin, DemandeVoter::MODIFIER, $this->demandeDuConseiller));

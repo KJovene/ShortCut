@@ -10,11 +10,10 @@ Le cahier des charges est dans [`cahier-des-charges.md`](cahier-des-charges.md).
 
 ## Prérequis
 
-- Docker Desktop (ou Docker Engine + Compose v2) : l'API PHP 8.3, Nginx et PostgreSQL 16 tournent dans des conteneurs
-- Node.js 22.22 ou plus récent (24 conseillé) et npm : le site tourne sur la machine
+- Docker Desktop (ou Docker Engine + Compose v2) : l'API PHP 8.3, Nginx, PostgreSQL 16 et le site React (Node 24, conteneur `front`) tournent dans des conteneurs
 - `make` (déjà présent sur macOS et Linux)
 
-Pas besoin d'installer PHP, Composer ni PostgreSQL sur sa machine.
+Pas besoin d'installer PHP, Composer, PostgreSQL ni Node.js sur sa machine.
 
 ## Installation
 
@@ -24,7 +23,7 @@ cd ShortCut
 make install
 ```
 
-`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple, applique les migrations et charge les données de démo.
+`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer et npm dans Docker), crée `api/.env.local` à partir de l'exemple, applique les migrations et charge les données de démo.
 Il reste à renseigner sa clé `ANTHROPIC_API_KEY` dans `api/.env.local`.
 
 Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jamais commités**. La clé API Claude n'existe que côté API, le site ne la voit jamais.
@@ -32,11 +31,11 @@ Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jama
 ## Lancer le projet
 
 ```bash
-make up     # API + base en arrière-plan
-make dev    # site (garde le terminal ouvert)
+make up     # API, base et site en arrière-plan
+make dev    # suit les logs du site (Ctrl+C n'arrête pas le conteneur)
 ```
 
-`make start` enchaîne les deux. `make start-d` lance l'API et le site en arrière-plan pour garder le terminal libre : `make site-logs` affiche les logs du site, `make stop-d` arrête tout. `make down` arrête et supprime les conteneurs. Les données de la base sont conservées dans un volume Docker.
+`make start` enchaîne les deux. Le conteneur `front` lance Vite avec le rechargement à chaud : modifier un fichier de `site/` suffit. Ses dépendances sont dans un volume Docker (`node_modules` n'apparaît pas dans `site/`), réinstallées automatiquement quand `package-lock.json` change. Pour ajouter un paquet : `make site-sh` puis `npm install <paquet>`. `make down` arrête et supprime les conteneurs. Les données de la base sont conservées dans un volume Docker.
 
 | Adresse | Service |
 | --- | --- |
@@ -46,7 +45,7 @@ make dev    # site (garde le terminal ouvert)
 
 Le site appelle l'API en relatif (`/api/...`) : Vite redirige ces requêtes vers l'API, donc pas d'erreur CORS. NelmioCorsBundle autorise aussi `localhost` pour les appels directs.
 
-Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la racine et changer `API_PORT` ou `POSTGRES_PORT`. Si `API_PORT` change, mettre la même valeur dans `site/.env.local` (`API_PROXY_TARGET`, voir `site/.env.example`).
+Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la racine et changer `API_PORT` ou `POSTGRES_PORT`. Le port du site se change avec `FRONT_PORT`.
 
 ## Commandes
 
@@ -63,7 +62,8 @@ Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la raci
 | `make db-ui` | Ouvre Adminer, l'interface web de la base : http://localhost:8080 (serveur `database`, utilisateur et mot de passe `shortcut`, base `shortcut`) |
 | `make schema` | Régénère le diagramme complet de la base dans [`docs/schema.md`](docs/schema.md) à partir des entités Doctrine |
 | `make sh` | Shell dans le conteneur PHP |
-| `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`) |
+| `make site-sh` | Shell dans le conteneur du site (npm) |
+| `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`, `front`) |
 
 ## Qualité du code
 
