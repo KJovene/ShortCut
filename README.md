@@ -10,74 +10,68 @@ Le cahier des charges est dans [`cahier-des-charges.md`](cahier-des-charges.md).
 
 ## Prérequis
 
-- PHP 8.3 ou plus récent, avec les extensions `intl` et `pdo_pgsql`
-- Composer 2
-- Node.js 22.22 ou plus récent (24 conseillé) et npm
-- PostgreSQL 16 : l'environnement Docker Compose arrive avec le ticket #171. En attendant, l'API démarre sans base tant qu'aucune entité n'est utilisée.
-- Facultatif : [Symfony CLI](https://symfony.com/download) pour le serveur de développement
+- Docker Desktop (ou Docker Engine + Compose v2) : l'API PHP 8.3, Nginx et PostgreSQL 16 tournent dans des conteneurs
+- Node.js 22.22 ou plus récent (24 conseillé) et npm : le site tourne sur la machine
+- `make` (déjà présent sur macOS et Linux)
+
+Pas besoin d'installer PHP, Composer ni PostgreSQL sur sa machine.
 
 ## Installation
 
 ```bash
 git clone https://github.com/KJovene/ShortCut.git
 cd ShortCut
-
-# API
-cd api
-composer install
-cp .env.local.example .env.local   # puis renseigner ANTHROPIC_API_KEY
-cd ..
-
-# Site
-cd site
-npm install
-cd ..
+make install
 ```
 
-Les fichiers `.env.local` contiennent les secrets de chacun (clé API Claude, identifiants locaux) : ils ne sont **jamais commités**.
-Les valeurs par défaut sont dans `api/.env`. Les exemples à copier sont `api/.env.local.example` et `site/.env.example`.
+`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple et applique les migrations.
+Il reste à renseigner sa clé `ANTHROPIC_API_KEY` dans `api/.env.local`.
+
+Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jamais commités**. La clé API Claude n'existe que côté API, le site ne la voit jamais.
 
 ## Lancer le projet
 
-Dans deux terminaux :
-
 ```bash
-# Terminal 1 : API sur http://127.0.0.1:8000
-cd api
-symfony serve --port=8000        # ou : php -S 127.0.0.1:8000 -t public
-
-# Terminal 2 : site sur http://localhost:5173
-cd site
-npm run dev
+make up     # API + base en arrière-plan
+make dev    # site (garde le terminal ouvert)
 ```
 
-Le site appelle l'API en relatif (`/api/...`) : Vite redirige ces requêtes vers `http://127.0.0.1:8000`, donc pas de souci de CORS en local.
-Si l'API tourne ailleurs, copier `site/.env.example` en `site/.env.local` et changer `API_PROXY_TARGET`.
+`make start` enchaîne les deux. `make start-d` lance l'API et le site en arrière-plan pour garder le terminal libre : `make site-logs` affiche les logs du site, `make stop-d` arrête tout. `make down` arrête et supprime les conteneurs. Les données de la base sont conservées dans un volume Docker.
 
-Vérifications rapides :
+| Adresse | Service |
+| --- | --- |
+| http://localhost:5173 | Site React. En développement, les devtools TanStack Query et Router s'affichent en bas de l'écran. |
+| http://localhost:8000/api | Documentation de l'API (API Platform) |
+| `localhost:5433` | PostgreSQL (`shortcut` / `shortcut`, base `shortcut`), pour un client SQL. `make psql` ouvre une console. |
 
-- http://127.0.0.1:8000/api : documentation de l'API (API Platform)
-- http://localhost:5173 : page d'accueil du site. En développement, les devtools TanStack Query et Router s'affichent en bas de l'écran.
+Le site appelle l'API en relatif (`/api/...`) : Vite redirige ces requêtes vers l'API, donc pas d'erreur CORS. NelmioCorsBundle autorise aussi `localhost` pour les appels directs.
+
+Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la racine et changer `API_PORT` ou `POSTGRES_PORT`. Si `API_PORT` change, mettre la même valeur dans `site/.env.local` (`API_PROXY_TARGET`, voir `site/.env.example`).
+
+## Commandes
+
+`make` affiche la liste complète. Les plus utiles :
+
+| Commande | Effet |
+| --- | --- |
+| `make migration` | Génère une migration après modification des entités |
+| `make migrate` | Applique les migrations |
+| `make fixtures` | Recharge le jeu de données de démo (vide la base avant) |
+| `make db-reset` | Recrée la base de zéro : suppression, création, migrations, fixtures |
+| `make console c="debug:router"` | Lance une commande Symfony dans le conteneur |
+| `make composer c="require symfony/mailer"` | Lance Composer dans le conteneur |
+| `make sh` | Shell dans le conteneur PHP |
+| `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`) |
 
 ## Qualité du code
 
-À lancer avant chaque pull request.
-
 ```bash
-# API
-cd api
-vendor/bin/php-cs-fixer fix          # formate le code (--dry-run pour vérifier seulement)
-vendor/bin/phpstan analyse           # analyse statique
-php bin/phpunit                      # tests
-
-# Site
-cd site
-npm run lint                         # ESLint (règles TanStack Query et Router incluses)
-npm run format                       # Prettier (format:check pour vérifier seulement)
-npm run typecheck                    # TypeScript
-npm test                             # Vitest
-npm run build                        # build de production
+make check   # tout vérifier avant une pull request
+make fix     # corriger automatiquement le style (PHP-CS-Fixer et Prettier)
 ```
+
+`make check` lance le style et les types (`make lint`), PHPStan (`make stan`), les tests PHPUnit et Vitest (`make test`) et le build du site.
+Avant les premiers tests qui utilisent la base, préparer la base de test avec `make db-test`.
 
 ## Organisation du site
 
