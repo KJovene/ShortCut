@@ -38,6 +38,8 @@ make dev    # site (garde le terminal ouvert)
 
 `make start` enchaîne les deux. `make start-d` lance l'API et le site en arrière-plan pour garder le terminal libre : `make site-logs` affiche les logs du site, `make stop-d` arrête tout. `make down` arrête et supprime les conteneurs. Les données de la base sont conservées dans un volume Docker.
 
+Sans Node sur sa machine, `make site-docker` lance aussi le site dans un conteneur, sur la même adresse (`make logs s=site` pour les logs, `make site-docker-stop` pour l'arrêter).
+
 | Adresse | Service |
 | --- | --- |
 | http://localhost:5173 | Site React. En développement, les devtools TanStack Query et Router s'affichent en bas de l'écran. |

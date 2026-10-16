@@ -5,7 +5,7 @@
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
         migration migrate fixtures db-reset db-test db-ui schema \
-        dev site-install site-build \
+        dev site-install site-build site-docker site-docker-stop \
         test test-api test-site lint lint-api lint-site stan fix check
 
 # Les fichiers créés dans le conteneur appartiennent à l'utilisateur de la machine.
@@ -60,7 +60,7 @@ up: ## Démarre l'API et la base en arrière-plan (http://localhost:8000)
 	$(COMPOSE) up -d --wait
 
 down: ## Arrête et supprime les conteneurs (les données de la base sont conservées)
-	$(COMPOSE) down
+	$(COMPOSE) --profile site down
 
 stop: ## Arrête les conteneurs sans les supprimer
 	$(COMPOSE) stop
@@ -134,6 +134,13 @@ site-install: ## Installe les dépendances du site
 
 site-build: ## Construit le site pour la production
 	$(NPM) run build
+
+site-docker: up ## Démarre le site dans Docker, sans Node sur la machine (http://localhost:5173)
+	$(COMPOSE) --profile site up -d site
+	@echo "Site en cours de démarrage : http://localhost:5173 (logs : make logs s=site, arrêt : make site-docker-stop)"
+
+site-docker-stop: ## Arrête le site lancé dans Docker
+	$(COMPOSE) --profile site stop site
 
 ## —— Qualité —————————————————————————————————————————————
 test: test-api test-site ## Lance tous les tests

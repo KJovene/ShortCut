@@ -1,17 +1,120 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
+import { SiteHeader } from '@/components/layout/SiteHeader'
+import { IconFlecheBas } from '@/components/ui/icons'
+import {
+  DESTINATIONS,
+  TYPES_DE_VOYAGE,
+  trouverDestination,
+  type TypeDeVoyage,
+} from '@/data/catalogue'
+import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
+import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
+import { SectionAssistant } from '@/features/accueil/SectionAssistant'
+import { cn } from '@/lib/cn'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    meta: [
+      { title: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes' },
+      {
+        name: 'description',
+        content:
+          "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+      },
+    ],
+  }),
   component: HomePage,
 })
 
+const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
+  { valeur: 'tous', label: 'Tous' },
+  ...TYPES_DE_VOYAGE.map((t) => ({ valeur: t.valeur, label: t.pluriel })),
+]
+
 function HomePage() {
+  const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
+  const [activeSlug, setActiveSlug] = useState('santorin')
+  const active = trouverDestination(activeSlug) ?? DESTINATIONS[0]
+
   return (
-    <section>
-      <h1 className="text-3xl font-bold">Votre voyage sur mesure</h1>
-      <p className="mt-4 text-slate-600">
-        Décrivez vos envies à notre assistant : il vous prépare une première proposition, puis un
-        conseiller la confirme.
-      </p>
-    </section>
+    <>
+      <section
+        aria-labelledby="hero-titre"
+        className="relative flex h-[max(640px,100svh)] flex-col md:h-[clamp(720px,100vh,960px)]"
+      >
+        <SiteHeader />
+
+        <div className="mx-auto flex w-full max-w-[1376px] flex-wrap items-end justify-between gap-2.5 px-4 pb-3 sm:gap-4 sm:px-8 sm:pt-1 sm:pb-0">
+          <div className="flex flex-col gap-1.5">
+            <span className="hidden text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase sm:block">
+              {DESTINATIONS.length} destinations sur mesure, partout dans le monde
+            </span>
+            <h1
+              id="hero-titre"
+              className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
+            >
+              Où irez-vous <em className="font-normal text-terre">chercher le soleil</em> ?
+            </h1>
+          </div>
+          <div
+            role="group"
+            aria-label="Filtrer par type de voyage"
+            className="scrollbar-none -mr-4 flex gap-1.5 overflow-x-auto pr-4 sm:mr-0 sm:flex-wrap sm:pr-0"
+          >
+            {FILTRES.map((f) => {
+              const actif = f.valeur === type
+              return (
+                <button
+                  key={f.valeur}
+                  type="button"
+                  aria-pressed={actif}
+                  onClick={() => setType(f.valeur)}
+                  className={cn(
+                    'min-h-[38px] shrink-0 cursor-pointer rounded-full border-[1.5px] px-3.5 text-[13px] font-bold sm:min-h-[42px] sm:px-4 sm:text-sm',
+                    actif
+                      ? 'border-encre bg-encre text-creme'
+                      : 'border-beige bg-white hover:border-encre',
+                  )}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14 md:px-8 md:pt-3">
+          <CarteDuMonde
+            destinations={DESTINATIONS}
+            active={active}
+            type={type}
+            onActiver={setActiveSlug}
+          />
+        </div>
+
+        <a
+          href="#voyages"
+          className="absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-2 px-4 text-sm font-bold text-taupe hover:text-encre sm:bottom-[18px]"
+        >
+          Tous les voyages
+          <IconFlecheBas size={18} />
+        </a>
+      </section>
+
+      <BandeauVoyages
+        destinations={DESTINATIONS}
+        active={active.slug}
+        type={type}
+        onActiver={setActiveSlug}
+      />
+
+      <SectionAssistant
+        suggestion={active}
+        photos={['santorin', 'bali', 'marrakech', 'islande'].map((slug) =>
+          trouverDestination(slug)!,
+        )}
+      />
+    </>
   )
 }

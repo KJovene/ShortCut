@@ -16,6 +16,8 @@ export default defineConfig(({ mode }) => {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     server: {
+      // Dans Docker (compose.yaml), les modifications sont détectées par scrutation.
+      watch: env.VITE_POLLING ? { usePolling: true, interval: 300 } : undefined,
       // Le site appelle l'API Symfony en relatif (/api/...) : pas de CORS en local.
       proxy: {
         '/api': env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
