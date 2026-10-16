@@ -28,11 +28,12 @@ help: ## Affiche cette aide
 	@echo
 
 ## —— Installation ————————————————————————————————————————
-install: build up ## Première installation : images, conteneurs, dépendances, base de données
+install: build up ## Première installation : images, conteneurs, dépendances, base et données de démo
 	$(PHP) composer install --no-interaction
 	@test -f api/.env.local || cp api/.env.local.example api/.env.local
 	$(NPM) install
 	$(MAKE) migrate
+	$(MAKE) fixtures
 	@echo "\nInstallation terminée : renseigner ANTHROPIC_API_KEY dans api/.env.local, puis lancer « make dev »."
 
 ## —— Docker ——————————————————————————————————————————————

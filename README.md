@@ -24,7 +24,7 @@ cd ShortCut
 make install
 ```
 
-`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple et applique les migrations.
+`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple, applique les migrations et charge les données de démo.
 Il reste à renseigner sa clé `ANTHROPIC_API_KEY` dans `api/.env.local`.
 
 Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jamais commités**. La clé API Claude n'existe que côté API, le site ne la voit jamais.
@@ -119,6 +119,25 @@ erDiagram
 Index sur les champs filtrés : statut et conseiller des demandes, pays et publication des destinations, destination et type des prestations, capacité, et périodes (`destination` ou `prestation`, `debut`, `fin`) des climats et des tarifs.
 
 Après une modification d'entité : `make migration`, relire le fichier créé dans `api/migrations/`, puis `make migrate`.
+
+## Données de démo
+
+`make fixtures` (ou `make db-reset` pour repartir d'une base vide) charge un catalogue fictif, défini dans `api/src/DataFixtures/Donnees/` pour que le PO puisse le relire et le modifier.
+
+| Données | Contenu |
+| --- | --- |
+| Comptes | `admin@shortcut.test` (administrateur), `lea@shortcut.test` et `hugo@shortcut.test` (conseillers). Mot de passe : `shortcut` |
+| Destinations | Lisbonne, Marrakech, Santorin, Tenerife, Rome, Islande, Bali, Costa Rica : climat sur les 12 mois de 2027, description, points forts, photo |
+| Prestataires | 15 : 7 hébergeurs, 3 transporteurs (fourchettes de vols depuis Paris, Lyon et Bordeaux, transferts), 2 guides, 3 prestataires d'activités |
+| Prestations | 30 logements et 20 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
+| Règles de prix | Marge 20 %, frais de dossier de 100 à 200 € |
+| Pages du site | Accueil, types de voyages, l'agence, contact et pages légales (modèles « à valider ») |
+
+Chaque type de voyage a au moins une combinaison possible : séjour (Tenerife, Lisbonne…), circuit (Islande, Costa Rica), groupe (résidences de 30 à 60 places), noces (Santorin, Bali), entreprise (salles de séminaire à Lisbonne, Marrakech et Rome).
+
+Périodes **volontairement non couvertes**, pour tester le passage au conseiller : aucun tarif en Islande d'octobre à avril, et les Cabinas Drake Bay (Costa Rica) sont fermées en septembre et octobre.
+
+Les photos sont libres de droits (CC0 ou domaine public, crédits dans `api/fixtures/images/CREDITS.md`). Elles sont copiées dans `api/public/uploads/` (non versionné), servies par l'API sous `/uploads/…` et accessibles depuis le site grâce au proxy Vite.
 
 ## Sécurité et droits
 
