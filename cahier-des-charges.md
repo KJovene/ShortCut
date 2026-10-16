@@ -263,7 +263,7 @@ flowchart TB
         ORC["Orchestrateur des agents<br/>Conversation, Recherche<br/>Chiffrage et rédaction, Modification<br/>outils : lire le backoffice, écrire une proposition"]:::ia
     end
     DB["PostgreSQL · Doctrine (Docker en local)<br/>clients, catalogue, climat, propositions<br/>photos sur disque, PDF générés par Dompdf"]
-    LLM["API Claude (Anthropic)<br/>modèle Claude Sonnet 5.5, via HttpClient<br/>clé côté serveur, jamais dans le navigateur"]:::ia
+    LLM["API Claude (Anthropic)<br/>Haiku 5.5 (conversation), Sonnet 5.5 (le reste)<br/>clé côté serveur, jamais dans le navigateur"]:::ia
     U --> INT
     BO --> API
     SITE --> API
@@ -288,7 +288,7 @@ L'orchestrateur ne lit jamais la base directement : il appelle l'API métier, qu
 | Base de données | PostgreSQL 16 lancé avec Docker Compose | Base relationnelle standard, identique pour toute l'équipe |
 | Accès aux données | Doctrine ORM, migrations et fixtures | Entités versionnées ; jeu de données fictif rechargeable en une commande |
 | Authentification et droits | Symfony Security : session pour le backoffice, rôles conseiller et administrateur, Voters ; jeton anonyme et limite de débit (RateLimiter) pour le chatbot | Droits portés par l'API, jamais par le navigateur |
-| IA | API Claude, modèle Sonnet 5.5, appelée depuis Symfony (HttpClient), réponses diffusées au fil de l'eau (Server-Sent Events) | Clé côté serveur ; premiers mots affichés vite |
+| IA | API Claude, Haiku 5.5 pour la conversation et Sonnet 5.5 pour la recherche, le chiffrage et la rédaction (D22), appelée depuis Symfony (HttpClient), réponses diffusées au fil de l'eau (Server-Sent Events) | Clé côté serveur ; premiers mots affichés vite |
 | Fichiers | Photos sur le disque local (VichUploaderBundle), PDF générés depuis Twig (Dompdf) | Aucun service externe en V1 |
 | Liaison site et API | Proxy Vite en local, NelmioCorsBundle | Aucun blocage CORS entre les deux projets |
 | Déploiement | Hors périmètre pour l'instant ; démo en local | Décision D20 |
@@ -572,3 +572,4 @@ Vingt décisions sont prises au 15 octobre, toutes validées ou remplacées ; to
 | D19 | 15/10/2026 | Le site web de l'agence est créé dans le projet : neuf pages, destinations lues dans le backoffice, pages légales, chatbot sur chaque page | Chatbot intégré à un site existant | Le site fait partie de la commande ; il est la vitrine et la seule porte d'entrée des demandes (D14) | Agence | Validée |
 | D20 | 15/10/2026 | Stack : site en React TypeScript, API et backoffice en Symfony avec EasyAdmin, PostgreSQL via Doctrine ; déploiement reporté, démo en local | Next.js, Prisma et Auth.js (D18) | Choix de l'équipe ; EasyAdmin génère le backoffice depuis les entités et libère du temps pour le site | Équipe | Validée |
 | D21 | 16/10/2026 | Frais de dossier selon le type de voyage : séjour 100 €, voyage de noces 150 €, circuit 150 €, groupe 200 €, entreprise 200 € | Selon le nombre de voyageurs ; au choix du conseiller avec une valeur par défaut | Le chatbot calcule seul des frais exacts dès la première proposition, simples à expliquer au client ; le prix ne bouge pas à la confirmation | Agence | Validée |
+| D22 | 16/10/2026 | Modèle Claude Haiku 5.5 pour l'agent Conversation ; Claude Sonnet 5.5 conservé pour la recherche, le chiffrage et la rédaction | Sonnet 5.5 pour tous les agents | Test des 5 profils (#177) : mêmes résultats que Sonnet (10 exigences sur 10, aucun prix ni disponibilité annoncés, ton 5/5) pour 0,004 $ par conversation au lieu de 0,13 $ ; à revérifier avec les outils (#195) | Équipe | Validée |
