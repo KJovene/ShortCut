@@ -8,3 +8,6 @@ parameters:
         - tests/
     excludePaths:
         - tests/bootstrap.php
+    doctrine:
+        # Convention Symfony : propriété nullable tant que l'entité n'est pas remplie, colonne obligatoire en base.
+        allowNullablePropertyForRequiredField: true

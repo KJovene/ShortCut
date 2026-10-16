@@ -24,7 +24,7 @@ cd ShortCut
 make install
 ```
 
-`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple et applique les migrations.
+`make install` construit l'image PHP, démarre les conteneurs, installe les dépendances (Composer dans Docker, npm sur la machine), crée `api/.env.local` à partir de l'exemple, applique les migrations et charge les données de démo.
 Il reste à renseigner sa clé `ANTHROPIC_API_KEY` dans `api/.env.local`.
 
 Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jamais commités**. La clé API Claude n'existe que côté API, le site ne la voit jamais.
@@ -72,6 +72,86 @@ make fix     # corriger automatiquement le style (PHP-CS-Fixer et Prettier)
 
 `make check` lance le style et les types (`make lint`), PHPStan (`make stan`), les tests PHPUnit et Vitest (`make test`) et le build du site.
 Avant les premiers tests qui utilisent la base, préparer la base de test avec `make db-test`.
+
+## Modèle de données
+
+Les entités sont dans `api/src/Entity`, les enums dans `api/src/Enum`. Conventions :
+
+- **Montants en centimes** (entiers) : `budgetCentimes`, `prixCentimes`, `totalCentimes`…
+- **Périodes** : `debut` et `fin` en dates (`date_immutable`), avec une contrainte qui refuse une fin avant le début.
+- **Listes libres** (envies, équipements, photos, hypothèses…) en colonnes JSON.
+- Tarifs et climat gardent `saisiPar` et `modifieLe` pour repérer les périodes à mettre à jour.
+
+```mermaid
+erDiagram
+    CLIENT ||--o{ DEMANDE : fait
+    UTILISATEUR |o--o{ DEMANDE : "suit (conseiller)"
+    DEMANDE ||--|| CONVERSATION : a
+    DEMANDE ||--o{ PROPOSITION : "a (versions)"
+    UTILISATEUR |o--o{ PROPOSITION : confirme
+    PROPOSITION ||--o{ LIGNE_DE_PRESTATION : contient
+    LIGNE_DE_PRESTATION }o--o| PRESTATION : "logement ou activité"
+    LIGNE_DE_PRESTATION }o--o| PRESTATAIRE : "transport ou guide"
+    DESTINATION ||--o{ PERIODE_CLIMATIQUE : a
+    DESTINATION ||--o{ PRESTATION : propose
+    PRESTATAIRE ||--o{ PRESTATION : fournit
+    PRESTATION ||--o{ TARIF_PAR_PERIODE : a
+    DEMANDE |o--o{ JOURNAL_IA : trace
+```
+
+| Entité | Rôle | Champs principaux |
+| --- | --- | --- |
+| `Client` | Personne qui écrit au chatbot | prénom, nom, e-mail, téléphone, préférences |
+| `Demande` | Fiche remplie par l'agent Conversation | type de voyage, lieu ou zone, dates et flexibilité, nombre de jours, températures min et max, adultes, enfants et âges, budget (total ou par personne, transport inclus), envies, contraintes, statut, conseiller |
+| `Conversation` | Messages entre le client et le chatbot | jeton anonyme du navigateur, messages, début, fin, reprise par un conseiller |
+| `Proposition` | Une version de proposition | version, type (première ou confirmée), statut, lien public, programme jour par jour, niveau de budget détaillé, totaux des trois niveaux, frais de dossier, hypothèses, confirmée par et le |
+| `LigneDePrestation` | Poste chiffré d'une proposition | type (logement, transport, activité, guide), libellé, dates, quantité, prix estimé, prix confirmé |
+| `Destination` | Destination du catalogue | pays, région, ville, slug, temps de trajet par ville de départ, points forts, description, photo, publiée, mise en avant |
+| `PeriodeClimatique` | Climat d'une destination sur une période | début, fin, température moyenne, pluie |
+| `Prestataire` | Hébergeur, transporteur, guide ou activités | nom, type, contact, conditions d'annulation, fourchettes de prix des transports |
+| `Prestation` | Logement ou activité | type, nom, catégorie, capacité, équipements, accessibilité, durée, âge minimum, envies, photos |
+| `TarifParPeriode` | Prix d'une prestation sur une période | début, fin, prix, unité (par nuit ou par personne), séjour minimum |
+| `RegleDePrix` | Règles de prix de l'agence | marge (20 %), frais de dossier minimum (100 €) et maximum (200 €) |
+| `PageDuSite` | Contenu modifiable d'une page du site | titre, slug, contenu, photos, titre et description pour le référencement, publiée, ordre dans le menu |
+| `Utilisateur` | Conseiller ou administrateur du backoffice | e-mail, nom, rôle, mot de passe |
+| `JournalIA` | Trace de chaque appel à un agent IA | agent, demande, modèle, entrée, sortie, tokens consommés |
+
+Index sur les champs filtrés : statut et conseiller des demandes, pays et publication des destinations, destination et type des prestations, capacité, et périodes (`destination` ou `prestation`, `debut`, `fin`) des climats et des tarifs.
+
+Après une modification d'entité : `make migration`, relire le fichier créé dans `api/migrations/`, puis `make migrate`.
+
+## Données de démo
+
+`make fixtures` (ou `make db-reset` pour repartir d'une base vide) charge un catalogue fictif, défini dans `api/src/DataFixtures/Donnees/` pour que le PO puisse le relire et le modifier.
+
+| Données | Contenu |
+| --- | --- |
+| Comptes | `admin@shortcut.test` (administrateur), `lea@shortcut.test` et `hugo@shortcut.test` (conseillers). Mot de passe : `shortcut` |
+| Destinations | Lisbonne, Marrakech, Santorin, Tenerife, Rome, Islande, Bali, Costa Rica : climat sur les 12 mois de 2027, description, points forts, photo |
+| Prestataires | 15 : 7 hébergeurs, 3 transporteurs (fourchettes de vols depuis Paris, Lyon et Bordeaux, transferts), 2 guides, 3 prestataires d'activités |
+| Prestations | 30 logements et 20 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
+| Règles de prix | Marge 20 %, frais de dossier de 100 à 200 € |
+| Pages du site | Accueil, types de voyages, l'agence, contact et pages légales (modèles « à valider ») |
+
+Chaque type de voyage a au moins une combinaison possible : séjour (Tenerife, Lisbonne…), circuit (Islande, Costa Rica), groupe (résidences de 30 à 60 places), noces (Santorin, Bali), entreprise (salles de séminaire à Lisbonne, Marrakech et Rome).
+
+Périodes **volontairement non couvertes**, pour tester le passage au conseiller : aucun tarif en Islande d'octobre à avril, et les Cabinas Drake Bay (Costa Rica) sont fermées en septembre et octobre.
+
+Les photos sont libres de droits (CC0 ou domaine public, crédits dans `api/fixtures/images/CREDITS.md`). Elles sont copiées dans `api/public/uploads/` (non versionné), servies par l'API sous `/uploads/…` et accessibles depuis le site grâce au proxy Vite.
+
+## Sécurité et droits
+
+Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/packages/security.yaml`).
+
+| Profil | Rôle Symfony | Accès |
+| --- | --- | --- |
+| Administrateur | `ROLE_ADMIN` (hérite de `ROLE_CONSEILLER`) | Toutes les demandes |
+| Conseiller | `ROLE_CONSEILLER` | Les demandes qui lui sont attribuées ; il voit aussi les demandes non attribuées pour les aiguiller (se les attribuer ou les confier à un autre conseiller), mais ne les traite qu'une fois attribuées |
+| Chatbot (client anonyme) | `ROLE_CHATBOT` | Uniquement la demande de sa propre conversation |
+
+- **Voter** : `DemandeVoter` (`DEMANDE_VOIR`, `DEMANDE_MODIFIER`, `DEMANDE_ATTRIBUER` pour l'aiguillage) s'applique à une demande, à sa conversation et à ses propositions. Dans un contrôleur : `$this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande)`.
+- **Chatbot** : `POST /api/chat/conversations` ouvre une conversation et renvoie un jeton. Les appels suivants envoient ce jeton dans l'en-tête `X-Conversation-Token` (pare-feu `chatbot`, sans session). Sans jeton valide : 401 ; demande d'un autre client : 403.
+- **Limite de débit** (`api/config/packages/rate_limiter.yaml`) : par adresse IP, 20 requêtes par minute sur `/api/chat` et 10 nouvelles conversations par heure. Au-delà : 429 avec un message clair et l'en-tête `Retry-After`.
 
 ## Organisation du site
 

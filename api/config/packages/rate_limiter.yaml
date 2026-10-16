@@ -1,0 +1,12 @@
+framework:
+    rate_limiter:
+        # Messages envoyés au chatbot, par adresse IP : protège les crédits de l'API Claude.
+        chatbot_messages:
+            policy: sliding_window
+            limit: 20
+            interval: '1 minute'
+        # Nouvelles conversations, par adresse IP.
+        chatbot_conversations:
+            policy: sliding_window
+            limit: 10
+            interval: '1 hour'

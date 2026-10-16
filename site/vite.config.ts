@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => {
       // Le site appelle l'API Symfony en relatif (/api/...) : pas de CORS en local.
       proxy: {
         '/api': env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
+        // Photos enregistrées par le backoffice et les fixtures.
+        '/uploads': env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
       },
     },
     test: {
