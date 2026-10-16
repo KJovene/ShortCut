@@ -1,0 +1,64 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "04",
+  "titre": "Aurores boréales en Islande en janvier",
+  "typeDeVoyage": "circuit",
+  "casParticuliers": [
+    "periode_sans_donnees"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, nous voulons voir les aurores boréales en Islande, en faisant un petit circuit en voiture."
+    },
+    {
+      "moment": "reponse",
+      "client": "Du 16 au 22 janvier 2027, à deux, au départ de Paris. Budget autour de 3 000 €."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "circuit",
+    "lieuOuZone": "Islande",
+    "villeDepart": "Paris",
+    "dateDebut": "2027-01-16",
+    "dateFin": "2027-01-22",
+    "datesFlexibles": false,
+    "nombreDeJours": 6,
+    "temperatureMin": null,
+    "temperatureMax": null,
+    "adultes": 2,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 3000,
+    "budgetParPersonne": false,
+    "transportInclus": true,
+    "envies": [
+      "nature",
+      "aurores boréales"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "islande"
+    ],
+    "passageAuConseiller": true,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [],
+    "exclusions": [],
+    "pointsDeControle": [
+      "Le chatbot indique qu'aucun tarif n'est saisi pour l'Islande en janvier.",
+      "Il n'invente aucun prix et ne remet pas de proposition chiffrée.",
+      "Il transmet la demande à un conseiller et le dit au client.",
+      "Il peut donner le climat saisi (0 °C en moyenne en janvier)."
+    ],
+    "budgetsParNiveau": null
+  },
+  "formule": {
+    "version": "provisoire",
+    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0.15,
+    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+  }
+}

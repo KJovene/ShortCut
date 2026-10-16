@@ -1,0 +1,184 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "05",
+  "titre": "Voyage d'une association de 35 personnes à Rome",
+  "typeDeVoyage": "groupe",
+  "casParticuliers": [
+    "capacite_activite"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Je suis présidente d'une association culturelle : nous voulons emmener 35 adhérents à Rome au printemps."
+    },
+    {
+      "moment": "reponse",
+      "client": "Du jeudi 15 au lundi 19 avril 2027, au départ de Lyon. Que des adultes. Budget 450 € par personne, transport compris."
+    },
+    {
+      "moment": "reponse",
+      "client": "L'essentiel pour nous : le Colisée avec un guide. Un hébergement simple nous convient."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "groupe",
+    "lieuOuZone": "Rome",
+    "villeDepart": "Lyon",
+    "dateDebut": "2027-04-15",
+    "dateFin": "2027-04-19",
+    "datesFlexibles": false,
+    "nombreDeJours": 4,
+    "temperatureMin": null,
+    "temperatureMax": null,
+    "adultes": 35,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 450,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "culture"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "rome"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Auberge Termini, dortoirs groupes",
+      "Roma Congressi Hotel"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Hôtel Colosseo, chambre double",
+        "raison": "capacité 2 : il faudrait 18 chambres, sans tarif de groupe"
+      }
+    ],
+    "pointsDeControle": [
+      "La visite du Colisée (30 places) est prévue en deux groupes.",
+      "Le budget est raisonné par personne."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalEuros": 12570,
+        "parPersonneEuros": 359,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Auberge Termini, dortoirs groupes",
+              "calcul": "1100 € × 4 nuits",
+              "euros": 4400.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (min de la fourchette)",
+              "calcul": "90 € × 35 personnes",
+              "euros": 3150.0
+            },
+            {
+              "prestation": "Transferts aéroport (min de la fourchette)",
+              "calcul": "25 € × 35 personnes",
+              "euros": 875.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "55 € × 35 personnes",
+              "euros": 1925.0
+            }
+          ],
+          "coutPrestationsEuros": 10350.0,
+          "margeEuros": 2070.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "equilibre": {
+        "totalEuros": 14670,
+        "parPersonneEuros": 419,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Auberge Termini, dortoirs groupes",
+              "calcul": "1100 € × 4 nuits",
+              "euros": 4400.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (bas de la fourchette)",
+              "calcul": "132.5 € × 35 personnes",
+              "euros": 4637.5
+            },
+            {
+              "prestation": "Transferts aéroport (bas de la fourchette)",
+              "calcul": "32.5 € × 35 personnes",
+              "euros": 1137.5
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "55 € × 35 personnes",
+              "euros": 1925.0
+            }
+          ],
+          "coutPrestationsEuros": 12100.0,
+          "margeEuros": 2420.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "confort": {
+        "totalEuros": 34470,
+        "parPersonneEuros": 985,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Roma Congressi Hotel",
+              "calcul": "3300 € × 4 nuits",
+              "euros": 13200.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (max de la fourchette)",
+              "calcul": "260 € × 35 personnes",
+              "euros": 9100.0
+            },
+            {
+              "prestation": "Transferts aéroport (max de la fourchette)",
+              "calcul": "55 € × 35 personnes",
+              "euros": 1925.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "55 € × 35 personnes",
+              "euros": 1925.0
+            },
+            {
+              "prestation": "Cours de pâtes fraîches",
+              "calcul": "70 € × 35 personnes",
+              "euros": 2450.0
+            }
+          ],
+          "coutPrestationsEuros": 28600.0,
+          "margeEuros": 5720.0,
+          "fraisDeDossierEuros": 150
+        }
+      }
+    }
+  },
+  "formule": {
+    "version": "provisoire",
+    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0.15,
+    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+  }
+}

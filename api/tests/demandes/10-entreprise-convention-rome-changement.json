@@ -1,0 +1,287 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "10",
+  "titre": "Convention à Rome : le nombre et la ville de départ changent",
+  "typeDeVoyage": "entreprise",
+  "casParticuliers": [
+    "changement_en_cours"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, nous organisons notre convention commerciale à Rome pour 55 personnes, avec une grande salle et la traduction simultanée."
+    },
+    {
+      "moment": "reponse",
+      "client": "Trois nuits, du 17 au 20 novembre 2027, départ de Paris. 800 € par personne maximum, transport compris."
+    },
+    {
+      "moment": "apres_proposition",
+      "client": "Changement : nous ne serons finalement que 45, et tout le monde partira de Lyon."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "entreprise",
+    "lieuOuZone": "Rome",
+    "villeDepart": "Lyon",
+    "dateDebut": "2027-11-17",
+    "dateFin": "2027-11-20",
+    "datesFlexibles": false,
+    "nombreDeJours": 3,
+    "temperatureMin": null,
+    "temperatureMax": null,
+    "adultes": 45,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 800,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "salle de réunion",
+      "traduction simultanée"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "rome"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Roma Congressi Hotel"
+    ],
+    "exclusions": [],
+    "versionInitiale": {
+      "exigences": {
+        "adultes": 55,
+        "villeDepart": "Paris"
+      },
+      "budgetsParNiveau": {
+        "essentiel": {
+          "totalEuros": 17904,
+          "parPersonneEuros": 326,
+          "detail": {
+            "hebergements": [
+              {
+                "prestation": "Roma Congressi Hotel",
+                "calcul": "2640 € × 3 nuits",
+                "euros": 7920.0
+              }
+            ],
+            "transports": [
+              {
+                "prestation": "Vol aller-retour Paris – Rome (min de la fourchette)",
+                "calcul": "100 € × 55 personnes",
+                "euros": 5500.0
+              },
+              {
+                "prestation": "Transferts aéroport (min de la fourchette)",
+                "calcul": "25 € × 55 personnes",
+                "euros": 1375.0
+              }
+            ],
+            "activites": [],
+            "coutPrestationsEuros": 14795.0,
+            "margeEuros": 2959.0,
+            "fraisDeDossierEuros": 150
+          }
+        },
+        "equilibre": {
+          "totalEuros": 28398,
+          "parPersonneEuros": 516,
+          "detail": {
+            "hebergements": [
+              {
+                "prestation": "Roma Congressi Hotel",
+                "calcul": "2640 € × 3 nuits",
+                "euros": 7920.0
+              }
+            ],
+            "transports": [
+              {
+                "prestation": "Vol aller-retour Paris – Rome (milieu de la fourchette)",
+                "calcul": "200 € × 55 personnes",
+                "euros": 11000.0
+              },
+              {
+                "prestation": "Transferts aéroport (milieu de la fourchette)",
+                "calcul": "40 € × 55 personnes",
+                "euros": 2200.0
+              }
+            ],
+            "activites": [
+              {
+                "prestation": "Visite guidée du Colisée et du Forum",
+                "calcul": "44 € × 55 personnes",
+                "euros": 2420.0
+              }
+            ],
+            "coutPrestationsEuros": 23540.0,
+            "margeEuros": 4708.0,
+            "fraisDeDossierEuros": 150
+          }
+        },
+        "confort": {
+          "totalEuros": 39684,
+          "parPersonneEuros": 722,
+          "detail": {
+            "hebergements": [
+              {
+                "prestation": "Roma Congressi Hotel",
+                "calcul": "2640 € × 3 nuits",
+                "euros": 7920.0
+              }
+            ],
+            "transports": [
+              {
+                "prestation": "Vol aller-retour Paris – Rome (max de la fourchette)",
+                "calcul": "300 € × 55 personnes",
+                "euros": 16500.0
+              },
+              {
+                "prestation": "Transferts aéroport (max de la fourchette)",
+                "calcul": "55 € × 55 personnes",
+                "euros": 3025.0
+              }
+            ],
+            "activites": [
+              {
+                "prestation": "Visite guidée du Colisée et du Forum",
+                "calcul": "44 € × 55 personnes",
+                "euros": 2420.0
+              },
+              {
+                "prestation": "Cours de pâtes fraîches",
+                "calcul": "56 € × 55 personnes",
+                "euros": 3080.0
+              }
+            ],
+            "coutPrestationsEuros": 32945.0,
+            "margeEuros": 6589.0,
+            "fraisDeDossierEuros": 150
+          }
+        }
+      }
+    },
+    "pointsDeControle": [
+      "Même le niveau confort reste sous les 800 € par personne : le chatbot le signale au lieu d'inventer des prestations.",
+      "Le chatbot confirme le changement avant de recalculer.",
+      "Une nouvelle version de la proposition est créée (version 2), la première est conservée.",
+      "Le client voit l'écart : nombre de personnes, ville de départ et budget par personne."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalEuros": 15864,
+        "parPersonneEuros": 353,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Roma Congressi Hotel",
+              "calcul": "2640 € × 3 nuits",
+              "euros": 7920.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (min de la fourchette)",
+              "calcul": "90 € × 45 personnes",
+              "euros": 4050.0
+            },
+            {
+              "prestation": "Transferts aéroport (min de la fourchette)",
+              "calcul": "25 € × 45 personnes",
+              "euros": 1125.0
+            }
+          ],
+          "activites": [],
+          "coutPrestationsEuros": 13095.0,
+          "margeEuros": 2619.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "equilibre": {
+        "totalEuros": 23640,
+        "parPersonneEuros": 525,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Roma Congressi Hotel",
+              "calcul": "2640 € × 3 nuits",
+              "euros": 7920.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (milieu de la fourchette)",
+              "calcul": "175 € × 45 personnes",
+              "euros": 7875.0
+            },
+            {
+              "prestation": "Transferts aéroport (milieu de la fourchette)",
+              "calcul": "40 € × 45 personnes",
+              "euros": 1800.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "44 € × 45 personnes",
+              "euros": 1980.0
+            }
+          ],
+          "coutPrestationsEuros": 19575.0,
+          "margeEuros": 3915.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "confort": {
+        "totalEuros": 32064,
+        "parPersonneEuros": 713,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Roma Congressi Hotel",
+              "calcul": "2640 € × 3 nuits",
+              "euros": 7920.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome (max de la fourchette)",
+              "calcul": "260 € × 45 personnes",
+              "euros": 11700.0
+            },
+            {
+              "prestation": "Transferts aéroport (max de la fourchette)",
+              "calcul": "55 € × 45 personnes",
+              "euros": 2475.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "44 € × 45 personnes",
+              "euros": 1980.0
+            },
+            {
+              "prestation": "Cours de pâtes fraîches",
+              "calcul": "56 € × 45 personnes",
+              "euros": 2520.0
+            }
+          ],
+          "coutPrestationsEuros": 26595.0,
+          "margeEuros": 5319.0,
+          "fraisDeDossierEuros": 150
+        }
+      }
+    }
+  },
+  "formule": {
+    "version": "provisoire",
+    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0.15,
+    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+  }
+}

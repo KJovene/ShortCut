@@ -1,0 +1,192 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "09",
+  "titre": "Séminaire de 40 collaborateurs à Marrakech",
+  "typeDeVoyage": "entreprise",
+  "casParticuliers": [
+    "capacite_activite"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, je prépare le séminaire annuel de notre entreprise : 40 collaborateurs, Marrakech, avec une salle plénière et une activité de cohésion."
+    },
+    {
+      "moment": "reponse",
+      "client": "Deux nuits, du 10 au 12 mars 2027, départ de Paris. Budget 900 € par personne, transport compris."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "entreprise",
+    "lieuOuZone": "Marrakech",
+    "villeDepart": "Paris",
+    "dateDebut": "2027-03-10",
+    "dateFin": "2027-03-12",
+    "datesFlexibles": false,
+    "nombreDeJours": 2,
+    "temperatureMin": null,
+    "temperatureMax": null,
+    "adultes": 40,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 900,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "cohésion",
+      "salle de réunion"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "marrakech"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Palmeraie Resort & Séminaires"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Riad Dar Yasmine, riad entier",
+        "raison": "capacité 12, pas de salle de réunion"
+      }
+    ],
+    "pointsDeControle": [
+      "Le chatbot demande l'objectif du séminaire.",
+      "La salle de réunion de 80 places est mise en avant.",
+      "Le cours de cuisine (16 places) est organisé en trois sessions.",
+      "Le hammam (2 places par soin) n'apparaît qu'au niveau confort, en créneaux successifs."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalEuros": 18150,
+        "parPersonneEuros": 454,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "3120 € × 2 nuits",
+              "euros": 6240.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech (min de la fourchette)",
+              "calcul": "150 € × 40 personnes",
+              "euros": 6000.0
+            },
+            {
+              "prestation": "Transferts aéroport (min de la fourchette)",
+              "calcul": "15 € × 40 personnes",
+              "euros": 600.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "54 € × 40 personnes",
+              "euros": 2160.0
+            }
+          ],
+          "coutPrestationsEuros": 15000.0,
+          "margeEuros": 3000.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "equilibre": {
+        "totalEuros": 29058,
+        "parPersonneEuros": 726,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "3120 € × 2 nuits",
+              "euros": 6240.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech (haut de la fourchette)",
+              "calcul": "322.5 € × 40 personnes",
+              "euros": 12900.0
+            },
+            {
+              "prestation": "Transferts aéroport (haut de la fourchette)",
+              "calcul": "33.75 € × 40 personnes",
+              "euros": 1350.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "54 € × 40 personnes",
+              "euros": 2160.0
+            },
+            {
+              "prestation": "Visite guidée de la médina et des souks",
+              "calcul": "36 € × 40 personnes",
+              "euros": 1440.0
+            }
+          ],
+          "coutPrestationsEuros": 24090.0,
+          "margeEuros": 4818.0,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "confort": {
+        "totalEuros": 36150,
+        "parPersonneEuros": 904,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "3120 € × 2 nuits",
+              "euros": 6240.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech (max de la fourchette)",
+              "calcul": "380 € × 40 personnes",
+              "euros": 15200.0
+            },
+            {
+              "prestation": "Transferts aéroport (max de la fourchette)",
+              "calcul": "40 € × 40 personnes",
+              "euros": 1600.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "54 € × 40 personnes",
+              "euros": 2160.0
+            },
+            {
+              "prestation": "Visite guidée de la médina et des souks",
+              "calcul": "36 € × 40 personnes",
+              "euros": 1440.0
+            },
+            {
+              "prestation": "Hammam traditionnel et massage",
+              "calcul": "84 € × 40 personnes",
+              "euros": 3360.0
+            }
+          ],
+          "coutPrestationsEuros": 30000.0,
+          "margeEuros": 6000.0,
+          "fraisDeDossierEuros": 150
+        }
+      }
+    }
+  },
+  "formule": {
+    "version": "provisoire",
+    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0.15,
+    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+  }
+}

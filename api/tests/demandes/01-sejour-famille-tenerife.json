@@ -1,0 +1,194 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "01",
+  "titre": "Séjour en famille au soleil d'hiver",
+  "typeDeVoyage": "sejour",
+  "casParticuliers": [
+    "age_minimum"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, on cherche un endroit au soleil pour les vacances de février avec nos deux enfants. Il faudrait au moins 18 degrés et une plage."
+    },
+    {
+      "moment": "reponse",
+      "client": "Nous sommes deux adultes, les enfants ont 6 et 9 ans. On partirait de Bordeaux du samedi 13 au samedi 20 février 2027."
+    },
+    {
+      "moment": "reponse",
+      "client": "Notre budget est de 3 500 € au total, avion compris. Les enfants adorent les animaux, on aimerait voir des dauphins."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "sejour",
+    "lieuOuZone": "soleil, plage",
+    "villeDepart": "Bordeaux",
+    "dateDebut": "2027-02-13",
+    "dateFin": "2027-02-20",
+    "datesFlexibles": false,
+    "nombreDeJours": 7,
+    "temperatureMin": 18,
+    "temperatureMax": null,
+    "adultes": 2,
+    "enfants": 2,
+    "agesEnfants": [
+      6,
+      9
+    ],
+    "budgetEuros": 3500,
+    "budgetParPersonne": false,
+    "transportInclus": true,
+    "envies": [
+      "plage",
+      "famille",
+      "animaux"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "tenerife"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Canaries Beach Resort, chambre familiale",
+      "Apartamentos Los Cristianos"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Baptême de plongée",
+        "raison": "âge minimum 10 ans, l'un des enfants a 9 ans"
+      },
+      {
+        "prestation": "Randonnée guidée au Teide",
+        "raison": "âge minimum 12 ans pour les enfants"
+      }
+    ],
+    "pointsDeControle": [
+      "Tenerife est la seule destination à 18 °C ou plus en février avec une plage.",
+      "L'observation des baleines et dauphins est proposée.",
+      "Aucune activité interdite aux enfants n'est proposée pour toute la famille."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalEuros": 2672,
+        "parPersonneEuros": 668,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Apartamentos Los Cristianos",
+              "calcul": "138 € × 7 nuits",
+              "euros": 966.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife (min de la fourchette)",
+              "calcul": "210 € × 4 personnes",
+              "euros": 840.0
+            },
+            {
+              "prestation": "Transferts aéroport (min de la fourchette)",
+              "calcul": "20 € × 4 personnes",
+              "euros": 80.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "54 € × 4 personnes",
+              "euros": 216.0
+            }
+          ],
+          "coutPrestationsEuros": 2102.0,
+          "margeEuros": 420.4,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "equilibre": {
+        "totalEuros": 3416,
+        "parPersonneEuros": 854,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Apartamentos Los Cristianos",
+              "calcul": "138 € × 7 nuits",
+              "euros": 966.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife (milieu de la fourchette)",
+              "calcul": "350 € × 4 personnes",
+              "euros": 1400.0
+            },
+            {
+              "prestation": "Transferts aéroport (milieu de la fourchette)",
+              "calcul": "35 € × 4 personnes",
+              "euros": 140.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "54 € × 4 personnes",
+              "euros": 216.0
+            }
+          ],
+          "coutPrestationsEuros": 2722.0,
+          "margeEuros": 544.4,
+          "fraisDeDossierEuros": 150
+        }
+      },
+      "confort": {
+        "totalEuros": 5104,
+        "parPersonneEuros": 1276,
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Canaries Beach Resort, chambre familiale",
+              "calcul": "228 € × 7 nuits",
+              "euros": 1596.0
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife (max de la fourchette)",
+              "calcul": "490 € × 4 personnes",
+              "euros": 1960.0
+            },
+            {
+              "prestation": "Transferts aéroport (max de la fourchette)",
+              "calcul": "50 € × 4 personnes",
+              "euros": 200.0
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "54 € × 4 personnes",
+              "euros": 216.0
+            },
+            {
+              "prestation": "Randonnée guidée au Teide",
+              "calcul": "78 € × 2 personnes",
+              "euros": 156.0
+            }
+          ],
+          "coutPrestationsEuros": 4128.0,
+          "margeEuros": 825.6,
+          "fraisDeDossierEuros": 150
+        }
+      }
+    }
+  },
+  "formule": {
+    "version": "provisoire",
+    "calcul": "(hébergements + transports + activités) × 1,20 + frais de dossier",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0.15,
+    "note": "Budgets de référence en attendant docs/chiffrage.md (#176) et la règle des frais de dossier (#165). Essentiel : combinaison la moins chère, vols au bas de la fourchette. Équilibré : la meilleure combinaison qui tient dans le budget du client. Confort : logement supérieur, vols au haut de la fourchette, activités en plus."
+  }
+}
