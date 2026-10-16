@@ -60,6 +60,8 @@ Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la raci
 | `make db-reset` | Recrée la base de zéro : suppression, création, migrations, fixtures |
 | `make console c="debug:router"` | Lance une commande Symfony dans le conteneur |
 | `make composer c="require symfony/mailer"` | Lance Composer dans le conteneur |
+| `make db-ui` | Ouvre Adminer, l'interface web de la base : http://localhost:8080 (serveur `database`, utilisateur et mot de passe `shortcut`, base `shortcut`) |
+| `make schema` | Régénère le diagramme complet de la base dans [`docs/schema.md`](docs/schema.md) à partir des entités Doctrine |
 | `make sh` | Shell dans le conteneur PHP |
 | `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`) |
 
@@ -75,7 +77,7 @@ Avant les premiers tests qui utilisent la base, préparer la base de test avec `
 
 ## Modèle de données
 
-Les entités sont dans `api/src/Entity`, les enums dans `api/src/Enum`. Conventions :
+Les entités sont dans `api/src/Entity`, les enums dans `api/src/Enum`. Le diagramme complet, avec toutes les colonnes, est dans [`docs/schema.md`](docs/schema.md) (`make schema` après chaque migration). Conventions :
 
 - **Montants en centimes** (entiers) : `budgetCentimes`, `prixCentimes`, `totalCentimes`…
 - **Périodes** : `debut` et `fin` en dates (`date_immutable`), avec une contrainte qui refuse une fin avant le début.

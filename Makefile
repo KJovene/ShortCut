@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
-        migration migrate fixtures db-reset db-test \
+        migration migrate fixtures db-reset db-test db-ui schema \
         dev site-install site-build \
         test test-api test-site lint lint-api lint-site stan fix check
 
@@ -115,6 +115,15 @@ db-reset: ## Recrée la base de zéro : suppression, création, migrations, fixt
 db-test: ## Prépare la base de test (shortcut_test)
 	$(CONSOLE) doctrine:database:create --env=test --if-not-exists
 	$(CONSOLE) doctrine:migrations:migrate --env=test --no-interaction --allow-no-migration
+
+db-ui: ## Interface web de la base (Adminer) : http://localhost:8080
+	$(COMPOSE) up -d adminer
+	@echo "Adminer : http://localhost:$${ADMINER_PORT:-8080} (serveur database, utilisateur shortcut, mot de passe shortcut, base shortcut)"
+
+schema: ## Régénère le diagramme de la base (docs/schema.md) depuis les entités Doctrine
+	@mkdir -p docs
+	$(COMPOSE) exec -T php php bin/console app:schema:diagramme --markdown > docs/schema.md
+	@echo "Diagramme écrit dans docs/schema.md"
 
 ## —— Site ————————————————————————————————————————————————
 dev: ## Démarre le site en développement (http://localhost:5173)
