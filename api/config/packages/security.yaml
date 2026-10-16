@@ -29,15 +29,27 @@ security:
                 - App\Security\JetonConversationAuthenticator
             access_denied_handler: App\Security\AccesRefuseChatbotHandler
 
-        # Backoffice et API privée : conseillers et administrateur (connexion : ticket #180).
+        # Comptes du site : clients (inscription libre), conseillers et administrateur. Les formulaires
+        # sont sur le site React, qui poste en JSON ; la session Symfony sert ensuite au backoffice.
         main:
             lazy: true
             provider: utilisateurs
+            json_login:
+                check_path: api_connexion
+                username_path: email
+                password_path: motDePasse
+            logout:
+                path: api_deconnexion
+            entry_point: App\Security\RedirectionConnexionEntryPoint
 
     # Seule la première règle qui correspond s'applique.
     access_control:
         - { path: ^/api/chat/conversations$, methods: [POST], roles: PUBLIC_ACCESS }
         - { path: ^/api/chat, roles: ROLE_CHATBOT }
+        - { path: ^/api/connexion$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/inscription$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/moi$, roles: ROLE_USER }
+        - { path: ^/admin, roles: ROLE_CONSEILLER }
 
 when@test:
     security:

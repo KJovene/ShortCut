@@ -1,0 +1,7 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title 'Tableau de bord' %}
+
+{% block main %}
+    <p>Bonjour {{ app.user.nom }}, vous êtes connecté en tant que {{ app.user.role.label|lower }}.</p>
+{% endblock %}

@@ -16,12 +16,19 @@ export default defineConfig(({ mode }) => {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     server: {
+      // Dans Docker, les changements de fichiers sont détectés par scrutation (voir compose.yaml).
+      watch: env.VITE_WATCH_POLLING === 'true' ? { usePolling: true, interval: 300 } : undefined,
       // Le site appelle l'API Symfony en relatif (/api/...) : pas de CORS en local.
-      proxy: {
-        '/api': env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
-        // Photos enregistrées par le backoffice et les fixtures.
-        '/uploads': env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
-      },
+      // changeOrigin: false garde l'en-tête Host du navigateur (localhost:5173) : sinon Symfony
+      // génère des URL absolues vers http://nginx/... (liens EasyAdmin), injoignables depuis l'hôte.
+      proxy: Object.fromEntries(
+        // /uploads : photos du backoffice et des fixtures.
+        // /admin et /bundles : EasyAdmin et ses assets, sur la même origine que le site (même cookie de session).
+        ['/api', '/uploads', '/admin', '/bundles'].map((chemin) => [
+          chemin,
+          { target: env.API_PROXY_TARGET || 'http://127.0.0.1:8000', changeOrigin: false },
+        ]),
+      ),
     },
     test: {
       environment: 'jsdom',

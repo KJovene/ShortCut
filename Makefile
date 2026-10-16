@@ -1,11 +1,11 @@
 # ShortCut : commandes du projet. `make` ou `make help` liste tout.
-# L'API (PHP, Nginx, PostgreSQL) tourne dans Docker ; le site tourne sur la machine (npm).
+# Tout tourne dans Docker : l'API (PHP, Nginx, PostgreSQL) et le site React (conteneur front).
 
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
         migration migrate fixtures db-reset db-test db-ui schema \
-        dev site-install site-build \
+        dev site-sh site-install site-build \
         test test-api test-site lint lint-api lint-site stan fix check
 
 # Les fichiers créés dans le conteneur appartiennent à l'utilisateur de la machine.
@@ -15,11 +15,7 @@ export GID := $(shell id -g)
 COMPOSE := docker compose
 PHP     := $(COMPOSE) exec php
 CONSOLE := $(PHP) php bin/console
-NPM     := npm --prefix site
-# Site lancé en arrière-plan par `make start-d` : pid et logs, ignorés par git.
-RUN_DIR  := .run
-SITE_PID := $(RUN_DIR)/site.pid
-SITE_LOG := $(RUN_DIR)/site.log
+NPM     := $(COMPOSE) exec front npm
 
 ## —— Aide ————————————————————————————————————————————————
 help: ## Affiche cette aide
@@ -31,32 +27,22 @@ help: ## Affiche cette aide
 install: build up ## Première installation : images, conteneurs, dépendances, base et données de démo
 	$(PHP) composer install --no-interaction
 	@test -f api/.env.local || cp api/.env.local.example api/.env.local
-	$(NPM) install
 	$(MAKE) migrate
 	$(MAKE) fixtures
 	@echo "\nInstallation terminée : renseigner ANTHROPIC_API_KEY dans api/.env.local, puis lancer « make dev »."
 
 ## —— Docker ——————————————————————————————————————————————
-start: up dev ## Démarre l'API puis le site (le site garde le terminal)
+start: up dev ## Démarre tout puis suit les logs du site
 
-start-d: up ## Démarre l'API et le site en arrière-plan (terminal libre)
-	@mkdir -p $(RUN_DIR)
-	@if [ -f $(SITE_PID) ] && kill -0 $$(cat $(SITE_PID)) 2>/dev/null; then \
-		echo "Le site tourne déjà (pid $$(cat $(SITE_PID)))."; \
-	else \
-		(cd site && exec nohup ./node_modules/.bin/vite > ../$(SITE_LOG) 2>&1) & echo $$! > $(SITE_PID); \
-		echo "Site lancé en arrière-plan : http://localhost:5173 (logs : make site-logs, arrêt : make stop-d)"; \
-	fi
+start-d: up ## Démarre tout en arrière-plan (terminal libre)
+	@echo "Site : http://localhost:$${FRONT_PORT:-5173} (logs : make site-logs, arrêt : make stop-d)"
 
-stop-d: ## Arrête le site lancé en arrière-plan et les conteneurs
-	@if [ -f $(SITE_PID) ] && kill $$(cat $(SITE_PID)) 2>/dev/null; then echo "Site arrêté."; fi
-	@rm -f $(SITE_PID)
-	$(COMPOSE) stop
+stop-d: stop ## Arrête les conteneurs
 
-site-logs: ## Suit les logs du site lancé en arrière-plan
-	@tail -f $(SITE_LOG)
+site-logs: ## Suit les logs du site (conteneur front)
+	$(COMPOSE) logs -f front
 
-up: ## Démarre l'API et la base en arrière-plan (http://localhost:8000)
+up: ## Démarre l'API, la base et le site en arrière-plan (http://localhost:8000, http://localhost:5173)
 	$(COMPOSE) up -d --wait
 
 down: ## Arrête et supprime les conteneurs (les données de la base sont conservées)
@@ -67,17 +53,17 @@ stop: ## Arrête les conteneurs sans les supprimer
 
 restart: down up ## Redémarre les conteneurs
 
-build: ## Construit l'image PHP
+build: ## Construit les images PHP et Node
 	$(COMPOSE) build
 
-rebuild: ## Reconstruit l'image PHP sans cache et redémarre
+rebuild: ## Reconstruit les images sans cache et redémarre
 	$(COMPOSE) build --no-cache
 	$(MAKE) restart
 
 ps: ## Liste les conteneurs et leur état
 	$(COMPOSE) ps
 
-logs: ## Suit les logs (ex. make logs s=php)
+logs: ## Suit les logs (ex. make logs s=front)
 	$(COMPOSE) logs -f $(s)
 
 sh: ## Ouvre un shell dans le conteneur PHP
@@ -126,11 +112,14 @@ schema: ## Régénère le diagramme de la base (docs/schema.md) depuis les entit
 	@echo "Diagramme écrit dans docs/schema.md"
 
 ## —— Site ————————————————————————————————————————————————
-dev: ## Démarre le site en développement (http://localhost:5173)
-	$(NPM) run dev
+dev: ## Suit les logs du site (http://localhost:5173), démarré par make up
+	$(COMPOSE) logs -f front
 
-site-install: ## Installe les dépendances du site
-	$(NPM) install
+site-sh: ## Ouvre un shell dans le conteneur du site
+	$(COMPOSE) exec front sh
+
+site-install: ## Réinstalle les dépendances du site depuis package-lock.json
+	$(NPM) ci
 
 site-build: ## Construit le site pour la production
 	$(NPM) run build

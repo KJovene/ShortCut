@@ -28,6 +28,7 @@ final class UtilisateurFixtures extends Fixture
             'utilisateur-admin' => ['admin@shortcut.test', 'Claire Martin', Role::Administrateur],
             self::LEA => ['lea@shortcut.test', 'Léa Dubois', Role::Conseiller],
             self::HUGO => ['hugo@shortcut.test', 'Hugo Bernard', Role::Conseiller],
+            'utilisateur-client' => ['client@shortcut.test', 'Camille Durand', Role::Client],
         ];
 
         foreach ($comptes as $reference => [$email, $nom, $role]) {

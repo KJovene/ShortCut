@@ -24,9 +24,9 @@ class Demande
     private ?int $id = null;
 
     /** Inconnu tant que le client ne s'est pas présenté. */
-    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'demandes')]
+    #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Client $client = null;
+    private ?Utilisateur $client = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -133,12 +133,12 @@ class Demande
         return $this->id;
     }
 
-    public function getClient(): ?Client
+    public function getClient(): ?Utilisateur
     {
         return $this->client;
     }
 
-    public function setClient(?Client $client): static
+    public function setClient(?Utilisateur $client): static
     {
         $this->client = $client;
 
