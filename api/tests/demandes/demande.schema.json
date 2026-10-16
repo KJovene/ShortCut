@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Demande test ShortCut",
+  "description": "Conversation client rejouable et résultat attendu du chatbot (ticket #175).",
+  "type": "object",
+  "required": ["id", "titre", "typeDeVoyage", "casParticuliers", "conversation", "exigencesAttendues", "attendu", "formule"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[0-9]{2}$" },
+    "titre": { "type": "string" },
+    "typeDeVoyage": { "enum": ["sejour", "circuit", "groupe", "noces", "entreprise"] },
+    "casParticuliers": {
+      "type": "array",
+      "items": { "enum": ["budget_insuffisant", "envie_floue", "changement_en_cours", "periode_sans_donnees", "mobilite_reduite", "age_minimum", "allergie", "capacite_activite"] }
+    },
+    "conversation": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["moment", "client"],
+        "properties": {
+          "moment": { "enum": ["debut", "reponse", "apres_pistes", "apres_proposition"] },
+          "client": { "type": "string" }
+        }
+      }
+    },
+    "exigencesAttendues": {
+      "type": "object",
+      "required": ["typeDeVoyage", "lieuOuZone", "villeDepart", "dateDebut", "dateFin", "datesFlexibles", "nombreDeJours", "temperatureMin", "temperatureMax", "adultes", "enfants", "agesEnfants", "budgetEuros", "budgetParPersonne", "transportInclus", "envies", "contraintes"]
+    },
+    "attendu": {
+      "type": "object",
+      "required": ["destinations", "passageAuConseiller", "budgetInsuffisant", "logementsCompatibles", "exclusions", "pointsDeControle", "budgetsParNiveau"],
+      "properties": {
+        "budgetsParNiveau": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "object", "required": ["essentiel", "equilibre", "confort"] }
+          ]
+        }
+      }
+    },
+    "formule": { "type": "object", "required": ["version", "calcul", "fraisDeDossierEuros", "tolerance"] }
+  }
+}

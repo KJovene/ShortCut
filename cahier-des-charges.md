@@ -55,7 +55,7 @@ L'agence a répondu à dix questions le 15 octobre ; la question sur le volume d
 | Fournisseur ou prestataire | Uniquement des prestataires | Une seule entité Prestataire (hébergement, transport, guide, activité) |
 | Données existantes | Aucune ; tout est à recréer | Pas d'import : le backoffice démarre vide et les conseillers saisissent tout |
 | API ou catalogues des prestataires | Non ; les conseillers récupèrent les informations pour chaque période | Saisie des tarifs et du climat période par période dans le backoffice |
-| Règles de prix | Marge de 20 %, aucune commission, frais de dossier entre 100 et 200 € | Formule de chiffrage fixée (section 4) |
+| Règles de prix | Marge de 20 %, aucune commission, frais de dossier de 100 à 200 € selon le type de voyage (D21) | Formule de chiffrage fixée (section 4 et `docs/chiffrage.md`) |
 | Format des propositions actuelles | Aucun modèle existant | ShortCut définit le format de la proposition |
 | RGPD et hébergement | Hors périmètre pour le moment | Aucune exigence RGPD en V1 |
 
@@ -79,7 +79,7 @@ Six acteurs gravitent autour d'une demande ; toute demande entre par le chatbot,
 | Décision | Qui décide | Moment du parcours | Ce que l'IA fournit pour aider |
 | --- | --- | --- | --- |
 | À quel conseiller confier la demande ? | Conseiller | Dès l'arrivée de la demande | Fiche structurée et type de voyage |
-| Les frais de dossier de la demande (100 à 200 €) | Conseiller, selon la règle de l'agence | Avant la proposition confirmée | Montant appliqué par défaut |
+| Le barème des frais de dossier par type de voyage | Responsable d'agence | Avant la mise en service, puis à chaque changement | Barème fixé en D21, modifiable dans le backoffice |
 | Les prix et disponibilités sont-ils confirmés ? | Conseiller | Après la première proposition | Proposition, hypothèses de budget, conversation complète |
 | Faut-il ajuster la proposition du chatbot ? | Conseiller | Avant la proposition confirmée | Fiche source de chaque prestation |
 | La proposition confirmée peut-elle partir ? | Conseiller | Avant envoi | Version éditable, écarts avec la première proposition |
@@ -132,10 +132,10 @@ Le client ne voit qu'un seul interlocuteur ; derrière lui, chaque agent a une m
 
 ### Comment le chatbot fait ses hypothèses de budget
 
-Chaque niveau de budget applique les règles de prix de l'agence aux tarifs saisis dans le backoffice : marge de 20 % sur le coût des prestations, aucune commission, frais de dossier entre 100 et 200 € ajoutés une fois par dossier.
+Chaque niveau de budget applique les règles de prix de l'agence aux tarifs saisis dans le backoffice : marge de 20 % sur le coût des prestations, aucune commission, frais de dossier selon le type de voyage (séjour 100 €, voyage de noces et circuit 150 €, groupe et entreprise 200 €), ajoutés une fois par dossier. Le détail du calcul et trois exemples sont dans `docs/chiffrage.md`.
 
 ```latex
-\text{Budget estimé} = \Big(\sum \text{hébergements} + \text{transports} + \sum \text{activités}\Big) \times 1{,}20 + \text{frais de dossier}\ (100 \text{ à } 200\ \text{€})
+\text{Budget estimé} = \Big(\sum \text{hébergements} + \text{transports} + \sum \text{activités}\Big) \times 1{,}20 + \text{frais de dossier selon le type de voyage}
 ```
 
 - **Budget donné par le client :** le niveau équilibré vise ce budget, les deux autres l'encadrent.
@@ -172,7 +172,7 @@ Le chatbot ne suit pas un formulaire fixe : chaque exigence change la question s
 | Destinations | Climat par période (températures moyennes, pluie), temps de trajet, points forts | Saisir une période, filtrer par mois et par température |
 | Prestataires | Hébergeurs, transporteurs, guides, activités ; contact, conditions | Créer, filtrer par type, destination et envie |
 | Logements et activités | Capacité, équipements, accessibilité, durée, âge minimum, tarifs par période, photos | Saisir les tarifs d'une période, voir les périodes non couvertes |
-| Règles de prix | Marge (20 %), frais de dossier minimum et maximum (100 et 200 €) | Modifiables par l'administrateur uniquement |
+| Règles de prix | Marge (20 %), frais de dossier par type de voyage, entre 100 et 200 € | Modifiables par l'administrateur uniquement |
 | Contenus du site | Textes des pages, photos, destinations mises en avant, textes légaux | Publier ou retirer une page ou une destination, modifiable par l'administrateur |
 
 Le backoffice démarre vide : l'agence n'a aucune donnée existante et ses prestataires n'ont pas d'API. Les conseillers saisissent prestataires, logements, activités, tarifs et climat, période par période ; pour la démo, ShortCut crée un jeu de données fictif.
@@ -239,7 +239,7 @@ Treize entités contiennent tout ce dont le chatbot a besoin pour proposer et ch
 | Prestataire | Nom, type (hébergeur, transporteur, guide, activité), contact, conditions d'annulation, fourchettes de prix des transports | Propose des logements et des activités |
 | Logement ou activité | Nom, catégorie, capacité, équipements, accessibilité, durée, âge minimum, envies associées, photos | Appartient à une destination et à un prestataire ; a des tarifs par période |
 | Tarif par période | Début, fin, prix par nuit ou par personne, séjour minimum, saisi par, date de mise à jour | Appartient à un logement ou une activité |
-| Règle de prix | Marge (20 %), frais de dossier minimum (100 €) et maximum (200 €) | Appliquée à chaque chiffrage |
+| Règle de prix | Marge (20 %), frais de dossier minimum (100 €) et maximum (200 €), frais par type de voyage | Appliquée à chaque chiffrage |
 | Page du site | Titre, adresse (slug), texte, photos, titre et description pour le référencement, publiée, ordre dans le menu | Modifiée dans le backoffice, lue par le site |
 | Utilisateur et journal IA | Rôle (conseiller, administrateur) ; pour chaque appel IA : agent, demande, entrée, sortie, date | Un utilisateur suit et confirme des demandes |
 
@@ -263,7 +263,7 @@ flowchart TB
         ORC["Orchestrateur des agents<br/>Conversation, Recherche<br/>Chiffrage et rédaction, Modification<br/>outils : lire le backoffice, écrire une proposition"]:::ia
     end
     DB["PostgreSQL · Doctrine (Docker en local)<br/>clients, catalogue, climat, propositions<br/>photos sur disque, PDF générés par Dompdf"]
-    LLM["API Claude (Anthropic)<br/>modèle Claude Sonnet 5.5, via HttpClient<br/>clé côté serveur, jamais dans le navigateur"]:::ia
+    LLM["API Claude (Anthropic)<br/>Haiku 5.5 (conversation), Sonnet 5.5 (le reste)<br/>clé côté serveur, jamais dans le navigateur"]:::ia
     U --> INT
     BO --> API
     SITE --> API
@@ -288,7 +288,7 @@ L'orchestrateur ne lit jamais la base directement : il appelle l'API métier, qu
 | Base de données | PostgreSQL 16 lancé avec Docker Compose | Base relationnelle standard, identique pour toute l'équipe |
 | Accès aux données | Doctrine ORM, migrations et fixtures | Entités versionnées ; jeu de données fictif rechargeable en une commande |
 | Authentification et droits | Symfony Security : session pour le backoffice, rôles conseiller et administrateur, Voters ; jeton anonyme et limite de débit (RateLimiter) pour le chatbot | Droits portés par l'API, jamais par le navigateur |
-| IA | API Claude, modèle Sonnet 5.5, appelée depuis Symfony (HttpClient), réponses diffusées au fil de l'eau (Server-Sent Events) | Clé côté serveur ; premiers mots affichés vite |
+| IA | API Claude, Haiku 5.5 pour la conversation et Sonnet 5.5 pour la recherche, le chiffrage et la rédaction (D22), appelée depuis Symfony (HttpClient), réponses diffusées au fil de l'eau (Server-Sent Events) | Clé côté serveur ; premiers mots affichés vite |
 | Fichiers | Photos sur le disque local (VichUploaderBundle), PDF générés depuis Twig (Dompdf) | Aucun service externe en V1 |
 | Liaison site et API | Proxy Vite en local, NelmioCorsBundle | Aucun blocage CORS entre les deux projets |
 | Déploiement | Hors périmètre pour l'instant ; démo en local | Décision D20 |
@@ -566,8 +566,10 @@ Vingt décisions sont prises au 15 octobre, toutes validées ou remplacées ; to
 | D13 | 15/10/2026 | Le backoffice démarre vide, sans import : les conseillers saisissent toutes les données, période par période | Import CSV des fichiers Excel (D02) | L'agence n'a aucune donnée existante et ses prestataires n'ont pas d'API | Agence | Validée |
 | D14 | 15/10/2026 | Le chatbot du site web est l'unique porte d'entrée des demandes ; le conseiller les aiguille | Demandes par e-mail, téléphone ou messageries | Une seule source de demandes, toutes structurées dès l'arrivée | Agence | Validée |
 | D15 | 15/10/2026 | Une seule entité Prestataire, sans distinction fournisseur | Fournisseurs et prestataires séparés | L'agence ne travaille qu'avec des prestataires | Agence | Validée |
-| D16 | 15/10/2026 | Règles de prix : marge de 20 %, aucune commission, frais de dossier entre 100 et 200 € | Marge variable par prestataire | Règles données par l'agence ; la règle de choix des frais reste à préciser | Agence | Validée |
+| D16 | 15/10/2026 | Règles de prix : marge de 20 %, aucune commission, frais de dossier entre 100 et 200 € | Marge variable par prestataire | Règles données par l'agence ; la règle de choix des frais est fixée en D21 | Agence | Validée |
 | D17 | 15/10/2026 | RGPD et hébergement des données hors périmètre de la V1 | Consentement et droits RGPD dès la V1 | Choix de l'agence ; à traiter avant une mise en production réelle | Agence | Validée |
 | D18 | 15/10/2026 | PostgreSQL avec Prisma et Auth.js, sans Supabase ; déploiement reporté, démo en local | Supabase et Vercel (D05) | Choix de l'équipe : stack standard maîtrisée, aucune dépendance à un service hébergé pour la V1 | Équipe | Remplacée par D20 |
 | D19 | 15/10/2026 | Le site web de l'agence est créé dans le projet : neuf pages, destinations lues dans le backoffice, pages légales, chatbot sur chaque page | Chatbot intégré à un site existant | Le site fait partie de la commande ; il est la vitrine et la seule porte d'entrée des demandes (D14) | Agence | Validée |
 | D20 | 15/10/2026 | Stack : site en React TypeScript, API et backoffice en Symfony avec EasyAdmin, PostgreSQL via Doctrine ; déploiement reporté, démo en local | Next.js, Prisma et Auth.js (D18) | Choix de l'équipe ; EasyAdmin génère le backoffice depuis les entités et libère du temps pour le site | Équipe | Validée |
+| D21 | 16/10/2026 | Frais de dossier selon le type de voyage : séjour 100 €, voyage de noces 150 €, circuit 150 €, groupe 200 €, entreprise 200 € | Selon le nombre de voyageurs ; au choix du conseiller avec une valeur par défaut | Le chatbot calcule seul des frais exacts dès la première proposition, simples à expliquer au client ; le prix ne bouge pas à la confirmation | Agence | Validée |
+| D22 | 16/10/2026 | Modèle Claude Haiku 5.5 pour l'agent Conversation ; Claude Sonnet 5.5 conservé pour la recherche, le chiffrage et la rédaction | Sonnet 5.5 pour tous les agents | Test des 5 profils (#177) : mêmes résultats que Sonnet (10 exigences sur 10, aucun prix ni disponibilité annoncés, ton 5/5) pour 0,004 $ par conversation au lieu de 0,13 $ ; à revérifier avec les outils (#195) | Équipe | Validée |
