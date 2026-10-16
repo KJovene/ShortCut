@@ -120,6 +120,20 @@ Index sur les champs filtrés : statut et conseiller des demandes, pays et publi
 
 Après une modification d'entité : `make migration`, relire le fichier créé dans `api/migrations/`, puis `make migrate`.
 
+## Sécurité et droits
+
+Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/packages/security.yaml`).
+
+| Profil | Rôle Symfony | Accès |
+| --- | --- | --- |
+| Administrateur | `ROLE_ADMIN` (hérite de `ROLE_CONSEILLER`) | Toutes les demandes |
+| Conseiller | `ROLE_CONSEILLER` | Les demandes qui lui sont attribuées ; il voit aussi les demandes non attribuées pour les aiguiller (se les attribuer ou les confier à un autre conseiller), mais ne les traite qu'une fois attribuées |
+| Chatbot (client anonyme) | `ROLE_CHATBOT` | Uniquement la demande de sa propre conversation |
+
+- **Voter** : `DemandeVoter` (`DEMANDE_VOIR`, `DEMANDE_MODIFIER`, `DEMANDE_ATTRIBUER` pour l'aiguillage) s'applique à une demande, à sa conversation et à ses propositions. Dans un contrôleur : `$this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande)`.
+- **Chatbot** : `POST /api/chat/conversations` ouvre une conversation et renvoie un jeton. Les appels suivants envoient ce jeton dans l'en-tête `X-Conversation-Token` (pare-feu `chatbot`, sans session). Sans jeton valide : 401 ; demande d'un autre client : 403.
+- **Limite de débit** (`api/config/packages/rate_limiter.yaml`) : par adresse IP, 20 requêtes par minute sur `/api/chat` et 10 nouvelles conversations par heure. Au-delà : 429 avec un message clair et l'en-tête `Retry-After`.
+
 ## Organisation du site
 
 - `src/routes/` : une route par fichier (TanStack Router). `src/routeTree.gen.ts` est généré automatiquement par le plugin Vite, ne pas le modifier à la main.
