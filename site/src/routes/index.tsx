@@ -11,18 +11,19 @@ import {
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
 import { SectionAssistant } from '@/features/accueil/SectionAssistant'
+import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
 
 export const Route = createFileRoute('/')({
-  head: () => ({
-    meta: [
-      { title: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes' },
-      {
-        name: 'description',
-        content:
-          "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
-      },
-    ],
+  // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement.
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null),
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, {
+      titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
+      description:
+        "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+    }),
   }),
   component: HomePage,
 })
