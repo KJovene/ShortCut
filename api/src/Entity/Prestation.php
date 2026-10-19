@@ -415,7 +415,11 @@ class Prestation
      */
     public function setEnvies(array $envies): static
     {
-        $this->envies = $envies;
+        // Vocabulaire commun au chatbot et aux filtres : « Plage », « plage » et « plage » saisis deux fois ne font qu'un.
+        $this->envies = array_values(array_unique(array_filter(
+            array_map(static fn (string $envie): string => mb_strtolower(trim($envie)), $envies),
+            static fn (string $envie): bool => '' !== $envie,
+        )));
 
         return $this;
     }

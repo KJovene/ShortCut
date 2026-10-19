@@ -61,6 +61,7 @@ final class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Catalogue');
         yield MenuItem::linkTo(DestinationCrudController::class, 'Destinations', 'fa fa-earth-europe');
+        yield MenuItem::linkTo(PrestataireCrudController::class, 'Prestataires', 'fa fa-handshake');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');

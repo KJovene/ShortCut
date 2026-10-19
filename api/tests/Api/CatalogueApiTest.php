@@ -159,6 +159,22 @@ final class CatalogueApiTest extends WebTestCase
         self::assertSame($attendues, $villes);
     }
 
+    public function testLeFiltreEnvieTolereLesVariantes(): void
+    {
+        $detente = $this->liste('/api/activites?envie=detente');
+        self::assertNotEmpty($detente);
+        foreach ($detente as $activite) {
+            self::assertContains('détente', $activite['envies']);
+        }
+        self::assertSame(array_column($this->liste('/api/logements?envie=plage'), 'id'), array_column($this->liste('/api/logements?envie=Plages'), 'id'));
+        self::assertSame([], $this->liste('/api/logements?envie=ski'));
+    }
+
+    public function testLesEnviesEnregistreesSontHarmonisees(): void
+    {
+        self::assertSame(['culture', 'détente'], (new Prestation())->setEnvies([' Culture', 'culture', 'Détente ', ''])->getEnvies());
+    }
+
     public function testLogementsEtActivitesOntChacunLeurAdresse(): void
     {
         $this->connecterConseiller();

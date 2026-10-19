@@ -126,6 +126,12 @@ class Prestataire
     #[Assert\Callback]
     public function verifierFourchettes(ExecutionContextInterface $context): void
     {
+        if ([] !== $this->fourchettesTransport && null !== $this->type && TypePrestataire::Transporteur !== $this->type) {
+            $context->buildViolation('Seul un transporteur a des fourchettes de prix de transport.')
+                ->atPath('fourchettesTransport')
+                ->addViolation();
+        }
+
         /** @var array<array<string, mixed>> $fourchettes contenu envoyé à l'API, pas encore validé */
         $fourchettes = $this->fourchettesTransport;
         foreach ($fourchettes as $index => $fourchette) {
@@ -224,11 +230,12 @@ class Prestataire
     }
 
     /**
-     * @param list<array{depart: string, arrivee: string, minCentimes: int, maxCentimes: int}> $fourchettesTransport
+     * @param array<int, array{depart: string, arrivee: string, minCentimes: int, maxCentimes: int}> $fourchettesTransport
      */
     public function setFourchettesTransport(array $fourchettesTransport): static
     {
-        $this->fourchettesTransport = $fourchettesTransport;
+        // Une ligne supprimée dans le formulaire laisse un trou dans les clés : on garde une liste.
+        $this->fourchettesTransport = array_values($fourchettesTransport);
 
         return $this;
     }
