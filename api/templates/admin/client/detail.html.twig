@@ -1,0 +1,66 @@
+{% extends '@EasyAdmin/crud/detail.html.twig' %}
+
+{# Fiche client : identité (champs EasyAdmin) puis historique des demandes et de leurs conversations. #}
+{% block detail_fields %}
+    {% set auteurs = {client: 'Client', assistant: 'Assistant', conseiller: 'Conseiller'} %}
+    {{ parent() }}
+
+    <section class="historique-client mt-4">
+        <h2 class="h4">Historique ({{ demandes|length }} demande{{ demandes|length > 1 ? 's' }})</h2>
+
+        {% for demande in demandes %}
+            <article class="card mb-3" data-demande="{{ demande.id }}">
+                <div class="card-header d-flex flex-wrap gap-2 align-items-center">
+                    <strong>Demande n° {{ demande.id }}</strong>
+                    <span>{{ demande.typeDeVoyage ? demande.typeDeVoyage.label : 'Type à préciser' }} · {{ demande.lieuOuZone ?? 'Destination à préciser' }}</span>
+                    <span class="badge badge-secondary">{{ demande.statut.label }}</span>
+                    {% if demande.prioritaire %}<span class="badge badge-warning">Prioritaire</span>{% endif %}
+                    <span class="text-muted ms-auto">Reçue le {{ demande.creeLe|date('d/m/Y à H:i') }}</span>
+                </div>
+
+                {% if is_granted('DEMANDE_VOIR', demande) %}
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-3">
+                            <li>Conseiller : {{ demande.conseiller ?? 'non attribuée' }}</li>
+                            {% if demande.dateDebut %}
+                                <li>Dates : du {{ demande.dateDebut|date('d/m/Y') }}{% if demande.dateFin %} au {{ demande.dateFin|date('d/m/Y') }}{% endif %}{% if demande.datesFlexibles %} (flexibles){% endif %}</li>
+                            {% endif %}
+                            <li>Voyageurs : {{ demande.adultes }} adulte{{ demande.adultes > 1 ? 's' }}{% if demande.enfants %}, {{ demande.enfants }} enfant{{ demande.enfants > 1 ? 's' }}{% endif %}</li>
+                            {% if demande.budgetCentimes %}
+                                <li>Budget : {{ (demande.budgetCentimes / 100)|number_format(0, ',', ' ') }} €{{ demande.budgetParPersonne ? ' par personne' }}</li>
+                            {% endif %}
+                            {% if demande.envies is not empty %}<li>Envies : {{ demande.envies|join(', ') }}</li>{% endif %}
+                            {% if demande.contraintes is not empty %}<li>Contraintes : {{ demande.contraintes|join(', ') }}</li>{% endif %}
+                        </ul>
+                        <a class="btn btn-sm btn-secondary" href="{{ ea_url().setController('App\Controller\Admin\DemandeCrudController').setAction('detail').setEntityId(demande.id) }}">Ouvrir la demande</a>
+
+                        <h3 class="h6 mt-4">Conversation</h3>
+                        {% if demande.conversation is null or demande.conversation.messages is empty %}
+                            <p class="text-muted">Aucun message.</p>
+                        {% else %}
+                            <p class="text-muted small">
+                                Commencée le {{ demande.conversation.debutLe|date('d/m/Y à H:i') }}
+                                {%- if demande.conversation.repriseParConseiller %} · reprise par un conseiller{% endif %}
+                            </p>
+                            <ol class="list-unstyled conversation">
+                                {% for message in demande.conversation.messages %}
+                                    <li class="mb-2">
+                                        <strong>{{ auteurs[message.role] ?? message.role|capitalize }}</strong>
+                                        <span class="text-muted small">{{ message.le|date('d/m/Y H:i') }}</span>
+                                        <div>{{ message.contenu|nl2br }}</div>
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="card-body text-muted">
+                        Suivie par {{ demande.conseiller }} : demandez-lui le détail du dossier.
+                    </div>
+                {% endif %}
+            </article>
+        {% else %}
+            <p class="text-muted">Ce client n'a encore aucune demande.</p>
+        {% endfor %}
+    </section>
+{% endblock detail_fields %}

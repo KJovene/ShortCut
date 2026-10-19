@@ -36,6 +36,7 @@ final class DashboardController extends AbstractDashboardController
     {
         yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-home');
         yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox');
+        yield MenuItem::linkTo(ClientCrudController::class, 'Clients', 'fa fa-address-book');
         yield MenuItem::linkToUrl('Retour au site', 'fa fa-arrow-left', rtrim($this->siteUrl, '/').'/');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
