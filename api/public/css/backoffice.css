@@ -1,0 +1,388 @@
+/*
+ * Thème du backoffice, d'après la maquette « Backoffice · aux couleurs de la version E ».
+ * EasyAdmin dérive presque tout de --ea-primary et de l'échelle --gray-* : on les réchauffe,
+ * puis on ajuste le menu latéral, les tableaux et les badges de statut.
+ */
+:root {
+    --bo-fond: #F6F4F1;
+    --bo-surface: #FFFFFF;
+    --bo-bordure: #E7E2DC;
+    --bo-bordure-douce: #F0EBE5;
+    --bo-bordure-champ: #D6CEC4;
+    --bo-texte: #2B1D14;
+    --bo-texte-doux: #6E5A4B;
+    --bo-libelle: #8A7666;
+    --bo-accent: #C2471E;
+    --bo-accent-fonce: #9A3A18;
+    --bo-accent-fond: #FBEDE6;
+    --bo-creme: #F3E7D6;
+
+    --ea-primary: var(--bo-accent);
+    --ea-radius: 0.5rem;
+    --font-family-sans-serif: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Échelle de gris d'EasyAdmin, en tons chauds. */
+    --gray-50: #FBFAF8;
+    --gray-100: #F6F4F1;
+    --gray-200: #E7E2DC;
+    --gray-300: #D6CEC4;
+    --gray-400: #B3A497;
+    --gray-500: #8A7666;
+    --gray-600: #6E5A4B;
+    --gray-700: #4F3E31;
+    --gray-800: #3D2C20;
+    --gray-900: #2B1D14;
+    --gray-950: #1E140D;
+
+    --body-bg: var(--bo-fond);
+    --content-bg: var(--bo-fond);
+    --text-color: var(--bo-texte);
+    --link-color: var(--bo-accent-fonce);
+    --border-color: var(--bo-bordure);
+    --table-cell-border-color: var(--bo-bordure-douce);
+    --form-input-border-color: var(--bo-bordure-champ);
+
+    --sidebar-bg: var(--bo-surface);
+    --sidebar-border-color: var(--bo-bordure);
+    --sidebar-menu-color: var(--gray-800);
+    --sidebar-menu-icon-color: var(--bo-texte-doux);
+    --sidebar-menu-header-color: var(--bo-libelle);
+    --sidebar-menu-hover-color: var(--bo-accent-fonce);
+    --sidebar-item-hover-bg: var(--bo-fond);
+    --sidebar-menu-active-item-bg: var(--bo-accent-fond);
+    --sidebar-menu-active-item-color: var(--bo-accent-fonce);
+}
+
+body {
+    color: var(--bo-texte);
+}
+
+a:hover {
+    color: var(--bo-texte);
+}
+
+/* Logo : pastille « S » et nom de l'agence. */
+.ea-sidebar-logo .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--bo-texte);
+    text-decoration: none;
+}
+
+.ea-sidebar-logo .logo-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.bo-logo-marque {
+    width: 32px;
+    height: 32px;
+    flex: none;
+    border-radius: 8px;
+    background: var(--bo-accent);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.bo-logo-texte {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.bo-logo-texte strong {
+    font-size: 15px;
+}
+
+.bo-logo-texte small {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--bo-texte-doux);
+}
+
+/* Menu latéral : intitulés de section en petites capitales, élément actif en terre cuite. */
+.ea-sidebar-group-label-text {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--bo-libelle);
+}
+
+.ea-sidebar-item-link {
+    min-height: 38px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ea-sidebar-item.is-active > .ea-sidebar-item-link {
+    font-weight: 700;
+}
+
+.ea-sidebar-item.is-active .ea-sidebar-item-icon {
+    color: var(--bo-accent-fonce);
+}
+
+.ea-sidebar-badge.badge-danger {
+    background: var(--bo-accent);
+    color: #FFFFFF;
+    box-shadow: none;
+    font-weight: 800;
+}
+
+/* Titres de page */
+.content-header-title .title {
+    font-size: 24px;
+    color: var(--bo-texte);
+}
+
+/* Boutons */
+.btn-primary {
+    --button-primary-bg: var(--bo-accent);
+    --button-primary-hover-bg: var(--bo-accent-fonce);
+    --button-primary-active-bg: var(--bo-accent-fonce);
+    --button-primary-box-shadow: none;
+    font-weight: 700;
+}
+
+/* Liste EasyAdmin : carte blanche bordée, en-têtes en petites capitales. */
+.datagrid {
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-bordure);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.datagrid thead th {
+    background: var(--gray-50);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--bo-libelle);
+}
+
+.datagrid thead th a {
+    color: inherit;
+}
+
+/* Fiches et formulaires */
+.content-panel,
+fieldset.form-fieldset,
+.field-group {
+    border-color: var(--bo-bordure);
+}
+
+/* Badges de statut d'une demande */
+.bo-statut {
+    display: inline-block;
+    white-space: nowrap;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+.bo-statut--nouvelle { background: #E3EDF8; color: #1E4E8C; }
+.bo-statut--prioritaire { background: #F9DED6; color: #8F2A1C; }
+.bo-statut--proposition_envoyee { background: #EFEAE4; color: #5A4A3E; }
+.bo-statut--a_confirmer { background: #FFF1D0; color: #7A5200; }
+.bo-statut--confirmee { background: #DDF1E4; color: #1F6B3A; }
+.bo-statut--acceptee { background: #1F6B3A; color: #FFFFFF; }
+.bo-statut--perdue { background: #F1EEEA; color: var(--bo-libelle); }
+
+.bo-vide {
+    color: var(--bo-libelle);
+}
+
+/* Onglets par statut au-dessus de la liste des demandes */
+.bo-onglets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--bo-bordure);
+}
+
+.bo-onglet {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 12px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gray-800);
+    text-decoration: none;
+}
+
+.bo-onglet:hover {
+    color: var(--bo-accent-fonce);
+}
+
+.bo-onglet[aria-current="page"] {
+    border-bottom-color: var(--bo-accent);
+    font-weight: 700;
+    color: var(--bo-accent-fonce);
+}
+
+.bo-onglet-nombre {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--bo-libelle);
+}
+
+/* Tableau de bord */
+.bo-intro {
+    margin: 0 0 20px;
+    color: var(--bo-texte-doux);
+}
+
+.bo-indicateurs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.bo-indicateur {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 18px;
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-bordure);
+    border-radius: 12px;
+    color: var(--bo-texte);
+    text-decoration: none;
+}
+
+.bo-indicateur:hover {
+    border-color: var(--bo-bordure-champ);
+    color: var(--bo-texte);
+}
+
+.bo-indicateur-libelle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bo-texte-doux);
+}
+
+.bo-indicateur-valeur {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+}
+
+.bo-indicateur-note {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bo-texte-doux);
+}
+
+.bo-note--info { color: #1E4E8C; }
+.bo-note--alerte { color: #8F2A1C; }
+.bo-note--attente { color: #7A5200; }
+
+.bo-carte {
+    background: var(--bo-surface);
+    border: 1px solid var(--bo-bordure);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.bo-carte-entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--bo-bordure);
+}
+
+.bo-carte-entete h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.bo-carte-entete a {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.bo-carte-vide {
+    margin: 0;
+    padding: 18px;
+    color: var(--bo-texte-doux);
+}
+
+.bo-tableau-defilant {
+    overflow-x: auto;
+}
+
+.bo-tableau {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.bo-tableau th {
+    padding: 10px 8px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--bo-libelle);
+}
+
+.bo-tableau td {
+    padding: 12px 8px;
+    border-top: 1px solid var(--bo-bordure-douce);
+}
+
+.bo-tableau th:first-child,
+.bo-tableau td:first-child {
+    padding-left: 18px;
+}
+
+.bo-tableau th:last-child,
+.bo-tableau td:last-child {
+    padding-right: 18px;
+}
+
+.bo-fort { font-weight: 600; }
+.bo-discret { color: var(--bo-texte-doux); }
+.bo-droite { text-align: right; }
+
+.bo-bouton-secondaire {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--bo-bordure-champ);
+    border-radius: 8px;
+    background: var(--bo-surface);
+    color: var(--bo-texte);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.bo-bouton-secondaire:hover {
+    border-color: var(--bo-accent);
+    color: var(--bo-accent-fonce);
+}

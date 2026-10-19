@@ -7,6 +7,7 @@ use App\Entity\Utilisateur;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
+use App\Repository\DemandeRepository;
 use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -17,6 +18,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
 use EasyCorp\Bundle\EasyAdminBundle\Dto\SearchDto;
@@ -48,6 +50,10 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_CONSEILLER')]
 final class DemandeCrudController extends AbstractCrudController
 {
+    public function __construct(private readonly DemandeRepository $demandes)
+    {
+    }
+
     public static function getEntityFqcn(): string
     {
         return Demande::class;
@@ -60,7 +66,23 @@ final class DemandeCrudController extends AbstractCrudController
             ->setEntityLabelInPlural('Demandes')
             ->setPageTitle(Crud::PAGE_INDEX, $this->estAdministrateur() ? 'Toutes les demandes' : 'Mes demandes')
             ->setDefaultSort(['prioritaire' => 'DESC', 'creeLe' => 'DESC'])
-            ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email']);
+            ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email'])
+            // Onglets par statut au-dessus de la liste.
+            ->overrideTemplate('crud/index', 'admin/demande/index.html.twig');
+    }
+
+    /** Compteurs des onglets, sur le même périmètre que la liste (ses demandes pour un conseiller). */
+    public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
+    {
+        if (Crud::PAGE_INDEX === $responseParameters->get('pageName')) {
+            $user = $this->getUser();
+            $responseParameters->set('compteurs', $this->demandes->compterParStatut(
+                !$this->estAdministrateur() && $user instanceof Utilisateur ? $user : null,
+            ));
+            $responseParameters->set('statuts', StatutDemande::cases());
+        }
+
+        return $responseParameters;
     }
 
     public function configureActions(Actions $actions): Actions
@@ -131,18 +153,12 @@ final class DemandeCrudController extends AbstractCrudController
         yield IdField::new('id', 'N°')->hideOnForm();
         yield BooleanField::new('prioritaire', 'Prioritaire')
             ->renderAsSwitch(false)
+            ->setTemplatePath('admin/champ/prioritaire.html.twig')
             ->setHelp('« Parler à un conseiller » ou période sans données dans le catalogue.');
         yield ChoiceField::new('statut', 'Statut')
             ->setChoices(self::choix(StatutDemande::cases()))
             ->setFormTypeOption('choice_value', static fn (?StatutDemande $s) => $s?->value)
-            ->renderAsBadges([
-                StatutDemande::Nouvelle->value => 'primary',
-                StatutDemande::PropositionEnvoyee->value => 'info',
-                StatutDemande::AConfirmer->value => 'warning',
-                StatutDemande::Confirmee->value => 'success',
-                StatutDemande::Acceptee->value => 'success',
-                StatutDemande::Perdue->value => 'secondary',
-            ]);
+            ->setTemplatePath('admin/champ/statut_demande.html.twig');
         yield AssociationField::new('client', 'Client')
             ->setQueryBuilder(static fn (QueryBuilder $qb) => $qb
                 ->andWhere('entity.role = :client')
