@@ -30,6 +30,8 @@ export type Message =
       etapes: { label: string; etat: EtatEtape }[]
     }
   | { id: string; auteur: 'assistant'; type: 'proposition'; texte: string; propositionId: string }
+  /** Fin de la conversation : la demande est enregistrée et transmise à un conseiller. */
+  | { id: string; auteur: 'assistant'; type: 'confirmation'; texte: string }
 
 export interface Conversation {
   demande: Demande

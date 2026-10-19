@@ -31,13 +31,16 @@ final class ContexteAgent
 interface Outil
 {
     public function nom(): string;               // ex. « chercher_logements »
-    public function description(): string;
-    /** @return array<string, mixed> schéma JSON d'entrée */
-    public function schemaEntree(): array;
-    /** @param array<string, mixed> $entree @return array<string, mixed> */
+    /** @return array<string, mixed> définition envoyée à l'API : name, description, strict, input_schema */
+    public function definition(): array;
+    /** @param array<string, mixed> $entree @return array<string, mixed> ; entrée refusée : OutilException */
     public function executer(ContexteAgent $contexte, array $entree): array;
 }
 ```
+
+Code : `api/src/Chatbot/ContexteAgent.php` et `api/src/Chatbot/Outil/`. Un outil est un service Symfony qui implémente `Outil` (tag ajouté automatiquement) ; chaque agent liste ses outils dans un ordre fixe (`AgentConversation::OUTILS`), pour que le début de la requête reste identique d'un appel à l'autre et profite du cache. Le ticket #192 livre une version simple des trois outils de l'agent Conversation : `enregistrer_exigences` (fiche et compte client), `chercher_destinations` (zone et températures, sans tarifs ni envies) et `transmettre_au_conseiller` (demande prioritaire, conversation reprise). Les tickets #194, #197 et #202 les complètent.
+
+Pas d'`eager_input_streaming` sur ces outils : leurs entrées sont courtes, et ce mode désactiverait la validation par l'API dont dépend le mode strict.
 
 ### Aucun outil ne lit les données d'un autre client
 
