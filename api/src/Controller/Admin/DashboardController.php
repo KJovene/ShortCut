@@ -62,6 +62,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::section('Activité');
         yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox')
             ->setBadge($nouvelles > 0 ? $nouvelles : null, 'danger');
+        yield MenuItem::linkToRoute('Climat et tarifs', 'fa fa-cloud-sun', 'admin_destinations');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');

@@ -6,6 +6,7 @@ use App\Entity\Destination;
 use App\Entity\PeriodeClimatique;
 use App\Entity\TarifParPeriode;
 use App\Form\PeriodeClimatiqueType;
+use App\Repository\DestinationRepository;
 use App\Repository\PeriodeClimatiqueRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,6 +17,14 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/admin/destinations')]
 final class PeriodeClimatiqueController extends AbstractController
 {
+    #[Route('', name: 'admin_destinations', methods: ['GET'])]
+    public function index(DestinationRepository $repository): Response
+    {
+        return $this->render('admin/destinations.html.twig', [
+            'destinations' => $repository->findBy([], ['ville' => 'ASC']),
+        ]);
+    }
+
     #[Route('/{id}/periode', name: 'admin_destination_periode', methods: ['GET', 'POST'])]
     public function edit(
         Destination $destination,
