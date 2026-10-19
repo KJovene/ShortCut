@@ -19,7 +19,7 @@ export const Route = createFileRoute('/')({
     page: await context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null),
   }),
   head: ({ loaderData }) => ({
-    meta: metaPage(loaderData.page, {
+    meta: metaPage(loaderData?.page ?? null, {
       titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
       description:
         "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
