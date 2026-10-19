@@ -1,9 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
+import { simulerApi } from './test/api'
 
 function renderAt(path: string) {
   const queryClient = createQueryClient()
@@ -16,6 +17,14 @@ function renderAt(path: string) {
 }
 
 describe('routeur', () => {
+  beforeEach(() => {
+    simulerApi({})
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it("affiche la page d'accueil", async () => {
     renderAt('/')
     expect(

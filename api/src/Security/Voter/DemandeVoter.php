@@ -17,7 +17,8 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
  * - administrateur : toutes les demandes ;
  * - conseiller : les demandes qui lui sont attribuées ; il voit aussi les demandes non attribuées
  *   pour les aiguiller (se les attribuer ou les confier à un autre conseiller) ;
- * - chatbot : uniquement la demande de sa propre conversation, en lecture et en écriture.
+ * - chatbot : uniquement la demande de sa propre conversation, en lecture et en écriture ;
+ * - client inscrit sur le site : aucun accès par le backoffice.
  *
  * @extends Voter<string, Demande|Conversation|Proposition>
  */
@@ -55,6 +56,12 @@ final class DemandeVoter extends Voter
 
         if (Role::Administrateur === $user->getRole()) {
             return true;
+        }
+
+        if (Role::Conseiller !== $user->getRole()) {
+            $vote?->addReason('Seuls les conseillers et l\'administrateur traitent les demandes.');
+
+            return false;
         }
 
         $conseiller = $demande->getConseiller();

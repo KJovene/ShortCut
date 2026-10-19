@@ -25,6 +25,25 @@ services:
     depends_on:
       - php
 
+  # Site React (Vite) : http://localhost:5173. Les appels /api et /uploads sont proxifiés vers nginx.
+  front:
+    build: docker/node
+    user: '${UID:-1000}:${GID:-1000}'
+    # npm ci au démarrage, seulement si package-lock.json a changé depuis la dernière installation.
+    command: sh -c "[ node_modules/.package-lock.json -nt package-lock.json ] || npm ci --no-audit --no-fund; npm run dev -- --host 0.0.0.0"
+    ports:
+      - '${FRONT_PORT:-5173}:5173'
+    volumes:
+      - ./site:/app
+      # node_modules reste dans un volume : binaires Linux, sans conflit avec ceux de la machine.
+      - front_node_modules:/app/node_modules
+    environment:
+      API_PROXY_TARGET: http://nginx
+      # Les événements de fichiers ne traversent pas toujours le partage Docker (Windows, macOS) : scrutation.
+      VITE_WATCH_POLLING: 'true'
+    depends_on:
+      - nginx
+
   database:
     image: postgres:16-alpine
     environment:
@@ -55,3 +74,4 @@ services:
 
 volumes:
   database_data:
+  front_node_modules:

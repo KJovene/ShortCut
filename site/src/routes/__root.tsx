@@ -2,6 +2,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
+import { MenuCompte } from '@/components/MenuCompte'
 import { NotFound } from '@/components/NotFound'
 
 export interface RouterContext {
@@ -21,6 +22,7 @@ function RootLayout() {
           <Link to="/" className="text-xl font-semibold">
             ShortCut
           </Link>
+          <MenuCompte />
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">

@@ -11,10 +11,10 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** Conseiller ou administrateur du backoffice. */
+/** Conseiller ou administrateur du backoffice, ou client qui écrit au chatbot. */
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: 'utilisateur')]
-#[UniqueEntity('email')]
+#[UniqueEntity('email', message: 'Un compte existe déjà avec cet e-mail.')]
 class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -23,16 +23,32 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    #[Assert\NotBlank]
-    #[Assert\Email]
+    #[Assert\NotBlank(message: 'Saisissez votre e-mail.')]
+    #[Assert\Email(message: 'Saisissez une adresse e-mail valide.')]
     private string $email = '';
 
     #[ORM\Column(type: Types::STRING, length: 100)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Saisissez votre nom.')]
+    #[Assert\Length(max: 100)]
     private string $nom = '';
 
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    private ?string $prenom = null;
+
+    #[ORM\Column(type: Types::STRING, length: 30, nullable: true)]
+    private ?string $telephone = null;
+
+    /**
+     * Étiquettes du client : « plage », « famille », « gastronomie »….
+     *
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $preferences = [];
+
+    /** Un compte créé par l'inscription du site est client ; l'administrateur change le rôle dans le backoffice. */
     #[ORM\Column(enumType: Role::class)]
-    private Role $role = Role::Conseiller;
+    private Role $role = Role::Client;
 
     /** Hash du mot de passe. */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -63,6 +79,48 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
+
+        return $this;
+    }
+
+    public function getPrenom(): ?string
+    {
+        return $this->prenom;
+    }
+
+    public function setPrenom(?string $prenom): static
+    {
+        $this->prenom = $prenom;
+
+        return $this;
+    }
+
+    public function getTelephone(): ?string
+    {
+        return $this->telephone;
+    }
+
+    public function setTelephone(?string $telephone): static
+    {
+        $this->telephone = $telephone;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getPreferences(): array
+    {
+        return $this->preferences;
+    }
+
+    /**
+     * @param list<string> $preferences
+     */
+    public function setPreferences(array $preferences): static
+    {
+        $this->preferences = $preferences;
 
         return $this;
     }
