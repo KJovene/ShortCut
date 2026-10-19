@@ -1,10 +1,12 @@
 import { vi } from 'vitest'
+import { PAGES_DE_DEMO } from './pages'
 
 type Reponse = { status: number; body?: unknown }
 
 /**
  * Remplace fetch par une API simulée : « POST /api/connexion » → réponse.
- * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté) et le reste 404.
+ * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages/{slug} sert
+ * les contenus de démo et le reste répond 404.
  */
 export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
   const restantes = new Map(Object.entries(routes).map(([cle, r]) => [cle, [r].flat()]))
@@ -13,11 +15,7 @@ export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
     const cle = `${init?.method ?? 'GET'} ${url}`
     const file = restantes.get(cle)
     // La dernière réponse prévue resservira pour les appels suivants.
-    const reponse =
-      (file && file.length > 1 ? file.shift() : file?.[0]) ??
-      (cle === 'GET /api/moi'
-        ? { status: 401, body: { erreur: 'Authentification requise.' } }
-        : { status: 404, body: {} })
+    const reponse = (file && file.length > 1 ? file.shift() : file?.[0]) ?? reponseParDefaut(cle)
 
     return new Response(reponse.body === undefined ? null : JSON.stringify(reponse.body), {
       status: reponse.status,
@@ -33,4 +31,15 @@ export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
         .filter(([url, init]) => `${init?.method ?? 'GET'} ${url}` === cle)
         .map(([, init]) => JSON.parse(String(init?.body ?? 'null')) as unknown),
   }
+}
+
+function reponseParDefaut(cle: string): Reponse {
+  if (cle === 'GET /api/moi') {
+    return { status: 401, body: { erreur: 'Authentification requise.' } }
+  }
+  const page = /^GET \/api\/pages\/(.+)$/.exec(cle)?.[1]
+  if (page && PAGES_DE_DEMO[page]) {
+    return { status: 200, body: PAGES_DE_DEMO[page] }
+  }
+  return { status: 404, body: {} }
 }

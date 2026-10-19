@@ -1,19 +1,22 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { IconCoche } from '@/components/ui/icons'
 import { DESTINATIONS } from '@/data/catalogue'
+import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/agence')({
-  head: () => ({
-    meta: [
-      { title: "L'agence · Nos conseillers et nos engagements" },
-      {
-        name: 'description',
-        content:
-          'Une équipe de conseillers spécialistes de chaque destination, qui confirment chaque proposition avant votre départ.',
-      },
-    ],
+  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('agence')),
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, {
+      titre: "L'agence · Nos conseillers et nos engagements",
+      description:
+        'Une équipe de conseillers spécialistes de chaque destination, qui confirment chaque proposition avant votre départ.',
+    }),
   }),
+  pendingComponent: PageEnChargement,
+  errorComponent: PageIndisponible,
   component: AgencePage,
 })
 
@@ -31,12 +34,6 @@ const CONSEILLERS = [
   },
 ]
 
-const ENGAGEMENTS = [
-  'Une première proposition complète en quelques minutes, à toute heure.',
-  'Un conseiller référent qui confirme les prix et les disponibilités sous deux jours ouvrés.',
-  'Des prix transparents : le détail de chaque poste et les hypothèses de budget.',
-]
-
 const initiales = (nom: string) =>
   nom
     .split(' ')
@@ -44,6 +41,11 @@ const initiales = (nom: string) =>
     .join('')
 
 function AgencePage() {
+  // Présentation et engagements : contenus du site, modifiables dans le backoffice.
+  const { data: page } = useSuspenseQuery(pageQuery('agence'))
+  const contenu = decouperContenu(page.contenu)
+  const engagements = trouverSection(contenu, 'Nos engagements')
+
   return (
     <>
       <EnTetePage
@@ -53,41 +55,43 @@ function AgencePage() {
             Des conseillers qui <em className="font-normal text-terre">connaissent le terrain</em>
           </>
         }
-        photo={{ src: '/uploads/pages/agence.jpg', alt: "L'équipe de l'agence" }}
+        photo={page.photos[0] ? { src: page.photos[0], alt: "L'équipe de l'agence" } : undefined}
       >
-        <p className="m-0">
-          Depuis plus de quinze ans, nos conseillers construisent des voyages sur mesure. Chacun
-          suit ses destinations, connaît les hébergeurs et les guides sur place, et met à jour les
-          tarifs saison après saison.
-        </p>
+        {contenu.intro.map((paragraphe) => (
+          <p key={paragraphe} className="m-0">
+            {paragraphe}
+          </p>
+        ))}
       </EnTetePage>
 
-      <section aria-labelledby="engagements-titre" className="bg-brun text-creme">
-        <div className="mx-auto max-w-[1376px] px-4 py-12 sm:px-8 sm:py-16">
-          <h2
-            id="engagements-titre"
-            className="m-0 mb-8 font-display text-[32px] font-semibold sm:text-[40px]"
-          >
-            Nos engagements
-          </h2>
-          <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
-            {ENGAGEMENTS.map((e) => (
-              <li
-                key={e}
-                className="flex flex-col gap-3 rounded-[22px] bg-white/5 p-6 text-lg leading-relaxed"
-              >
-                <span
-                  aria-hidden="true"
-                  className="flex size-9 items-center justify-center rounded-full bg-ocre text-brun"
+      {engagements && engagements.elements.length > 0 && (
+        <section aria-labelledby="engagements-titre" className="bg-brun text-creme">
+          <div className="mx-auto max-w-[1376px] px-4 py-12 sm:px-8 sm:py-16">
+            <h2
+              id="engagements-titre"
+              className="m-0 mb-8 font-display text-[32px] font-semibold sm:text-[40px]"
+            >
+              {engagements.titre}
+            </h2>
+            <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
+              {engagements.elements.map((e) => (
+                <li
+                  key={e}
+                  className="flex flex-col gap-3 rounded-[22px] bg-white/5 p-6 text-lg leading-relaxed"
                 >
-                  <IconCoche size={16} />
-                </span>
-                {e}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+                  <span
+                    aria-hidden="true"
+                    className="flex size-9 items-center justify-center rounded-full bg-ocre text-brun"
+                  >
+                    <IconCoche size={16} />
+                  </span>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <section
         aria-labelledby="equipe-titre"
