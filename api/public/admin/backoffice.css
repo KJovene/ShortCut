@@ -61,7 +61,7 @@ a:hover {
     color: var(--bo-texte);
 }
 
-/* Logo : pastille « S » et nom de l'agence. */
+/* Logo : symbole Détour et nom de l'agence. */
 .ea-sidebar-logo .logo {
     display: flex;
     align-items: center;
@@ -77,17 +77,10 @@ a:hover {
 }
 
 .bo-logo-marque {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     flex: none;
-    border-radius: 8px;
-    background: var(--bo-accent);
-    color: #FFFFFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 15px;
+    display: block;
 }
 
 .bo-logo-texte {

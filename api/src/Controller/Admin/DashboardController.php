@@ -41,7 +41,9 @@ final class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('<span class="bo-logo-marque">S</span><span class="bo-logo-texte"><strong>ShortCut</strong><small>Backoffice</small></span>')
+            // Logo et favicon Détour, copiés du site dans public/admin (servis aussi par le proxy Vite).
+            ->setTitle('<img class="bo-logo-marque" src="/admin/logo-detour.svg" alt=""><span class="bo-logo-texte"><strong>Détour</strong><small>Backoffice</small></span>')
+            ->setFaviconPath('admin/favicon.svg')
             ->setLocales(['fr'])
             // La maquette n'a qu'un thème clair.
             ->disableDarkMode();
