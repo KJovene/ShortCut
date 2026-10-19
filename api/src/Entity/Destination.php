@@ -2,15 +2,78 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\ExactFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
+use App\ApiPlatform\Filtre\ClimatFilter;
+use App\ApiPlatform\Filtre\EnvieFilter;
+use App\ApiPlatform\Filtre\MoisFilter;
 use App\Repository\DestinationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** Destination du catalogue, avec son climat par période. */
+/**
+ * Destination du catalogue, avec son climat par période.
+ * Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+ */
+#[ApiResource(
+    operations: [
+        new GetCollection(parameters: [
+            'pays' => new QueryParameter(filter: new PartialSearchFilter(), property: 'pays', castToArray: false),
+            'ville' => new QueryParameter(filter: new PartialSearchFilter(), property: 'ville', castToArray: false),
+            'slug' => new QueryParameter(filter: new ExactFilter(), property: 'slug', castToArray: false),
+            'publiee' => new QueryParameter(filter: new ExactFilter(), property: 'publiee', nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, castToArray: false),
+            'miseEnAvant' => new QueryParameter(filter: new ExactFilter(), property: 'miseEnAvant', nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, castToArray: false),
+            'mois' => new QueryParameter(
+                filter: new ClimatFilter(),
+                description: 'Mois du voyage, au format AAAA-MM. Combiné à temperatureMin ou temperatureMax, la température porte sur ce mois.',
+                schema: ['type' => 'string', 'pattern' => '^\\d{4}-(0[1-9]|1[0-2])$', 'example' => '2027-05'],
+                constraints: [new Assert\Regex(MoisFilter::FORMAT, message: 'Le mois doit être au format AAAA-MM, par exemple 2027-05.')],
+                castToArray: false,
+            ),
+            'temperatureMin' => new QueryParameter(
+                filter: new ClimatFilter(),
+                description: 'Température moyenne minimale, en °C.',
+                schema: ['type' => 'number'],
+                constraints: [new Assert\Range(min: -50, max: 60)],
+                castToArray: false,
+            ),
+            'temperatureMax' => new QueryParameter(
+                filter: new ClimatFilter(),
+                description: 'Température moyenne maximale, en °C.',
+                schema: ['type' => 'number'],
+                constraints: [new Assert\Range(min: -50, max: 60)],
+                castToArray: false,
+            ),
+            'envie' => new QueryParameter(
+                filter: new EnvieFilter(parDestination: true),
+                description: 'Au moins un logement ou une activité de la destination correspond à cette envie (plage, culture…).',
+                castToArray: false,
+            ),
+        ]),
+        new Get(),
+        new Post(),
+        new Patch(),
+        new Delete(security: "is_granted('ROLE_ADMIN')"),
+    ],
+    normalizationContext: ['groups' => ['destination:public', 'destination:interne']],
+    denormalizationContext: ['groups' => ['destination:ecriture']],
+    order: ['ville' => 'ASC'],
+    security: "is_granted('ROLE_CONSEILLER')",
+)]
 #[ORM\Entity(repositoryClass: DestinationRepository::class)]
 #[ORM\Table(name: 'destination')]
 #[ORM\Index(columns: ['pays'])]
@@ -21,22 +84,32 @@ class Destination
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['destination:public'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::STRING, length: 100)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Indiquez le pays.')]
+    #[Assert\Length(max: 100)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $pays = null;
 
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $region = null;
 
     #[ORM\Column(type: Types::STRING, length: 100)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Indiquez la ville.')]
+    #[Assert\Length(max: 100)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $ville = null;
 
     /** Adresse de la fiche sur le site. */
     #[ORM\Column(type: Types::STRING, length: 150, unique: true)]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: 'Indiquez l\'adresse de la fiche (slug).')]
+    #[Assert\Length(max: 150)]
+    #[Assert\Regex('/^[a-z0-9]+(-[a-z0-9]+)*$/', message: 'Le slug ne contient que des minuscules sans accent, des chiffres et des tirets (ex. « costa-rica »).')]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $slug = null;
 
     /**
@@ -45,32 +118,49 @@ class Destination
      * @var array<string, int>
      */
     #[ORM\Column(type: Types::JSON)]
+    #[Assert\All([
+        new Assert\Type('int', message: 'Un temps de trajet est un nombre entier de minutes.'),
+        new Assert\Range(min: 1, max: 2880),
+    ])]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private array $tempsDeTrajet = [];
 
     /**
      * @var list<string>
      */
     #[ORM\Column(type: Types::JSON)]
+    #[Assert\Count(max: 10)]
+    #[Assert\All([new Assert\NotBlank(), new Assert\Length(max: 150)])]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private array $pointsForts = [];
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Assert\Length(max: 5000)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $photo = null;
 
     #[ORM\Column(type: Types::BOOLEAN)]
+    #[Groups(['destination:interne', 'destination:ecriture'])]
     private bool $publiee = false;
 
     /** Affichée sur la page d'accueil. */
     #[ORM\Column(type: Types::BOOLEAN)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
     private bool $miseEnAvant = false;
 
     /**
+     * Climat en lecture seule dans l'API : il se saisit dans le backoffice.
+     *
      * @var Collection<int, PeriodeClimatique>
      */
     #[ORM\OneToMany(targetEntity: PeriodeClimatique::class, mappedBy: 'destination', orphanRemoval: true)]
     #[ORM\OrderBy(['debut' => 'ASC'])]
+    #[Groups(['destination:public'])]
     private Collection $periodesClimatiques;
 
     /**
@@ -83,6 +173,11 @@ class Destination
     {
         $this->periodesClimatiques = new ArrayCollection();
         $this->prestations = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return \sprintf('%s (%s)', $this->ville, $this->pays);
     }
 
     public function getId(): ?int
@@ -152,6 +247,37 @@ class Destination
     public function setTempsDeTrajet(array $tempsDeTrajet): static
     {
         $this->tempsDeTrajet = $tempsDeTrajet;
+
+        return $this;
+    }
+
+    /**
+     * Temps de trajet en lignes (ville, minutes), pour le formulaire du backoffice.
+     *
+     * @return list<array{ville: string, minutes: int}>
+     */
+    public function getTrajets(): array
+    {
+        $trajets = [];
+        foreach ($this->tempsDeTrajet as $ville => $minutes) {
+            $trajets[] = ['ville' => (string) $ville, 'minutes' => $minutes];
+        }
+
+        return $trajets;
+    }
+
+    /**
+     * @param iterable<array{ville?: ?string, minutes?: ?int}> $trajets
+     */
+    public function setTrajets(iterable $trajets): static
+    {
+        $this->tempsDeTrajet = [];
+        foreach ($trajets as $trajet) {
+            $ville = trim((string) ($trajet['ville'] ?? ''));
+            if ('' !== $ville && null !== ($trajet['minutes'] ?? null)) {
+                $this->tempsDeTrajet[$ville] = (int) $trajet['minutes'];
+            }
+        }
 
         return $this;
     }

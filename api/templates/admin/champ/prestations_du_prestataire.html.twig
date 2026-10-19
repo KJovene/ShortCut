@@ -1,0 +1,11 @@
+{# Logements et activités d'un prestataire, avec leur destination. #}
+{% set prestations = entity.instance.prestations %}
+{% if prestations is empty %}
+    <span class="bo-vide">Aucun logement ni activité</span>
+{% else %}
+    <ul class="list-unstyled m-0">
+        {% for prestation in prestations %}
+            <li>{{ prestation.nom }} <span class="bo-discret">· {{ prestation.type.label }} · {{ prestation.destination.ville }}</span></li>
+        {% endfor %}
+    </ul>
+{% endif %}

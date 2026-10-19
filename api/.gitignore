@@ -18,3 +18,9 @@
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+###> photos téléversées (#188) : sur le disque local, hors dépôt ###
+# `make fixtures` y copie les photos de démo depuis fixtures/images. Les dossiers restent (EasyAdmin y téléverse).
+/public/uploads/*/*
+!/public/uploads/*/.gitkeep
+###< photos téléversées ###

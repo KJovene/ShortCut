@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
-        migration migrate fixtures db-reset db-test db-ui schema \
+        migration migrate fixtures db-reset db-test db-ui schema openapi \
         dev site-sh site-install site-build \
         test test-api test-site lint lint-api lint-site stan fix check
 
@@ -110,6 +110,11 @@ schema: ## Régénère le diagramme de la base (docs/schema.md) depuis les entit
 	@mkdir -p docs
 	$(COMPOSE) exec -T php php bin/console app:schema:diagramme --markdown > docs/schema.md
 	@echo "Diagramme écrit dans docs/schema.md"
+
+openapi: ## Exporte la documentation OpenAPI de l'API (docs/openapi.yaml)
+	@mkdir -p docs
+	$(COMPOSE) exec -T php php bin/console api:openapi:export --yaml > docs/openapi.yaml
+	@echo "Documentation écrite dans docs/openapi.yaml"
 
 ## —— Site ————————————————————————————————————————————————
 dev: ## Suit les logs du site (http://localhost:5173), démarré par make up
