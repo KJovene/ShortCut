@@ -67,6 +67,9 @@ final class CatalogueController extends AbstractController
     {
         $tarifs = [];
         foreach ($prestation->getTarifs() as $tarif) {
+            if (!$tarif->isSaisiDepuisAdmin()) {
+                continue;
+            }
             if (null === $tarif->getDebut() || null === $tarif->getFin() || null === $tarif->getPrixCentimes()) {
                 continue;
             }
@@ -82,8 +85,10 @@ final class CatalogueController extends AbstractController
         return [
             'id' => $prestation->getId(),
             'nom' => $prestation->getNom(),
+            'type' => $prestation->getType()?->value,
             'destination' => $prestation->getDestination()?->getSlug(),
             'categorie' => $prestation->getCategorie(),
+            'description' => $prestation->getDescription(),
             'capacite' => $prestation->getCapacite(),
             'accessible' => $prestation->isAccessible(),
             'duree' => $prestation->getDureeMinutes(),

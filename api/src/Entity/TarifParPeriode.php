@@ -43,6 +43,10 @@ class TarifParPeriode
     #[Assert\Positive]
     private ?int $sejourMinimumNuits = null;
 
+    /** Vrai uniquement pour un tarif saisi ou confirmé depuis le panneau admin. */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $saisiDepuisAdmin = false;
+
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Utilisateur $saisiPar = null;
@@ -128,6 +132,18 @@ class TarifParPeriode
     public function setSejourMinimumNuits(?int $sejourMinimumNuits): static
     {
         $this->sejourMinimumNuits = $sejourMinimumNuits;
+
+        return $this;
+    }
+
+    public function isSaisiDepuisAdmin(): bool
+    {
+        return $this->saisiDepuisAdmin;
+    }
+
+    public function setSaisiDepuisAdmin(bool $saisiDepuisAdmin): static
+    {
+        $this->saisiDepuisAdmin = $saisiDepuisAdmin;
 
         return $this;
     }

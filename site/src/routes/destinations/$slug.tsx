@@ -232,6 +232,7 @@ function Prestations({
             <img src={p.photo} alt="" className="block h-36 w-full object-cover" />
             <div className="flex flex-col gap-1 px-4 pt-3 pb-4">
               <h3 className="m-0 text-base leading-snug font-bold">{p.nom}</h3>
+              {p.description && <p className="m-0 text-sm leading-snug text-taupe">{p.description}</p>}
               <span className="text-sm text-taupe">
                 {p.categorie}
                 {unite === 'nuit'
@@ -244,6 +245,18 @@ function Prestations({
               <span className="mt-1 text-sm">
                 dès <strong>{formatEuros(p.prix)}</strong> / {unite}
               </span>
+              {p.tarifs?.map((tarif) => (
+                <span key={`${tarif.dateDebut}-${tarif.dateFin}`} className="text-xs text-taupe-clair">
+                  Valable du{' '}
+                  {new Date(`${tarif.dateDebut}T00:00:00`).toLocaleDateString('fr-FR')} au{' '}
+                  {new Date(`${tarif.dateFin}T00:00:00`).toLocaleDateString('fr-FR')}
+                  {' · '}
+                  {formatEuros(tarif.prix)} / {tarif.unite === 'par_nuit' ? 'nuit' : 'personne'}
+                  {tarif.sejourMinimumNuits
+                    ? ` · Minimum ${tarif.sejourMinimumNuits} nuit${tarif.sejourMinimumNuits > 1 ? 's' : ''}`
+                    : ''}
+                </span>
+              ))}
             </div>
           </article>
         ))}

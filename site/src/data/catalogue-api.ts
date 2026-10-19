@@ -32,8 +32,10 @@ const catalogueSchema = z.object({
         z.object({
           id: z.number().nullable(),
           nom: z.string().nullable(),
+          type: z.enum(['logement', 'activite']).nullable(),
           destination: z.string().nullable(),
           categorie: z.string().nullable(),
+          description: z.string().nullable(),
           capacite: z.number(),
           accessible: z.boolean(),
           duree: z.number().nullable(),
@@ -86,12 +88,24 @@ function mapperPrestation(
     nom: raw.nom ?? fallback?.nom ?? 'Prestation',
     destination: raw.destination ?? fallback?.destination ?? '',
     categorie: raw.categorie ?? fallback?.categorie ?? '',
+    description: raw.description ?? fallback?.description,
     capacite: raw.capacite,
     prix: tarif ? tarif.prixCentimes / 100 : (fallback?.prix ?? 0),
     photo: imageUrl('prestations', raw.photo, fallback?.photo ?? ''),
+    imageNom: raw.photo ?? fallback?.photo,
     envies: raw.envies,
     accessible: raw.accessible,
     duree: raw.duree ?? undefined,
+    dateDebut: tarif?.debut,
+    dateFin: tarif?.fin,
+    sejourMinimumNuits: tarif?.sejourMinimumNuits ?? undefined,
+    tarifs: raw.tarifs.map((item) => ({
+      dateDebut: item.debut,
+      dateFin: item.fin,
+      prix: item.prixCentimes / 100,
+      unite: item.unite,
+      sejourMinimumNuits: item.sejourMinimumNuits ?? undefined,
+    })),
   }
 }
 
@@ -102,8 +116,8 @@ function mapperDestination(
   const climat = climatParMois(raw.climat, fallback?.temperatures ?? [], fallback?.pluie ?? [])
   const temperatures = climat.map((p) => p.temperature)
   const pluie = climat.map((p) => p.pluie)
-  const logements = raw.prestations.filter((p) => p.tarifs.some((t) => t.unite === 'par_nuit'))
-  const activites = raw.prestations.filter((p) => !p.tarifs.some((t) => t.unite === 'par_nuit'))
+  const logements = raw.prestations.filter((p) => p.type === 'logement')
+  const activites = raw.prestations.filter((p) => p.type === 'activite')
   const moisIdeal = temperatures.indexOf(Math.max(...temperatures))
 
   return {

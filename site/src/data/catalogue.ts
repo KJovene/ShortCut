@@ -70,11 +70,24 @@ export interface Prestation {
   capacite: number
   /** Logement : prix par nuit pour le logement entier. Activité : prix par personne. */
   prix: number
+  unite?: string
   photo: string
+  imageNom?: string
   envies: string[]
   accessible?: boolean
   /** Activité : durée en minutes. */
   duree?: number
+  description?: string
+  dateDebut?: string
+  dateFin?: string
+  sejourMinimumNuits?: number
+  tarifs?: {
+    dateDebut: string
+    dateFin: string
+    prix: number
+    unite?: string
+    sejourMinimumNuits?: number
+  }[]
 }
 
 const photoDestination = (slug: string) => `/uploads/destinations/${slug}.jpg`
