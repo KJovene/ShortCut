@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib/cn'
 
 /** Nom de l'agence, en attente de son identité définitive (même mention que sur les maquettes). */
-export const NOM_AGENCE = '[Agence]'
+export const NOM_AGENCE = '[Détour]'
 
 export function Logo({ className, clair = false }: { className?: string; clair?: boolean }) {
   return (
