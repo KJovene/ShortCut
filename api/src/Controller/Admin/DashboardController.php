@@ -41,7 +41,9 @@ final class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('<span class="bo-logo-marque">S</span><span class="bo-logo-texte"><strong>ShortCut</strong><small>Backoffice</small></span>')
+            // Logo et favicon Détour, copiés du site dans public/admin (servis aussi par le proxy Vite).
+            ->setTitle('<img class="bo-logo-marque" src="/admin/logo-detour.svg" alt=""><span class="bo-logo-texte"><strong>Détour</strong><small>Backoffice</small></span>')
+            ->setFaviconPath('admin/favicon.svg')
             ->setLocales(['fr'])
             // La maquette n'a qu'un thème clair.
             ->disableDarkMode();
@@ -55,14 +57,16 @@ final class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        $nouvelles = $this->demandes->compterParStatut($this->conseillerConnecte())[StatutDemande::Nouvelle->value];
+        yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-home');
+        yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox');
+        yield MenuItem::linkTo(ClientCrudController::class, 'Clients', 'fa fa-address-book');
 
-        yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-table-cells-large');
-
-        yield MenuItem::section('Activité');
-        yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox')
-            ->setBadge($nouvelles > 0 ? $nouvelles : null, 'danger');
+        yield MenuItem::section('Catalogue');
         yield MenuItem::linkToRoute('Climat et tarifs', 'fa fa-cloud-sun', 'admin_destinations');
+        yield MenuItem::linkTo(DestinationCrudController::class, 'Destinations', 'fa fa-earth-europe');
+        yield MenuItem::linkTo(LogementCrudController::class, 'Logements', 'fa fa-bed');
+        yield MenuItem::linkTo(ActiviteCrudController::class, 'Activités', 'fa fa-person-hiking');
+        yield MenuItem::linkTo(PrestataireCrudController::class, 'Prestataires', 'fa fa-handshake');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');

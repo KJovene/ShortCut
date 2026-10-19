@@ -1,0 +1,9 @@
+{
+  "name": "Détour · Voyages sur mesure",
+  "short_name": "Détour",
+  "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }],
+  "theme_color": "#C2471E",
+  "background_color": "#FBF6EE",
+  "display": "standalone",
+  "start_url": "/"
+}

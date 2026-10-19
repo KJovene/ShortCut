@@ -8,7 +8,7 @@ Les agents IA n'accèdent aux données de l'agence qu'à travers ces sept outils
 | `chercher_destinations` | Trouver les destinations compatibles (zone, climat, dates, envies) | Conversation, Recherche | `CatalogueRecherche::destinations()` | Catalogue publié | — |
 | `chercher_logements` | Lister les logements compatibles d'une destination, avec leurs tarifs aux dates | Recherche, Modification | `CatalogueRecherche::logements()` | Catalogue publié | — |
 | `chercher_activites` | Lister les activités compatibles d'une destination, selon les âges | Recherche, Modification | `CatalogueRecherche::activites()` | Catalogue publié | — |
-| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `ChiffrageService::calculerNiveaux()` | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
+| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `BudgetCalculator::calculer()` (outil `App\Agent\Outil\CalculerBudget`) | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
 | `enregistrer_proposition` | Enregistrer une version de proposition à partir d'un chiffrage | Chiffrage et rédaction, Modification | `PropositionService::enregistrer()` | Chiffrage de la demande courante | Proposition et lignes de la demande courante |
 | `transmettre_au_conseiller` | Passer la main à un conseiller | Tous | `DemandeService::transmettreAuConseiller()` | — | Demande et conversation courantes |
 
@@ -17,6 +17,8 @@ Les agents IA n'accèdent aux données de l'agence qu'à travers ces sept outils
 ### Contexte imposé par le serveur
 
 Aucun outil ne reçoit d'identifiant de demande, de conversation, de proposition ou de client. Le serveur construit un **contexte** à partir du jeton de conversation du visiteur (`VisiteurChatbot`, ticket #173) et le passe à chaque service :
+
+Code : `App\Agent\ContexteAgent`, `App\Agent\Outil` et `App\Agent\EntreeInvalide` (une entrée refusée, renvoyée au modèle avec `is_error`).
 
 ```php
 final class ContexteAgent
@@ -31,13 +33,16 @@ final class ContexteAgent
 interface Outil
 {
     public function nom(): string;               // ex. « chercher_logements »
-    public function description(): string;
-    /** @return array<string, mixed> schéma JSON d'entrée */
-    public function schemaEntree(): array;
-    /** @param array<string, mixed> $entree @return array<string, mixed> */
+    /** @return array<string, mixed> définition envoyée à l'API : name, description, strict, input_schema */
+    public function definition(): array;
+    /** @param array<string, mixed> $entree @return array<string, mixed> ; entrée refusée : OutilException */
     public function executer(ContexteAgent $contexte, array $entree): array;
 }
 ```
+
+Code : `api/src/Chatbot/ContexteAgent.php` et `api/src/Chatbot/Outil/`. Un outil est un service Symfony qui implémente `Outil` (tag ajouté automatiquement) ; chaque agent liste ses outils dans un ordre fixe (`AgentConversation::OUTILS`), pour que le début de la requête reste identique d'un appel à l'autre et profite du cache. Le ticket #192 livre une version simple des trois outils de l'agent Conversation : `enregistrer_exigences` (fiche et compte client), `chercher_destinations` (zone et températures, sans tarifs ni envies) et `transmettre_au_conseiller` (demande prioritaire, conversation reprise). Les tickets #194, #197 et #202 les complètent.
+
+Pas d'`eager_input_streaming` sur ces outils : leurs entrées sont courtes, et ce mode désactiverait la validation par l'API dont dépend le mode strict.
 
 ### Aucun outil ne lit les données d'un autre client
 
@@ -322,6 +327,23 @@ Sortie (extrait, niveau essentiel seul) :
   },
   "nonChiffrable": null
 }
+```
+
+La sortie contient aussi `avertissement` (« Première proposition, prix estimés, à confirmer par votre conseiller. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
+
+Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contient aussi `arbitrages` (ticket #206, voir `docs/chiffrage.md`) : l'agent les présente au client et, s'il en accepte un, rappelle l'outil avec ses `etapes`.
+
+```json
+"arbitrages": [
+  {
+    "type": "moins_de_nuits_et_autre_periode",
+    "libelle": "Réduire à 3 nuits, du 28/09/2027 au 01/10/2027, à une période moins chère",
+    "etapes": [{ "dateDebut": "2027-09-28", "nombreDeNuits": 3 }],
+    "totalEuros": 4448, "parPersonneEuros": 370.67,
+    "tientDansLeBudget": false, "ecartAuBudgetEuros": 848,
+    "hypotheses": ["Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 3 nuits du 28/09/2027 au 01/10/2027, tarif de juin à septembre 2027", "…"]
+  }
+]
 ```
 
 Si un tarif manque, `niveaux` vaut `null` et `nonChiffrable` explique pourquoi : `{"prestation": "Guesthouse Reykjavik Centre", "date": "2027-01-16", "raison": "Aucun tarif saisi à cette date."}`. L'agent propose alors un autre logement ou d'autres dates, ou appelle `transmettre_au_conseiller`.

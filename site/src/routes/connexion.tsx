@@ -12,6 +12,15 @@ import {
 } from '@/lib/auth'
 
 export const Route = createFileRoute('/connexion')({
+  head: () => ({
+    meta: [
+      { title: 'Connexion' },
+      {
+        name: 'description',
+        content: 'Connectez-vous pour suivre vos voyages, vos propositions et vos conversations.',
+      },
+    ],
+  }),
   component: PageConnexion,
 })
 
@@ -33,7 +42,7 @@ function PageConnexion() {
       if (accedeAuBackoffice(profil)) {
         ouvrirBackoffice()
       } else {
-        void navigate({ to: '/profil' })
+        void navigate({ to: '/espace' })
       }
     },
   })

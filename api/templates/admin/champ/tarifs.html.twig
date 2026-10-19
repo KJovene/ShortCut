@@ -1,0 +1,24 @@
+{# Tarifs d'un logement ou d'une activité, période par période (prix d'achat avant marge). #}
+{% set tarifs = entity.instance.tarifs %}
+{% if tarifs is empty %}
+    <span class="bo-vide">Aucun tarif : cette fiche ne sera pas proposée par le chatbot.</span>
+{% else %}
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead>
+            <tr>
+                <th scope="col">Période</th>
+                <th scope="col">Prix</th>
+                <th scope="col">Séjour minimum</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tarif in tarifs %}
+                <tr>
+                    <td>{{ tarif.debut|date('d/m/Y') }} – {{ tarif.fin|date('d/m/Y') }}</td>
+                    <td>{{ (tarif.prixCentimes / 100)|number_format(2, ',', ' ') }} € {{ tarif.unite.label|lower }}</td>
+                    <td>{{ tarif.sejourMinimumNuits ? tarif.sejourMinimumNuits ~ ' nuits' : '—' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+{% endif %}

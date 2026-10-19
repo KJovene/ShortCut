@@ -50,7 +50,9 @@ hébergement = Σ sur chaque nuit (prix de la nuit) × nombre d'unités
 transport = (vol aller-retour + transfert aéroport) × voyageurs
 ```
 
-- Prix par personne pris dans la **fourchette** du transporteur pour la ville de départ et la destination : **minimum** au niveau essentiel, **milieu** au niveau équilibré, **maximum** au niveau confort.
+- Prix par personne pris dans la **fourchette** du transporteur pour la ville de départ et la destination : **minimum** au niveau essentiel, **milieu** au niveau équilibré (arrondi au centime supérieur), **maximum** au niveau confort.
+- Si plusieurs transporteurs desservent le trajet, la fourchette au minimum le plus bas est retenue. Les villes sont rapprochées sans tenir compte des majuscules, des accents ni d'une petite faute.
+- Sans fourchette pour le vol ou le transfert, la demande n'est pas chiffrable (voir [Données manquantes](#données-manquantes)).
 - Les enfants paient le même prix que les adultes, faute de tarif enfant saisi.
 - Le poste est toujours affiché comme **estimé** (fourchette, pas de tarif précis).
 - Si le client ne veut pas que le transport soit inclus, ce poste vaut 0 et l'hypothèse « transport non inclus » est affichée.
@@ -61,7 +63,7 @@ transport = (vol aller-retour + transfert aéroport) × voyageurs
 activités = Σ prix par personne × participants
 ```
 
-- **Participants** : les voyageurs dont l'âge atteint l'âge minimum de l'activité. Les autres ne la font pas et ne la paient pas.
+- **Participants** : les voyageurs dont l'âge atteint l'âge minimum de l'activité. Les autres ne la font pas et ne la paient pas. Les adultes ont toujours l'âge requis ; un enfant dont l'âge n'est pas encore connu compte comme le plus jeune.
 - Une activité dont la capacité est inférieure au nombre de participants est organisée en plusieurs sessions, sans surcoût.
 - Prix : le tarif de la période qui couvre le premier jour du voyage.
 
@@ -75,24 +77,44 @@ Chaque proposition présente trois niveaux. Le chatbot ne retient que des presta
 | **Équilibré** | Voir ci-dessous : vise le budget du client | Demandées, plus les suggestions qui tiennent dans le budget | Milieu de la fourchette |
 | **Confort** | Le logement compatible le plus cher (par étape) | Demandées et toutes les suggestions | Maximum de la fourchette |
 
-« Le moins cher » et « le plus cher » se comparent sur le prix moyen des tarifs saisis pour le logement.
+« Le moins cher » et « le plus cher » se comparent sur le coût du logement pour l'étape : ses nuits aux tarifs des dates, multipliées par le nombre d'unités.
 
 ### Écart au budget du client
 
 Le budget du client peut être un total ou un montant par personne : la comparaison se fait sur la même base.
 
-- **Budget donné et suffisant** (l'essentiel tient dans le budget) : l'équilibré est la combinaison **la plus complète qui tient dans le budget**, parmi tous les choix de logements et de suggestions, transport au milieu de la fourchette. Si aucune ne tient ainsi, on reprend la même recherche avec le transport au minimum. L'essentiel et le confort encadrent l'équilibré.
+- **Budget donné et suffisant** (l'essentiel tient dans le budget) : l'équilibré est la combinaison **la plus complète qui tient dans le budget**, parmi tous les choix de logements et de suggestions, transport au milieu de la fourchette. « La plus complète » est celle au **total le plus élevé** sans dépasser le budget ; à total égal, celle qui a le plus d'activités. Une meilleure catégorie de logement peut donc l'emporter sur une activité de plus (demande test 07 : la suite avec la croisière plutôt que l'hôtel avec deux activités). Si aucune ne tient ainsi, on reprend la même recherche avec le transport au minimum. L'essentiel et le confort encadrent l'équilibré.
 - **Budget absent** : le chatbot calcule les trois niveaux, l'équilibré prenant le logement de prix médian (le moins cher des deux du milieu si leur nombre est pair) et les seules activités demandées. Il présente les **trois fourchettes** et demande laquelle convient avant de détailler la proposition.
 - **Budget insuffisant** (même l'essentiel dépasse le budget) : le chatbot le dit clairement, avec les chiffres, et propose des **arbitrages chiffrés avec la même formule** : moins de nuits, une autre période (saison moins chère), une autre catégorie d'hébergement, une destination voisine. Il ne baisse jamais les prix des prestataires pour tenir un budget. Les trois niveaux restent calculés pour information, l'équilibré prenant alors la combinaison la moins chère avec le transport au milieu de la fourchette.
 
 ## Hypothèses affichées au client
 
-Chaque niveau liste ses hypothèses de budget :
+Chaque niveau liste ses hypothèses de budget (ticket #206), pour que le client comprenne d'où vient chaque montant :
 
-- saison(s) tarifaire(s) appliquée(s) et dates ;
-- catégorie d'hébergement et nombre de chambres ou d'unités ;
+- pour chaque logement : catégorie, nombre de chambres (ou d'unités si le nombre de chambres n'est pas saisi), nuits et dates, saison(s) tarifaire(s) appliquée(s) ;
+- pour une activité : les participants si certains n'ont pas l'âge minimum, les sessions si la capacité ne suffit pas ;
 - transport inclus ou non, et position dans la fourchette (estimé) ;
 - frais de dossier appliqués.
+
+Exemple (essentiel de l'exemple 2) :
+
+```text
+Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 4 nuits du 21/10/2027 au 25/10/2027, tarif d'octobre à décembre 2027
+Transport inclus : vols et transferts estimés au minimum de la fourchette, pour 12 voyageurs
+Frais de dossier groupe : 200 €
+```
+
+## Arbitrages quand le budget est insuffisant
+
+Le service `ArbitrageCalculator` chiffre, au niveau essentiel et avec la même formule, les mêmes prestations autrement :
+
+1. **Moins de nuits** : une nuit de moins à la fois, à l'étape la plus longue (chaque étape garde au moins une nuit), jusqu'au séjour le plus long qui tient dans le budget ; si aucun ne tient, une nuit de moins, chiffrée.
+2. **Une autre période** : les mêmes nuits aux dates les moins chères, à six mois au plus des dates demandées et jamais dans le passé ; à prix égal, les dates les plus proches.
+3. **Les deux à la fois**, seulement si ni l'un ni l'autre ne suffit seul.
+
+Chaque arbitrage donne ses dates, son total, son prix par personne, s'il tient dans le budget et l'écart restant. Changer de catégorie d'hébergement ou de destination demande d'autres candidats : l'agent les cherche, puis rappelle `calculer_budget`.
+
+Pour l'exemple 2 (demande test 06), trois arbitrages, aucun ne suffisant : 3 nuits (448,67 € par personne), fin septembre en basse saison (422,67 €), 3 nuits fin septembre (370,67 €). Le chatbot le dit clairement au lieu de proposer un voyage hors budget.
 
 ## Données manquantes
 
@@ -142,7 +164,7 @@ hébergement 3 × 520 = 1 560 € ; vols 1 800 € ; transferts 180 €
 coût 3 540 € + marge 708 € + frais 200 € = 4 448 €, soit 370,67 € par personne
 ```
 
-Le chatbot l'annonce : même avec ces arbitrages, il faut compter environ 371 € par personne.
+Le chatbot l'annonce : même avec ces arbitrages, il faut compter environ 371 € par personne. Voir [Arbitrages quand le budget est insuffisant](#arbitrages-quand-le-budget-est-insuffisant) : le service retient les dates du 28 septembre au 1er octobre, les plus proches des dates demandées en basse saison, pour le même montant.
 
 ### Exemple 3 : budget absent
 
@@ -162,6 +184,10 @@ Logements : Hôtel Fira Blue (150 € la nuit) et Suite Caldera Oia (420 € la 
 
 Le chatbot présente les trois fourchettes (environ 2 300 €, 2 700 € et 5 500 € pour deux) et demande laquelle convient avant de détailler la proposition.
 
+## Implémentation
+
+Service `App\Chiffrage\BudgetCalculator` (ticket #205), sans état et sans accès à la base : il reçoit une `DemandeDeChiffrage` (voyageurs, budget, étapes et candidats, fourchettes, marge et frais) et rend les trois niveaux poste par poste, ou la raison pour laquelle la demande n'est pas chiffrable. L'outil `calculer_budget` (`App\Agent\Outil\CalculerBudget`) le met à la disposition des agents.
+
 ## Tests
 
-Les budgets attendus des dix demandes test (`api/tests/demandes`) sont calculés avec exactement cette formule, au centime près : le service de chiffrage doit les retrouver.
+Les budgets attendus des dix demandes test (`api/tests/demandes`) sont calculés avec exactement cette formule, au centime près : `tests/Chiffrage/ChiffrageDesDemandesTestTest.php` vérifie que le service les retrouve poste par poste, ainsi que les trois exemples ci-dessus et l'arbitrage de l'exemple 2. `make coverage` mesure la couverture des tests (plus de 99 % des lignes du service).

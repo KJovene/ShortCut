@@ -138,6 +138,7 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
             ->setCategorie($p['categorie'])
             ->setDescription($p['description'] ?? null)
             ->setCapacite($p['capacite'])
+            ->setChambres($p['chambres'] ?? null)
             ->setEquipements($p['equipements'] ?? [])
             ->setAccessible($p['accessible'] ?? false)
             ->setDureeMinutes($p['duree'] ?? null)

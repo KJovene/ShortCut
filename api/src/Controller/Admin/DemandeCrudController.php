@@ -7,6 +7,7 @@ use App\Entity\Utilisateur;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
+use App\Form\TexteSuggereType;
 use App\Repository\DemandeRepository;
 use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -68,7 +69,8 @@ final class DemandeCrudController extends AbstractCrudController
             ->setDefaultSort(['prioritaire' => 'DESC', 'creeLe' => 'DESC'])
             ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email'])
             // Onglets par statut au-dessus de la liste.
-            ->overrideTemplate('crud/index', 'admin/demande/index.html.twig');
+            ->overrideTemplate('crud/index', 'admin/demande/index.html.twig')
+            ->addFormTheme('admin/form/texte_suggere.html.twig');
     }
 
     /** Compteurs des onglets, sur le même périmètre que la liste (ses demandes pour un conseiller). */
@@ -179,7 +181,11 @@ final class DemandeCrudController extends AbstractCrudController
             ->setChoices(self::choix(TypeDeVoyage::cases()))
             ->setFormTypeOption('choice_value', static fn (?TypeDeVoyage $t) => $t?->value);
         yield TextField::new('lieuOuZone', 'Lieu ou zone');
-        yield TextField::new('villeDepart', 'Ville de départ')->hideOnIndex();
+        // Suggestions : les villes de départ du catalogue, pour que le chiffrage retrouve les vols.
+        yield TextField::new('villeDepart', 'Ville de départ')
+            ->setFormType(TexteSuggereType::class)
+            ->setFormTypeOption('suggestions', 'departs')
+            ->hideOnIndex();
         yield DateField::new('dateDebut', 'Départ');
         yield DateField::new('dateFin', 'Retour')->hideOnIndex();
         yield BooleanField::new('datesFlexibles', 'Dates flexibles')->renderAsSwitch(false)->hideOnIndex();

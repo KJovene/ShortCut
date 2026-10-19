@@ -2,19 +2,26 @@
 
 namespace App\Controller;
 
+use App\Chatbot\AgentConversation;
 use App\Entity\Conversation;
 use App\Entity\Demande;
+use App\Repository\ConversationRepository;
+use App\Security\VisiteurChatbot;
 use App\Security\Voter\DemandeVoter;
 use App\Service\RechercheCatalogueService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\EventStreamResponse;
+use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
- * Routes publiques du chatbot. L'envoi des messages en streaming (POST /api/chat) arrive avec le ticket #192.
+ * Routes publiques du chatbot. Toute la logique IA passe par ici : le site ne parle jamais à l'API Claude.
+ * Chaque appel est limité en débit par adresse IP (LimiteChatbotSubscriber).
  */
 #[Route('/api/chat')]
 final class ChatController extends AbstractController
@@ -46,6 +53,40 @@ final class ChatController extends AbstractController
         ]);
     }
 
+    /** Longueur maximale d'un message du client, en caractères. */
+    public const MESSAGE_MAX = 2000;
+
+    /**
+     * Envoie un message du client et diffuse la réponse de l'assistant en Server-Sent Events.
+     * Corps JSON {"message": "…"} ; la conversation est celle du jeton (en-tête X-Conversation-Token).
+     */
+    #[Route('', name: 'chat_envoyer', methods: ['POST'])]
+    public function envoyer(
+        Request $request,
+        #[CurrentUser] VisiteurChatbot $visiteur,
+        ConversationRepository $conversations,
+        AgentConversation $agent,
+    ): Response {
+        try {
+            $message = $request->toArray()['message'] ?? null;
+        } catch (JsonException) {
+            $message = null;
+        }
+        $message = \is_string($message) ? trim($message) : '';
+        if ('' === $message || mb_strlen($message) > self::MESSAGE_MAX) {
+            return $this->json(
+                ['erreur' => \sprintf('Le message doit contenir entre 1 et %d caractères.', self::MESSAGE_MAX)],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $conversation = $conversations->find($visiteur->getConversationId())
+            ?? throw $this->createNotFoundException('Conversation introuvable.');
+        $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $conversation);
+
+        return new EventStreamResponse(static fn () => $agent->repondre($conversation, $message));
+    }
+
     /** Ouvre une conversation et sa demande vide ; le jeton renvoyé authentifie les appels suivants. */
     #[Route('/conversations', name: 'chat_demarrer', methods: ['POST'])]
     public function demarrer(EntityManagerInterface $em): JsonResponse
@@ -62,7 +103,7 @@ final class ChatController extends AbstractController
     }
 
     /** Récapitulatif de la demande en cours, affiché par le widget. */
-    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\d+'])]
+    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\\d+'])]
     public function demande(Demande $demande): JsonResponse
     {
         $this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande);

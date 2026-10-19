@@ -74,6 +74,24 @@ class DemandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Historique d'un client pour sa fiche : ses demandes, les plus récentes d'abord, avec leur conversation.
+     *
+     * @return list<Demande>
+     */
+    public function findHistoriqueDuClient(Utilisateur $client): array
+    {
+        return $this->createQueryBuilder('d')
+            ->addSelect('conversation', 'conseiller')
+            ->leftJoin('d.conversation', 'conversation')
+            ->leftJoin('d.conseiller', 'conseiller')
+            ->where('d.client = :client')
+            ->setParameter('client', $client)
+            ->orderBy('d.creeLe', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     private function duConseiller(?Utilisateur $conseiller): QueryBuilder
     {
         $qb = $this->createQueryBuilder('d');

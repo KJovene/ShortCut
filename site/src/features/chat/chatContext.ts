@@ -9,6 +9,10 @@ export interface EtatChat {
   /** L'assistant est en train d'écrire. */
   reflexion: boolean
   propositionId?: string
+  /** Jeton de la conversation côté API, obtenu au premier message. */
+  jeton?: string
+  /** Le client a confirmé son récapitulatif : la demande est transmise, la saisie est fermée. */
+  terminee?: boolean
   /** Fenêtre du chatbot ouverte (pages autres que l'accueil). */
   ouvert: boolean
   brouillon: string

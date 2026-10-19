@@ -6,6 +6,9 @@ use App\Repository\PeriodeClimatiqueRepository;
 use App\Validator\NoPeriodOverlap;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Context;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /** Climat moyen d'une destination sur une période. */
@@ -25,19 +28,29 @@ class PeriodeClimatique
     private ?Destination $destination = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[Assert\NotNull(message: 'Indiquez la date de début.')]
+    #[Groups(['destination:public'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
     private ?\DateTimeImmutable $debut = null;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
-    #[Assert\GreaterThanOrEqual(propertyPath: 'debut')]
+    #[Assert\NotNull(message: 'Indiquez la date de fin.')]
+    #[Assert\GreaterThanOrEqual(propertyPath: 'debut', message: 'La fin doit être le même jour que le début ou après.')]
+    #[Groups(['destination:public'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
     private ?\DateTimeImmutable $fin = null;
 
     /** En °C. */
     #[ORM\Column(type: Types::FLOAT)]
+    #[Assert\NotNull(message: 'Indiquez la température moyenne.')]
+    #[Assert\Range(min: -50, max: 60)]
+    #[Groups(['destination:public'])]
     private ?float $temperatureMoyenne = null;
 
     /** Précipitations sur la période, en mm. */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\PositiveOrZero]
+    #[Groups(['destination:public'])]
     private ?int $pluieMm = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]

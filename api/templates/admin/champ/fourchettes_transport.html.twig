@@ -1,0 +1,24 @@
+{# Fourchettes de prix d'un transporteur, en euros par personne. #}
+{% set fourchettes = entity.instance.fourchettesTransport %}
+{% if fourchettes is empty %}
+    <span class="bo-vide">Aucune fourchette</span>
+{% else %}
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead>
+            <tr>
+                <th scope="col">Départ</th>
+                <th scope="col">Arrivée</th>
+                <th scope="col">Prix par personne</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fourchette in fourchettes %}
+                <tr>
+                    <td>{{ fourchette.depart }}</td>
+                    <td>{{ fourchette.arrivee }}</td>
+                    <td>{{ (fourchette.minCentimes / 100)|number_format(2, ',', ' ') }} € à {{ (fourchette.maxCentimes / 100)|number_format(2, ',', ' ') }} €</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+{% endif %}

@@ -1,0 +1,9 @@
+{# Champ TexteSuggereType : un champ texte suivi de ses suggestions. #}
+{% block texte_suggere_widget %}
+    {{ block('form_widget_simple') }}
+    <datalist id="{{ id }}_suggestions">
+        {% for suggestion in suggestions %}
+            <option value="{{ suggestion }}"></option>
+        {% endfor %}
+    </datalist>
+{% endblock %}

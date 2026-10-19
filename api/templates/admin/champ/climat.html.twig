@@ -1,0 +1,24 @@
+{# Climat d'une destination, période par période (saisi depuis « Saisir une période »). #}
+{% set periodes = entity.instance.periodesClimatiques %}
+{% if periodes is empty %}
+    <span class="bo-vide">Aucune période saisie : le chatbot ne pourra pas vérifier le climat.</span>
+{% else %}
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead>
+            <tr>
+                <th scope="col">Période</th>
+                <th scope="col">Température moyenne</th>
+                <th scope="col">Pluie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for periode in periodes %}
+                <tr>
+                    <td>{{ periode.debut|date('d/m/Y') }} – {{ periode.fin|date('d/m/Y') }}</td>
+                    <td>{{ periode.temperatureMoyenne|number_format(1, ',') }} °C</td>
+                    <td>{{ periode.pluieMm is null ? '—' : periode.pluieMm ~ ' mm' }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+{% endif %}

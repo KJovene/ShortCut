@@ -10,19 +10,20 @@ import { chargerCatalogue, type CatalogueDestination } from '@/data/catalogue-ap
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
 import { SectionAssistant } from '@/features/accueil/SectionAssistant'
+import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
 
 export const Route = createFileRoute('/')({
-  loader: () => chargerCatalogue(),
-  head: () => ({
-    meta: [
-      { title: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes' },
-      {
-        name: 'description',
-        content:
-          "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
-      },
-    ],
+  loader: async ({ context }) => ({
+    catalogue: await chargerCatalogue(),
+    page: await context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null),
+  }),
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData.page, {
+      titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
+      description:
+        "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+    }),
   }),
   component: HomePage,
 })
@@ -33,7 +34,7 @@ const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
 ]
 
 function HomePage() {
-  const catalogue = Route.useLoaderData() as CatalogueDestination[]
+  const { catalogue } = Route.useLoaderData() as { catalogue: CatalogueDestination[] }
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
   const [activeSlug, setActiveSlug] = useState('santorin')
   const active = catalogue.find((d) => d.slug === activeSlug) ?? catalogue[0]

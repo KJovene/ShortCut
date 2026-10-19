@@ -32,6 +32,14 @@ class Conversation
     #[ORM\Column(type: Types::JSON)]
     private array $messages = [];
 
+    /**
+     * Échanges au format de l'API Claude (réflexion, appels d'outils et résultats compris), renvoyés tels quels
+     * à chaque appel. L'historique ne fait que s'allonger : modifier un ancien message invaliderait la réflexion.
+     * Stocké en texte et non en JSON Doctrine, qui décode en tableaux et changerait « {} » en « [] ».
+     */
+    #[ORM\Column(type: Types::TEXT, options: ['default' => '[]'])]
+    private string $historique = '[]';
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $debutLe;
 
@@ -90,6 +98,36 @@ class Conversation
     public function setMessages(array $messages): static
     {
         $this->messages = $messages;
+
+        return $this;
+    }
+
+    /** Ajoute un message à la conversation lisible (backoffice, reprise par un conseiller). */
+    public function ajouterMessage(string $role, string $contenu): static
+    {
+        $this->messages[] = ['role' => $role, 'contenu' => $contenu, 'le' => (new \DateTimeImmutable())->format(\DATE_ATOM)];
+
+        return $this;
+    }
+
+    /**
+     * Messages décodés en objets (\stdClass), pour être réencodés à l'identique.
+     *
+     * @return list<mixed>
+     */
+    public function getHistorique(): array
+    {
+        $historique = json_decode($this->historique, false, flags: \JSON_THROW_ON_ERROR);
+
+        return \is_array($historique) ? array_values($historique) : [];
+    }
+
+    /**
+     * @param list<mixed> $historique
+     */
+    public function setHistorique(array $historique): static
+    {
+        $this->historique = json_encode($historique, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_PRESERVE_ZERO_FRACTION);
 
         return $this;
     }
