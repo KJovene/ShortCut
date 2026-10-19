@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Destinations - périodes{% endblock %}
+
+{% block body %}
+    <main>
+        <h1>Climat et tarifs par période</h1>
+        <p>Choisissez une destination pour saisir ou compléter ses périodes climatiques et ses tarifs.</p>
+        <ul>
+            {% for destination in destinations %}
+                <li>
+                    <a href="{{ path('admin_destination_periode', {id: destination.id}) }}">
+                        {{ destination.ville }}{% if destination.pays %} ({{ destination.pays }}){% endif %}
+                    </a>
+                </li>
+            {% else %}
+                <li>Aucune destination n'est disponible.</li>
+            {% endfor %}
+        </ul>
+    </main>
+{% endblock %}

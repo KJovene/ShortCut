@@ -62,6 +62,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(ClientCrudController::class, 'Clients', 'fa fa-address-book');
 
         yield MenuItem::section('Catalogue');
+        yield MenuItem::linkToRoute('Climat et tarifs', 'fa fa-cloud-sun', 'admin_destinations');
         yield MenuItem::linkTo(DestinationCrudController::class, 'Destinations', 'fa fa-earth-europe');
         yield MenuItem::linkTo(LogementCrudController::class, 'Logements', 'fa fa-bed');
         yield MenuItem::linkTo(ActiviteCrudController::class, 'Activités', 'fa fa-person-hiking');
