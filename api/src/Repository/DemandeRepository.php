@@ -81,7 +81,6 @@ class DemandeRepository extends ServiceEntityRepository
      */
     public function findHistoriqueDuClient(Utilisateur $client): array
     {
-        /** @var list<Demande> */
         return $this->createQueryBuilder('d')
             ->addSelect('conversation', 'conseiller')
             ->leftJoin('d.conversation', 'conversation')

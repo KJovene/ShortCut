@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router'
-import { useState } from 'react'
+import { Link, useLocation } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
 import { MenuCompte } from '@/components/MenuCompte'
 import { IconFermer, IconMenu } from '@/components/ui/icons'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
@@ -13,9 +13,29 @@ const LIENS = [
   { to: '/contact', label: 'Contact' },
 ] as const
 
+/** Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu. */
+const LIENS_MOBILE = [{ to: '/', label: 'Accueil' }, ...LIENS] as const
+
 export function SiteHeader({ className }: { className?: string }) {
-  const [menuOuvert, setMenuOuvert] = useState(false)
+  const pathname = useLocation({ select: (l) => l.pathname })
+  // Le menu mobile reste ouvert sur la page où il a été ouvert : changer de page le referme.
+  const [ouvertSur, setOuvertSur] = useState<string | null>(null)
+  const menuOuvert = ouvertSur === pathname
+  const setMenuOuvert = (ouvert: boolean) => setOuvertSur(ouvert ? pathname : null)
+  const bouton = useRef<HTMLButtonElement>(null)
   const ouvrirAssistant = useOuvrirAssistant()
+
+  // Échap referme le menu et rend le focus au bouton.
+  useEffect(() => {
+    if (!menuOuvert) return
+    const touche = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setOuvertSur(null)
+      bouton.current?.focus()
+    }
+    document.addEventListener('keydown', touche)
+    return () => document.removeEventListener('keydown', touche)
+  }, [menuOuvert])
 
   return (
     <header className={cn('no-print relative z-30', className)}>
@@ -39,23 +59,17 @@ export function SiteHeader({ className }: { className?: string }) {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Connexion, compte et accès au backoffice (branche login). */}
-          <div className="hidden lg:flex">
+          {/* Connexion et inscription, ou « Mon espace » une fois connecté. */}
+          <div className="hidden sm:flex">
             <MenuCompte />
           </div>
-          <button
-            type="button"
-            onClick={() => ouvrirAssistant()}
-            className="hidden min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-brun sm:flex"
-          >
-            Construire mon voyage
-          </button>
           <button
             type="button"
             aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={menuOuvert}
             aria-controls="menu-mobile"
-            onClick={() => setMenuOuvert((o) => !o)}
+            ref={bouton}
+            onClick={() => setMenuOuvert(!menuOuvert)}
             className="flex size-11 items-center justify-center rounded-full md:hidden"
           >
             {menuOuvert ? <IconFermer size={22} /> : <IconMenu size={22} />}
@@ -70,10 +84,11 @@ export function SiteHeader({ className }: { className?: string }) {
           className="absolute inset-x-0 top-full border-y border-lin bg-creme px-4 pb-5 shadow-lg md:hidden"
         >
           <ul className="flex flex-col">
-            {LIENS.map((lien) => (
+            {LIENS_MOBILE.map((lien) => (
               <li key={lien.to}>
                 <Link
                   to={lien.to}
+                  activeOptions={{ exact: lien.to === '/' }}
                   onClick={() => setMenuOuvert(false)}
                   className="flex min-h-12 items-center border-b border-lin font-display text-xl font-semibold"
                   activeProps={{ className: 'text-terre', 'aria-current': 'page' }}
@@ -93,6 +108,9 @@ export function SiteHeader({ className }: { className?: string }) {
           >
             Construire mon voyage
           </button>
+          <div className="mt-3 flex justify-center sm:hidden">
+            <MenuCompte />
+          </div>
         </nav>
       )}
     </header>

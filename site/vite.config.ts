@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => {
       proxy: Object.fromEntries(
         // /uploads : photos du backoffice et des fixtures.
         // /admin et /bundles : EasyAdmin et ses assets, sur la même origine que le site (même cookie de session).
-        ['/api', '/uploads', '/admin', '/bundles'].map((chemin) => [
+        // /sitemap.xml et /robots.txt : générés par l'API à partir des destinations publiées.
+        ['/api', '/uploads', '/admin', '/bundles', '/sitemap.xml', '/robots.txt'].map((chemin) => [
           chemin,
           { target: env.API_PROXY_TARGET || 'http://127.0.0.1:8000', changeOrigin: false },
         ]),

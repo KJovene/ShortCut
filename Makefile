@@ -4,9 +4,9 @@
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
-        migration migrate fixtures db-reset db-test db-ui schema \
+        migration migrate fixtures db-reset db-test db-ui schema openapi \
         dev site-sh site-install site-build \
-        test test-api test-site lint lint-api lint-site stan fix check
+        test test-api coverage test-site lint lint-api lint-site stan fix check
 
 # Les fichiers créés dans le conteneur appartiennent à l'utilisateur de la machine.
 export UID := $(shell id -u)
@@ -111,6 +111,11 @@ schema: ## Régénère le diagramme de la base (docs/schema.md) depuis les entit
 	$(COMPOSE) exec -T php php bin/console app:schema:diagramme --markdown > docs/schema.md
 	@echo "Diagramme écrit dans docs/schema.md"
 
+openapi: ## Exporte la documentation OpenAPI de l'API (docs/openapi.yaml)
+	@mkdir -p docs
+	$(COMPOSE) exec -T php php bin/console api:openapi:export --yaml > docs/openapi.yaml
+	@echo "Documentation écrite dans docs/openapi.yaml"
+
 ## —— Site ————————————————————————————————————————————————
 dev: ## Suit les logs du site (http://localhost:5173), démarré par make up
 	$(COMPOSE) logs -f front
@@ -129,6 +134,9 @@ test: test-api test-site ## Lance tous les tests
 
 test-api: ## Tests de l'API (PHPUnit)
 	$(PHP) php bin/phpunit
+
+coverage: ## Couverture des tests de l'API, classe par classe (détail navigable : api/var/coverage/index.html)
+	$(PHP) php -d pcov.enabled=1 bin/phpunit --coverage-text --coverage-html var/coverage
 
 test-site: ## Tests du site (Vitest)
 	$(NPM) test

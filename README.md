@@ -81,6 +81,8 @@ Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la raci
 | `make composer c="require symfony/mailer"` | Lance Composer dans le conteneur |
 | `make db-ui` | Ouvre Adminer, l'interface web de la base : http://localhost:8080 (serveur `database`, utilisateur et mot de passe `shortcut`, base `shortcut`) |
 | `make schema` | Régénère le diagramme complet de la base dans [`docs/schema.md`](docs/schema.md) à partir des entités Doctrine |
+| `make openapi` | Exporte la documentation OpenAPI de l'API dans [`docs/openapi.yaml`](docs/openapi.yaml) (version interactive : http://localhost:8000/api/docs) |
+| `make coverage` | Couverture des tests de l'API, classe par classe (détail dans `api/var/coverage/index.html`) |
 | `make sh` | Shell dans le conteneur PHP |
 | `make site-sh` | Shell dans le conteneur du site (npm) |
 | `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`, `front`) |
@@ -186,6 +188,25 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
 
   C'est une requête POST : côté site, lire le flux avec `fetch` et `response.body.getReader()`, pas avec `EventSource` (GET seulement).
 - **Agent Conversation** (`api/src/Chatbot`) : Symfony appelle l'API Claude en streaming (`ClientClaude`, client HTTP `claude.client` qui porte la clé), exécute les outils demandés par le modèle (`Chatbot/Outil`, voir [`docs/outils.md`](docs/outils.md)) et rappelle Claude jusqu'à sa réponse finale (8 appels au plus par message). L'historique complet au format de l'API est gardé dans `Conversation::historique`, la conversation lisible dans `Conversation::messages`, chaque appel dans `JournalIA`. Le navigateur ne parle jamais à l'API Claude.
+
+## API du catalogue
+
+Le catalogue est exposé avec API Platform (ticket #185). La documentation OpenAPI interactive est sur http://localhost:8000/api/docs ; `make openapi` l'exporte dans `docs/openapi.yaml`.
+
+| Ressource | Adresse | Filtres de la liste |
+| --- | --- | --- |
+| Destinations | `/api/destinations` | `pays`, `ville`, `slug`, `publiee`, `miseEnAvant`, `mois` (AAAA-MM) avec `temperatureMin` / `temperatureMax`, `envie` |
+| Prestataires | `/api/prestataires` | `nom`, `type` (`hebergeur`, `transporteur`, `guide`, `activite`) |
+| Logements | `/api/logements` | `destination` (IRI), `destinationSlug`, `prestataire`, `categorie`, `capacite[gte]=4`, `chambres[gte]=2`, `accessible`, `envie` (tolère accents et pluriels), `mois` (au moins un tarif dans le mois) |
+| Activités | `/api/activites` | les mêmes, plus `ageMinimum[lte]` et `dureeMinutes[lte]` |
+| Tarifs | `/api/tarifs` | `prestation` (IRI), `unite`, `mois` |
+
+- **Accès** : lecture, création et modification pour les conseillers connectés (session ouverte par `POST /api/connexion`) ; suppression d'une destination, d'un prestataire ou d'une prestation réservée à l'administrateur. Sans session : 401 ; compte client : 403.
+- **Formats** : JSON-LD (`application/ld+json`, avec `totalItems` et la pagination) ou JSON simple (`application/json`). Modification partielle en `PATCH` avec `application/merge-patch+json`.
+- **Logements et activités** sont la même entité `Prestation` : l'adresse fixe le type (un champ `type` envoyé est ignoré).
+- **Validation** : une entrée invalide renvoie 422 avec `violations`, un message en français par champ (`propertyPath`, `message`), y compris pour une valeur du mauvais type ou un filtre `mois` mal écrit.
+- **Données publiques et internes** : groupes de sérialisation `destination:public` / `destination:interne`, `prestation:public` / `prestation:interne`. Les prestataires (contacts) et les tarifs (prix d'achat, avant marge) sont internes. Le site public n'y aura accès qu'en lecture et seulement aux groupes `public` (ticket #216).
+- **Montants** en centimes, dates au format `AAAA-MM-JJ`.
 
 ## Organisation du site
 

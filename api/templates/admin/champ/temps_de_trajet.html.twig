@@ -1,0 +1,11 @@
+{# Temps de trajet d'une destination : « Paris : 2 h 30 ». #}
+{% set trajets = entity.instance.tempsDeTrajet %}
+{% if trajets is empty %}
+    <span class="bo-vide">Non renseigné</span>
+{% else %}
+    <ul class="list-unstyled m-0">
+        {% for ville, minutes in trajets %}
+            <li>{{ ville }} : {{ minutes // 60 }} h {{ '%02d'|format(minutes % 60) }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
