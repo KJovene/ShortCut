@@ -3,7 +3,10 @@
 namespace App\Controller\Admin;
 
 use App\Entity\Utilisateur;
+use App\Enum\StatutDemande;
+use App\Repository\DemandeRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
@@ -16,20 +19,38 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 final class DashboardController extends AbstractDashboardController
 {
-    public function __construct(#[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl)
-    {
+    public function __construct(
+        #[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl,
+        private readonly DemandeRepository $demandes,
+    ) {
     }
 
     public function index(): Response
     {
-        return $this->render('admin/tableau_de_bord.html.twig');
+        $conseiller = $this->conseillerConnecte();
+        $compteurs = $this->demandes->compterParStatut($conseiller);
+
+        return $this->render('admin/tableau_de_bord.html.twig', [
+            'compteurs' => $compteurs,
+            'prioritaires' => $this->demandes->compterPrioritaires($conseiller),
+            'a_traiter' => $this->demandes->aTraiter($conseiller),
+            'statuts' => StatutDemande::cases(),
+        ]);
     }
 
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            ->setTitle('ShortCut')
-            ->setLocales(['fr']);
+            ->setTitle('<span class="bo-logo-marque">S</span><span class="bo-logo-texte"><strong>ShortCut</strong><small>Backoffice</small></span>')
+            ->setLocales(['fr'])
+            // La maquette n'a qu'un thème clair.
+            ->disableDarkMode();
+    }
+
+    public function configureAssets(): Assets
+    {
+        // Sous /admin pour passer par le proxy Vite du site (localhost:5173), comme les pages du backoffice.
+        return Assets::new()->addCssFile('admin/backoffice.css');
     }
 
     public function configureMenuItems(): iterable
@@ -41,6 +62,9 @@ final class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');
+
+        yield MenuItem::section();
+        yield MenuItem::linkToUrl('Retour au site', 'fa fa-arrow-left', rtrim($this->siteUrl, '/').'/');
     }
 
     public function configureUserMenu(UserInterface $user): UserMenu
@@ -48,5 +72,13 @@ final class DashboardController extends AbstractDashboardController
         $menu = parent::configureUserMenu($user);
 
         return $user instanceof Utilisateur ? $menu->setName($user->getNom()) : $menu;
+    }
+
+    /** Un conseiller ne compte que ses demandes ; null pour l'administrateur, qui voit tout. */
+    private function conseillerConnecte(): ?Utilisateur
+    {
+        $user = $this->getUser();
+
+        return !$this->isGranted('ROLE_ADMIN') && $user instanceof Utilisateur ? $user : null;
     }
 }
