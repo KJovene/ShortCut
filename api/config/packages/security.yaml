@@ -48,7 +48,7 @@ security:
         - { path: ^/api/chat, roles: ROLE_CHATBOT }
         - { path: ^/api/connexion$, roles: PUBLIC_ACCESS }
         - { path: ^/api/inscription$, roles: PUBLIC_ACCESS }
-        - { path: ^/api/moi$, roles: ROLE_USER }
+        - { path: ^/api/moi(/|$), roles: ROLE_USER }
         - { path: ^/admin, roles: ROLE_CONSEILLER }
 
 when@test:

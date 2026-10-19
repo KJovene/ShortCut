@@ -25,7 +25,7 @@ function PageInscription() {
     mutationFn: (valeurs: Inscription) => sInscrire(valeurs),
     onSuccess: (profil) => {
       queryClient.setQueryData(profilQuery.queryKey, profil)
-      void navigate({ to: '/profil' })
+      void navigate({ to: '/espace' })
     },
   })
 

@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Demande;
+use App\Entity\Proposition;
+use App\Entity\Utilisateur;
+use App\Enum\StatutProposition;
+use App\Repository\DemandeRepository;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
+
+/**
+ * « Mon espace » sur le site : le client connecté suit ses demandes, leur proposition et ses conversations.
+ * Il ne voit que ses propres demandes ; les brouillons de proposition restent côté conseiller.
+ */
+#[Route('/api/moi')]
+final class EspaceClientController extends AbstractController
+{
+    #[Route('/demandes', name: 'api_moi_demandes', methods: ['GET'])]
+    public function demandes(#[CurrentUser] Utilisateur $utilisateur, DemandeRepository $demandes): JsonResponse
+    {
+        return $this->json(array_map($this->demande(...), $demandes->findHistoriqueDuClient($utilisateur)));
+    }
+
+    /** @return array<string, mixed> */
+    private function demande(Demande $demande): array
+    {
+        $conseiller = $demande->getConseiller();
+        $conversation = $demande->getConversation();
+        $proposition = self::propositionVisible($demande);
+
+        return [
+            'id' => $demande->getId(),
+            'statut' => $demande->getStatut()->value,
+            'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
+            'lieuOuZone' => $demande->getLieuOuZone(),
+            'dateDebut' => $demande->getDateDebut()?->format('Y-m-d'),
+            'nombreDeJours' => $demande->getNombreDeJours(),
+            'adultes' => $demande->getAdultes(),
+            'enfants' => $demande->getEnfants(),
+            'creeLe' => $demande->getCreeLe()->format(\DATE_ATOM),
+            'conseiller' => null === $conseiller ? null : ['prenom' => $conseiller->getPrenom(), 'nom' => $conseiller->getNom()],
+            'proposition' => null === $proposition ? null : [
+                'version' => $proposition->getVersion(),
+                'statut' => $proposition->getStatut()->value,
+                'niveauBudget' => $proposition->getNiveauBudget()->label(),
+                'totalCentimes' => $proposition->getTotalCentimes(),
+                'totalParPersonneCentimes' => $proposition->getTotalParPersonneCentimes(),
+            ],
+            'conversation' => null === $conversation ? null : [
+                'debutLe' => $conversation->getDebutLe()->format(\DATE_ATOM),
+                'messages' => $conversation->getMessages(),
+            ],
+        ];
+    }
+
+    /** Dernière version montrée au client : ni brouillon, ni remplacée. */
+    private static function propositionVisible(Demande $demande): ?Proposition
+    {
+        $visible = null;
+        foreach ($demande->getPropositions() as $proposition) {
+            if (\in_array($proposition->getStatut(), [StatutProposition::Brouillon, StatutProposition::Remplacee], true)) {
+                continue;
+            }
+            if (null === $visible || $proposition->getVersion() > $visible->getVersion()) {
+                $visible = $proposition;
+            }
+        }
+
+        return $visible;
+    }
+}
