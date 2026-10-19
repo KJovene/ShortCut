@@ -82,6 +82,7 @@ Ports déjà pris sur votre machine ? Copier `.env.example` en `.env` à la raci
 | `make db-ui` | Ouvre Adminer, l'interface web de la base : http://localhost:8080 (serveur `database`, utilisateur et mot de passe `shortcut`, base `shortcut`) |
 | `make schema` | Régénère le diagramme complet de la base dans [`docs/schema.md`](docs/schema.md) à partir des entités Doctrine |
 | `make openapi` | Exporte la documentation OpenAPI de l'API dans [`docs/openapi.yaml`](docs/openapi.yaml) (version interactive : http://localhost:8000/api/docs) |
+| `make coverage` | Couverture des tests de l'API, classe par classe (détail dans `api/var/coverage/index.html`) |
 | `make sh` | Shell dans le conteneur PHP |
 | `make site-sh` | Shell dans le conteneur du site (npm) |
 | `make logs s=php` | Logs d'un service (`php`, `nginx`, `database`, `front`) |

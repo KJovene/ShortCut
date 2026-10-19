@@ -6,7 +6,7 @@
         composer console cc \
         migration migrate fixtures db-reset db-test db-ui schema openapi \
         dev site-sh site-install site-build \
-        test test-api test-site lint lint-api lint-site stan fix check
+        test test-api coverage test-site lint lint-api lint-site stan fix check
 
 # Les fichiers créés dans le conteneur appartiennent à l'utilisateur de la machine.
 export UID := $(shell id -u)
@@ -134,6 +134,9 @@ test: test-api test-site ## Lance tous les tests
 
 test-api: ## Tests de l'API (PHPUnit)
 	$(PHP) php bin/phpunit
+
+coverage: ## Couverture des tests de l'API, classe par classe (détail navigable : api/var/coverage/index.html)
+	$(PHP) php -d pcov.enabled=1 bin/phpunit --coverage-text --coverage-html var/coverage
 
 test-site: ## Tests du site (Vitest)
 	$(NPM) test
