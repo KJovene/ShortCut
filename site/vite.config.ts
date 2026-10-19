@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },
     server: {
-      // Dans Docker, les changements de fichiers sont détectés par scrutation (voir compose.yaml).
-      watch: env.VITE_WATCH_POLLING === 'true' ? { usePolling: true, interval: 300 } : undefined,
+      // Dans Docker (compose.yaml), les modifications sont détectées par scrutation.
+      watch: env.VITE_POLLING ? { usePolling: true, interval: 300 } : undefined,
       // Le site appelle l'API Symfony en relatif (/api/...) : pas de CORS en local.
       // changeOrigin: false garde l'en-tête Host du navigateur (localhost:5173) : sinon Symfony
       // génère des URL absolues vers http://nginx/... (liens EasyAdmin), injoignables depuis l'hôte.

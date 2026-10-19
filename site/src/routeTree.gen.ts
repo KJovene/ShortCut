@@ -10,63 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ConnexionRouteImport } from './routes/connexion'
-import { Route as InscriptionRouteImport } from './routes/inscription'
-import { Route as ProfilRouteImport } from './routes/profil'
+import { Route as AgenceRouteImport } from './routes/agence'
+import { Route as CgvRouteImport } from './routes/cgv'
+import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as TypesDeVoyagesRouteImport } from './routes/types-de-voyages'
+import { Route as DestinationsIndexRouteImport } from './routes/destinations/index'
+import { Route as DestinationsSlugRouteImport } from './routes/destinations/$slug'
+import { Route as PropositionIdRouteImport } from './routes/proposition/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ConnexionRoute = ConnexionRouteImport.update({
-  id: '/connexion',
-  path: '/connexion',
+const AgenceRoute = AgenceRouteImport.update({
+  id: '/agence',
+  path: '/agence',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InscriptionRoute = InscriptionRouteImport.update({
-  id: '/inscription',
-  path: '/inscription',
+const CgvRoute = CgvRouteImport.update({
+  id: '/cgv',
+  path: '/cgv',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfilRoute = ProfilRouteImport.update({
-  id: '/profil',
-  path: '/profil',
+const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
+  id: '/confidentialite',
+  path: '/confidentialite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
+  id: '/mentions-legales',
+  path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TypesDeVoyagesRoute = TypesDeVoyagesRouteImport.update({
+  id: '/types-de-voyages',
+  path: '/types-de-voyages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DestinationsIndexRoute = DestinationsIndexRouteImport.update({
+  id: '/destinations/',
+  path: '/destinations/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DestinationsSlugRoute = DestinationsSlugRouteImport.update({
+  id: '/destinations/$slug',
+  path: '/destinations/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PropositionIdRoute = PropositionIdRouteImport.update({
+  id: '/proposition/$id',
+  path: '/proposition/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
-  '/profil': typeof ProfilRoute
+  '/agence': typeof AgenceRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/types-de-voyages': typeof TypesDeVoyagesRoute
+  '/destinations/$slug': typeof DestinationsSlugRoute
+  '/proposition/$id': typeof PropositionIdRoute
+  '/destinations/': typeof DestinationsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
-  '/profil': typeof ProfilRoute
+  '/agence': typeof AgenceRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/types-de-voyages': typeof TypesDeVoyagesRoute
+  '/destinations/$slug': typeof DestinationsSlugRoute
+  '/proposition/$id': typeof PropositionIdRoute
+  '/destinations': typeof DestinationsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/connexion': typeof ConnexionRoute
-  '/inscription': typeof InscriptionRoute
-  '/profil': typeof ProfilRoute
+  '/agence': typeof AgenceRoute
+  '/cgv': typeof CgvRoute
+  '/confidentialite': typeof ConfidentialiteRoute
+  '/contact': typeof ContactRoute
+  '/mentions-legales': typeof MentionsLegalesRoute
+  '/types-de-voyages': typeof TypesDeVoyagesRoute
+  '/destinations/$slug': typeof DestinationsSlugRoute
+  '/proposition/$id': typeof PropositionIdRoute
+  '/destinations/': typeof DestinationsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/connexion' | '/inscription' | '/profil'
+  fullPaths:
+    | '/'
+    | '/agence'
+    | '/cgv'
+    | '/confidentialite'
+    | '/contact'
+    | '/mentions-legales'
+    | '/types-de-voyages'
+    | '/destinations/$slug'
+    | '/proposition/$id'
+    | '/destinations/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/connexion' | '/inscription' | '/profil'
-  id: '__root__' | '/' | '/connexion' | '/inscription' | '/profil'
+  to:
+    | '/'
+    | '/agence'
+    | '/cgv'
+    | '/confidentialite'
+    | '/contact'
+    | '/mentions-legales'
+    | '/types-de-voyages'
+    | '/destinations/$slug'
+    | '/proposition/$id'
+    | '/destinations'
+  id:
+    | '__root__'
+    | '/'
+    | '/agence'
+    | '/cgv'
+    | '/confidentialite'
+    | '/contact'
+    | '/mentions-legales'
+    | '/types-de-voyages'
+    | '/destinations/$slug'
+    | '/proposition/$id'
+    | '/destinations/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ConnexionRoute: typeof ConnexionRoute
-  InscriptionRoute: typeof InscriptionRoute
-  ProfilRoute: typeof ProfilRoute
+  AgenceRoute: typeof AgenceRoute
+  CgvRoute: typeof CgvRoute
+  ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ContactRoute: typeof ContactRoute
+  MentionsLegalesRoute: typeof MentionsLegalesRoute
+  TypesDeVoyagesRoute: typeof TypesDeVoyagesRoute
+  DestinationsSlugRoute: typeof DestinationsSlugRoute
+  PropositionIdRoute: typeof PropositionIdRoute
+  DestinationsIndexRoute: typeof DestinationsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,25 +169,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/connexion': {
-      id: '/connexion'
-      path: '/connexion'
-      fullPath: '/connexion'
-      preLoaderRoute: typeof ConnexionRouteImport
+    '/agence': {
+      id: '/agence'
+      path: '/agence'
+      fullPath: '/agence'
+      preLoaderRoute: typeof AgenceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/inscription': {
-      id: '/inscription'
-      path: '/inscription'
-      fullPath: '/inscription'
-      preLoaderRoute: typeof InscriptionRouteImport
+    '/cgv': {
+      id: '/cgv'
+      path: '/cgv'
+      fullPath: '/cgv'
+      preLoaderRoute: typeof CgvRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profil': {
-      id: '/profil'
-      path: '/profil'
-      fullPath: '/profil'
-      preLoaderRoute: typeof ProfilRouteImport
+    '/confidentialite': {
+      id: '/confidentialite'
+      path: '/confidentialite'
+      fullPath: '/confidentialite'
+      preLoaderRoute: typeof ConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions-legales': {
+      id: '/mentions-legales'
+      path: '/mentions-legales'
+      fullPath: '/mentions-legales'
+      preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/types-de-voyages': {
+      id: '/types-de-voyages'
+      path: '/types-de-voyages'
+      fullPath: '/types-de-voyages'
+      preLoaderRoute: typeof TypesDeVoyagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/destinations/': {
+      id: '/destinations/'
+      path: '/destinations'
+      fullPath: '/destinations/'
+      preLoaderRoute: typeof DestinationsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/destinations/$slug': {
+      id: '/destinations/$slug'
+      path: '/destinations/$slug'
+      fullPath: '/destinations/$slug'
+      preLoaderRoute: typeof DestinationsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proposition/$id': {
+      id: '/proposition/$id'
+      path: '/proposition/$id'
+      fullPath: '/proposition/$id'
+      preLoaderRoute: typeof PropositionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -104,9 +237,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ConnexionRoute: ConnexionRoute,
-  InscriptionRoute: InscriptionRoute,
-  ProfilRoute: ProfilRoute,
+  AgenceRoute: AgenceRoute,
+  CgvRoute: CgvRoute,
+  ConfidentialiteRoute: ConfidentialiteRoute,
+  ContactRoute: ContactRoute,
+  MentionsLegalesRoute: MentionsLegalesRoute,
+  TypesDeVoyagesRoute: TypesDeVoyagesRoute,
+  DestinationsSlugRoute: DestinationsSlugRoute,
+  PropositionIdRoute: PropositionIdRoute,
+  DestinationsIndexRoute: DestinationsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

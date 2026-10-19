@@ -1,1 +1,103 @@
 @import 'tailwindcss';
+
+/* Charte « chaleureuse » (maquette E) : crème, brun, terre cuite. */
+@theme {
+  --font-sans: 'Nunito Sans', system-ui, sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
+
+  --color-creme: #fbf6ee;
+  --color-sable: #f3e7d6;
+  --color-lin: #eadbc6;
+  --color-beige: #e3cdb0;
+  --color-encre: #2b1d14;
+  --color-brun: #3a2418;
+  --color-taupe: #6e5a4b;
+  --color-taupe-clair: #8a6a55;
+  --color-terre: #c2471e;
+  --color-terre-pale: #fbede6;
+  --color-rouille: #9a3a18;
+  --color-ocre: #f2b33d;
+  --color-vert: #2f8f5b;
+  --color-vert-fonce: #2f6b45;
+}
+
+@layer base {
+  body {
+    @apply bg-creme font-sans text-encre antialiased;
+  }
+
+  ::placeholder {
+    color: #8a7666;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-terre);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes pin-pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+@keyframes typing-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+@utility animate-pin-pulse {
+  animation: pin-pulse 2.4s ease-out infinite;
+}
+
+@utility animate-typing-dot {
+  animation: typing-dot 1.2s infinite;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Contenus HTML simples des pages (textes gérés dans le backoffice). */
+@utility prose-agence {
+  & h2 {
+    @apply mt-8 mb-3 font-display text-2xl font-semibold;
+  }
+  & p {
+    @apply mb-4 text-lg leading-relaxed text-taupe;
+  }
+  & ul {
+    @apply mb-4 list-disc space-y-2 pl-6 text-lg text-taupe;
+  }
+  & strong {
+    @apply text-encre;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pin-pulse,
+  .animate-typing-dot {
+    animation: none;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
