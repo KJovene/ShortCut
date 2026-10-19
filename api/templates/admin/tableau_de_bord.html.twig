@@ -11,10 +11,10 @@
     <p class="bo-intro">Vous êtes connecté en tant que {{ app.user.role.label|lower }}.</p>
 
     <div class="bo-indicateurs">
-        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('filters', {statut: {comparison: '=', value: 'nouvelle'}}) }}">
-            <span class="bo-indicateur-libelle">Nouvelles demandes</span>
-            <span class="bo-indicateur-valeur">{{ compteurs.nouvelle }}</span>
-            <span class="bo-indicateur-note bo-note--info">À aiguiller</span>
+        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('aiguiller', 1) }}">
+            <span class="bo-indicateur-libelle">Demandes à aiguiller</span>
+            <span class="bo-indicateur-valeur">{{ a_aiguiller }}</span>
+            <span class="bo-indicateur-note bo-note--info">Sans conseiller, à attribuer</span>
         </a>
         <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('filters', {prioritaire: '1'}) }}">
             <span class="bo-indicateur-libelle">Demandes prioritaires</span>

@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Controller\AiguillageController;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\Role;
@@ -44,6 +45,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * - conseiller : uniquement les demandes qui lui sont attribuées ;
  * - administrateur : toutes les demandes, avec un filtre par conseiller.
  * Les demandes prioritaires apparaissent en premier, puis les plus récentes.
+ * La vue « À aiguiller » (?aiguiller=1) liste pour tous les demandes arrivées sans conseiller ;
+ * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController).
  * L'accès à une fiche (consultation, modification, suppression) est vérifié par DemandeVoter.
  *
  * @extends AbstractCrudController<Demande>
@@ -65,7 +68,11 @@ final class DemandeCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Demande')
             ->setEntityLabelInPlural('Demandes')
-            ->setPageTitle(Crud::PAGE_INDEX, $this->estAdministrateur() ? 'Toutes les demandes' : 'Mes demandes')
+            ->setPageTitle(Crud::PAGE_INDEX, match (true) {
+                $this->enVueAAiguiller() => 'Demandes à aiguiller',
+                $this->estAdministrateur() => 'Toutes les demandes',
+                default => 'Mes demandes',
+            })
             ->setDefaultSort(['prioritaire' => 'DESC', 'creeLe' => 'DESC'])
             ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email'])
             // Onglets par statut au-dessus de la liste.
@@ -82,6 +89,8 @@ final class DemandeCrudController extends AbstractCrudController
                 !$this->estAdministrateur() && $user instanceof Utilisateur ? $user : null,
             ));
             $responseParameters->set('statuts', StatutDemande::cases());
+            $responseParameters->set('a_aiguiller', $this->demandes->compterAAiguiller());
+            $responseParameters->set('vue_a_aiguiller', $this->enVueAAiguiller());
         }
 
         return $responseParameters;
@@ -89,8 +98,20 @@ final class DemandeCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        // En POST, jeton CSRF dans l'URL : le formulaire généré par EasyAdmin n'a pas de corps.
+        $attribuer = Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
+            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_attribuer', [
+                'id' => $d->getId(),
+                '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
+            ]))
+            ->renderAsForm()
+            ->displayIf(static fn (Demande $d): bool => null === $d->getConseiller());
+
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_INDEX, $attribuer)
+            ->add(Crud::PAGE_DETAIL, $attribuer)
+            ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
             // Vérifié sur chaque fiche : un conseiller qui saisit l'URL d'une demande d'un autre reçoit un 403.
             ->setPermission(Action::DETAIL, DemandeVoter::VOIR)
             ->setPermission(Action::EDIT, DemandeVoter::MODIFIER)
@@ -118,12 +139,15 @@ final class DemandeCrudController extends AbstractCrudController
 
     /**
      * Restreint la liste aux demandes du conseiller connecté ; l'administrateur voit tout.
+     * La vue « À aiguiller » est la même pour tous : les demandes arrivées sans conseiller.
      */
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         $qb = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
 
-        if (!$this->estAdministrateur()) {
+        if ($this->enVueAAiguiller()) {
+            $this->demandes->restreindreAAiguiller($qb, 'entity');
+        } elseif (!$this->estAdministrateur()) {
             $qb->andWhere('entity.conseiller = :conseillerConnecte')
                 ->setParameter('conseillerConnecte', $this->getUser());
         }
@@ -207,6 +231,11 @@ final class DemandeCrudController extends AbstractCrudController
     private function estAdministrateur(): bool
     {
         return $this->isGranted('ROLE_ADMIN');
+    }
+
+    private function enVueAAiguiller(): bool
+    {
+        return (bool) $this->container->get('request_stack')->getCurrentRequest()?->query->getBoolean('aiguiller');
     }
 
     /**

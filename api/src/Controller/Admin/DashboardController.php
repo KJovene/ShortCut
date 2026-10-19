@@ -33,6 +33,7 @@ final class DashboardController extends AbstractDashboardController
         return $this->render('admin/tableau_de_bord.html.twig', [
             'compteurs' => $compteurs,
             'prioritaires' => $this->demandes->compterPrioritaires($conseiller),
+            'a_aiguiller' => $this->demandes->compterAAiguiller(),
             'a_traiter' => $this->demandes->aTraiter($conseiller),
             'statuts' => StatutDemande::cases(),
         ]);
