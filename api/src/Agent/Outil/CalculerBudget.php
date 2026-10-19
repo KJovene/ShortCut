@@ -25,7 +25,6 @@ use App\Repository\DestinationRepository;
 use App\Repository\PrestataireRepository;
 use App\Repository\PrestationRepository;
 use App\Repository\RegleDePrixRepository;
-use App\Texte\Correspondance;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -154,14 +153,8 @@ final class CalculerBudget implements Outil
             throw new EntreeInvalide('Indique la destination (slug renvoyé par chercher_destinations).');
         }
 
-        foreach ($this->destinations->findBy(['publiee' => true]) as $destination) {
-            if (Correspondance::normaliser($slug) === Correspondance::normaliser((string) $destination->getSlug())
-                || Correspondance::correspondent($slug, (string) $destination->getVille())) {
-                return $destination;
-            }
-        }
-
-        throw new EntreeInvalide(\sprintf('La destination « %s » n\'existe pas dans le catalogue.', $slug));
+        return $this->destinations->publieeCorrespondant($slug)
+            ?? throw new EntreeInvalide(\sprintf('La destination « %s » n\'existe pas dans le catalogue.', $slug));
     }
 
     /**

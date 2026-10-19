@@ -495,6 +495,34 @@ class Prestation
         return $this->tarifs;
     }
 
+    /** Le tarif qui s'applique ce jour-là, ou null si aucune période ne le couvre. */
+    public function tarifLe(\DateTimeImmutable $date): ?TarifParPeriode
+    {
+        $jour = $date->format('Y-m-d');
+        foreach ($this->tarifs as $tarif) {
+            if ($tarif->getDebut()?->format('Y-m-d') <= $jour && $jour <= $tarif->getFin()?->format('Y-m-d')) {
+                return $tarif;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Le tarif de chacune des $nuits à partir de $premiereNuit, null pour une nuit qu'aucune période ne couvre.
+     *
+     * @return list<TarifParPeriode|null>
+     */
+    public function tarifsDesNuits(\DateTimeImmutable $premiereNuit, int $nuits): array
+    {
+        $tarifs = [];
+        for ($i = 0; $i < $nuits; ++$i) {
+            $tarifs[] = $this->tarifLe($premiereNuit->modify(\sprintf('+%d days', $i)));
+        }
+
+        return $tarifs;
+    }
+
     public function addTarif(TarifParPeriode $tarif): static
     {
         if (!$this->tarifs->contains($tarif)) {

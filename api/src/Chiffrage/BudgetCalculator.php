@@ -177,7 +177,7 @@ final class BudgetCalculator
         $prixDesNuits = [];
         for ($i = 0; $i < $etape->nombreDeNuits; ++$i) {
             $date = $etape->nuit($i);
-            $tarif = self::tarifA($logement, $date) ?? throw new NonChiffrable($nom, $date, 'Aucun tarif saisi à cette date.');
+            $tarif = $logement->tarifLe($date) ?? throw new NonChiffrable($nom, $date, 'Aucun tarif saisi à cette date.');
             $prixDesNuits[] = (int) $tarif->getPrixCentimes();
             if (!\in_array($tarif, $tarifs, true)) {
                 $tarifs[] = $tarif;
@@ -243,7 +243,7 @@ final class BudgetCalculator
         $chiffrees = [];
         foreach ($activites as $activite) {
             $nom = (string) $activite->getNom();
-            $tarif = self::tarifA($activite, $jour);
+            $tarif = $activite->tarifLe($jour);
             if (null === $tarif) {
                 if ($demandees) {
                     throw new NonChiffrable($nom, $jour, 'Aucun tarif saisi à cette date.');
@@ -439,18 +439,6 @@ final class BudgetCalculator
         $texte = Montant::quantite($chambres * $l->unites, 'chambre');
 
         return $l->unites > 1 && $chambres > 1 ? \sprintf('%s (%s)', $texte, Montant::quantite($l->unites, 'unité')) : $texte;
-    }
-
-    private static function tarifA(Prestation $prestation, \DateTimeImmutable $date): ?TarifParPeriode
-    {
-        $jour = $date->format('Y-m-d');
-        foreach ($prestation->getTarifs() as $tarif) {
-            if ($tarif->getDebut()?->format('Y-m-d') <= $jour && $jour <= $tarif->getFin()?->format('Y-m-d')) {
-                return $tarif;
-            }
-        }
-
-        return null;
     }
 
     /**
