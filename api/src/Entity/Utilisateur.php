@@ -54,6 +54,12 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $motDePasse = null;
 
+    /** Affichage dans les listes et filtres du backoffice. */
+    public function __toString(): string
+    {
+        return trim(($this->prenom ?? '').' '.$this->nom);
+    }
+
     public function getId(): ?int
     {
         return $this->id;
