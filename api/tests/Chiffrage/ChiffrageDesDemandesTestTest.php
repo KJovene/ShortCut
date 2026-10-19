@@ -2,6 +2,8 @@
 
 namespace App\Tests\Chiffrage;
 
+use App\Chiffrage\Arbitrage;
+use App\Chiffrage\ArbitrageCalculator;
 use App\Chiffrage\BudgetCalculator;
 use App\Chiffrage\DemandeDeChiffrage;
 use App\Chiffrage\Etape;
@@ -78,6 +80,68 @@ final class ChiffrageDesDemandesTestTest extends KernelTestCase
             $resultat = $this->calculateur->calculer($this->demandeDeChiffrage($initiale));
             $this->comparer($fichier.' (version initiale)', $attendu['versionInitiale']['budgetsParNiveau'], $resultat->niveaux ?? []);
         }
+    }
+
+    /**
+     * Chaque niveau affiche ses hypothèses (#206) : période tarifaire, catégorie et chambres de chaque logement,
+     * transport inclus ou non, frais de dossier.
+     *
+     * @param array<string, mixed> $demande
+     */
+    #[DataProvider('demandesTest')]
+    public function testChaqueNiveauAfficheSesHypotheses(string $fichier, array $demande): void
+    {
+        $niveaux = $this->calculateur->calculer($this->demandeDeChiffrage($demande))->niveaux;
+        if (null === $niveaux) {
+            self::assertTrue($demande['attendu']['passageAuConseiller'], $fichier);
+
+            return;
+        }
+
+        $frais = \sprintf('Frais de dossier %s : %d €', mb_strtolower(TypeDeVoyage::from($demande['typeDeVoyage'])->label()), $demande['formule']['fraisDeDossierEuros']);
+        foreach ($niveaux as $cle => $niveau) {
+            $contexte = $fichier.' '.$cle;
+            foreach ($niveau->logements as $logement) {
+                $hypothese = current(array_filter($niveau->hypotheses, static fn (string $h): bool => str_starts_with($h, $logement.' : ')));
+                self::assertIsString($hypothese, $contexte.' : '.$logement);
+                self::assertMatchesRegularExpression('/ chambres?[ ,].* nuits? du \d\d\/\d\d\/\d{4} au .*, tarif (de |d\'|du )/u', $hypothese, $contexte);
+            }
+            self::assertContains(\sprintf('Transport inclus : vols et transferts estimés au %s, pour %d voyageurs', $niveau->transport->label(), $demande['exigencesAttendues']['adultes'] + \count($demande['exigencesAttendues']['agesEnfants'])), $niveau->hypotheses, $contexte);
+            self::assertContains($frais, $niveau->hypotheses, $contexte);
+        }
+    }
+
+    public function testLesHypothesesDuRiadDeMarrakech(): void
+    {
+        $niveaux = $this->calculateur->calculer($this->demandeDeChiffrage(self::demandesTest()['06-groupe-marrakech-budget-insuffisant.json'][1]))->niveaux;
+
+        self::assertSame([
+            'Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 4 nuits du 21/10/2027 au 25/10/2027, tarif d\'octobre à décembre 2027',
+            'Transport inclus : vols et transferts estimés au minimum de la fourchette, pour 12 voyageurs',
+            'Frais de dossier groupe : 200 €',
+        ], $niveaux['essentiel']->hypotheses ?? null);
+    }
+
+    /** La demande test « budget insuffisant » propose au moins deux arbitrages chiffrés (#206). */
+    public function testLeBudgetInsuffisantProposeDesArbitragesChiffres(): void
+    {
+        $demande = $this->demandeDeChiffrage(self::demandesTest()['06-groupe-marrakech-budget-insuffisant.json'][1]);
+        $arbitrages = (new ArbitrageCalculator($this->calculateur))->proposer($demande, new \DateTimeImmutable('2026-10-19'));
+
+        self::assertGreaterThanOrEqual(2, \count($arbitrages));
+        $parType = [];
+        foreach ($arbitrages as $arbitrage) {
+            $parType[$arbitrage->type] = [$arbitrage->libelle, $arbitrage->essentiel->totalCentimes, $arbitrage->essentiel->parPersonneCentimes, $arbitrage->tientDansLeBudget()];
+        }
+
+        // 300 € par personne restent hors de portée : chaque arbitrage est chiffré et dit l'écart, sans baisser les prix.
+        self::assertSame([
+            Arbitrage::MOINS_DE_NUITS => ['Réduire à 3 nuits, du 21/10/2027 au 24/10/2027', 538400, 44867, false],
+            Arbitrage::AUTRE_PERIODE => ['Partir à une période moins chère, du 27/09/2027 au 01/10/2027', 507200, 42267, false],
+            // Exemple 2 de docs/chiffrage.md : 3 nuits en basse saison, 370,67 € par personne.
+            Arbitrage::LES_DEUX => ['Réduire à 3 nuits, du 28/09/2027 au 01/10/2027, à une période moins chère', 444800, 37067, false],
+        ], $parType);
+        self::assertContains('Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 4 nuits du 27/09/2027 au 01/10/2027, tarif de juin à septembre 2027', $arbitrages[1]->essentiel->hypotheses);
     }
 
     public function testExemple1BudgetDonneEtSuffisant(): void

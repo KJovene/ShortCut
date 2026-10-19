@@ -329,6 +329,21 @@ Sortie (extrait, niveau essentiel seul) :
 
 La sortie contient aussi `avertissement` (« Première proposition, prix estimés, à confirmer par votre conseiller. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
 
+Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contient aussi `arbitrages` (ticket #206, voir `docs/chiffrage.md`) : l'agent les présente au client et, s'il en accepte un, rappelle l'outil avec ses `etapes`.
+
+```json
+"arbitrages": [
+  {
+    "type": "moins_de_nuits_et_autre_periode",
+    "libelle": "Réduire à 3 nuits, du 28/09/2027 au 01/10/2027, à une période moins chère",
+    "etapes": [{ "dateDebut": "2027-09-28", "nombreDeNuits": 3 }],
+    "totalEuros": 4448, "parPersonneEuros": 370.67,
+    "tientDansLeBudget": false, "ecartAuBudgetEuros": 848,
+    "hypotheses": ["Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 3 nuits du 28/09/2027 au 01/10/2027, tarif de juin à septembre 2027", "…"]
+  }
+]
+```
+
 Si un tarif manque, `niveaux` vaut `null` et `nonChiffrable` explique pourquoi : `{"prestation": "Guesthouse Reykjavik Centre", "date": "2027-01-16", "raison": "Aucun tarif saisi à cette date."}`. L'agent propose alors un autre logement ou d'autres dates, ou appelle `transmettre_au_conseiller`.
 
 Le résultat est gardé en cache 24 heures sous la demande courante, avec son `chiffrageId`.

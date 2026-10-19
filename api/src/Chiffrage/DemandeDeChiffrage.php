@@ -67,4 +67,24 @@ final readonly class DemandeDeChiffrage
     {
         return $this->etapes[0]->dateDebut;
     }
+
+    public function nombreDeNuits(): int
+    {
+        return array_sum(array_map(static fn (Etape $e): int => $e->nombreDeNuits, $this->etapes));
+    }
+
+    /**
+     * La même demande avec d'autres étapes (autres dates, moins de nuits) : pour chiffrer un arbitrage.
+     *
+     * @param list<Etape> $etapes
+     */
+    public function avecEtapes(array $etapes): self
+    {
+        return new self(
+            $this->typeDeVoyage, $this->destination, $this->adultes, $this->agesEnfants, $this->villeDepart,
+            $this->transportInclus, $this->budgetCentimes, $this->budgetParPersonne, $etapes,
+            $this->activitesDemandees, $this->activitesSuggerees, $this->transporteurs,
+            $this->margePourcentage, $this->fraisDeDossierCentimes,
+        );
+    }
 }

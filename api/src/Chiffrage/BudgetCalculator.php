@@ -59,6 +59,26 @@ final class BudgetCalculator
     }
 
     /**
+     * Le seul niveau essentiel (logements les moins chers, activités demandées, transport au minimum), ou null si la
+     * demande n'est pas chiffrable : pour comparer rapidement des arbitrages (ArbitrageCalculator).
+     */
+    public function essentiel(DemandeDeChiffrage $demande): ?Niveau
+    {
+        $exclusions = [];
+        try {
+            $etapes = $this->chiffrerLesLogements($demande, $exclusions);
+            $demandees = $this->chiffrerLesActivites($demande, $demande->activitesDemandees, true, $exclusions);
+            $transport = $demande->transportInclus ? $this->trouverLeTransport($demande) : null;
+        } catch (NonChiffrable) {
+            return null;
+        }
+
+        $moinsChers = array_map(static fn (array $logements): LogementChiffre => $logements[0], $etapes);
+
+        return $this->niveau(NiveauBudget::Essentiel, $demande, $moinsChers, $demandees, PositionTransport::Minimum, $transport);
+    }
+
+    /**
      * Niveau équilibré :
      * - sans budget : le logement de prix médian (le moins cher des deux du milieu si leur nombre est pair) et les
      *   seules activités demandées, transport au milieu ;
@@ -364,8 +384,11 @@ final class BudgetCalculator
     }
 
     /**
-     * Hypothèses affichées sous le niveau : tarifs et dates par logement, catégorie et unités, participants des
-     * activités, transport, frais de dossier.
+     * Hypothèses affichées sous le niveau, pour que le client comprenne d'où vient chaque montant (#206) :
+     * - par logement : catégorie, chambres (ou unités), nuits et dates, période tarifaire appliquée ;
+     * - par activité : participants si certains n'ont pas l'âge, sessions si la capacité ne suffit pas ;
+     * - transport inclus ou non, et sa position dans la fourchette ;
+     * - frais de dossier du type de voyage.
      *
      * @param list<LogementChiffre>  $logements
      * @param list<ActiviteChiffree> $activites
@@ -376,19 +399,17 @@ final class BudgetCalculator
     {
         $hypotheses = [];
         foreach ($logements as $l) {
-            $periodes = implode(' et ', array_map(
-                static fn (TarifParPeriode $t): string => \sprintf('du %s au %s', $t->getDebut()?->format('d/m/Y'), $t->getFin()?->format('d/m/Y')),
-                $l->tarifs,
-            ));
             $hypotheses[] = \sprintf(
-                '%s : %s%s, %s à partir du %s, %s %s',
+                '%s : %s%s, %s %s, tarif %s',
                 $l->logement->getNom(),
                 null !== $l->logement->getCategorie() ? $l->logement->getCategorie().', ' : '',
-                Montant::quantite($l->unites, 'unité'),
+                self::chambres($l),
                 Montant::quantite($l->etape->nombreDeNuits, 'nuit'),
-                $l->etape->dateDebut->format('d/m/Y'),
-                1 === \count($l->tarifs) ? 'tarif' : 'tarifs',
-                $periodes,
+                Periode::sejour($l->etape->dateDebut, $l->etape->nombreDeNuits),
+                implode(' puis ', array_map(
+                    static fn (TarifParPeriode $t): string => Periode::ecrire($t->getDebut() ?? new \DateTimeImmutable(), $t->getFin() ?? new \DateTimeImmutable()),
+                    $l->tarifs,
+                )),
             );
         }
         foreach ($activites as $a) {
@@ -400,11 +421,24 @@ final class BudgetCalculator
             }
         }
         $hypotheses[] = $transport
-            ? \sprintf('Vols et transferts estimés au %s, %s', $position->label(), Montant::quantite($demande->voyageurs(), 'voyageur'))
-            : 'Transport non inclus';
+            ? \sprintf('Transport inclus : vols et transferts estimés au %s, pour %s', $position->label(), Montant::quantite($demande->voyageurs(), 'voyageur'))
+            : 'Transport non inclus : vols et transferts à la charge du client';
         $hypotheses[] = \sprintf('Frais de dossier %s : %s', mb_strtolower($demande->typeDeVoyage->label()), Montant::euros($demande->fraisDeDossierCentimes));
 
         return $hypotheses;
+    }
+
+    /** « 2 chambres », « 6 chambres », « 20 chambres (2 unités) » ; « 2 unités » si le nombre de chambres n'est pas saisi. */
+    private static function chambres(LogementChiffre $l): string
+    {
+        $chambres = $l->logement->getChambres();
+        if (null === $chambres) {
+            return Montant::quantite($l->unites, 'unité');
+        }
+
+        $texte = Montant::quantite($chambres * $l->unites, 'chambre');
+
+        return $l->unites > 1 && $chambres > 1 ? \sprintf('%s (%s)', $texte, Montant::quantite($l->unites, 'unité')) : $texte;
     }
 
     private static function tarifA(Prestation $prestation, \DateTimeImmutable $date): ?TarifParPeriode

@@ -5,6 +5,8 @@ namespace App\Agent\Outil;
 use App\Agent\ContexteAgent;
 use App\Agent\EntreeInvalide;
 use App\Agent\Outil;
+use App\Chiffrage\Arbitrage;
+use App\Chiffrage\ArbitrageCalculator;
 use App\Chiffrage\BudgetCalculator;
 use App\Chiffrage\ChiffrageCache;
 use App\Chiffrage\DemandeDeChiffrage;
@@ -24,11 +26,13 @@ use App\Repository\PrestataireRepository;
 use App\Repository\PrestationRepository;
 use App\Repository\RegleDePrixRepository;
 use App\Texte\Correspondance;
+use Psr\Clock\ClockInterface;
 
 /**
  * Outil `calculer_budget` (docs/outils.md) : le modèle donne les candidats, le serveur chiffre les trois niveaux
  * avec BudgetCalculator. Voyageurs, ville de départ, budget et type de voyage viennent de la demande courante :
  * le modèle ne les fournit pas. Montants en euros dans la sortie, pour qu'il les recopie sans erreur.
+ * Si même l'essentiel dépasse le budget, la sortie propose des arbitrages chiffrés (ArbitrageCalculator).
  */
 final class CalculerBudget implements Outil
 {
@@ -36,6 +40,8 @@ final class CalculerBudget implements Outil
 
     public function __construct(
         private readonly BudgetCalculator $calculateur,
+        private readonly ArbitrageCalculator $arbitrages,
+        private readonly ClockInterface $horloge,
         private readonly ChiffrageCache $cache,
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
@@ -101,7 +107,7 @@ final class CalculerBudget implements Outil
         $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
 
         try {
-            $resultat = $this->calculateur->calculer(new DemandeDeChiffrage(
+            $resultat = $this->calculateur->calculer($aChiffrer = new DemandeDeChiffrage(
                 typeDeVoyage: $type,
                 destination: $destination,
                 adultes: $demande->getAdultes(),
@@ -125,6 +131,12 @@ final class CalculerBudget implements Outil
         }
 
         $sortie = $this->sortie($resultat);
+        if ($resultat->budgetInsuffisant) {
+            $sortie['arbitrages'] = array_map(
+                self::arbitrage(...),
+                $this->arbitrages->proposer($aChiffrer, $this->horloge->now()->setTime(0, 0)),
+            );
+        }
         if (null !== $resultat->niveaux) {
             $sortie = ['chiffrageId' => $this->cache->enregistrer($demande, $sortie)] + $sortie;
         }
@@ -240,6 +252,26 @@ final class CalculerBudget implements Outil
                 'date' => $resultat->nonChiffrable->date?->format('Y-m-d'),
                 'raison' => $resultat->nonChiffrable->raison,
             ],
+        ];
+    }
+
+    /**
+     * Un arbitrage chiffré : ce qui change, les étapes à redonner à calculer_budget si le client accepte,
+     * le total essentiel et s'il tient dans le budget.
+     *
+     * @return array<string, mixed>
+     */
+    private static function arbitrage(Arbitrage $arbitrage): array
+    {
+        return [
+            'type' => $arbitrage->type,
+            'libelle' => $arbitrage->libelle,
+            'etapes' => array_map(static fn (Etape $e): array => ['dateDebut' => $e->dateDebut->format('Y-m-d'), 'nombreDeNuits' => $e->nombreDeNuits], $arbitrage->etapes),
+            'totalEuros' => Montant::nombre($arbitrage->essentiel->totalCentimes),
+            'parPersonneEuros' => Montant::nombre($arbitrage->essentiel->parPersonneCentimes),
+            'tientDansLeBudget' => $arbitrage->tientDansLeBudget(),
+            'ecartAuBudgetEuros' => Montant::nombre($arbitrage->ecartCentimes()),
+            'hypotheses' => $arbitrage->essentiel->hypotheses,
         ];
     }
 

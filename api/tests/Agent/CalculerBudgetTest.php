@@ -5,6 +5,7 @@ namespace App\Tests\Agent;
 use App\Agent\ContexteAgent;
 use App\Agent\EntreeInvalide;
 use App\Agent\Outil\CalculerBudget;
+use App\Chiffrage\ArbitrageCalculator;
 use App\Chiffrage\BudgetCalculator;
 use App\Chiffrage\ChiffrageCache;
 use App\Entity\Conversation;
@@ -21,6 +22,7 @@ use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Clock\MockClock;
 
 /**
  * Outil calculer_budget (#205) : le modèle donne des identifiants de candidats, le serveur chiffre la demande
@@ -44,8 +46,11 @@ final class CalculerBudgetTest extends KernelTestCase
 
         // Personne n'appelle encore l'outil (la boucle d'agent arrive avec #192) : le conteneur de test l'a retiré.
         $this->cache = new ChiffrageCache(new ArrayAdapter());
+        $calculateur = new BudgetCalculator();
         $this->outil = new CalculerBudget(
-            new BudgetCalculator(),
+            $calculateur,
+            new ArbitrageCalculator($calculateur),
+            new MockClock('2026-10-19 15:30'),
             $this->cache,
             $this->em->getRepository(Destination::class),
             $this->em->getRepository(Prestation::class),
@@ -93,6 +98,7 @@ final class CalculerBudgetTest extends KernelTestCase
         self::assertSame(['type' => 'transport', 'libelle' => 'Transferts aéroport – hébergement à Santorin', 'calcul' => '2 voyageurs × 42,50 €', 'montantEuros' => 85, 'estime' => true], $equilibre['postes'][2]);
         self::assertContains('Frais de dossier voyage de noces : 150 €', $equilibre['hypotheses']);
         self::assertNull($sortie['nonChiffrable']);
+        self::assertArrayNotHasKey('arbitrages', $sortie, 'Le budget suffit : pas d\'arbitrage.');
 
         // Retrouvé par son identifiant sous la même demande, jamais sous une autre.
         $cache = $this->cache;
@@ -100,6 +106,31 @@ final class CalculerBudgetTest extends KernelTestCase
         self::assertSame($sortie['niveaux'], $cache->retrouver($contexte->demande, $sortie['chiffrageId'])['niveaux'] ?? null);
         self::assertNull($cache->retrouver($this->demandeDeNoces(), $sortie['chiffrageId']));
         self::assertNull($cache->retrouver($contexte->demande, '../autre'));
+    }
+
+    public function testUnBudgetInsuffisantRenvoieDesArbitragesChiffres(): void
+    {
+        $demande = $this->demandeDeNoces()->setTypeDeVoyage(TypeDeVoyage::Groupe)->setAdultes(12)->setBudgetCentimes(30000)->setBudgetParPersonne(true);
+        $sortie = $this->outil->executer($this->contexte($demande), [
+            'destination' => 'marrakech',
+            'etapes' => [['dateDebut' => '2027-10-21', 'nombreDeNuits' => 4, 'logementIds' => $this->ids('Riad Dar Yasmine, riad entier')]],
+            'activitesDemandees' => [],
+            'activitesSuggerees' => [],
+        ]);
+
+        self::assertTrue($sortie['budgetInsuffisant']);
+        self::assertSame(526.67, $sortie['niveaux']['essentiel']['parPersonneEuros']);
+        self::assertGreaterThanOrEqual(2, \count($sortie['arbitrages']));
+        self::assertSame([
+            'type' => 'moins_de_nuits_et_autre_periode',
+            'libelle' => 'Réduire à 3 nuits, du 28/09/2027 au 01/10/2027, à une période moins chère',
+            'etapes' => [['dateDebut' => '2027-09-28', 'nombreDeNuits' => 3]],
+            'totalEuros' => 4448,
+            'parPersonneEuros' => 370.67,
+            'tientDansLeBudget' => false,
+            'ecartAuBudgetEuros' => 848,
+        ], array_diff_key($sortie['arbitrages'][2], ['hypotheses' => true]));
+        self::assertNotEmpty($sortie['arbitrages'][2]['hypotheses']);
     }
 
     public function testUnePeriodeSansTarifRenvoieLaRaisonSansChiffrage(): void

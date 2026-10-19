@@ -47,7 +47,7 @@ final class BudgetCalculatorTest extends TestCase
         self::assertSame('(1 nuit × 100 € + 2 nuits × 130 €) × 2 unités', $poste?->calcul);
         self::assertSame((10000 + 2 * 13000) * 2, $poste->centimes);
         self::assertContains(
-            'Casa : Appartement, 2 unités, 3 nuits à partir du 30/06/2027, tarifs du 01/06/2027 au 30/06/2027 et du 01/07/2027 au 31/07/2027',
+            'Casa : Appartement, 2 unités, 3 nuits du 30/06/2027 au 03/07/2027, tarif de juin 2027 puis de juillet 2027',
             $resultat->niveau(NiveauBudget::Essentiel)->hypotheses,
         );
     }
@@ -124,7 +124,7 @@ final class BudgetCalculatorTest extends TestCase
 
         self::assertSame([], $essentiel?->postes(Poste::TRANSPORT));
         self::assertSame(20000 + 4000 + 10000, $essentiel->totalCentimes);
-        self::assertContains('Transport non inclus', $essentiel->hypotheses);
+        self::assertContains('Transport non inclus : vols et transferts à la charge du client', $essentiel->hypotheses);
     }
 
     public function testUneFourchetteManquanteRendLaDemandeNonChiffrable(): void

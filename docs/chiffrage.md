@@ -89,12 +89,32 @@ Le budget du client peut être un total ou un montant par personne : la comparai
 
 ## Hypothèses affichées au client
 
-Chaque niveau liste ses hypothèses de budget :
+Chaque niveau liste ses hypothèses de budget (ticket #206), pour que le client comprenne d'où vient chaque montant :
 
-- saison(s) tarifaire(s) appliquée(s) et dates ;
-- catégorie d'hébergement et nombre de chambres ou d'unités ;
+- pour chaque logement : catégorie, nombre de chambres (ou d'unités si le nombre de chambres n'est pas saisi), nuits et dates, saison(s) tarifaire(s) appliquée(s) ;
+- pour une activité : les participants si certains n'ont pas l'âge minimum, les sessions si la capacité ne suffit pas ;
 - transport inclus ou non, et position dans la fourchette (estimé) ;
 - frais de dossier appliqués.
+
+Exemple (essentiel de l'exemple 2) :
+
+```text
+Riad Dar Yasmine, riad entier : Riad privatisé, 6 chambres, 4 nuits du 21/10/2027 au 25/10/2027, tarif d'octobre à décembre 2027
+Transport inclus : vols et transferts estimés au minimum de la fourchette, pour 12 voyageurs
+Frais de dossier groupe : 200 €
+```
+
+## Arbitrages quand le budget est insuffisant
+
+Le service `ArbitrageCalculator` chiffre, au niveau essentiel et avec la même formule, les mêmes prestations autrement :
+
+1. **Moins de nuits** : une nuit de moins à la fois, à l'étape la plus longue (chaque étape garde au moins une nuit), jusqu'au séjour le plus long qui tient dans le budget ; si aucun ne tient, une nuit de moins, chiffrée.
+2. **Une autre période** : les mêmes nuits aux dates les moins chères, à six mois au plus des dates demandées et jamais dans le passé ; à prix égal, les dates les plus proches.
+3. **Les deux à la fois**, seulement si ni l'un ni l'autre ne suffit seul.
+
+Chaque arbitrage donne ses dates, son total, son prix par personne, s'il tient dans le budget et l'écart restant. Changer de catégorie d'hébergement ou de destination demande d'autres candidats : l'agent les cherche, puis rappelle `calculer_budget`.
+
+Pour l'exemple 2 (demande test 06), trois arbitrages, aucun ne suffisant : 3 nuits (448,67 € par personne), fin septembre en basse saison (422,67 €), 3 nuits fin septembre (370,67 €). Le chatbot le dit clairement au lieu de proposer un voyage hors budget.
 
 ## Données manquantes
 
@@ -144,7 +164,7 @@ hébergement 3 × 520 = 1 560 € ; vols 1 800 € ; transferts 180 €
 coût 3 540 € + marge 708 € + frais 200 € = 4 448 €, soit 370,67 € par personne
 ```
 
-Le chatbot l'annonce : même avec ces arbitrages, il faut compter environ 371 € par personne.
+Le chatbot l'annonce : même avec ces arbitrages, il faut compter environ 371 € par personne. Voir [Arbitrages quand le budget est insuffisant](#arbitrages-quand-le-budget-est-insuffisant) : le service retient les dates du 28 septembre au 1er octobre, les plus proches des dates demandées en basse saison, pour le même montant.
 
 ### Exemple 3 : budget absent
 
