@@ -32,11 +32,34 @@ export function Bulle({ message }: { message: Message }) {
         return <Preparation texte={message.texte} etapes={message.etapes} />
       case 'proposition':
         return <CartePropositionChat texte={message.texte} propositionId={message.propositionId} />
+      case 'confirmation':
+        return <Confirmation texte={message.texte} />
     }
   }
   return (
     <div className={cn('max-w-[85%] self-start px-4 py-3 sm:max-w-[72%]', BULLE_ASSISTANT)}>
       {message.texte}
+    </div>
+  )
+}
+
+/** Fin de la conversation : la demande est enregistrée et transmise à un conseiller. */
+function Confirmation({ texte }: { texte: string }) {
+  return (
+    <div
+      role="status"
+      className="flex max-w-full items-start gap-3 self-stretch rounded-[20px] border-2 border-vert bg-white px-4 py-3.5 shadow-[0_2px_10px_rgba(43,29,20,0.06)]"
+    >
+      <span
+        aria-hidden="true"
+        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-vert text-white"
+      >
+        <IconCoche size={16} />
+      </span>
+      <span className="flex flex-col gap-0.5">
+        <strong className="text-[15px] font-extrabold text-vert-fonce">Demande transmise</strong>
+        <span>{texte}</span>
+      </span>
     </div>
   )
 }

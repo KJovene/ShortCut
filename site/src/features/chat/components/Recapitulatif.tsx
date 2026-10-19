@@ -12,7 +12,7 @@ export function Recapitulatif({
   onModifier: (texte: string) => void
   titreId?: string
 }) {
-  const { conversation, propositionId, reflexion } = useChat()
+  const { conversation, propositionId, reflexion, terminee } = useChat()
   const d = conversation.demande
   const destination = d.destination ? trouverDestination(d.destination) : undefined
   const renseignes = nombreRenseignes(d)
@@ -115,6 +115,19 @@ export function Recapitulatif({
             >
               Voir ma proposition
             </Link>
+          </>
+        ) : terminee ? (
+          <>
+            <p className="m-0 text-xs leading-normal text-taupe-clair">
+              Votre conseiller vous recontacte dans les plus brefs délais avec votre proposition.
+              Prix estimés, rien n'est réservé avant sa confirmation.
+            </p>
+            <p
+              role="status"
+              className="m-0 flex min-h-[50px] items-center justify-center rounded-full bg-vert text-[15px] font-extrabold text-white"
+            >
+              Demande transmise à votre conseiller
+            </p>
           </>
         ) : (
           <>

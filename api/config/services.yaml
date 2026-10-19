@@ -21,3 +21,9 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@test:
+    services:
+        # Fausse API Claude (voir config/packages/framework.yaml), publique pour que les tests lui donnent ses réponses.
+        App\Tests\Chatbot\FausseApiClaude:
+            public: true

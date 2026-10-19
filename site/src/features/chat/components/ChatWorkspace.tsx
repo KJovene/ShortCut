@@ -11,8 +11,16 @@ import { Recapitulatif } from './Recapitulatif'
  * Affiché dans la section de l'accueil une fois le premier message envoyé, et dans la fenêtre du chatbot.
  */
 export function ChatWorkspace({ className }: { className?: string }) {
-  const { messages, reflexion, brouillon, setBrouillon, envoyer, recommencer, conversation } =
-    useChat()
+  const {
+    messages,
+    reflexion,
+    brouillon,
+    setBrouillon,
+    envoyer,
+    recommencer,
+    conversation,
+    terminee,
+  } = useChat()
   const fil = useRef<HTMLDivElement>(null)
   const champ = useRef<HTMLInputElement>(null)
 
@@ -68,27 +76,34 @@ export function ChatWorkspace({ className }: { className?: string }) {
             envoyer(brouillon)
           }}
         >
-          <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pr-1.5 pl-2 shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
-            <label className="flex flex-1">
-              <span className="sr-only">Votre message</span>
-              <input
-                ref={champ}
-                type="text"
-                value={brouillon}
-                onChange={(e) => setBrouillon(e.target.value)}
-                placeholder="Ajouter une précision ou modifier votre demande…"
-                className="min-h-11 flex-1 bg-transparent px-3 text-[15px] outline-none"
-              />
-            </label>
-            <button
-              type="submit"
-              aria-label="Envoyer"
-              disabled={!brouillon.trim()}
-              className="flex size-12 shrink-0 items-center justify-center rounded-full bg-terre text-white hover:bg-rouille disabled:opacity-50"
-            >
-              <IconFlecheHaut strokeWidth={2.4} />
-            </button>
-          </div>
+          {terminee ? (
+            <p className="m-0 rounded-full bg-white px-5 py-3.5 text-center text-sm text-taupe shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
+              Votre demande est transmise. Pour préparer un autre voyage, cliquez sur « Recommencer
+              ».
+            </p>
+          ) : (
+            <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pr-1.5 pl-2 shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
+              <label className="flex flex-1">
+                <span className="sr-only">Votre message</span>
+                <input
+                  ref={champ}
+                  type="text"
+                  value={brouillon}
+                  onChange={(e) => setBrouillon(e.target.value)}
+                  placeholder="Ajouter une précision ou modifier votre demande…"
+                  className="min-h-11 flex-1 bg-transparent px-3 text-[15px] outline-none"
+                />
+              </label>
+              <button
+                type="submit"
+                aria-label="Envoyer"
+                disabled={!brouillon.trim()}
+                className="flex size-12 shrink-0 items-center justify-center rounded-full bg-terre text-white hover:bg-rouille disabled:opacity-50"
+              >
+                <IconFlecheHaut strokeWidth={2.4} />
+              </button>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-taupe-clair">
             <span>
               Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre

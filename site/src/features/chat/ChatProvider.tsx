@@ -1,23 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { DESTINATIONS, formatEuros } from '@/data/catalogue'
-import { genererProposition } from '@/features/proposition/proposition'
-import { enregistrerProposition, trouverProposition } from '@/features/proposition/store'
-import {
-  choisirAmbiance as choisirAmbianceAssistant,
-  etapesPreparation,
-  MESSAGE_ACCUEIL,
-  nouvelId,
-  repondre,
-  type Conversation,
-  type Message,
-  type Reponse,
-} from './assistant'
+import { DESTINATIONS } from '@/data/catalogue'
+import { ApiError } from '@/lib/api'
+import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
+import { MESSAGE_ACCUEIL, nouvelId, type Message } from './assistant'
 import { ChatContext, type EtatChat } from './chatContext'
-import { demandeVide, extraire } from './demande'
+import { type Demande, demandeVide } from './demande'
 
 const CLE = 'chat'
-/** Délai simulé de réponse de l'assistant. */
-const DELAI = 700
+
+const INJOIGNABLE = 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.'
+
+const CONFIRMATION =
+  'Votre demande est bien prise en compte. Un conseiller de l’agence revient vers vous dans les plus brefs délais avec votre proposition.'
 
 const etatInitial = (): EtatChat => ({
   statut: 'accueil',
@@ -38,148 +32,140 @@ function restaurer(): EtatChat {
   return etatInitial()
 }
 
-const CONSEILLER = /conseiller|humain|quelqu.un|appeler|telephone|téléphone/i
-
 /**
  * État du chatbot partagé par tout le site : la conversation commencée sur l'accueil continue dans la
- * fenêtre ouverte depuis les autres pages.
+ * fenêtre ouverte depuis les autres pages. L'assistant répond par l'API (POST /api/chat, en streaming) ;
+ * quand le client confirme son récapitulatif, la demande est transmise et la conversation se termine.
  */
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatChat>(restaurer)
-  const timers = useRef<number[]>([])
+  const etatCourant = useRef(etat)
+  /** Une réponse est en cours : un nouveau message attend qu'elle soit finie. */
+  const enCours = useRef(false)
+  /** Annule la réponse en cours quand le client recommence. */
+  const annulation = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    const { statut, messages, conversation, propositionId } = etat
+    etatCourant.current = etat
+    const { statut, messages, conversation, jeton, terminee } = etat
     try {
-      sessionStorage.setItem(CLE, JSON.stringify({ statut, messages, conversation, propositionId }))
+      sessionStorage.setItem(
+        CLE,
+        JSON.stringify({ statut, messages, conversation, jeton, terminee }),
+      )
     } catch {
       // Sans stockage, la conversation dure le temps de la page.
     }
   }, [etat])
 
-  useEffect(() => {
-    const enCours = timers.current
-    return () => enCours.forEach((t) => window.clearTimeout(t))
-  }, [])
-
-  const plusTard = useCallback((delai: number, action: () => void) => {
-    timers.current.push(window.setTimeout(action, delai))
-  }, [])
+  useEffect(() => () => annulation.current?.abort(), [])
 
   const ajouter = useCallback((messages: Message[], maj: Partial<EtatChat> = {}) => {
     setEtat((e) => ({ ...e, ...maj, messages: [...e.messages, ...messages] }))
   }, [])
 
-  /** Agents Recherche et Chiffrage : étapes affichées une à une, puis la proposition. */
-  const preparer = useCallback(
-    (conversation: Conversation) => {
-      const labels = etapesPreparation(conversation.demande)
-      const idPreparation = nouvelId()
-      const etapes = (fait: number) =>
-        labels.map((label, i) => ({
-          label,
-          etat:
-            i < fait
-              ? ('fait' as const)
-              : i === fait
-                ? ('en-cours' as const)
-                : ('attente' as const),
-        }))
-      ajouter([
-        {
-          id: idPreparation,
-          auteur: 'assistant',
-          type: 'preparation',
-          texte:
-            'J’ai tout ce qu’il me faut : vérifiez le récapitulatif. Je prépare votre proposition chiffrée.',
-          etapes: etapes(0),
-        },
-      ])
-      labels.forEach((_, i) =>
-        plusTard(DELAI * (i + 1), () =>
-          setEtat((e) => ({
-            ...e,
-            messages: e.messages.map((m) =>
-              m.id === idPreparation && 'type' in m && m.type === 'preparation'
-                ? { ...m, etapes: etapes(i + 1) }
-                : m,
-            ),
-          })),
-        ),
-      )
-      plusTard(DELAI * (labels.length + 1), () => {
-        const d = conversation.demande
-        const slug = d.destination ?? DESTINATIONS[0].slug
-        const proposition = genererProposition(d, slug)
-        enregistrerProposition(proposition)
-        const equilibre = proposition.budgets.equilibre
-        ajouter(
-          [
+  /** Agent Conversation : envoie le message à l'API et affiche la réponse au fil du flux. */
+  const discuter = useCallback(
+    async (texte: string) => {
+      const controleur = new AbortController()
+      annulation.current = controleur
+      const actif = () => !controleur.signal.aborted
+      let jeton = etatCourant.current.jeton
+      let demande: Demande = etatCourant.current.conversation.demande
+      let confirme = false
+      /** Bulle de l'assistant en cours d'écriture. */
+      let bulle: string | undefined
+
+      const lire = async (jetonConversation: string) => {
+        for await (const ev of envoyerMessage(jetonConversation, texte, controleur.signal)) {
+          if (!actif()) return
+          switch (ev.type) {
+            case 'texte': {
+              if (!bulle) {
+                const id = (bulle = nouvelId())
+                ajouter([{ id, auteur: 'assistant', texte: ev.texte }], { reflexion: false })
+              } else {
+                const id = bulle
+                setEtat((e) => ({
+                  ...e,
+                  messages: e.messages.map((m) =>
+                    m.id === id ? { ...m, texte: m.texte + ev.texte } : m,
+                  ),
+                }))
+              }
+              break
+            }
+            case 'outil':
+              // Le texte qui suivra l'outil va dans une nouvelle bulle.
+              bulle = undefined
+              setEtat((e) => ({ ...e, reflexion: true }))
+              break
+            case 'demande': {
+              if (ev.fiche) {
+                const nouvelle = (demande = ficheVersDemande(ev.fiche, demande))
+                setEtat((e) => ({ ...e, conversation: { ...e.conversation, demande: nouvelle } }))
+              }
+              confirme ||= ev.recapitulatifConfirme
+              break
+            }
+            case 'erreur':
+              bulle = undefined
+              ajouter([{ id: nouvelId(), auteur: 'assistant', texte: ev.erreur }])
+              break
+          }
+        }
+      }
+
+      try {
+        if (!jeton) {
+          jeton = await ouvrirConversation(controleur.signal)
+          const nouveau = jeton
+          setEtat((e) => ({ ...e, jeton: nouveau }))
+        }
+        try {
+          await lire(jeton)
+        } catch (err) {
+          // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
+          if (!(err instanceof ApiError && err.status === 401)) throw err
+          const nouveau = await ouvrirConversation(controleur.signal)
+          setEtat((e) => ({ ...e, jeton: nouveau }))
+          await lire(nouveau)
+        }
+      } catch (err) {
+        if (actif()) {
+          ajouter([
             {
               id: nouvelId(),
               auteur: 'assistant',
-              type: 'proposition',
-              texte: `Voici votre première proposition : ${proposition.titre}, ${formatEuros(equilibre.total)} en niveau équilibré. Vous pouvez me demander de la modifier.`,
-              propositionId: proposition.id,
+              texte: err instanceof ApiError ? err.message : INJOIGNABLE,
             },
-          ],
-          { propositionId: proposition.id, reflexion: false },
+          ])
+        }
+      } finally {
+        if (annulation.current === controleur) annulation.current = null
+      }
+
+      if (!actif()) return
+      enCours.current = false
+      setEtat((e) => ({ ...e, reflexion: false }))
+      // Récapitulatif confirmé : la demande est enregistrée, la conversation est aboutie.
+      if (confirme) {
+        ajouter(
+          [{ id: nouvelId(), auteur: 'assistant', type: 'confirmation', texte: CONFIRMATION }],
+          {
+            terminee: true,
+          },
         )
-      })
+      }
     },
-    [ajouter, plusTard],
-  )
-
-  /** Agent Modification : nouvelle version de la proposition avec la demande mise à jour. */
-  const modifier = useCallback((e: EtatChat, texte: string) => {
-    const precedente = trouverProposition(e.propositionId!)
-    const demande = extraire(texte, e.conversation.demande)
-    const slug = demande.destination ?? precedente?.destination ?? DESTINATIONS[0].slug
-    const proposition = {
-      ...genererProposition(demande, slug),
-      version: (precedente?.version ?? 1) + 1,
-    }
-    enregistrerProposition(proposition)
-    const ecart = precedente
-      ? proposition.budgets.equilibre.total - precedente.budgets.equilibre.total
-      : 0
-    const resumeEcart =
-      ecart === 0
-        ? 'le budget ne change pas'
-        : `le budget équilibré ${ecart > 0 ? 'augmente' : 'baisse'} de ${formatEuros(Math.abs(ecart))}`
-    return {
-      conversation: { ...e.conversation, demande },
-      message: {
-        id: nouvelId(),
-        auteur: 'assistant' as const,
-        type: 'proposition' as const,
-        texte: `C’est fait : voici la version ${proposition.version}, ${resumeEcart}.`,
-        propositionId: proposition.id,
-      },
-      propositionId: proposition.id,
-    }
-  }, [])
-
-  const appliquer = useCallback(
-    (reponse: Reponse) => {
-      plusTard(DELAI, () => {
-        setEtat((e) => ({
-          ...e,
-          conversation: reponse.conversation,
-          messages: [...e.messages, ...reponse.messages],
-          reflexion: reponse.complete,
-        }))
-        if (reponse.complete) preparer(reponse.conversation)
-      })
-    },
-    [plusTard, preparer],
+    [ajouter],
   )
 
   const envoyer = useCallback(
     (texte: string) => {
       const propre = texte.trim()
-      if (!propre) return
-      const e = etat
+      if (!propre || enCours.current || etatCourant.current.terminee) return
+      enCours.current = true
       const client: Message = { id: nouvelId(), auteur: 'client', texte: propre }
       setEtat((x) => ({
         ...x,
@@ -188,59 +174,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         reflexion: true,
         messages: [...x.messages, client],
       }))
-
-      if (CONSEILLER.test(propre)) {
-        plusTard(DELAI, () =>
-          ajouter(
-            [
-              {
-                id: nouvelId(),
-                auteur: 'assistant',
-                texte:
-                  'Je transmets votre demande et notre conversation à un conseiller de l’agence. Il vous recontacte sous 2 jours ouvrés, du lundi au samedi.',
-              },
-            ],
-            { reflexion: false },
-          ),
-        )
-        return
-      }
-
-      if (e.propositionId) {
-        const resultat = modifier(e, propre)
-        plusTard(DELAI, () =>
-          ajouter([resultat.message], {
-            conversation: resultat.conversation,
-            propositionId: resultat.propositionId,
-            reflexion: false,
-          }),
-        )
-        return
-      }
-
-      appliquer(repondre(e.conversation, propre))
+      void discuter(propre)
     },
-    [etat, ajouter, appliquer, modifier, plusTard],
+    [discuter],
   )
 
   const choisirAmbiance = useCallback(
     (slug: string) => {
-      const e = etat
       const dest = DESTINATIONS.find((d) => d.slug === slug)
-      if (!dest || e.reflexion || e.propositionId) return
-      setEtat((x) => ({
-        ...x,
-        reflexion: true,
-        messages: [
-          ...x.messages.map((m) =>
-            'type' in m && m.type === 'ambiances' && !m.choix ? { ...m, choix: slug } : m,
-          ),
-          { id: nouvelId(), auteur: 'client', texte: `${dest.pointsForts[0]}, à ${dest.ville} !` },
-        ],
-      }))
-      appliquer(choisirAmbianceAssistant(e.conversation, slug))
+      if (dest) envoyer(`${dest.pointsForts[0]}, à ${dest.ville} !`)
     },
-    [etat, appliquer],
+    [envoyer],
   )
 
   const valeur = useMemo(
@@ -253,8 +197,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
       setBrouillon: (brouillon: string) => setEtat((e) => ({ ...e, brouillon })),
       recommencer: () => {
-        timers.current.forEach((t) => window.clearTimeout(t))
-        timers.current = []
+        annulation.current?.abort()
+        enCours.current = false
+        // Sans jeton : le prochain message ouvre une nouvelle conversation côté API.
         setEtat((e) => ({ ...etatInitial(), ouvert: e.ouvert }))
       },
     }),

@@ -176,6 +176,18 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
 - **Voter** : `DemandeVoter` (`DEMANDE_VOIR`, `DEMANDE_MODIFIER`, `DEMANDE_ATTRIBUER` pour l'aiguillage) s'applique à une demande, à sa conversation et à ses propositions. Dans un contrôleur : `$this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande)`.
 - **Chatbot** : `POST /api/chat/conversations` ouvre une conversation et renvoie un jeton. Les appels suivants envoient ce jeton dans l'en-tête `X-Conversation-Token` (pare-feu `chatbot`, sans session). Sans jeton valide : 401 ; demande d'un autre client : 403.
 - **Limite de débit** (`api/config/packages/rate_limiter.yaml`) : par adresse IP, 20 requêtes par minute sur `/api/chat` et 10 nouvelles conversations par heure. Au-delà : 429 avec un message clair et l'en-tête `Retry-After`.
+- **Messages du chatbot** : `POST /api/chat` avec le jeton et le corps JSON `{"message": "…"}` (2 000 caractères au plus, sinon 400). La réponse est diffusée en Server-Sent Events (`text/event-stream`) :
+
+  | Événement | Données | Le site |
+  | --- | --- | --- |
+  | `texte` | `{"texte": "…"}` | ajoute ce morceau à la bulle de l'assistant |
+  | `outil` | `{"nom": "chercher_destinations"}` | peut montrer que l'assistant cherche |
+  | `demande` | `{"fiche": {…}, "recapitulatifConfirme": false}` | met à jour le récapitulatif ; une fois confirmé, lance la proposition |
+  | `erreur` | `{"erreur": "…"}` | affiche le message, déjà rédigé pour le client |
+  | `fin` | `{}` | la réponse est complète |
+
+  C'est une requête POST : côté site, lire le flux avec `fetch` et `response.body.getReader()`, pas avec `EventSource` (GET seulement).
+- **Agent Conversation** (`api/src/Chatbot`) : Symfony appelle l'API Claude en streaming (`ClientClaude`, client HTTP `claude.client` qui porte la clé), exécute les outils demandés par le modèle (`Chatbot/Outil`, voir [`docs/outils.md`](docs/outils.md)) et rappelle Claude jusqu'à sa réponse finale (8 appels au plus par message). L'historique complet au format de l'API est gardé dans `Conversation::historique`, la conversation lisible dans `Conversation::messages`, chaque appel dans `JournalIA`. Le navigateur ne parle jamais à l'API Claude.
 
 ## API du catalogue
 
