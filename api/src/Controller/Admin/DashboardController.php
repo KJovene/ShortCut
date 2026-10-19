@@ -8,6 +8,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -15,6 +16,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
 final class DashboardController extends AbstractDashboardController
 {
+    public function __construct(#[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl)
+    {
+    }
+
     public function index(): Response
     {
         return $this->render('admin/tableau_de_bord.html.twig');
@@ -30,6 +35,8 @@ final class DashboardController extends AbstractDashboardController
     public function configureMenuItems(): iterable
     {
         yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-home');
+        yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox');
+        yield MenuItem::linkToUrl('Retour au site', 'fa fa-arrow-left', rtrim($this->siteUrl, '/').'/');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');
