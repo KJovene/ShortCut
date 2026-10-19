@@ -1,0 +1,3709 @@
+openapi: 3.2.0
+info:
+  title: 'ShortCut API'
+  description: |-
+    API de l'agence ShortCut. Le catalogue (destinations, prestataires, logements, activités, tarifs)
+    est réservé aux conseillers connectés : la session ouverte par /api/connexion sert ici aussi.
+  version: 1.0.0
+servers:
+  -
+    url: /
+    description: ''
+paths:
+  /api/activites:
+    get:
+      operationId: api_activites_get_collection
+      tags:
+        - Activite
+      responses:
+        '200':
+          description: 'Activite collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Activite-prestation.public_prestation.interne_prestation.tarifs'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Activite resources.'
+      description: 'Retrieves the collection of Activite resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: destination
+          in: query
+          description: 'Activite destination'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: destinationSlug
+          in: query
+          description: 'Slug de la destination, ex. lisbonne.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: prestataire
+          in: query
+          description: 'Activite prestataire'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: categorie
+          in: query
+          description: 'Activite categorie'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: 'capacite[gt]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[gte]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[lt]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[lte]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[ne]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[between]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: accessible
+          in: query
+          description: 'Adapté aux personnes à mobilité réduite.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: envie
+          in: query
+          description: 'Envie associée (plage, culture, détente…).'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: mois
+          in: query
+          description: 'Disponible ce mois-ci (AAAA-MM) : au moins un tarif saisi sur le mois.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: 2027-05
+          style: form
+          explode: true
+        -
+          name: 'ageMinimum[gt]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'ageMinimum[gte]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'ageMinimum[lt]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'ageMinimum[lte]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'ageMinimum[ne]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'ageMinimum[between]'
+          in: query
+          description: 'Âge minimum, ex. ageMinimum[lte]=8 pour une activité ouverte à un enfant de 8 ans.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[gt]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[gte]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[lt]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[lte]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[ne]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'dureeMinutes[between]'
+          in: query
+          description: 'Durée en minutes, ex. dureeMinutes[lte]=180.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+    post:
+      operationId: api_activites_post
+      tags:
+        - Activite
+      responses:
+        '201':
+          description: 'Activite resource created'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite-prestation.public_prestation.interne_prestation.tarifs'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Creates a Activite resource.'
+      description: 'Creates a Activite resource.'
+      parameters: []
+      requestBody:
+        description: 'The new Activite resource'
+        content:
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/Activite-prestation.ecriture'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activite-prestation.ecriture'
+        required: true
+  '/api/activites/{id}':
+    get:
+      operationId: activite_fiche
+      tags:
+        - Activite
+      responses:
+        '200':
+          description: 'Activite resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite-prestation.public_prestation.interne_prestation.tarifs'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Activite resource.'
+      description: 'Retrieves a Activite resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Activite identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    delete:
+      operationId: api_activites_id_delete
+      tags:
+        - Activite
+      responses:
+        '204':
+          description: 'Activite resource deleted'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Removes the Activite resource.'
+      description: 'Removes the Activite resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Activite identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    patch:
+      operationId: api_activites_id_patch
+      tags:
+        - Activite
+      responses:
+        '200':
+          description: 'Activite resource updated'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Activite-prestation.public_prestation.interne_prestation.tarifs'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Updates the Activite resource.'
+      description: 'Updates the Activite resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Activite identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+      requestBody:
+        description: 'The updated Activite resource'
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Activite-prestation.ecriture.jsonMergePatch'
+        required: true
+  /api/destinations:
+    get:
+      operationId: api_destinations_get_collection
+      tags:
+        - Destination
+      responses:
+        '200':
+          description: 'Destination collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Destination.jsonld-destination.public_destination.interne collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Destination.jsonld-destination.public_destination.interne' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Destination-destination.public_destination.interne'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Destination resources.'
+      description: 'Retrieves the collection of Destination resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: pays
+          in: query
+          description: 'Destination pays'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: ville
+          in: query
+          description: 'Destination ville'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: slug
+          in: query
+          description: 'Destination slug'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: publiee
+          in: query
+          description: 'Destination publiee'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: miseEnAvant
+          in: query
+          description: 'Destination miseEnAvant'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: mois
+          in: query
+          description: 'Mois du voyage, au format AAAA-MM. Combiné à temperatureMin ou temperatureMax, la température porte sur ce mois.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: 2027-05
+          style: form
+          explode: true
+        -
+          name: temperatureMin
+          in: query
+          description: 'Température moyenne minimale, en °C.'
+          required: false
+          deprecated: false
+          schema:
+            type: number
+          style: form
+          explode: true
+        -
+          name: temperatureMax
+          in: query
+          description: 'Température moyenne maximale, en °C.'
+          required: false
+          deprecated: false
+          schema:
+            type: number
+          style: form
+          explode: true
+        -
+          name: envie
+          in: query
+          description: 'Au moins un logement ou une activité de la destination correspond à cette envie (plage, culture…).'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+    post:
+      operationId: api_destinations_post
+      tags:
+        - Destination
+      responses:
+        '201':
+          description: 'Destination resource created'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Destination.jsonld-destination.public_destination.interne'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destination-destination.public_destination.interne'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Creates a Destination resource.'
+      description: 'Creates a Destination resource.'
+      parameters: []
+      requestBody:
+        description: 'The new Destination resource'
+        content:
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/Destination-destination.ecriture'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Destination-destination.ecriture'
+        required: true
+  '/api/destinations/{id}':
+    get:
+      operationId: api_destinations_id_get
+      tags:
+        - Destination
+      responses:
+        '200':
+          description: 'Destination resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Destination.jsonld-destination.public_destination.interne'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destination-destination.public_destination.interne'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Destination resource.'
+      description: 'Retrieves a Destination resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Destination identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    delete:
+      operationId: api_destinations_id_delete
+      tags:
+        - Destination
+      responses:
+        '204':
+          description: 'Destination resource deleted'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Removes the Destination resource.'
+      description: 'Removes the Destination resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Destination identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    patch:
+      operationId: api_destinations_id_patch
+      tags:
+        - Destination
+      responses:
+        '200':
+          description: 'Destination resource updated'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Destination.jsonld-destination.public_destination.interne'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destination-destination.public_destination.interne'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Updates the Destination resource.'
+      description: 'Updates the Destination resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Destination identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+      requestBody:
+        description: 'The updated Destination resource'
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Destination-destination.ecriture.jsonMergePatch'
+        required: true
+  /api/logements:
+    get:
+      operationId: api_logements_get_collection
+      tags:
+        - Logement
+      responses:
+        '200':
+          description: 'Logement collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Logement-prestation.public_prestation.interne_prestation.tarifs'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Logement resources.'
+      description: 'Retrieves the collection of Logement resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: destination
+          in: query
+          description: 'Logement destination'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: destinationSlug
+          in: query
+          description: 'Slug de la destination, ex. lisbonne.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: prestataire
+          in: query
+          description: 'Logement prestataire'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: categorie
+          in: query
+          description: 'Logement categorie'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: 'capacite[gt]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[gte]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[lt]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[lte]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[ne]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'capacite[between]'
+          in: query
+          description: 'Capacité, ex. capacite[gte]=4 pour au moins 4 personnes.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: accessible
+          in: query
+          description: 'Adapté aux personnes à mobilité réduite.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: envie
+          in: query
+          description: 'Envie associée (plage, culture, détente…).'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: mois
+          in: query
+          description: 'Disponible ce mois-ci (AAAA-MM) : au moins un tarif saisi sur le mois.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: 2027-05
+          style: form
+          explode: true
+    post:
+      operationId: api_logements_post
+      tags:
+        - Logement
+      responses:
+        '201':
+          description: 'Logement resource created'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logement-prestation.public_prestation.interne_prestation.tarifs'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Creates a Logement resource.'
+      description: 'Creates a Logement resource.'
+      parameters: []
+      requestBody:
+        description: 'The new Logement resource'
+        content:
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/Logement-prestation.ecriture'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Logement-prestation.ecriture'
+        required: true
+  '/api/logements/{id}':
+    get:
+      operationId: logement_fiche
+      tags:
+        - Logement
+      responses:
+        '200':
+          description: 'Logement resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logement-prestation.public_prestation.interne_prestation.tarifs'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Logement resource.'
+      description: 'Retrieves a Logement resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Logement identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    delete:
+      operationId: api_logements_id_delete
+      tags:
+        - Logement
+      responses:
+        '204':
+          description: 'Logement resource deleted'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Removes the Logement resource.'
+      description: 'Removes the Logement resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Logement identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    patch:
+      operationId: api_logements_id_patch
+      tags:
+        - Logement
+      responses:
+        '200':
+          description: 'Logement resource updated'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logement-prestation.public_prestation.interne_prestation.tarifs'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Updates the Logement resource.'
+      description: 'Updates the Logement resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Logement identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+      requestBody:
+        description: 'The updated Logement resource'
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Logement-prestation.ecriture.jsonMergePatch'
+        required: true
+  /api/prestataires:
+    get:
+      operationId: api_prestataires_get_collection
+      tags:
+        - Prestataire
+      responses:
+        '200':
+          description: 'Prestataire collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Prestataire.jsonld-prestataire.lecture collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Prestataire.jsonld-prestataire.lecture' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prestataire-prestataire.lecture'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Prestataire resources.'
+      description: 'Retrieves the collection of Prestataire resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: nom
+          in: query
+          description: 'Prestataire nom'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: type
+          in: query
+          description: 'Prestataire type'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            enum:
+              - hebergeur
+              - transporteur
+              - guide
+              - activite
+          style: form
+          explode: true
+    post:
+      operationId: api_prestataires_post
+      tags:
+        - Prestataire
+      responses:
+        '201':
+          description: 'Prestataire resource created'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Prestataire.jsonld-prestataire.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestataire-prestataire.lecture'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Creates a Prestataire resource.'
+      description: 'Creates a Prestataire resource.'
+      parameters: []
+      requestBody:
+        description: 'The new Prestataire resource'
+        content:
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/Prestataire-prestataire.ecriture'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prestataire-prestataire.ecriture'
+        required: true
+  '/api/prestataires/{id}':
+    get:
+      operationId: api_prestataires_id_get
+      tags:
+        - Prestataire
+      responses:
+        '200':
+          description: 'Prestataire resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Prestataire.jsonld-prestataire.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestataire-prestataire.lecture'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Prestataire resource.'
+      description: 'Retrieves a Prestataire resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Prestataire identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    delete:
+      operationId: api_prestataires_id_delete
+      tags:
+        - Prestataire
+      responses:
+        '204':
+          description: 'Prestataire resource deleted'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Removes the Prestataire resource.'
+      description: 'Removes the Prestataire resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Prestataire identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    patch:
+      operationId: api_prestataires_id_patch
+      tags:
+        - Prestataire
+      responses:
+        '200':
+          description: 'Prestataire resource updated'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Prestataire.jsonld-prestataire.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestataire-prestataire.lecture'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Updates the Prestataire resource.'
+      description: 'Updates the Prestataire resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Prestataire identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+      requestBody:
+        description: 'The updated Prestataire resource'
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Prestataire-prestataire.ecriture.jsonMergePatch'
+        required: true
+  /api/tarifs:
+    get:
+      operationId: api_tarifs_get_collection
+      tags:
+        - Tarif
+      responses:
+        '200':
+          description: 'Tarif collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Tarif.jsonld-tarif.lecture collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Tarif.jsonld-tarif.lecture' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tarif-tarif.lecture'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Tarif resources.'
+      description: 'Retrieves the collection of Tarif resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: prestation
+          in: query
+          description: 'Tarif prestation'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: unite
+          in: query
+          description: 'Tarif unite'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            enum:
+              - par_nuit
+              - par_personne
+          style: form
+          explode: true
+        -
+          name: mois
+          in: query
+          description: 'Tarifs qui couvrent au moins un jour de ce mois (AAAA-MM).'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: 2027-05
+          style: form
+          explode: true
+    post:
+      operationId: api_tarifs_post
+      tags:
+        - Tarif
+      responses:
+        '201':
+          description: 'Tarif resource created'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Tarif.jsonld-tarif.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tarif-tarif.lecture'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Creates a Tarif resource.'
+      description: 'Creates a Tarif resource.'
+      parameters: []
+      requestBody:
+        description: 'The new Tarif resource'
+        content:
+          application/ld+json:
+            schema:
+              $ref: '#/components/schemas/Tarif-tarif.ecriture'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tarif-tarif.ecriture'
+        required: true
+  '/api/tarifs/{id}':
+    get:
+      operationId: api_tarifs_id_get
+      tags:
+        - Tarif
+      responses:
+        '200':
+          description: 'Tarif resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Tarif.jsonld-tarif.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tarif-tarif.lecture'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Tarif resource.'
+      description: 'Retrieves a Tarif resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Tarif identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    delete:
+      operationId: api_tarifs_id_delete
+      tags:
+        - Tarif
+      responses:
+        '204':
+          description: 'Tarif resource deleted'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Removes the Tarif resource.'
+      description: 'Removes the Tarif resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Tarif identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+    patch:
+      operationId: api_tarifs_id_patch
+      tags:
+        - Tarif
+      responses:
+        '200':
+          description: 'Tarif resource updated'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Tarif.jsonld-tarif.lecture'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tarif-tarif.lecture'
+          links: {  }
+        '400':
+          description: 'Invalid input'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '422':
+          description: 'An error occurred'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConstraintViolation'
+          links: {  }
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Updates the Tarif resource.'
+      description: 'Updates the Tarif resource.'
+      parameters:
+        -
+          name: id
+          in: path
+          description: 'Tarif identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
+      requestBody:
+        description: 'The updated Tarif resource'
+        content:
+          application/merge-patch+json:
+            schema:
+              $ref: '#/components/schemas/Tarif-tarif.ecriture.jsonMergePatch'
+        required: true
+components:
+  schemas:
+    Activite-prestation.ecriture:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      required:
+        - nom
+        - destination
+        - prestataire
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+    Activite-prestation.ecriture.jsonMergePatch:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+    Activite-prestation.public_prestation.interne_prestation.tarifs:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        type:
+          description: "Fixé par l'adresse utilisée (/api/logements ou /api/activites), jamais par le contenu envoyé."
+          type:
+            - string
+            - 'null'
+          enum:
+            - logement
+            - activite
+            - null
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        tarifs:
+          description: 'Tarifs en lecture seule ici : ils se créent et se modifient sur /api/tarifs.'
+          type: array
+          items:
+            $ref: '#/components/schemas/Tarif-prestation.public_prestation.interne_prestation.tarifs'
+      required:
+        - type
+        - nom
+        - destination
+        - prestataire
+    Activite.jsonld-prestation.public_prestation.interne_prestation.tarifs:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            type:
+              description: "Fixé par l'adresse utilisée (/api/logements ou /api/activites), jamais par le contenu envoyé."
+              type:
+                - string
+                - 'null'
+              enum:
+                - logement
+                - activite
+                - null
+            nom:
+              maxLength: 150
+              type: string
+            destination:
+              type: string
+              format: iri-reference
+              example: 'https://example.com/'
+            prestataire:
+              type: string
+              format: iri-reference
+              example: 'https://example.com/'
+            categorie:
+              maxLength: 100
+              description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+              type:
+                - string
+                - 'null'
+            description:
+              maxLength: 5000
+              type:
+                - string
+                - 'null'
+            capacite:
+              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 1000
+              description: 'Nombre maximum de personnes.'
+              default: 1
+              type: integer
+            equipements:
+              type: array
+              items:
+                type: string
+            accessible:
+              description: 'Adapté aux personnes à mobilité réduite.'
+              default: false
+              type: boolean
+            dureeMinutes:
+              minimum: 0
+              exclusiveMinimum: 0
+              description: "Durée d'une activité."
+              type:
+                - integer
+                - 'null'
+            ageMinimum:
+              minimum: 0
+              maximum: 99
+              type:
+                - integer
+                - 'null'
+            envies:
+              type: array
+              items:
+                type: string
+            photos:
+              maxItems: 10
+              type: array
+              items:
+                type: string
+            tarifs:
+              description: 'Tarifs en lecture seule ici : ils se créent et se modifient sur /api/tarifs.'
+              type: array
+              items:
+                $ref: '#/components/schemas/Tarif.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+          required:
+            - type
+            - nom
+            - destination
+            - prestataire
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+    ConstraintViolation:
+      type: object
+      description: 'Unprocessable entity'
+      properties:
+        status:
+          default: 422
+          type: integer
+        violations:
+          type: array
+          items:
+            type: object
+            properties:
+              propertyPath:
+                type: string
+                description: 'The property path of the violation'
+              message:
+                type: string
+                description: 'The message associated with the violation'
+              code:
+                type: string
+                description: 'The code of the violation'
+              hint:
+                type: string
+                description: 'An extra hint to understand the violation'
+              payload:
+                type: object
+                additionalProperties: true
+                description: 'The serialized payload of the violation'
+            required:
+              - propertyPath
+              - message
+        detail:
+          readOnly: true
+          type: string
+        type:
+          readOnly: true
+          type: string
+        title:
+          readOnly: true
+          type:
+            - string
+            - 'null'
+        instance:
+          readOnly: true
+          type:
+            - string
+            - 'null'
+    ConstraintViolation.jsonld:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            status:
+              default: 422
+              type: integer
+            violations:
+              type: array
+              items:
+                type: object
+                properties:
+                  propertyPath: { type: string, description: 'The property path of the violation' }
+                  message: { type: string, description: 'The message associated with the violation' }
+                  code: { type: string, description: 'The code of the violation' }
+                  hint: { type: string, description: 'An extra hint to understand the violation' }
+                  payload: { type: object, additionalProperties: true, description: 'The serialized payload of the violation' }
+                required:
+                  - propertyPath
+                  - message
+            detail:
+              readOnly: true
+              type: string
+            description:
+              readOnly: true
+              type: string
+            type:
+              readOnly: true
+              type: string
+            title:
+              readOnly: true
+              type:
+                - string
+                - 'null'
+            instance:
+              readOnly: true
+              type:
+                - string
+                - 'null'
+      description: 'Unprocessable entity'
+    Destination-destination.ecriture:
+      type: object
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+      required:
+        - pays
+        - ville
+        - slug
+      properties:
+        pays:
+          maxLength: 100
+          type: string
+        region:
+          maxLength: 100
+          type:
+            - string
+            - 'null'
+        ville:
+          maxLength: 100
+          type: string
+        slug:
+          maxLength: 150
+          pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+          description: 'Adresse de la fiche sur le site.'
+          type: string
+        tempsDeTrajet:
+          description: 'Minutes de trajet, indexées par ville de départ.'
+          type: object
+          additionalProperties:
+            type: integer
+        pointsForts:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        photo:
+          maxLength: 255
+          type:
+            - string
+            - 'null'
+        publiee:
+          default: false
+          type: boolean
+        miseEnAvant:
+          description: "Affichée sur la page d'accueil."
+          default: false
+          type: boolean
+    Destination-destination.ecriture.jsonMergePatch:
+      type: object
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+      properties:
+        pays:
+          maxLength: 100
+          type: string
+        region:
+          maxLength: 100
+          type:
+            - string
+            - 'null'
+        ville:
+          maxLength: 100
+          type: string
+        slug:
+          maxLength: 150
+          pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+          description: 'Adresse de la fiche sur le site.'
+          type: string
+        tempsDeTrajet:
+          description: 'Minutes de trajet, indexées par ville de départ.'
+          type: object
+          additionalProperties:
+            type: integer
+        pointsForts:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        photo:
+          maxLength: 255
+          type:
+            - string
+            - 'null'
+        publiee:
+          default: false
+          type: boolean
+        miseEnAvant:
+          description: "Affichée sur la page d'accueil."
+          default: false
+          type: boolean
+    Destination-destination.public_destination.interne:
+      type: object
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        pays:
+          maxLength: 100
+          type: string
+        region:
+          maxLength: 100
+          type:
+            - string
+            - 'null'
+        ville:
+          maxLength: 100
+          type: string
+        slug:
+          maxLength: 150
+          pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+          description: 'Adresse de la fiche sur le site.'
+          type: string
+        tempsDeTrajet:
+          description: 'Minutes de trajet, indexées par ville de départ.'
+          type: object
+          additionalProperties:
+            type: integer
+        pointsForts:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        photo:
+          maxLength: 255
+          type:
+            - string
+            - 'null'
+        publiee:
+          default: false
+          type: boolean
+        miseEnAvant:
+          description: "Affichée sur la page d'accueil."
+          default: false
+          type: boolean
+        periodesClimatiques:
+          readOnly: true
+          description: "Climat en lecture seule dans l'API : il se saisit dans le backoffice."
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodeClimatique-destination.public_destination.interne'
+      required:
+        - pays
+        - ville
+        - slug
+    Destination.jsonld-destination.public_destination.interne:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            pays:
+              maxLength: 100
+              type: string
+            region:
+              maxLength: 100
+              type:
+                - string
+                - 'null'
+            ville:
+              maxLength: 100
+              type: string
+            slug:
+              maxLength: 150
+              pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+              description: 'Adresse de la fiche sur le site.'
+              type: string
+            tempsDeTrajet:
+              description: 'Minutes de trajet, indexées par ville de départ.'
+              type: object
+              additionalProperties:
+                type: integer
+            pointsForts:
+              maxItems: 10
+              type: array
+              items:
+                type: string
+            description:
+              maxLength: 5000
+              type:
+                - string
+                - 'null'
+            photo:
+              maxLength: 255
+              type:
+                - string
+                - 'null'
+            publiee:
+              default: false
+              type: boolean
+            miseEnAvant:
+              description: "Affichée sur la page d'accueil."
+              default: false
+              type: boolean
+            periodesClimatiques:
+              readOnly: true
+              description: "Climat en lecture seule dans l'API : il se saisit dans le backoffice."
+              type: array
+              items:
+                $ref: '#/components/schemas/PeriodeClimatique.jsonld-destination.public_destination.interne'
+          required:
+            - pays
+            - ville
+            - slug
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+    Error:
+      type: object
+      description: 'A representation of common errors.'
+      properties:
+        title:
+          readOnly: true
+          description: 'A short, human-readable summary of the problem.'
+          type:
+            - string
+            - 'null'
+        detail:
+          readOnly: true
+          description: 'A human-readable explanation specific to this occurrence of the problem.'
+          type:
+            - string
+            - 'null'
+        status:
+          type:
+            - integer
+            - 'null'
+          examples:
+            - 404
+          default: 400
+        instance:
+          readOnly: true
+          description: 'A URI reference that identifies the specific occurrence of the problem. It may or may not yield further information if dereferenced.'
+          type:
+            - string
+            - 'null'
+        type:
+          readOnly: true
+          description: 'A URI reference that identifies the problem type'
+          type: string
+    Error.jsonld:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            title:
+              readOnly: true
+              description: 'A short, human-readable summary of the problem.'
+              type:
+                - string
+                - 'null'
+            detail:
+              readOnly: true
+              description: 'A human-readable explanation specific to this occurrence of the problem.'
+              type:
+                - string
+                - 'null'
+            status:
+              type:
+                - integer
+                - 'null'
+              examples:
+                - 404
+              default: 400
+            instance:
+              readOnly: true
+              description: 'A URI reference that identifies the specific occurrence of the problem. It may or may not yield further information if dereferenced.'
+              type:
+                - string
+                - 'null'
+            type:
+              readOnly: true
+              description: 'A URI reference that identifies the problem type'
+              type: string
+            description:
+              readOnly: true
+              type:
+                - string
+                - 'null'
+      description: 'A representation of common errors.'
+    HydraCollectionBaseSchema:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraCollectionBaseSchemaNoPagination'
+        -
+          type: object
+          properties:
+            view:
+              type: object
+              properties:
+                '@id':
+                  type: string
+                  format: iri-reference
+                '@type':
+                  type: string
+                first:
+                  type: [string, 'null']
+                  format: iri-reference
+                last:
+                  type: [string, 'null']
+                  format: iri-reference
+                previous:
+                  type: [string, 'null']
+                  format: iri-reference
+                next:
+                  type: [string, 'null']
+                  format: iri-reference
+              example:
+                '@id': string
+                '@type': string
+                first: string
+                last: string
+                previous: string
+                next: string
+    HydraCollectionBaseSchemaNoPagination:
+      type: object
+      properties:
+        totalItems:
+          type: integer
+          minimum: 0
+        search:
+          type: object
+          properties:
+            '@type':
+              type: string
+            template:
+              type: string
+            variableRepresentation:
+              type: string
+            mapping:
+              type: array
+              items:
+                type: object
+                properties:
+                  '@type': { type: string }
+                  variable: { type: string }
+                  property: { type: [string, 'null'] }
+                  required: { type: boolean }
+    HydraItemBaseSchema:
+      type: object
+      properties:
+        '@context':
+          oneOf:
+            -
+              type: string
+            -
+              type: object
+              properties:
+                '@vocab':
+                  type: string
+                hydra:
+                  type: string
+                  enum: ['http://www.w3.org/ns/hydra/core#']
+              required:
+                - '@vocab'
+                - hydra
+              additionalProperties: true
+        '@id':
+          type: string
+        '@type':
+          type: string
+      required:
+        - '@id'
+        - '@type'
+    Logement-prestation.ecriture:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      required:
+        - nom
+        - destination
+        - prestataire
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+    Logement-prestation.ecriture.jsonMergePatch:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+    Logement-prestation.public_prestation.interne_prestation.tarifs:
+      type: object
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        type:
+          description: "Fixé par l'adresse utilisée (/api/logements ou /api/activites), jamais par le contenu envoyé."
+          type:
+            - string
+            - 'null'
+          enum:
+            - logement
+            - activite
+            - null
+        nom:
+          maxLength: 150
+          type: string
+        destination:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        prestataire:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        categorie:
+          maxLength: 100
+          description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+          type:
+            - string
+            - 'null'
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        capacite:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 1000
+          description: 'Nombre maximum de personnes.'
+          default: 1
+          type: integer
+        equipements:
+          type: array
+          items:
+            type: string
+        accessible:
+          description: 'Adapté aux personnes à mobilité réduite.'
+          default: false
+          type: boolean
+        dureeMinutes:
+          minimum: 0
+          exclusiveMinimum: 0
+          description: "Durée d'une activité."
+          type:
+            - integer
+            - 'null'
+        ageMinimum:
+          minimum: 0
+          maximum: 99
+          type:
+            - integer
+            - 'null'
+        envies:
+          type: array
+          items:
+            type: string
+        photos:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        tarifs:
+          description: 'Tarifs en lecture seule ici : ils se créent et se modifient sur /api/tarifs.'
+          type: array
+          items:
+            $ref: '#/components/schemas/Tarif-prestation.public_prestation.interne_prestation.tarifs'
+      required:
+        - type
+        - nom
+        - destination
+        - prestataire
+    Logement.jsonld-prestation.public_prestation.interne_prestation.tarifs:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            type:
+              description: "Fixé par l'adresse utilisée (/api/logements ou /api/activites), jamais par le contenu envoyé."
+              type:
+                - string
+                - 'null'
+              enum:
+                - logement
+                - activite
+                - null
+            nom:
+              maxLength: 150
+              type: string
+            destination:
+              type: string
+              format: iri-reference
+              example: 'https://example.com/'
+            prestataire:
+              type: string
+              format: iri-reference
+              example: 'https://example.com/'
+            categorie:
+              maxLength: 100
+              description: 'Ex. « 3 étoiles », « villa », « excursion ».'
+              type:
+                - string
+                - 'null'
+            description:
+              maxLength: 5000
+              type:
+                - string
+                - 'null'
+            capacite:
+              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 1000
+              description: 'Nombre maximum de personnes.'
+              default: 1
+              type: integer
+            equipements:
+              type: array
+              items:
+                type: string
+            accessible:
+              description: 'Adapté aux personnes à mobilité réduite.'
+              default: false
+              type: boolean
+            dureeMinutes:
+              minimum: 0
+              exclusiveMinimum: 0
+              description: "Durée d'une activité."
+              type:
+                - integer
+                - 'null'
+            ageMinimum:
+              minimum: 0
+              maximum: 99
+              type:
+                - integer
+                - 'null'
+            envies:
+              type: array
+              items:
+                type: string
+            photos:
+              maxItems: 10
+              type: array
+              items:
+                type: string
+            tarifs:
+              description: 'Tarifs en lecture seule ici : ils se créent et se modifient sur /api/tarifs.'
+              type: array
+              items:
+                $ref: '#/components/schemas/Tarif.jsonld-prestation.public_prestation.interne_prestation.tarifs'
+          required:
+            - type
+            - nom
+            - destination
+            - prestataire
+      description: |-
+        Logement ou activité proposé par un prestataire dans une destination.
+        Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+        Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+    PeriodeClimatique-destination.public_destination.interne:
+      type: object
+      required:
+        - debut
+        - fin
+        - temperatureMoyenne
+      properties:
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        temperatureMoyenne:
+          minimum: -50
+          maximum: 60
+          description: 'En °C.'
+          type: number
+        pluieMm:
+          minimum: 0
+          description: 'Précipitations sur la période, en mm.'
+          type:
+            - integer
+            - 'null'
+    PeriodeClimatique.jsonld-destination.public_destination.interne:
+      type: object
+      required:
+        - debut
+        - fin
+        - temperatureMoyenne
+      properties:
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        temperatureMoyenne:
+          minimum: -50
+          maximum: 60
+          description: 'En °C.'
+          type: number
+        pluieMm:
+          minimum: 0
+          description: 'Précipitations sur la période, en mm.'
+          type:
+            - integer
+            - 'null'
+    Prestataire-prestataire.ecriture:
+      type: object
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      required:
+        - nom
+        - type
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        type:
+          type: string
+          enum:
+            - hebergeur
+            - transporteur
+            - guide
+            - activite
+        contactNom:
+          maxLength: 150
+          type:
+            - string
+            - 'null'
+        email:
+          format: email
+          maxLength: 180
+          externalDocs:
+            url: 'https://schema.org/email'
+          type:
+            - string
+            - 'null'
+        telephone:
+          maxLength: 30
+          pattern: '^(\+?[0-9 .()-]{6,})$'
+          type:
+            - string
+            - 'null'
+        conditionsAnnulation:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        fourchettesTransport:
+          description: "Fourchettes de prix des transports, utilisées quand il n'y a pas de tarif précis."
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              anyOf:
+                -
+                  type: integer
+                -
+                  type: string
+    Prestataire-prestataire.ecriture.jsonMergePatch:
+      type: object
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      properties:
+        nom:
+          maxLength: 150
+          type: string
+        type:
+          type: string
+          enum:
+            - hebergeur
+            - transporteur
+            - guide
+            - activite
+        contactNom:
+          maxLength: 150
+          type:
+            - string
+            - 'null'
+        email:
+          format: email
+          maxLength: 180
+          externalDocs:
+            url: 'https://schema.org/email'
+          type:
+            - string
+            - 'null'
+        telephone:
+          maxLength: 30
+          pattern: '^(\+?[0-9 .()-]{6,})$'
+          type:
+            - string
+            - 'null'
+        conditionsAnnulation:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        fourchettesTransport:
+          description: "Fourchettes de prix des transports, utilisées quand il n'y a pas de tarif précis."
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              anyOf:
+                -
+                  type: integer
+                -
+                  type: string
+    Prestataire-prestataire.lecture:
+      type: object
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        nom:
+          maxLength: 150
+          type: string
+        type:
+          type: string
+          enum:
+            - hebergeur
+            - transporteur
+            - guide
+            - activite
+        contactNom:
+          maxLength: 150
+          type:
+            - string
+            - 'null'
+        email:
+          format: email
+          maxLength: 180
+          externalDocs:
+            url: 'https://schema.org/email'
+          type:
+            - string
+            - 'null'
+        telephone:
+          maxLength: 30
+          pattern: '^(\+?[0-9 .()-]{6,})$'
+          type:
+            - string
+            - 'null'
+        conditionsAnnulation:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        fourchettesTransport:
+          description: "Fourchettes de prix des transports, utilisées quand il n'y a pas de tarif précis."
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              anyOf:
+                -
+                  type: integer
+                -
+                  type: string
+      required:
+        - nom
+        - type
+    Prestataire.jsonld-prestataire.lecture:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            nom:
+              maxLength: 150
+              type: string
+            type:
+              type: string
+              enum:
+                - hebergeur
+                - transporteur
+                - guide
+                - activite
+            contactNom:
+              maxLength: 150
+              type:
+                - string
+                - 'null'
+            email:
+              format: email
+              maxLength: 180
+              externalDocs:
+                url: 'https://schema.org/email'
+              type:
+                - string
+                - 'null'
+            telephone:
+              maxLength: 30
+              pattern: '^(\+?[0-9 .()-]{6,})$'
+              type:
+                - string
+                - 'null'
+            conditionsAnnulation:
+              maxLength: 5000
+              type:
+                - string
+                - 'null'
+            fourchettesTransport:
+              description: "Fourchettes de prix des transports, utilisées quand il n'y a pas de tarif précis."
+              type: array
+              items:
+                type: object
+                additionalProperties:
+                  anyOf: [{ type: integer }, { type: string }]
+          required:
+            - nom
+            - type
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+    Tarif-prestation.public_prestation.interne_prestation.tarifs:
+      type: object
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        prixCentimes:
+          minimum: 0
+          type: integer
+        unite:
+          default: par_nuit
+          type: string
+          enum:
+            - par_nuit
+            - par_personne
+        sejourMinimumNuits:
+          minimum: 0
+          exclusiveMinimum: 0
+          type:
+            - integer
+            - 'null'
+      required:
+        - debut
+        - fin
+        - prixCentimes
+    Tarif-tarif.ecriture:
+      type: object
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      required:
+        - prestation
+        - debut
+        - fin
+        - prixCentimes
+      properties:
+        prestation:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        prixCentimes:
+          minimum: 0
+          type: integer
+        unite:
+          default: par_nuit
+          type: string
+          enum:
+            - par_nuit
+            - par_personne
+        sejourMinimumNuits:
+          minimum: 0
+          exclusiveMinimum: 0
+          type:
+            - integer
+            - 'null'
+    Tarif-tarif.ecriture.jsonMergePatch:
+      type: object
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      properties:
+        prestation:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        prixCentimes:
+          minimum: 0
+          type: integer
+        unite:
+          default: par_nuit
+          type: string
+          enum:
+            - par_nuit
+            - par_personne
+        sejourMinimumNuits:
+          minimum: 0
+          exclusiveMinimum: 0
+          type:
+            - integer
+            - 'null'
+    Tarif-tarif.lecture:
+      type: object
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        prestation:
+          type: string
+          format: iri-reference
+          example: 'https://example.com/'
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        prixCentimes:
+          minimum: 0
+          type: integer
+        unite:
+          default: par_nuit
+          type: string
+          enum:
+            - par_nuit
+            - par_personne
+        sejourMinimumNuits:
+          minimum: 0
+          exclusiveMinimum: 0
+          type:
+            - integer
+            - 'null'
+        modifieLe:
+          type: string
+          format: date-time
+      required:
+        - prestation
+        - debut
+        - fin
+        - prixCentimes
+    Tarif.jsonld-prestation.public_prestation.interne_prestation.tarifs:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            debut:
+              type: string
+              format: date-time
+            fin:
+              type: string
+              format: date-time
+            prixCentimes:
+              minimum: 0
+              type: integer
+            unite:
+              default: par_nuit
+              type: string
+              enum:
+                - par_nuit
+                - par_personne
+            sejourMinimumNuits:
+              minimum: 0
+              exclusiveMinimum: 0
+              type:
+                - integer
+                - 'null'
+          required:
+            - debut
+            - fin
+            - prixCentimes
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+    Tarif.jsonld-tarif.lecture:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          properties:
+            id:
+              readOnly: true
+              type: integer
+            prestation:
+              type: string
+              format: iri-reference
+              example: 'https://example.com/'
+            debut:
+              type: string
+              format: date-time
+            fin:
+              type: string
+              format: date-time
+            prixCentimes:
+              minimum: 0
+              type: integer
+            unite:
+              default: par_nuit
+              type: string
+              enum:
+                - par_nuit
+                - par_personne
+            sejourMinimumNuits:
+              minimum: 0
+              exclusiveMinimum: 0
+              type:
+                - integer
+                - 'null'
+            modifieLe:
+              type: string
+              format: date-time
+          required:
+            - prestation
+            - debut
+            - fin
+            - prixCentimes
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+  responses: {  }
+  parameters: {  }
+  examples: {  }
+  requestBodies: {  }
+  headers: {  }
+  securitySchemes: {  }
+security: []
+tags:
+  -
+    name: Destination
+    description: |-
+      Destination du catalogue, avec son climat par période.
+      Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+  -
+    name: Prestataire
+    description: |-
+      Hébergeur, transporteur, guide ou prestataire d'activités.
+      Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+  -
+    name: Logement
+    description: |-
+      Logement ou activité proposé par un prestataire dans une destination.
+      Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+      Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+  -
+    name: Activite
+    description: |-
+      Logement ou activité proposé par un prestataire dans une destination.
+      Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
+      Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+  -
+    name: Tarif
+    description: |-
+      Prix d'un logement ou d'une activité sur une période.
+      Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+      Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+webhooks: {  }
+

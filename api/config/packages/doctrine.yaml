@@ -26,6 +26,9 @@ doctrine:
                 alias: App
         controller_resolver:
             auto_mapping: false
+        dql:
+            string_functions:
+                JSON_CONTIENT: App\Doctrine\JsonContient
 
 when@test:
     doctrine:
