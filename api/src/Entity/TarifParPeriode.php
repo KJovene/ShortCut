@@ -7,11 +7,13 @@ use App\Repository\TarifParPeriodeRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Validator\NoPeriodOverlap;
 
 /** Prix d'un logement ou d'une activité sur une période. */
 #[ORM\Entity(repositoryClass: TarifParPeriodeRepository::class)]
 #[ORM\Table(name: 'tarif_par_periode')]
 #[ORM\Index(columns: ['prestation_id', 'debut', 'fin'])]
+#[NoPeriodOverlap]
 class TarifParPeriode
 {
     #[ORM\Id]

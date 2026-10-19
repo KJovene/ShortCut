@@ -16,6 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'demande')]
 #[ORM\Index(columns: ['statut'])]
 #[ORM\Index(columns: ['conseiller_id', 'statut'])]
+#[ORM\Index(columns: ['conseiller_id', 'prioritaire', 'cree_le'])]
 class Demande
 {
     #[ORM\Id]
@@ -24,9 +25,9 @@ class Demande
     private ?int $id = null;
 
     /** Inconnu tant que le client ne s'est pas présenté. */
-    #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'demandes')]
+    #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?Client $client = null;
+    private ?Utilisateur $client = null;
 
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -40,6 +41,10 @@ class Demande
 
     #[ORM\Column(enumType: StatutDemande::class)]
     private StatutDemande $statut = StatutDemande::Nouvelle;
+
+    /** Le client a demandé à parler à un conseiller, ou le chatbot manque de données pour la période. */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $prioritaire = false;
 
     /** Lieu précis ou zone : « Lisbonne », « la Méditerranée ». */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -133,12 +138,12 @@ class Demande
         return $this->id;
     }
 
-    public function getClient(): ?Client
+    public function getClient(): ?Utilisateur
     {
         return $this->client;
     }
 
-    public function setClient(?Client $client): static
+    public function setClient(?Utilisateur $client): static
     {
         $this->client = $client;
 
@@ -193,6 +198,18 @@ class Demande
     public function setStatut(StatutDemande $statut): static
     {
         $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function isPrioritaire(): bool
+    {
+        return $this->prioritaire;
+    }
+
+    public function setPrioritaire(bool $prioritaire): static
+    {
+        $this->prioritaire = $prioritaire;
 
         return $this;
     }

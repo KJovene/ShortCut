@@ -2,7 +2,6 @@
 
 namespace App\Tests\Entity;
 
-use App\Entity\Client;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Destination;
@@ -12,7 +11,9 @@ use App\Entity\Prestataire;
 use App\Entity\Prestation;
 use App\Entity\Proposition;
 use App\Entity\TarifParPeriode;
+use App\Entity\Utilisateur;
 use App\Enum\NiveauBudget;
+use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
 use App\Enum\TypeLigne;
@@ -68,7 +69,7 @@ final class ModeleDeDonneesTest extends KernelTestCase
                 ->setPrixCentimes(12000),
         );
 
-        $client = (new Client())->setPrenom('Camille')->setEmail('camille@example.com');
+        $client = (new Utilisateur())->setRole(Role::Client)->setPrenom('Camille')->setNom('Durand')->setEmail('camille@example.com');
         $demande = (new Demande())
             ->setTypeDeVoyage(TypeDeVoyage::Sejour)
             ->setLieuOuZone('Lisbonne')
@@ -76,7 +77,7 @@ final class ModeleDeDonneesTest extends KernelTestCase
             ->setAdultes(2)
             ->setBudgetCentimes(250000)
             ->setEnvies(['gastronomie', 'balades']);
-        $client->addDemande($demande);
+        $demande->setClient($client);
         $demande->setConversation(new Conversation());
 
         $proposition = (new Proposition())
@@ -128,5 +129,31 @@ final class ModeleDeDonneesTest extends KernelTestCase
 
         self::assertCount(1, $erreurs);
         self::assertSame('fin', $erreurs[0]->getPropertyPath());
+    }
+
+    public function testUnChevauchementDePeriodeEstRefuse(): void
+    {
+        $destination = (new Destination())->setPays('Portugal')->setVille('Porto')->setSlug('porto');
+        $existante = (new PeriodeClimatique())
+            ->setDestination($destination)
+            ->setDebut(new \DateTimeImmutable('2027-06-01'))
+            ->setFin(new \DateTimeImmutable('2027-06-30'))
+            ->setTemperatureMoyenne(25);
+        $destination->addPeriodeClimatique($existante);
+        $this->em->persist($destination);
+        $this->em->persist($existante);
+        $this->em->flush();
+
+        $chevauchante = (new PeriodeClimatique())
+            ->setDestination($destination)
+            ->setDebut(new \DateTimeImmutable('2027-06-15'))
+            ->setFin(new \DateTimeImmutable('2027-07-15'))
+            ->setTemperatureMoyenne(26);
+
+        $erreurs = self::getContainer()->get(ValidatorInterface::class)->validate($chevauchante);
+
+        self::assertCount(1, $erreurs);
+        self::assertSame('debut', $erreurs[0]->getPropertyPath());
+        self::assertStringContainsString('chevauche', $erreurs[0]->getMessage());
     }
 }
