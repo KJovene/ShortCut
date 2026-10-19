@@ -29,6 +29,8 @@ doctrine:
         dql:
             string_functions:
                 JSON_CONTIENT: App\Doctrine\JsonContient
+            numeric_functions:
+                MOIS_COUVERT: App\Doctrine\MoisCouvert
 
 when@test:
     doctrine:

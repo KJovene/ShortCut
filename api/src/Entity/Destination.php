@@ -247,6 +247,37 @@ class Destination
     }
 
     /**
+     * Temps de trajet en lignes (ville, minutes), pour le formulaire du backoffice.
+     *
+     * @return list<array{ville: string, minutes: int}>
+     */
+    public function getTrajets(): array
+    {
+        $trajets = [];
+        foreach ($this->tempsDeTrajet as $ville => $minutes) {
+            $trajets[] = ['ville' => (string) $ville, 'minutes' => $minutes];
+        }
+
+        return $trajets;
+    }
+
+    /**
+     * @param iterable<array{ville?: ?string, minutes?: ?int}> $trajets
+     */
+    public function setTrajets(iterable $trajets): static
+    {
+        $this->tempsDeTrajet = [];
+        foreach ($trajets as $trajet) {
+            $ville = trim((string) ($trajet['ville'] ?? ''));
+            if ('' !== $ville && null !== ($trajet['minutes'] ?? null)) {
+                $this->tempsDeTrajet[$ville] = (int) $trajet['minutes'];
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * @return list<string>
      */
     public function getPointsForts(): array
