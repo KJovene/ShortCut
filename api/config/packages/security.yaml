@@ -44,6 +44,7 @@ security:
 
     # Seule la première règle qui correspond s'applique.
     access_control:
+        - { path: ^/api/catalogue, roles: PUBLIC_ACCESS }
         - { path: ^/api/chat/conversations$, methods: [POST], roles: PUBLIC_ACCESS }
         - { path: ^/api/chat, roles: ROLE_CHATBOT }
         - { path: ^/api/connexion$, roles: PUBLIC_ACCESS }

@@ -3,17 +3,17 @@ import { useState } from 'react'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { IconFlecheBas } from '@/components/ui/icons'
 import {
-  DESTINATIONS,
   TYPES_DE_VOYAGE,
-  trouverDestination,
   type TypeDeVoyage,
 } from '@/data/catalogue'
+import { chargerCatalogue, type CatalogueDestination } from '@/data/catalogue-api'
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
 import { SectionAssistant } from '@/features/accueil/SectionAssistant'
 import { cn } from '@/lib/cn'
 
 export const Route = createFileRoute('/')({
+  loader: () => chargerCatalogue(),
   head: () => ({
     meta: [
       { title: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes' },
@@ -33,9 +33,10 @@ const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
 ]
 
 function HomePage() {
+  const catalogue = Route.useLoaderData() as CatalogueDestination[]
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
   const [activeSlug, setActiveSlug] = useState('santorin')
-  const active = trouverDestination(activeSlug) ?? DESTINATIONS[0]
+  const active = catalogue.find((d) => d.slug === activeSlug) ?? catalogue[0]
 
   return (
     <>
@@ -48,7 +49,7 @@ function HomePage() {
         <div className="mx-auto flex w-full max-w-[1376px] flex-wrap items-end justify-between gap-2.5 px-4 pb-3 sm:gap-4 sm:px-8 sm:pt-1 sm:pb-0">
           <div className="flex flex-col gap-1.5">
             <span className="hidden text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase sm:block">
-              {DESTINATIONS.length} destinations sur mesure, partout dans le monde
+              {catalogue.length} destinations sur mesure, partout dans le monde
             </span>
             <h1
               id="hero-titre"
@@ -86,7 +87,7 @@ function HomePage() {
 
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14 md:px-8 md:pt-3">
           <CarteDuMonde
-            destinations={DESTINATIONS}
+            destinations={catalogue}
             active={active}
             type={type}
             onActiver={setActiveSlug}
@@ -103,7 +104,7 @@ function HomePage() {
       </section>
 
       <BandeauVoyages
-        destinations={DESTINATIONS}
+        destinations={catalogue}
         active={active.slug}
         type={type}
         onActiver={setActiveSlug}
@@ -111,9 +112,9 @@ function HomePage() {
 
       <SectionAssistant
         suggestion={active}
-        photos={['santorin', 'bali', 'marrakech', 'islande'].map((slug) =>
-          trouverDestination(slug)!,
-        )}
+        photos={['santorin', 'bali', 'marrakech', 'islande']
+          .map((slug) => catalogue.find((d) => d.slug === slug))
+          .filter((d): d is CatalogueDestination => d !== undefined)}
       />
     </>
   )

@@ -58,6 +58,9 @@ export interface Destination {
   photo: string
   alt: string
   miseEnAvant: boolean
+  /** Données chargées depuis l'API, présentes sur les pages catalogue. */
+  _logements?: Prestation[]
+  _activites?: Prestation[]
 }
 
 export interface Prestation {
@@ -753,7 +756,10 @@ export const MARGE = 0.2
  * vol depuis Paris et transferts au bas de la fourchette, marge de 20 % et frais de dossier partagés.
  */
 export function prixAPartirDe(destination: Destination) {
-  const logements = logementsDe(destination.slug).filter((l) => l.capacite >= 2)
+  const logements = (destination._logements ?? logementsDe(destination.slug)).filter(
+    (l) => l.capacite >= 2,
+  )
+  if (logements.length === 0) return 0
   const nuit = Math.min(...logements.map((l) => l.prix))
   const frais = TYPES_DE_VOYAGE.find((t) => t.valeur === destination.types[0])!.fraisDossier
   const parPersonne =

@@ -1,22 +1,20 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { IconAvion, IconCoche, IconFleche } from '@/components/ui/icons'
 import {
-  activitesDe,
   formatDuree,
   formatEuros,
   labelType,
-  logementsDe,
   MOIS,
   prixAPartirDe,
-  trouverDestination,
   type Prestation,
 } from '@/data/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
+import { chargerCatalogue, type CatalogueDestination } from '@/data/catalogue-api'
 
 export const Route = createFileRoute('/destinations/$slug')({
-  loader: ({ params }) => {
-    const destination = trouverDestination(params.slug)
+  loader: async ({ params }) => {
+    const destination = (await chargerCatalogue()).find((d) => d.slug === params.slug)
     if (!destination) throw notFound()
     return destination
   },
@@ -34,10 +32,10 @@ export const Route = createFileRoute('/destinations/$slug')({
 const TEMP_MAX = 32
 
 function DestinationPage() {
-  const d = Route.useLoaderData()
+  const d = Route.useLoaderData() as CatalogueDestination
   const ouvrirAssistant = useOuvrirAssistant()
-  const logements = logementsDe(d.slug)
-  const activites = activitesDe(d.slug)
+  const logements = d._logements
+  const activites = d._activites
   const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)
 
   return (
