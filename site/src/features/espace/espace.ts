@@ -59,7 +59,7 @@ export const STATUT_CLIENT: Record<StatutDemande, { label: string; classe: strin
   proposition_envoyee: { label: 'Proposition reçue', classe: 'bg-[#FFF1D0] text-[#7A5200]' },
   a_confirmer: { label: 'En cours de confirmation', classe: 'bg-[#FFF1D0] text-[#7A5200]' },
   confirmee: { label: 'Confirmée, à valider', classe: 'bg-[#DDF1E4] text-[#1F6B3A]' },
-  acceptee: { label: 'Voyage réservé', classe: 'bg-vert text-white' },
+  acceptee: { label: 'Voyage réservé', classe: 'bg-vert-fonce text-white' },
   perdue: { label: 'Clôturée', classe: 'bg-[#EFEAE4] text-[#5A4A3E]' },
 }
 
