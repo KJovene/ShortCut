@@ -423,7 +423,9 @@ Sortie :
 }
 ```
 
-Service : `DemandeService::transmettreAuConseiller(ContexteAgent, motif, resume)` passe `Conversation::repriseParConseiller` à `true`, ajoute le résumé au journal et rend la demande visible comme « à reprendre » dans le pipeline du backoffice.
+Code : `TransmettreAuConseiller` passe `Conversation::repriseParConseiller` à `true` et appelle `Demande::transmettre(motif, resume)` : la demande devient prioritaire, arrive dans l'onglet « À aiguiller » du backoffice et sa fiche affiche le motif, le résumé et la conversation (US06). Ensuite, le chatbot ne répond plus au client : chaque nouveau message est gardé pour le conseiller et reçoit une réponse fixe (`AgentConversation::MESSAGE_REPRISE`). Un conseiller peut aussi reprendre lui-même une conversation depuis la fiche (« Reprendre la conversation »).
+
+`chercher_destinations` transmet aussi la demande, sans intervention du modèle, quand des dates sont données et qu'aucune destination cherchée n'a de climat saisi sur tout le séjour : motif `donnees_manquantes`, résumé généré, et la sortie contient `donneesManquantes` (`destinations`, `consigne`). La conversation n'est pas reprise : le client peut continuer avec d'autres dates.
 
 ## Quel agent voit quels outils
 

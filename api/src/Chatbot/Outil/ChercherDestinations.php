@@ -5,20 +5,26 @@ namespace App\Chatbot\Outil;
 use App\Chatbot\ContexteAgent;
 use App\Entity\Destination;
 use App\Entity\PeriodeClimatique;
+use App\Enum\MotifTransmission;
 use App\Enum\TypeDeVoyage;
 use App\Repository\DestinationRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Destinations publiées compatibles avec une zone, des dates et un climat (docs/outils.md).
  * Version simple du ticket #192 : filtre par zone et par température ; les tarifs aux dates et les envies
  * viennent avec le ticket #202.
+ * Si aucune destination cherchée n'a de climat saisi sur toutes les dates, la demande est transmise à un conseiller
+ * (US06, motif « données manquantes ») : elle devient prioritaire, mais le client peut continuer avec d'autres dates.
  */
 final class ChercherDestinations implements Outil
 {
     private const LIMITE_PAR_DEFAUT = 5;
 
-    public function __construct(private readonly DestinationRepository $destinations)
-    {
+    public function __construct(
+        private readonly DestinationRepository $destinations,
+        private readonly EntityManagerInterface $em,
+    ) {
     }
 
     public function nom(): string
@@ -79,16 +85,27 @@ final class ChercherDestinations implements Outil
             $candidates = $publiees;
         }
 
+        $sansDonnees = [];
+        $uneCouverte = false;
         foreach ($candidates as $destination) {
             $climat = null === $debut ? [] : self::climatAuxDates($destination, $debut, $fin ?? $debut);
+            if (null !== $debut) {
+                if (self::couvre($climat, $debut, $fin ?? $debut)) {
+                    $uneCouverte = true;
+                } else {
+                    $sansDonnees[] = $destination;
+                }
+            }
+
             $raison = self::raisonClimat($climat, $temperatureMin, $temperatureMax);
             if (null !== $raison) {
                 $resultat['ecartees'][] = ['slug' => $destination->getSlug(), 'raison' => $raison];
                 continue;
             }
 
+            // Les suivantes sont encore parcourues : leur climat compte pour les données manquantes.
             if (\count($resultat['destinations']) >= $limite) {
-                break;
+                continue;
             }
             $resultat['destinations'][] = [
                 'slug' => $destination->getSlug(),
@@ -102,7 +119,58 @@ final class ChercherDestinations implements Outil
             ];
         }
 
+        if (null !== $debut && [] !== $sansDonnees && !$uneCouverte) {
+            $resultat['donneesManquantes'] = [
+                'destinations' => array_map(static fn (Destination $d) => $d->getSlug(), $sansDonnees),
+                'consigne' => 'L\'agence n\'a pas encore de données pour ces dates. Dis-le simplement au client, propose-lui d\'autres dates si elles lui conviennent, et précise qu\'un conseiller a été prévenu et complétera sa demande.',
+            ];
+            $this->signalerAuConseiller($contexte, $sansDonnees, $debut, $fin ?? $debut);
+        }
+
         return $resultat;
+    }
+
+    /**
+     * Rend la demande prioritaire (US06). Une demande déjà transmise garde son premier motif et son résumé.
+     *
+     * @param list<Destination> $sansDonnees
+     */
+    private function signalerAuConseiller(ContexteAgent $contexte, array $sansDonnees, \DateTimeImmutable $debut, \DateTimeImmutable $fin): void
+    {
+        if (null !== $contexte->demande->getMotifTransmission()) {
+            return;
+        }
+
+        $contexte->demande->transmettre(MotifTransmission::DonneesManquantes, \sprintf(
+            'Aucun climat saisi du %s au %s pour : %s. Saisir la période dans le catalogue, puis compléter la demande.',
+            $debut->format('d/m/Y'),
+            $fin->format('d/m/Y'),
+            implode(', ', array_map(static fn (Destination $d) => (string) $d->getVille(), $sansDonnees)),
+        ));
+        $this->em->flush();
+    }
+
+    /**
+     * Les périodes climatiques couvrent-elles chaque jour du séjour ?
+     *
+     * @param list<array{debut: string, fin: string, temperatureMoyenne: float|null, pluieMm: int|null}> $climat
+     */
+    private static function couvre(array $climat, \DateTimeImmutable $debut, \DateTimeImmutable $fin): bool
+    {
+        usort($climat, static fn (array $a, array $b) => $a['debut'] <=> $b['debut']);
+
+        // Dates au format AAAA-MM-JJ : l'ordre des chaînes est celui des dates.
+        $jour = $debut->format('Y-m-d');
+        foreach ($climat as $periode) {
+            if ($periode['debut'] > $jour) {
+                return false;
+            }
+            if ($periode['fin'] >= $jour) {
+                $jour = (new \DateTimeImmutable($periode['fin']))->modify('+1 day')->format('Y-m-d');
+            }
+        }
+
+        return $jour > $fin->format('Y-m-d');
     }
 
     private static function correspond(Destination $destination, string $zone): bool

@@ -35,6 +35,8 @@ final class AgentConversation
     private const APPELS_MAX = 8;
     /** Outils de cet agent, dans un ordre fixe : le préfixe de la requête reste identique (cache). */
     private const OUTILS = [EnregistrerExigences::class, ChercherDestinations::class, TransmettreAuConseiller::class];
+    /** Réponse fixe une fois la conversation reprise par un conseiller. */
+    public const MESSAGE_REPRISE = 'Votre demande est entre les mains d\'un conseiller de l\'agence : il a bien reçu votre message et vous recontacte sous 2 jours ouvrés.';
 
     /** @var array<string, Outil> */
     private array $outils = [];
@@ -67,6 +69,19 @@ final class AgentConversation
     public function repondre(Conversation $conversation, string $message): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
+
+        // Un conseiller a repris la conversation (US06) : le message lui est gardé, le chatbot ne répond plus.
+        if ($conversation->isRepriseParConseiller()) {
+            $conversation->ajouterMessage('client', $message);
+            $conversation->ajouterMessage('assistant', self::MESSAGE_REPRISE);
+            $this->em->flush();
+
+            yield self::evenement('texte', ['texte' => self::MESSAGE_REPRISE]);
+            yield self::evenement('fin', new \stdClass());
+
+            return;
+        }
+
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Conversation);
 
         $historique = $conversation->getHistorique();

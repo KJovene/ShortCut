@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\MotifTransmission;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
 use App\Repository\DemandeRepository;
@@ -45,6 +46,17 @@ class Demande
     /** Le client a demandé à parler à un conseiller, ou le chatbot manque de données pour la période. */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $prioritaire = false;
+
+    /** Pourquoi le chatbot a transmis la demande à un conseiller ; null tant qu'il ne l'a pas fait. */
+    #[ORM\Column(length: 30, nullable: true, enumType: MotifTransmission::class)]
+    private ?MotifTransmission $motifTransmission = null;
+
+    /** Résumé écrit pour le conseiller : où en est la demande et ce qui bloque. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $resumeTransmission = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $transmiseLe = null;
 
     /** Lieu précis ou zone : « Lisbonne », « la Méditerranée ». */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -212,6 +224,32 @@ class Demande
         $this->prioritaire = $prioritaire;
 
         return $this;
+    }
+
+    /** Passe la demande à un conseiller : elle devient prioritaire et arrive dans « À aiguiller » (US06). */
+    public function transmettre(MotifTransmission $motif, string $resume): static
+    {
+        $this->prioritaire = true;
+        $this->motifTransmission = $motif;
+        $this->resumeTransmission = $resume;
+        $this->transmiseLe = $this->modifieLe = new \DateTimeImmutable();
+
+        return $this;
+    }
+
+    public function getMotifTransmission(): ?MotifTransmission
+    {
+        return $this->motifTransmission;
+    }
+
+    public function getResumeTransmission(): ?string
+    {
+        return $this->resumeTransmission;
+    }
+
+    public function getTransmiseLe(): ?\DateTimeImmutable
+    {
+        return $this->transmiseLe;
     }
 
     public function getLieuOuZone(): ?string

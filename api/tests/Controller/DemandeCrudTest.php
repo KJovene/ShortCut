@@ -5,6 +5,7 @@ namespace App\Tests\Controller;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
+use App\Enum\MotifTransmission;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use Doctrine\ORM\EntityManagerInterface;
@@ -14,7 +15,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 /**
  * Liste des demandes du backoffice (US01) : un conseiller ne voit que ses demandes, l'administrateur
  * les voit toutes et peut filtrer par conseiller ; les prioritaires d'abord. Aiguillage (US06) : la vue
- * « À aiguiller » est commune à tous et chaque demande s'y attribue en un clic. Nécessite `make db-test`.
+ * « À aiguiller » est commune à tous et chaque demande s'y attribue en un clic ; la fiche montre la transmission
+ * et la conversation, que le conseiller reprend en un clic. Nécessite `make db-test`.
  */
 final class DemandeCrudTest extends WebTestCase
 {
@@ -223,6 +225,84 @@ final class DemandeCrudTest extends WebTestCase
         self::assertSelectorTextContains('body', 'vient d\'être attribuée');
         $this->em->clear();
         self::assertSame($this->hugo->getId(), $this->em->find(Demande::class, $id)?->getConseiller()?->getId());
+    }
+
+    public function testLaFicheMontreLaTransmissionEtLaConversation(): void
+    {
+        $demande = $this->creerDemandeTransmise();
+
+        $this->client->loginUser($this->lea);
+        $crawler = $this->client->request('GET', '/admin/demande/'.$demande->getId());
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', MotifTransmission::DemandeDuClient->label());
+        self::assertSelectorTextContains('body', 'Couple, Islande en janvier, veut un devis par téléphone.');
+        self::assertSelectorTextContains('.conversation', 'Je préfère parler à quelqu\'un.');
+        self::assertSelectorTextContains('body', 'le chatbot ne répond plus');
+        // Le chatbot a déjà passé la main : il reste à s'attribuer la demande.
+        self::assertCount(1, $crawler->filter('form[action*="/attribuer"]'));
+        self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
+    }
+
+    public function testUnConseillerReprendLaConversationEnUnClic(): void
+    {
+        $demande = $this->creerDemandeTransmise();
+        $demande->getConversation()?->setRepriseParConseiller(false);
+        $this->em->flush();
+        $id = $demande->getId();
+
+        $this->client->loginUser($this->lea);
+        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
+        $url = $crawler->filter('form[action*="/reprendre"]')->attr('action');
+
+        $this->client->request('POST', (string) $url);
+        self::assertResponseRedirects('/admin/demande/'.$id);
+
+        $this->em->clear();
+        $reprise = $this->em->find(Demande::class, $id);
+        self::assertSame($this->lea->getId(), $reprise?->getConseiller()?->getId(), 'Attribuée au passage.');
+        self::assertTrue($reprise->getConversation()?->isRepriseParConseiller());
+        self::assertNotNull($reprise->getConversation()->getFinLe());
+
+        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
+        self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
+        self::assertSelectorTextContains('.conversation', 'Je préfère parler à quelqu\'un.');
+    }
+
+    public function testUnConseillerNeReprendPasLaConversationDUnAutre(): void
+    {
+        $demande = $this->creerDemandeTransmise();
+        $demande->getConversation()?->setRepriseParConseiller(false);
+        $id = $demande->getId();
+
+        $this->client->loginUser($this->lea);
+        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
+        $url = $crawler->filter('form[action*="/reprendre"]')->attr('action');
+
+        // Hugo s'attribue la demande avant que Léa ne clique.
+        $this->em->find(Demande::class, $id)?->setConseiller($this->hugo);
+        $this->em->flush();
+
+        $this->client->request('POST', (string) $url);
+        self::assertResponseRedirects();
+        $this->em->clear();
+        $demande = $this->em->find(Demande::class, $id);
+        self::assertSame($this->hugo->getId(), $demande?->getConseiller()?->getId());
+        self::assertFalse($demande->getConversation()?->isRepriseParConseiller());
+    }
+
+    /** Demande du chatbot transmise au conseiller, sans conseiller attribué. */
+    private function creerDemandeTransmise(): Demande
+    {
+        $demande = $this->creerDemandeDuChatbot('Islande', prioritaire: false, terminee: false);
+        $demande->transmettre(MotifTransmission::DemandeDuClient, 'Couple, Islande en janvier, veut un devis par téléphone.');
+        $demande->getConversation()
+            ?->ajouterMessage('client', 'Je préfère parler à quelqu\'un.')
+            ->ajouterMessage('assistant', 'Un conseiller va vous recontacter.')
+            ->setRepriseParConseiller(true);
+        $this->em->flush();
+
+        return $demande;
     }
 
     private function creerDemandeDuChatbot(string $lieu, bool $prioritaire, bool $terminee): Demande

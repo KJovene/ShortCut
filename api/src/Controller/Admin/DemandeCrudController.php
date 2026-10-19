@@ -30,6 +30,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\Field;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -46,7 +47,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * - administrateur : toutes les demandes, avec un filtre par conseiller.
  * Les demandes prioritaires apparaissent en premier, puis les plus récentes.
  * La vue « À aiguiller » (?aiguiller=1) liste pour tous les demandes arrivées sans conseiller ;
- * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController).
+ * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController). La fiche montre pourquoi le
+ * chatbot a transmis la demande et la conversation, que le conseiller reprend avec « Reprendre la conversation ».
  * L'accès à une fiche (consultation, modification, suppression) est vérifié par DemandeVoter.
  *
  * @extends AbstractCrudController<Demande>
@@ -106,12 +108,22 @@ final class DemandeCrudController extends AbstractCrudController
             ]))
             ->renderAsForm()
             ->displayIf(static fn (Demande $d): bool => null === $d->getConseiller());
+        // Le chatbot cesse de répondre au client ; la demande est attribuée au passage si besoin.
+        $reprendre = Action::new('reprendre', 'Reprendre la conversation', 'fa fa-comments')
+            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_reprendre', [
+                'id' => $d->getId(),
+                '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
+            ]))
+            ->renderAsForm()
+            ->displayIf(static fn (Demande $d): bool => null !== $d->getConversation() && !$d->getConversation()->isRepriseParConseiller());
 
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_INDEX, $attribuer)
             ->add(Crud::PAGE_DETAIL, $attribuer)
+            ->add(Crud::PAGE_DETAIL, $reprendre)
             ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
+            ->setPermission('reprendre', DemandeVoter::ATTRIBUER)
             // Vérifié sur chaque fiche : un conseiller qui saisit l'URL d'une demande d'un autre reçoit un 403.
             ->setPermission(Action::DETAIL, DemandeVoter::VOIR)
             ->setPermission(Action::EDIT, DemandeVoter::MODIFIER)
@@ -226,6 +238,15 @@ final class DemandeCrudController extends AbstractCrudController
         yield BooleanField::new('transportInclus', 'Transport inclus')->renderAsSwitch(false)->hideOnIndex();
         yield ArrayField::new('envies', 'Envies')->hideOnIndex();
         yield ArrayField::new('contraintes', 'Contraintes')->hideOnIndex();
+
+        // US06 : pourquoi le chatbot a passé la main, et l'échange à reprendre.
+        yield FormField::addFieldset('Conversation avec le chatbot')->onlyOnDetail();
+        yield Field::new('motifTransmission', 'Transmise au conseiller')
+            ->onlyOnDetail()
+            ->setTemplatePath('admin/champ/transmission.html.twig');
+        yield Field::new('conversation', 'Échanges')
+            ->onlyOnDetail()
+            ->setTemplatePath('admin/champ/conversation.html.twig');
     }
 
     private function estAdministrateur(): bool

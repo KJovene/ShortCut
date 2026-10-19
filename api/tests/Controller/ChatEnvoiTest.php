@@ -4,7 +4,10 @@ namespace App\Tests\Controller;
 
 use App\Chatbot\AgentConversation;
 use App\Entity\Conversation;
+use App\Entity\Destination;
 use App\Entity\JournalIA;
+use App\Entity\PeriodeClimatique;
+use App\Enum\MotifTransmission;
 use App\Tests\Chatbot\FausseApiClaude;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -183,7 +186,62 @@ final class ChatEnvoiTest extends WebTestCase
 
         $conversation = $this->conversation($jeton);
         self::assertTrue($conversation->isRepriseParConseiller());
-        self::assertTrue($conversation->getDemande()?->isPrioritaire());
+        $demande = $conversation->getDemande();
+        self::assertTrue($demande?->isPrioritaire());
+        self::assertSame(MotifTransmission::DemandeDuClient, $demande->getMotifTransmission());
+        self::assertSame('Le client veut parler à quelqu’un.', $demande->getResumeTransmission());
+        self::assertNotNull($demande->getTransmiseLe());
+
+        // Reprise par un conseiller : le chatbot ne répond plus, le message est gardé pour le conseiller.
+        $requetes = \count($this->claude->requetes);
+        $evenements = $this->envoyer($jeton, 'Finalement, je préfère partir en juillet.');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(AgentConversation::MESSAGE_REPRISE, $this->texte($evenements));
+        self::assertSame('fin', array_key_last($this->parType($evenements)));
+        self::assertCount($requetes, $this->claude->requetes, 'Claude n\'est plus appelé.');
+        self::assertContains('Finalement, je préfère partir en juillet.', array_column($this->conversation($jeton)->getMessages(), 'contenu'));
+    }
+
+    public function testUnePeriodeSansClimatSaisiRendLaDemandePrioritaire(): void
+    {
+        $this->creerDestinationAvecClimat('2027-11-01', '2028-02-29');
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('chercher_destinations', ['zone' => 'Cairns', 'dateDebut' => '2028-02-20', 'dateFin' => '2028-03-05']),
+            FausseApiClaude::texte('Nous n’avons pas encore ces dates : un conseiller est prévenu.'),
+        );
+
+        $this->envoyer($jeton, 'Cairns du 20 février au 5 mars 2028');
+
+        $messages = $this->claude->requetes[1]['corps']['messages'];
+        $sortie = json_decode(end($messages)['content'][0]['content'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertSame(['cairns'], $sortie['donneesManquantes']['destinations']);
+
+        $conversation = $this->conversation($jeton);
+        $demande = $conversation->getDemande();
+        self::assertTrue($demande?->isPrioritaire());
+        self::assertSame(MotifTransmission::DonneesManquantes, $demande->getMotifTransmission());
+        self::assertStringContainsString('Cairns', (string) $demande->getResumeTransmission());
+        self::assertFalse($conversation->isRepriseParConseiller(), 'Le client peut continuer avec d\'autres dates.');
+    }
+
+    public function testUnePeriodeCouverteNeTransmetPasLaDemande(): void
+    {
+        $this->creerDestinationAvecClimat('2027-11-01', '2028-02-29');
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('chercher_destinations', ['zone' => 'Cairns', 'dateDebut' => '2027-12-20', 'dateFin' => '2028-01-05']),
+            FausseApiClaude::texte('Cairns est idéal à cette période.'),
+        );
+
+        $this->envoyer($jeton, 'Cairns pour les fêtes');
+
+        $messages = $this->claude->requetes[1]['corps']['messages'];
+        $sortie = json_decode(end($messages)['content'][0]['content'], true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayNotHasKey('donneesManquantes', $sortie);
+        self::assertSame('cairns', $sortie['destinations'][0]['slug']);
+        self::assertFalse($this->conversation($jeton)->getDemande()?->isPrioritaire());
     }
 
     public function testUnMessageVideOuTropLongEstRefuse(): void
@@ -281,6 +339,19 @@ final class ChatEnvoiTest extends WebTestCase
             static fn (array $e) => 'texte' === $e[0] ? $e[1]['texte'] : '',
             $evenements,
         ));
+    }
+
+    private function creerDestinationAvecClimat(string $debut, string $fin): void
+    {
+        $destination = (new Destination())->setPays('Australie')->setVille('Cairns')->setSlug('cairns')->setPubliee(true);
+        $periode = (new PeriodeClimatique())
+            ->setDebut(new \DateTimeImmutable($debut))
+            ->setFin(new \DateTimeImmutable($fin))
+            ->setTemperatureMoyenne(28);
+        $destination->addPeriodeClimatique($periode);
+        $this->em->persist($destination);
+        $this->em->persist($periode);
+        $this->em->flush();
     }
 
     private function conversation(string $jeton): Conversation
