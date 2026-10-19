@@ -55,13 +55,10 @@ final class DashboardController extends AbstractDashboardController
 
     public function configureMenuItems(): iterable
     {
-        $nouvelles = $this->demandes->compterParStatut($this->conseillerConnecte())[StatutDemande::Nouvelle->value];
-
-        yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-table-cells-large');
-
-        yield MenuItem::section('Activité');
-        yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox')
-            ->setBadge($nouvelles > 0 ? $nouvelles : null, 'danger');
+        yield MenuItem::linkToDashboard('Tableau de bord', 'fa fa-home');
+        yield MenuItem::linkTo(DemandeCrudController::class, 'Demandes', 'fa fa-inbox');
+        yield MenuItem::linkTo(ClientCrudController::class, 'Clients', 'fa fa-address-book');
+        yield MenuItem::linkToUrl('Retour au site', 'fa fa-arrow-left', rtrim($this->siteUrl, '/').'/');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');
