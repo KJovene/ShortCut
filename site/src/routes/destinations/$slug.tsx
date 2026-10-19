@@ -1,20 +1,22 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { IconAvion, IconCoche, IconFleche } from '@/components/ui/icons'
 import {
+  activitesDe,
   formatDuree,
   formatEuros,
   labelType,
+  logementsDe,
   MOIS,
   prixAPartirDe,
+  trouverDestination,
   type Prestation,
 } from '@/data/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
-import { chargerCatalogue, type CatalogueDestination } from '@/data/catalogue-api'
 
 export const Route = createFileRoute('/destinations/$slug')({
-  loader: async ({ params }) => {
-    const destination = (await chargerCatalogue()).find((d) => d.slug === params.slug)
+  loader: ({ params }) => {
+    const destination = trouverDestination(params.slug)
     if (!destination) throw notFound()
     return destination
   },
@@ -32,10 +34,10 @@ export const Route = createFileRoute('/destinations/$slug')({
 const TEMP_MAX = 32
 
 function DestinationPage() {
-  const d = Route.useLoaderData() as CatalogueDestination
+  const d = Route.useLoaderData()
   const ouvrirAssistant = useOuvrirAssistant()
-  const logements = d._logements
-  const activites = d._activites
+  const logements = logementsDe(d.slug)
+  const activites = activitesDe(d.slug)
   const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)
 
   return (
@@ -232,7 +234,6 @@ function Prestations({
             <img src={p.photo} alt="" className="block h-36 w-full object-cover" />
             <div className="flex flex-col gap-1 px-4 pt-3 pb-4">
               <h3 className="m-0 text-base leading-snug font-bold">{p.nom}</h3>
-              {p.description && <p className="m-0 text-sm leading-snug text-taupe">{p.description}</p>}
               <span className="text-sm text-taupe">
                 {p.categorie}
                 {unite === 'nuit'
@@ -245,18 +246,6 @@ function Prestations({
               <span className="mt-1 text-sm">
                 dès <strong>{formatEuros(p.prix)}</strong> / {unite}
               </span>
-              {p.tarifs?.map((tarif) => (
-                <span key={`${tarif.dateDebut}-${tarif.dateFin}`} className="text-xs text-taupe-clair">
-                  Valable du{' '}
-                  {new Date(`${tarif.dateDebut}T00:00:00`).toLocaleDateString('fr-FR')} au{' '}
-                  {new Date(`${tarif.dateFin}T00:00:00`).toLocaleDateString('fr-FR')}
-                  {' · '}
-                  {formatEuros(tarif.prix)} / {tarif.unite === 'par_nuit' ? 'nuit' : 'personne'}
-                  {tarif.sejourMinimumNuits
-                    ? ` · Minimum ${tarif.sejourMinimumNuits} nuit${tarif.sejourMinimumNuits > 1 ? 's' : ''}`
-                    : ''}
-                </span>
-              ))}
             </div>
           </article>
         ))}

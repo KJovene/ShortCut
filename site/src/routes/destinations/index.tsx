@@ -2,10 +2,9 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { z } from 'zod'
 import { CarteDestination } from '@/components/ui/CarteDestination'
 import { EnTetePage } from '@/components/ui/EnTetePage'
-import { MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { DESTINATIONS, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
-import { chargerCatalogue, type CatalogueDestination } from '@/data/catalogue-api'
 
 const TYPES = TYPES_DE_VOYAGE.map((t) => t.valeur) as [TypeDeVoyage, ...TypeDeVoyage[]]
 
@@ -17,7 +16,6 @@ const filtresSchema = z.object({
 
 export const Route = createFileRoute('/destinations/')({
   validateSearch: filtresSchema,
-  loader: () => chargerCatalogue(),
   head: () => ({
     meta: [
       { title: 'Destinations · Où partir, et quand ?' },
@@ -37,12 +35,11 @@ const selectClasse =
   'min-h-11 rounded-xl border-[1.5px] border-beige bg-white px-3 text-[15px] font-semibold text-encre hover:border-encre'
 
 function DestinationsPage() {
-  const catalogue = Route.useLoaderData() as CatalogueDestination[]
   const { mois, temperature, type } = Route.useSearch()
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
 
-  const resultats = catalogue.filter(
+  const resultats = DESTINATIONS.filter(
     (d) =>
       (type === undefined || d.types.includes(type)) &&
       (temperature === undefined || d.temperatures[mois ?? d.moisIdeal] >= temperature),

@@ -8,7 +8,6 @@ use App\Entity\Demande;
 use App\Repository\ConversationRepository;
 use App\Security\VisiteurChatbot;
 use App\Security\Voter\DemandeVoter;
-use App\Service\RechercheCatalogueService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\EventStreamResponse;
@@ -26,33 +25,6 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 #[Route('/api/chat')]
 final class ChatController extends AbstractController
 {
-    #[Route('/catalogue', name: 'chat_catalogue', methods: ['GET'])]
-    public function catalogue(Request $request, RechercheCatalogueService $recherche): JsonResponse
-    {
-        $debut = $this->dateQuery($request, 'dateDebut');
-        $fin = $this->dateQuery($request, 'dateFin');
-        if (null === $debut || null === $fin || $debut > $fin) {
-            return $this->json([
-                'erreur' => 'Les paramètres dateDebut et dateFin sont requis au format AAAA-MM-JJ.',
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $temperatureMin = $this->integerQuery($request, 'temperatureMin');
-        $temperatureMax = $this->integerQuery($request, 'temperatureMax');
-        if ($temperatureMin > $temperatureMax) {
-            return $this->json([
-                'erreur' => 'La température minimale doit être inférieure ou égale à la température maximale.',
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $destinations = $recherche->rechercher($debut, $fin, $temperatureMin, $temperatureMax);
-
-        return $this->json([
-            'destinations' => $destinations,
-            'resultat' => [] === $destinations ? 'aucune_disponibilite' : 'disponibilites_trouvees',
-        ]);
-    }
-
     /** Longueur maximale d'un message du client, en caractères. */
     public const MESSAGE_MAX = 2000;
 
@@ -103,7 +75,7 @@ final class ChatController extends AbstractController
     }
 
     /** Récapitulatif de la demande en cours, affiché par le widget. */
-    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\\d+'])]
+    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function demande(Demande $demande): JsonResponse
     {
         $this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande);
@@ -118,28 +90,5 @@ final class ChatController extends AbstractController
             'enfants' => $demande->getEnfants(),
             'envies' => $demande->getEnvies(),
         ]);
-    }
-
-    private function dateQuery(Request $request, string $name): ?\DateTimeImmutable
-    {
-        $value = $request->query->get($name);
-        if (!is_string($value) || '' === $value) {
-            return null;
-        }
-
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        $errors = \DateTimeImmutable::getLastErrors();
-
-        return false !== $date && (false === $errors || 0 === $errors['warning_count'] + $errors['error_count']) ? $date : null;
-    }
-
-    private function integerQuery(Request $request, string $name): ?int
-    {
-        $value = $request->query->get($name);
-
-        return is_string($value) && '' !== $value && filter_var($value, \FILTER_VALIDATE_INT) !== false
-            ? (int) $value
-            : null;
     }
 }

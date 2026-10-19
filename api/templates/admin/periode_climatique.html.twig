@@ -14,12 +14,7 @@
             {{ form_row(form.temperatureMoyenne) }}
             {{ form_row(form.pluieMm) }}
             <h2>Tarifs des prestations</h2>
-            {% for tarifForm in form.tarifs %}
-                <fieldset>
-                    <legend>{{ tarifForm.vars.data.prestation.nom|default('Prestation') }}</legend>
-                    {{ form_widget(tarifForm) }}
-                </fieldset>
-            {% endfor %}
+            {{ form_widget(form.tarifs) }}
             <button type="submit">Enregistrer la période</button>
             {% if form.vars.value.id %}
                 <button type="submit" name="{{ form.vars.name }}_duplicate">Dupliquer la période précédente</button>
