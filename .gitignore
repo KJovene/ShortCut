@@ -22,3 +22,5 @@ Logs
 
 Claude Code (réglages locaux)
 .claude/settings.local.json
+# Docker Compose (surcharge locale, ex. compose.windows.yaml copié sous Windows)
+compose.override.yaml

@@ -15,4 +15,8 @@ COPY php.ini /usr/local/etc/php/conf.d/zz-shortcut.ini
 # Composer a besoin d'un HOME accessible en écriture.
 ENV COMPOSER_HOME=/tmp/composer
 
+# Sous Windows, vendor/ et var/ peuvent vivre dans des volumes Docker (voir compose.windows.yaml) :
+# les dossiers doivent exister et être accessibles en écriture avant le montage.
+RUN mkdir -p /app/vendor /app/var && chmod 777 /app/vendor /app/var
+
 WORKDIR /app
