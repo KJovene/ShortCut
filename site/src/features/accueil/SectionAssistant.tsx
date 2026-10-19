@@ -33,8 +33,23 @@ export function SectionAssistant({
 
   // Au premier envoi, la section se transforme : on la cale en haut de l'écran.
   useEffect(() => {
-    if (precedent.current === 'accueil' && statut === 'conversation') {
-      section.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const el = section.current
+    if (precedent.current === 'accueil' && statut === 'conversation' && el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Des images des sections précédentes peuvent finir de charger pendant le défilement et décaler
+      // la section : on la recale en fin de défilement (scrollend, ou après 1,2 s sans cet événement).
+      const recaler = () => {
+        window.clearTimeout(minuteur)
+        window.removeEventListener('scrollend', recaler)
+        if (Math.abs(el.getBoundingClientRect().top) > 1) el.scrollIntoView({ block: 'start' })
+      }
+      const minuteur = window.setTimeout(recaler, 1200)
+      window.addEventListener('scrollend', recaler)
+      precedent.current = statut
+      return () => {
+        window.clearTimeout(minuteur)
+        window.removeEventListener('scrollend', recaler)
+      }
     }
     precedent.current = statut
   }, [statut])
@@ -47,18 +62,21 @@ export function SectionAssistant({
       className="scroll-mt-0 bg-sable"
     >
       {statut === 'accueil' ? (
-        <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-center gap-10 px-4 py-10 sm:px-8 sm:py-20">
+        // Trois colonnes sur une seule ligne : les polaroïds gardent leur largeur, le formulaire prend le reste.
+        <div className="mx-auto flex max-w-[1376px] items-center justify-center gap-10 px-4 py-10 sm:px-8 sm:py-20">
           <div
             aria-hidden="true"
-            className="hidden flex-[0_1_230px] flex-col items-center gap-[18px] xl:flex"
+            className="hidden w-[230px] shrink-0 flex-col items-center gap-[18px] xl:flex"
           >
             <Polaroid d={photos[0]} rotation="-4deg" />
             <Polaroid d={photos[1]} rotation="3deg" />
           </div>
-          <ChatAccueil suggestion={`Comme ${suggestion.ville}, à mes dates`} />
+          <div className="flex min-w-0 flex-1 justify-center">
+            <ChatAccueil suggestion={`Comme ${suggestion.ville}, à mes dates`} />
+          </div>
           <div
             aria-hidden="true"
-            className="hidden flex-[0_1_230px] flex-col items-center gap-[18px] xl:flex"
+            className="hidden w-[230px] shrink-0 flex-col items-center gap-[18px] xl:flex"
           >
             <Polaroid d={photos[2]} rotation="4deg" />
             <Polaroid d={photos[3]} rotation="-3deg" />

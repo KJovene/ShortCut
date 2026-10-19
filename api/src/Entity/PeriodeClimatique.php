@@ -3,10 +3,10 @@
 namespace App\Entity;
 
 use App\Repository\PeriodeClimatiqueRepository;
+use App\Validator\NoPeriodOverlap;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Validator\NoPeriodOverlap;
 
 /** Climat moyen d'une destination sur une période. */
 #[ORM\Entity(repositoryClass: PeriodeClimatiqueRepository::class)]

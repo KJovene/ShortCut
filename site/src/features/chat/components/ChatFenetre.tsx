@@ -1,9 +1,9 @@
 import { useLocation } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Logo } from '@/components/layout/Logo'
 import { IconBulle, IconFermer, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '../chatContext'
-import { useOuvrirAssistant } from '../useOuvrirAssistant'
+import { ID_SECTION_ASSISTANT, useOuvrirAssistant } from '../useOuvrirAssistant'
 import { ChatAccueil } from './ChatAccueil'
 import { ChatWorkspace } from './ChatWorkspace'
 
@@ -90,13 +90,46 @@ export function ChatFenetre() {
   )
 }
 
-/** Bouton flottant présent sur toutes les pages. */
+/** Vrai tant que la section de l'assistant de l'accueil est visible à l'écran. */
+function useSectionAssistantVisible(estAccueil: boolean) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Sans IntersectionObserver (tests, très vieux navigateurs), le bouton reste toujours affiché.
+    if (!estAccueil || typeof IntersectionObserver === 'undefined') return
+    let observateur: IntersectionObserver | undefined
+    const brancher = () => {
+      const section = document.getElementById(ID_SECTION_ASSISTANT)
+      if (!section) return false
+      observateur = new IntersectionObserver(([entree]) => setVisible(entree.isIntersecting), {
+        threshold: 0.25,
+      })
+      observateur.observe(section)
+      return true
+    }
+    // La page d'accueil est chargée à la demande : la section peut apparaître après ce composant.
+    const attente = new MutationObserver(() => {
+      if (brancher()) attente.disconnect()
+    })
+    if (!brancher()) attente.observe(document.body, { childList: true, subtree: true })
+    return () => {
+      attente.disconnect()
+      observateur?.disconnect()
+    }
+  }, [estAccueil])
+
+  // Hors de l'accueil, la section n'existe pas : la dernière valeur observée ne compte plus.
+  return estAccueil && visible
+}
+
+/** Bouton flottant présent sur toutes les pages, masqué quand la section de l'assistant est déjà à l'écran. */
 export function ChatLanceur() {
   const { ouvert, statut } = useChat()
   const ouvrirAssistant = useOuvrirAssistant()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
   const estProposition = useLocation({ select: (l) => l.pathname.startsWith('/proposition') })
-  if (ouvert && !estAccueil) return null
+  const sectionVisible = useSectionAssistantVisible(estAccueil)
+  if ((ouvert && !estAccueil) || sectionVisible) return null
 
   return (
     <button

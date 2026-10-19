@@ -13,8 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CgvRouteImport } from './routes/cgv'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
+import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as MentionsLegalesRouteImport } from './routes/mentions-legales'
+import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as TypesDeVoyagesRouteImport } from './routes/types-de-voyages'
 import { Route as DestinationsIndexRouteImport } from './routes/destinations/index'
 import { Route as DestinationsSlugRouteImport } from './routes/destinations/$slug'
@@ -40,14 +43,29 @@ const ConfidentialiteRoute = ConfidentialiteRouteImport.update({
   path: '/confidentialite',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnexionRoute = ConnexionRouteImport.update({
+  id: '/connexion',
+  path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MentionsLegalesRoute = MentionsLegalesRouteImport.update({
   id: '/mentions-legales',
   path: '/mentions-legales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilRoute = ProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TypesDeVoyagesRoute = TypesDeVoyagesRouteImport.update({
@@ -76,8 +94,11 @@ export interface FileRoutesByFullPath {
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/connexion': typeof ConnexionRoute
   '/contact': typeof ContactRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/profil': typeof ProfilRoute
   '/types-de-voyages': typeof TypesDeVoyagesRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/proposition/$id': typeof PropositionIdRoute
@@ -88,8 +109,11 @@ export interface FileRoutesByTo {
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/connexion': typeof ConnexionRoute
   '/contact': typeof ContactRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/profil': typeof ProfilRoute
   '/types-de-voyages': typeof TypesDeVoyagesRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/proposition/$id': typeof PropositionIdRoute
@@ -101,8 +125,11 @@ export interface FileRoutesById {
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
+  '/connexion': typeof ConnexionRoute
   '/contact': typeof ContactRoute
+  '/inscription': typeof InscriptionRoute
   '/mentions-legales': typeof MentionsLegalesRoute
+  '/profil': typeof ProfilRoute
   '/types-de-voyages': typeof TypesDeVoyagesRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/proposition/$id': typeof PropositionIdRoute
@@ -115,8 +142,11 @@ export interface FileRouteTypes {
     | '/agence'
     | '/cgv'
     | '/confidentialite'
+    | '/connexion'
     | '/contact'
+    | '/inscription'
     | '/mentions-legales'
+    | '/profil'
     | '/types-de-voyages'
     | '/destinations/$slug'
     | '/proposition/$id'
@@ -127,8 +157,11 @@ export interface FileRouteTypes {
     | '/agence'
     | '/cgv'
     | '/confidentialite'
+    | '/connexion'
     | '/contact'
+    | '/inscription'
     | '/mentions-legales'
+    | '/profil'
     | '/types-de-voyages'
     | '/destinations/$slug'
     | '/proposition/$id'
@@ -139,8 +172,11 @@ export interface FileRouteTypes {
     | '/agence'
     | '/cgv'
     | '/confidentialite'
+    | '/connexion'
     | '/contact'
+    | '/inscription'
     | '/mentions-legales'
+    | '/profil'
     | '/types-de-voyages'
     | '/destinations/$slug'
     | '/proposition/$id'
@@ -152,8 +188,11 @@ export interface RootRouteChildren {
   AgenceRoute: typeof AgenceRoute
   CgvRoute: typeof CgvRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
+  ConnexionRoute: typeof ConnexionRoute
   ContactRoute: typeof ContactRoute
+  InscriptionRoute: typeof InscriptionRoute
   MentionsLegalesRoute: typeof MentionsLegalesRoute
+  ProfilRoute: typeof ProfilRoute
   TypesDeVoyagesRoute: typeof TypesDeVoyagesRoute
   DestinationsSlugRoute: typeof DestinationsSlugRoute
   PropositionIdRoute: typeof PropositionIdRoute
@@ -190,6 +229,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfidentialiteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connexion': {
+      id: '/connexion'
+      path: '/connexion'
+      fullPath: '/connexion'
+      preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -197,11 +243,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mentions-legales': {
       id: '/mentions-legales'
       path: '/mentions-legales'
       fullPath: '/mentions-legales'
       preLoaderRoute: typeof MentionsLegalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profil': {
+      id: '/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof ProfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/types-de-voyages': {
@@ -240,8 +300,11 @@ const rootRouteChildren: RootRouteChildren = {
   AgenceRoute: AgenceRoute,
   CgvRoute: CgvRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,
+  ConnexionRoute: ConnexionRoute,
   ContactRoute: ContactRoute,
+  InscriptionRoute: InscriptionRoute,
   MentionsLegalesRoute: MentionsLegalesRoute,
+  ProfilRoute: ProfilRoute,
   TypesDeVoyagesRoute: TypesDeVoyagesRoute,
   DestinationsSlugRoute: DestinationsSlugRoute,
   PropositionIdRoute: PropositionIdRoute,

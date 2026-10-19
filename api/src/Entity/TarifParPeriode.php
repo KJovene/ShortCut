@@ -4,10 +4,10 @@ namespace App\Entity;
 
 use App\Enum\UniteTarif;
 use App\Repository\TarifParPeriodeRepository;
+use App\Validator\NoPeriodOverlap;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Validator\NoPeriodOverlap;
 
 /** Prix d'un logement ou d'une activité sur une période. */
 #[ORM\Entity(repositoryClass: TarifParPeriodeRepository::class)]

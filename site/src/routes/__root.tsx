@@ -9,7 +9,6 @@ import {
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
-import { MenuCompte } from '@/components/MenuCompte'
 import { NotFound } from '@/components/NotFound'
 import { ChatFenetre, ChatLanceur } from '@/features/chat/components/ChatFenetre'
 import { ChatProvider } from '@/features/chat/ChatProvider'

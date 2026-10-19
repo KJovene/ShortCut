@@ -17,8 +17,10 @@ export function ChatWorkspace({ className }: { className?: string }) {
   const champ = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    // Défilement instantané : un défilement doux ici interromprait celui de la page (Chrome n'en mène
+    // qu'un à la fois), qui cale la section de l'accueil en haut de l'écran au premier message.
     const el = fil.current
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    if (el) el.scrollTop = el.scrollHeight
   }, [messages.length, reflexion])
 
   const modifier = (texte: string) => {

@@ -28,8 +28,11 @@ export function ChatAccueil({
       <h2
         id="assistant-titre"
         className={cn(
-          'm-0 font-display leading-[1.05] font-semibold tracking-[-1.5px]',
-          compact ? 'text-[32px] sm:text-[44px]' : 'text-[32px] sm:text-[52px]',
+          'm-0 font-display font-semibold tracking-[-1.5px]',
+          // Taille et interligne ensemble : avec cn (tailwind-merge), un text-[…] placé après un leading-[…] l'annule.
+          compact
+            ? 'text-[32px]/[1.05] sm:text-[44px]/[1.05]'
+            : 'text-[32px]/[1.05] sm:text-[52px]/[1.05]',
         )}
       >
         Racontez-nous vos <em className="font-normal text-terre">prochaines vacances</em>
@@ -86,7 +89,7 @@ export function ChatAccueil({
           <button
             type="submit"
             disabled={!brouillon.trim()}
-            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-terre px-6 font-extrabold text-white hover:bg-rouille disabled:opacity-60 sm:w-auto"
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-terre px-6 font-extrabold text-white hover:bg-rouille disabled:opacity-60 sm:ml-auto sm:w-auto"
           >
             Construire mon voyage
             <IconFleche size={18} strokeWidth={2.4} />

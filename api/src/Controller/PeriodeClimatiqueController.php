@@ -77,7 +77,6 @@ final class PeriodeClimatiqueController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $periode->setDestination($destination);
             $entityManager->persist($periode);
-            /** @var mixed $tarifsSoumis */
             $tarifsSoumis = $form->get('tarifs')->getData();
             foreach (is_iterable($tarifsSoumis) ? $tarifsSoumis : [] as $tarif) {
                 if (!$tarif instanceof TarifParPeriode) {

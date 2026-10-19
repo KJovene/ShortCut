@@ -37,8 +37,6 @@ make dev    # suit les logs du site (Ctrl+C n'arrête pas le conteneur)
 
 `make start` enchaîne les deux. Le conteneur `front` lance Vite avec le rechargement à chaud : modifier un fichier de `site/` suffit. Ses dépendances sont dans un volume Docker (`node_modules` n'apparaît pas dans `site/`), réinstallées automatiquement quand `package-lock.json` change. Pour ajouter un paquet : `make site-sh` puis `npm install <paquet>`. `make down` arrête et supprime les conteneurs. Les données de la base sont conservées dans un volume Docker.
 
-Sans Node sur sa machine, `make site-docker` lance aussi le site dans un conteneur, sur la même adresse (`make logs s=site` pour les logs, `make site-docker-stop` pour l'arrêter).
-
 | Adresse | Service |
 | --- | --- |
 | http://localhost:5173 | Site React. En développement, les devtools TanStack Query et Router s'affichent en bas de l'écran. |

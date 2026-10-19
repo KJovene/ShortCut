@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { MenuCompte } from '@/components/MenuCompte'
 import { IconFermer, IconMenu } from '@/components/ui/icons'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
@@ -38,6 +39,10 @@ export function SiteHeader({ className }: { className?: string }) {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Connexion, compte et accès au backoffice (branche login). */}
+          <div className="hidden lg:flex">
+            <MenuCompte />
+          </div>
           <button
             type="button"
             onClick={() => ouvrirAssistant()}
