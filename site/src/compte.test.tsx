@@ -65,14 +65,17 @@ describe('connexion', () => {
     ])
   })
 
-  it('emmène un client sur son profil', async () => {
-    simulerApi({ 'POST /api/connexion': { status: 200, body: CAMILLE } })
+  it('emmène un client sur son espace', async () => {
+    simulerApi({
+      'POST /api/connexion': { status: 200, body: CAMILLE },
+      'GET /api/moi/demandes': { status: 200, body: [] },
+    })
     const router = afficher('/connexion')
 
     await seConnecter('camille@example.com', 'shortcut')
 
-    expect(await screen.findByRole('heading', { name: 'Mon profil' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/profil')
+    expect(await screen.findByRole('heading', { name: /Bonjour Camille/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/espace')
     expect(ouvrirBackoffice).not.toHaveBeenCalled()
   })
 
@@ -110,14 +113,19 @@ describe('inscription', () => {
     await user.click(screen.getByRole('button', { name: 'Créer mon compte' }))
   }
 
-  it('crée un compte client et ouvre le profil', async () => {
-    const api = simulerApi({ 'POST /api/inscription': { status: 201, body: CAMILLE } })
+  it('crée un compte client et ouvre son espace', async () => {
+    const api = simulerApi({
+      'POST /api/inscription': { status: 201, body: CAMILLE },
+      'GET /api/moi/demandes': { status: 200, body: [] },
+    })
     afficher('/inscription')
 
     await sInscrire()
 
-    expect(await screen.findByRole('heading', { name: 'Mon profil' })).toBeInTheDocument()
-    expect(screen.getByText(/Compte client/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Bonjour Camille/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Pas encore de voyage en cours' }),
+    ).toBeInTheDocument()
     expect(api.envoisA('POST /api/inscription')).toEqual([
       {
         prenom: 'Camille',
@@ -206,9 +214,11 @@ describe('déconnexion', () => {
     })
     afficher('/')
 
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'Déconnexion' }))
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Mon espace' }))
+    await user.click(screen.getByRole('button', { name: 'Se déconnecter' }))
 
-    expect(await screen.findByRole('link', { name: 'Créer un compte' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Inscription' })).toBeInTheDocument()
     expect(api.fetch).toHaveBeenCalledWith(
       '/api/deconnexion',
       expect.objectContaining({ method: 'POST' }),
@@ -219,9 +229,8 @@ describe('déconnexion', () => {
     simulerApi({ 'GET /api/moi': { status: 200, body: LEA } })
     afficher('/')
 
-    expect(await screen.findByRole('link', { name: 'Backoffice' })).toHaveAttribute(
-      'href',
-      '/admin',
-    )
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Mon espace' }))
+
+    expect(screen.getByRole('link', { name: 'Backoffice' })).toHaveAttribute('href', '/admin')
   })
 })

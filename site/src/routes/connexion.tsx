@@ -33,7 +33,7 @@ function PageConnexion() {
       if (accedeAuBackoffice(profil)) {
         ouvrirBackoffice()
       } else {
-        void navigate({ to: '/profil' })
+        void navigate({ to: '/espace' })
       }
     },
   })

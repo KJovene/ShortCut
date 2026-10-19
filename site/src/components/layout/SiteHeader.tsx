@@ -39,17 +39,10 @@ export function SiteHeader({ className }: { className?: string }) {
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Connexion, compte et accès au backoffice (branche login). */}
-          <div className="hidden lg:flex">
+          {/* Connexion et inscription, ou « Mon espace » une fois connecté. */}
+          <div className="hidden sm:flex">
             <MenuCompte />
           </div>
-          <button
-            type="button"
-            onClick={() => ouvrirAssistant()}
-            className="hidden min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-brun sm:flex"
-          >
-            Construire mon voyage
-          </button>
           <button
             type="button"
             aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
@@ -93,6 +86,9 @@ export function SiteHeader({ className }: { className?: string }) {
           >
             Construire mon voyage
           </button>
+          <div className="mt-3 flex justify-center sm:hidden">
+            <MenuCompte />
+          </div>
         </nav>
       )}
     </header>
