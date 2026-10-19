@@ -38,6 +38,7 @@ security:
     access_control:
         - { path: ^/api/chat/conversations$, methods: [POST], roles: PUBLIC_ACCESS }
         - { path: ^/api/chat, roles: ROLE_CHATBOT }
+        - { path: ^/admin, roles: ROLE_CONSEILLER }
 
 when@test:
     security:

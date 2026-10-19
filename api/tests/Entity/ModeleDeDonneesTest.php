@@ -129,4 +129,30 @@ final class ModeleDeDonneesTest extends KernelTestCase
         self::assertCount(1, $erreurs);
         self::assertSame('fin', $erreurs[0]->getPropertyPath());
     }
+
+    public function testUnChevauchementDePeriodeEstRefuse(): void
+    {
+        $destination = (new Destination())->setPays('Portugal')->setVille('Porto')->setSlug('porto');
+        $existante = (new PeriodeClimatique())
+            ->setDestination($destination)
+            ->setDebut(new \DateTimeImmutable('2027-06-01'))
+            ->setFin(new \DateTimeImmutable('2027-06-30'))
+            ->setTemperatureMoyenne(25);
+        $destination->addPeriodeClimatique($existante);
+        $this->em->persist($destination);
+        $this->em->persist($existante);
+        $this->em->flush();
+
+        $chevauchante = (new PeriodeClimatique())
+            ->setDestination($destination)
+            ->setDebut(new \DateTimeImmutable('2027-06-15'))
+            ->setFin(new \DateTimeImmutable('2027-07-15'))
+            ->setTemperatureMoyenne(26);
+
+        $erreurs = self::getContainer()->get(ValidatorInterface::class)->validate($chevauchante);
+
+        self::assertCount(1, $erreurs);
+        self::assertSame('debut', $erreurs[0]->getPropertyPath());
+        self::assertStringContainsString('chevauche', $erreurs[0]->getMessage());
+    }
 }
