@@ -1,6 +1,10 @@
 import type { PageDuSite } from '@/features/pages/pageDuSite'
 
 /** Contenus des pages servis par l'API simulée, repris des données de démo (api/src/DataFixtures/Donnees/Pages.php). */
+/** Mention qui ouvre les modèles de pages légales tant que l'agence n'a pas fourni ses textes. */
+const A_VALIDER =
+  "<p><strong>Modèle à valider par l'agence</strong> : ce texte doit être relu et complété avant la mise en ligne.</p>"
+
 export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   accueil: {
     slug: 'accueil',
@@ -46,5 +50,37 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
     photos: ['/uploads/pages/contact.jpg'],
     seoTitre: "Contacter l'agence",
     seoDescription: 'Posez vos questions à notre assistant ou demandez à parler à un conseiller.',
+  },
+  'mentions-legales': {
+    slug: 'mentions-legales',
+    titre: 'Mentions légales',
+    contenu:
+      A_VALIDER +
+      '<h2>Éditeur</h2><p>[Raison sociale], [forme juridique] au capital de [montant] €.</p>' +
+      '<h2>Hébergement</h2><p>[Hébergeur], [adresse].</p>',
+    photos: [],
+    seoTitre: 'Mentions légales',
+    seoDescription: "Éditeur du site, hébergement et immatriculation de l'agence.",
+  },
+  cgv: {
+    slug: 'cgv',
+    titre: 'Conditions générales de vente',
+    contenu:
+      A_VALIDER +
+      '<h2>Frais de dossier</h2><p>Des frais de dossier de 100 à 200 € s’appliquent une fois par dossier.</p>',
+    photos: [],
+    seoTitre: 'Conditions générales de vente',
+    seoDescription: 'Conditions de réservation, de paiement, de modification et d’annulation.',
+  },
+  confidentialite: {
+    slug: 'confidentialite',
+    titre: 'Politique de confidentialité et cookies',
+    contenu:
+      A_VALIDER +
+      '<h2>Assistant IA</h2><p>L’assistant est une intelligence artificielle.</p>' +
+      '<h2>Cookies</h2><p>[Liste des cookies et gestion du consentement.]</p>',
+    photos: [],
+    seoTitre: 'Confidentialité et cookies',
+    seoDescription: 'Données collectées par l’assistant et le site, finalités et vos droits.',
   },
 }

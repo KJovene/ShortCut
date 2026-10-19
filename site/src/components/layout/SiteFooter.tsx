@@ -5,7 +5,7 @@ export function SiteFooter() {
   return (
     <footer className="no-print bg-encre text-beige">
       <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
-        <Logo clair className="text-[22px] sm:text-[22px]" />
+        <Logo clair className="gap-2 text-[22px] sm:text-[22px] [&>img]:size-7" />
         <Link to="/types-de-voyages" className="hover:text-creme">
           Séjours · Circuits · Groupes · Voyages de noces · Entreprise
         </Link>

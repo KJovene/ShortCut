@@ -90,3 +90,11 @@ export function normaliser(texte: string) {
     .toLowerCase()
     .trim()
 }
+
+/**
+ * Un modèle fourni par ShortCut s'ouvre sur la mention « Modèle à valider par l'agence » (DataFixtures/Donnees/Pages.php) :
+ * elle disparaît du contenu quand l'agence saisit ses propres textes dans le backoffice.
+ */
+export function estMentionAValider(paragraphe: string) {
+  return normaliser(paragraphe).includes('a valider')
+}

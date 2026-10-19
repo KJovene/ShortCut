@@ -1,32 +1,17 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { PageLegale } from '@/components/PageLegale'
+import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/mentions-legales')({
-  head: () => ({
-    meta: [
-      { title: 'Mentions légales' },
-      {
-        name: 'description',
-        content: "Éditeur du site, hébergement et immatriculation de l'agence.",
-      },
-    ],
+  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('mentions-legales')),
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, {
+      titre: 'Mentions légales',
+      description: "Éditeur du site, hébergement et immatriculation de l'agence.",
+    }),
   }),
-  component: () => (
-    <PageLegale
-      titre="Mentions légales"
-      sections={[
-        {
-          titre: 'Éditeur',
-          texte:
-            '[Raison sociale], [forme juridique] au capital de [montant] €, immatriculée au RCS de [ville] sous le numéro [numéro]. Siège : [adresse]. Directeur de la publication : [nom].',
-        },
-        {
-          titre: 'Immatriculation',
-          texte:
-            'Opérateur de voyages immatriculé au registre Atout France sous le numéro [IM000000000]. Garantie financière : [organisme]. Assurance responsabilité civile professionnelle : [assureur].',
-        },
-        { titre: 'Hébergement', texte: '[Hébergeur], [adresse].' },
-      ]}
-    />
-  ),
+  pendingComponent: PageEnChargement,
+  errorComponent: PageIndisponible,
+  component: () => <PageLegale slug="mentions-legales" />,
 })
