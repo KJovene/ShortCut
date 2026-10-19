@@ -28,6 +28,26 @@ Il reste à renseigner sa clé `ANTHROPIC_API_KEY` dans `api/.env.local`.
 
 Les fichiers `.env.local` contiennent les secrets de chacun : ils ne sont **jamais commités**. La clé API Claude n'existe que côté API, le site ne la voit jamais.
 
+### Windows : API lente
+
+Sous Windows, le partage de fichiers entre la machine et Docker est très lent : chaque requête Symfony peut prendre plus de 10 s. `compose.windows.yaml` place `vendor/` et `var/` dans des volumes Docker (le code reste partagé). À faire une fois, avant ou après `make install` :
+
+```bash
+cp compose.windows.yaml compose.override.yaml   # lu automatiquement par Docker Compose, non versionné
+make build && make down && make up
+make composer c=install                         # remplit le volume vendor/
+make cc
+```
+
+`api/vendor/` et `api/var/` de la machine ne sont alors plus utilisés par le conteneur : ajouter un paquet passe toujours par `make composer`, les logs se lisent avec `make sh` (`var/log/`). Pour l'autocomplétion de l'éditeur, `docker compose cp php:/app/vendor api/` recopie les dépendances sur la machine. macOS et Linux n'ont pas besoin de cette surcharge.
+
+Si le site ne démarre plus ensuite (`EACCES ... node_modules/.vite-temp` dans `make site-logs`), les conteneurs avaient été lancés sans `make`, donc avec un autre utilisateur. Une seule fois :
+
+```bash
+docker compose run --rm --no-deps -u 0 --entrypoint sh front -c 'chmod -R a+rwX /app/node_modules'
+make up
+```
+
 ## Lancer le projet
 
 ```bash
