@@ -1,0 +1,12 @@
+# Windows uniquement : à copier en compose.override.yaml (non versionné), lu automatiquement par Docker Compose.
+# Le partage de fichiers Windows → Docker est très lent : vendor/ et var/ (des milliers de fichiers lus
+# à chaque requête) passent dans des volumes Docker. Le code (src/, config/…) reste partagé avec la machine.
+services:
+  php:
+    volumes:
+      - php_vendor:/app/vendor
+      - php_var:/app/var
+
+volumes:
+  php_vendor:
+  php_var:
