@@ -8,7 +8,7 @@ Les agents IA n'accèdent aux données de l'agence qu'à travers ces sept outils
 | `chercher_destinations` | Trouver les destinations compatibles (zone, climat, dates, envies) | Conversation, Recherche | `CatalogueRecherche::destinations()` | Catalogue publié | — |
 | `chercher_logements` | Lister les logements compatibles d'une destination, avec leurs tarifs aux dates | Recherche, Modification | `CatalogueRecherche::logements()` | Catalogue publié | — |
 | `chercher_activites` | Lister les activités compatibles d'une destination, selon les âges | Recherche, Modification | `CatalogueRecherche::activites()` | Catalogue publié | — |
-| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `ChiffrageService::calculerNiveaux()` | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
+| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `BudgetCalculator::calculer()` (outil `App\Agent\Outil\CalculerBudget`) | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
 | `enregistrer_proposition` | Enregistrer une version de proposition à partir d'un chiffrage | Chiffrage et rédaction, Modification | `PropositionService::enregistrer()` | Chiffrage de la demande courante | Proposition et lignes de la demande courante |
 | `transmettre_au_conseiller` | Passer la main à un conseiller | Tous | `DemandeService::transmettreAuConseiller()` | — | Demande et conversation courantes |
 
@@ -17,6 +17,8 @@ Les agents IA n'accèdent aux données de l'agence qu'à travers ces sept outils
 ### Contexte imposé par le serveur
 
 Aucun outil ne reçoit d'identifiant de demande, de conversation, de proposition ou de client. Le serveur construit un **contexte** à partir du jeton de conversation du visiteur (`VisiteurChatbot`, ticket #173) et le passe à chaque service :
+
+Code : `App\Agent\ContexteAgent`, `App\Agent\Outil` et `App\Agent\EntreeInvalide` (une entrée refusée, renvoyée au modèle avec `is_error`).
 
 ```php
 final class ContexteAgent
@@ -34,6 +36,7 @@ interface Outil
     public function description(): string;
     /** @return array<string, mixed> schéma JSON d'entrée */
     public function schemaEntree(): array;
+    public function strict(): bool;               // mode strict de l'API Claude (outils qui écrivent)
     /** @param array<string, mixed> $entree @return array<string, mixed> */
     public function executer(ContexteAgent $contexte, array $entree): array;
 }
@@ -323,6 +326,8 @@ Sortie (extrait, niveau essentiel seul) :
   "nonChiffrable": null
 }
 ```
+
+La sortie contient aussi `avertissement` (« Première proposition, prix estimés, à confirmer par votre conseiller. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
 
 Si un tarif manque, `niveaux` vaut `null` et `nonChiffrable` explique pourquoi : `{"prestation": "Guesthouse Reykjavik Centre", "date": "2027-01-16", "raison": "Aucun tarif saisi à cette date."}`. L'agent propose alors un autre logement ou d'autres dates, ou appelle `transmettre_au_conseiller`.
 
