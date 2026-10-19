@@ -175,6 +175,11 @@ class Destination
         $this->prestations = new ArrayCollection();
     }
 
+    public function __toString(): string
+    {
+        return \sprintf('%s (%s)', $this->ville, $this->pays);
+    }
+
     public function getId(): ?int
     {
         return $this->id;

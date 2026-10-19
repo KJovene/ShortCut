@@ -57,6 +57,13 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
                 constraints: [new Assert\Regex(MoisFilter::FORMAT, message: 'Le mois doit être au format AAAA-MM, par exemple 2027-05.')],
                 castToArray: false,
             ),
+            'chambres' => new QueryParameter(
+                filter: new ComparisonFilter(new ExactFilter()),
+                property: 'chambres',
+                description: 'Nombre de chambres, ex. chambres[gte]=2.',
+                nativeType: new BuiltinType(TypeIdentifier::INT),
+                castToNativeType: true,
+            ),
         ]),
         new Get(uriTemplate: '/logements/{id}', name: self::OPERATION_LOGEMENT),
         new Post(
@@ -191,6 +198,13 @@ class Prestation
     #[Groups(['prestation:public', 'prestation:ecriture'])]
     private int $capacite = 1;
 
+    /** Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1). */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Assert\Positive(message: 'Le nombre de chambres doit être d\'au moins 1.')]
+    #[Assert\LessThanOrEqual(500)]
+    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    private ?int $chambres = null;
+
     /**
      * @var list<string>
      */
@@ -237,7 +251,7 @@ class Prestation
      *
      * @var Collection<int, TarifParPeriode>
      */
-    #[ORM\OneToMany(targetEntity: TarifParPeriode::class, mappedBy: 'prestation', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: TarifParPeriode::class, mappedBy: 'prestation', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['debut' => 'ASC'])]
     #[Groups(['prestation:interne'])]
     private Collection $tarifs;
@@ -257,6 +271,14 @@ class Prestation
         if (TypePrestation::Logement === $this->type && null !== $this->dureeMinutes) {
             $context->buildViolation('Un logement n\'a pas de durée : laissez ce champ vide.')->atPath('dureeMinutes')->addViolation();
         }
+        if (TypePrestation::Activite === $this->type && null !== $this->chambres) {
+            $context->buildViolation('Une activité n\'a pas de chambres : laissez ce champ vide.')->atPath('chambres')->addViolation();
+        }
+    }
+
+    public function __toString(): string
+    {
+        return (string) $this->nom;
     }
 
     public function getId(): ?int
@@ -348,6 +370,26 @@ class Prestation
         return $this;
     }
 
+    public function getChambres(): ?int
+    {
+        return $this->chambres;
+    }
+
+    public function setChambres(?int $chambres): static
+    {
+        $this->chambres = $chambres;
+
+        return $this;
+    }
+
+    /**
+     * Première photo, pour les vignettes.
+     */
+    public function getPhotoPrincipale(): ?string
+    {
+        return $this->photos[0] ?? null;
+    }
+
     /**
      * @return list<string>
      */
@@ -361,7 +403,10 @@ class Prestation
      */
     public function setEquipements(array $equipements): static
     {
-        $this->equipements = $equipements;
+        $this->equipements = array_values(array_unique(array_filter(
+            array_map(static fn (string $equipement): string => trim($equipement), $equipements),
+            static fn (string $equipement): bool => '' !== $equipement,
+        )));
 
         return $this;
     }

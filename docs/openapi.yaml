@@ -1138,6 +1138,66 @@ paths:
             example: 2027-05
           style: form
           explode: true
+        -
+          name: 'chambres[gt]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'chambres[gte]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'chambres[lt]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'chambres[lte]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'chambres[ne]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
+        -
+          name: 'chambres[between]'
+          in: query
+          description: 'Nombre de chambres, ex. chambres[gte]=2.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: false
     post:
       operationId: api_logements_post
       tags:
@@ -2098,6 +2158,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -2164,6 +2232,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -2242,6 +2318,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -2330,6 +2414,14 @@ components:
               description: 'Nombre maximum de personnes.'
               default: 1
               type: integer
+            chambres:
+              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 500
+              description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+              type:
+                - integer
+                - 'null'
             equipements:
               type: array
               items:
@@ -2893,6 +2985,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -2959,6 +3059,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -3037,6 +3145,14 @@ components:
           description: 'Nombre maximum de personnes.'
           default: 1
           type: integer
+        chambres:
+          minimum: 0
+          exclusiveMinimum: 0
+          maximum: 500
+          description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+          type:
+            - integer
+            - 'null'
         equipements:
           type: array
           items:
@@ -3125,6 +3241,14 @@ components:
               description: 'Nombre maximum de personnes.'
               default: 1
               type: integer
+            chambres:
+              minimum: 0
+              exclusiveMinimum: 0
+              maximum: 500
+              description: "Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1)."
+              type:
+                - integer
+                - 'null'
             equipements:
               type: array
               items:

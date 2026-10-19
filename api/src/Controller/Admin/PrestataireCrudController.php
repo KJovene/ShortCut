@@ -47,7 +47,7 @@ final class PrestataireCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Prestataire $p) => (string) $p->getNom())
             ->setDefaultSort(['nom' => 'ASC'])
             ->setSearchFields(['nom', 'contactNom', 'email'])
-            ->addFormTheme('admin/form/ville.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions

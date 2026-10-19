@@ -1,5 +1,5 @@
-{# Champ VilleType : un champ texte suivi de ses suggestions. #}
-{% block ville_widget %}
+{# Champ TexteSuggereType : un champ texte suivi de ses suggestions. #}
+{% block texte_suggere_widget %}
     {{ block('form_widget_simple') }}
     <datalist id="{{ id }}_suggestions">
         {% for suggestion in suggestions %}

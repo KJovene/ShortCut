@@ -7,7 +7,7 @@ use App\Entity\Utilisateur;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
-use App\Form\VilleType;
+use App\Form\TexteSuggereType;
 use App\Repository\DemandeRepository;
 use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -70,7 +70,7 @@ final class DemandeCrudController extends AbstractCrudController
             ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email'])
             // Onglets par statut au-dessus de la liste.
             ->overrideTemplate('crud/index', 'admin/demande/index.html.twig')
-            ->addFormTheme('admin/form/ville.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig');
     }
 
     /** Compteurs des onglets, sur le même périmètre que la liste (ses demandes pour un conseiller). */
@@ -183,7 +183,7 @@ final class DemandeCrudController extends AbstractCrudController
         yield TextField::new('lieuOuZone', 'Lieu ou zone');
         // Suggestions : les villes de départ du catalogue, pour que le chiffrage retrouve les vols.
         yield TextField::new('villeDepart', 'Ville de départ')
-            ->setFormType(VilleType::class)
+            ->setFormType(TexteSuggereType::class)
             ->setFormTypeOption('suggestions', 'departs')
             ->hideOnIndex();
         yield DateField::new('dateDebut', 'Départ');

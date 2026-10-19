@@ -1,0 +1,7 @@
+{# Vignette d'une prestation dans la liste : sa première photo. #}
+{% set photo = entity.instance.photoPrincipale %}
+{% if photo %}
+    <img src="{{ asset('uploads/prestations/' ~ photo) }}" alt="" class="bo-vignette" loading="lazy">
+{% else %}
+    <span class="bo-vide">—</span>
+{% endif %}

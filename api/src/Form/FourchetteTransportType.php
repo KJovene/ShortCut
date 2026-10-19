@@ -24,13 +24,13 @@ final class FourchetteTransportType extends AbstractType
         ];
 
         $builder
-            ->add('depart', VilleType::class, [
+            ->add('depart', TexteSuggereType::class, [
                 'label' => 'Départ',
                 'suggestions' => 'departs',
                 'attr' => ['placeholder' => 'Paris'],
                 'constraints' => [new Assert\NotBlank(message: 'Indiquez la ville de départ.'), new Assert\Length(max: 100)],
             ])
-            ->add('arrivee', VilleType::class, [
+            ->add('arrivee', TexteSuggereType::class, [
                 'label' => 'Arrivée',
                 'suggestions' => 'destinations',
                 'help' => 'La ville de la destination, à choisir dans la liste. Une variante (majuscules, accents, petite faute) est aussi reconnue.',

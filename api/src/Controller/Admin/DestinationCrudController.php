@@ -48,7 +48,7 @@ final class DestinationCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Destination $d) => \sprintf('%s, %s', $d->getVille(), $d->getPays()))
             ->setDefaultSort(['ville' => 'ASC'])
             ->setSearchFields(['ville', 'pays', 'region'])
-            ->addFormTheme('admin/form/ville.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions

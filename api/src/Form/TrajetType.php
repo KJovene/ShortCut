@@ -17,7 +17,7 @@ final class TrajetType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('ville', VilleType::class, [
+            ->add('ville', TexteSuggereType::class, [
                 'label' => 'Ville de départ',
                 'suggestions' => 'departs',
                 'attr' => ['placeholder' => 'Paris'],

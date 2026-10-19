@@ -184,7 +184,7 @@ Le catalogue est exposé avec API Platform (ticket #185). La documentation OpenA
 | --- | --- | --- |
 | Destinations | `/api/destinations` | `pays`, `ville`, `slug`, `publiee`, `miseEnAvant`, `mois` (AAAA-MM) avec `temperatureMin` / `temperatureMax`, `envie` |
 | Prestataires | `/api/prestataires` | `nom`, `type` (`hebergeur`, `transporteur`, `guide`, `activite`) |
-| Logements | `/api/logements` | `destination` (IRI), `destinationSlug`, `prestataire`, `categorie`, `capacite[gte]=4`, `accessible`, `envie`, `mois` (au moins un tarif dans le mois) |
+| Logements | `/api/logements` | `destination` (IRI), `destinationSlug`, `prestataire`, `categorie`, `capacite[gte]=4`, `chambres[gte]=2`, `accessible`, `envie` (tolère accents et pluriels), `mois` (au moins un tarif dans le mois) |
 | Activités | `/api/activites` | les mêmes, plus `ageMinimum[lte]` et `dureeMinutes[lte]` |
 | Tarifs | `/api/tarifs` | `prestation` (IRI), `unite`, `mois` |
 

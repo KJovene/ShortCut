@@ -144,6 +144,11 @@ class Prestataire
         }
     }
 
+    public function __toString(): string
+    {
+        return (string) $this->nom;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
