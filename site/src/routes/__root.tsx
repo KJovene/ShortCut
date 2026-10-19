@@ -40,8 +40,15 @@ function RootLayout() {
     <ChatProvider>
       <HeadContent />
       <div className="flex min-h-screen flex-col overflow-x-clip">
+        {/* Premier élément au clavier : passe l'en-tête et le menu. */}
+        <a
+          href="#contenu"
+          className="sr-only z-50 rounded-full bg-encre px-5 py-3 font-bold text-creme focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        >
+          Aller au contenu
+        </a>
         {!estAccueil && <SiteHeader className="border-b border-lin" />}
-        <main className="flex-1">
+        <main id="contenu" tabIndex={-1} className="flex-1 focus:outline-none">
           <Outlet />
         </main>
         <SiteFooter />

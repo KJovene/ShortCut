@@ -1,23 +1,29 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { IconBulle, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '@/features/chat/chatContext'
+import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/contact')({
-  head: () => ({
-    meta: [
-      { title: "Contacter l'agence" },
-      {
-        name: 'description',
-        content: 'Posez vos questions à notre assistant ou demandez à parler à un conseiller.',
-      },
-    ],
+  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('contact')),
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, {
+      titre: "Contacter l'agence",
+      description: 'Posez vos questions à notre assistant ou demandez à parler à un conseiller.',
+    }),
   }),
+  pendingComponent: PageEnChargement,
+  errorComponent: PageIndisponible,
   component: ContactPage,
 })
 
 function ContactPage() {
   const { ouvrir, envoyer } = useChat()
+  // Introduction, horaires et adresse : contenus du site, modifiables dans le backoffice.
+  const { data: page } = useSuspenseQuery(pageQuery('contact'))
+  const contenu = decouperContenu(page.contenu)
 
   return (
     <>
@@ -28,12 +34,13 @@ function ContactPage() {
             Une question ? <em className="font-normal text-terre">Parlons-en</em>
           </>
         }
-        photo={{ src: '/uploads/pages/contact.jpg', alt: "L'accueil de l'agence" }}
+        photo={page.photos[0] ? { src: page.photos[0], alt: "L'accueil de l'agence" } : undefined}
       >
-        <p className="m-0">
-          Le plus rapide : ouvrez l'assistant et décrivez votre projet. Vous pouvez à tout moment
-          lui demander de parler à un conseiller.
-        </p>
+        {contenu.intro.map((paragraphe) => (
+          <p key={paragraphe} className="m-0">
+            {paragraphe}
+          </p>
+        ))}
       </EnTetePage>
 
       <section className="mx-auto grid max-w-[1376px] grid-cols-1 gap-6 px-4 pb-16 sm:px-8 sm:pb-24 md:grid-cols-2">
@@ -64,20 +71,20 @@ function ContactPage() {
             <IconPersonne size={24} />
           </span>
           <h2 className="m-0 font-display text-[28px] font-semibold">Un conseiller</h2>
-          <dl className="m-0 flex flex-col gap-3 text-lg">
-            <div>
-              <dt className="text-sm font-bold text-taupe-clair">Horaires des conseillers</dt>
-              <dd className="m-0">
-                Du lundi au vendredi de 9 h à 18 h 30, le samedi de 10 h à 17 h.
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-bold text-taupe-clair">Adresse</dt>
-              <dd className="m-0">
-                12 rue des Voyageurs, 75000 Paris (adresse fictive de démonstration).
-              </dd>
-            </div>
-          </dl>
+          {contenu.sections.length > 0 && (
+            <dl className="m-0 flex flex-col gap-3 text-lg">
+              {contenu.sections.map((section) => (
+                <div key={section.titre}>
+                  <dt className="text-sm font-bold text-taupe-clair">{section.titre}</dt>
+                  {[...section.paragraphes, ...section.elements].map((ligne) => (
+                    <dd key={ligne} className="m-0">
+                      {ligne}
+                    </dd>
+                  ))}
+                </div>
+              ))}
+            </dl>
+          )}
           <button
             type="button"
             onClick={() => {

@@ -31,7 +31,15 @@ export const Route = createFileRoute('/espace')({
   },
   loader: ({ context }) => context.queryClient.ensureQueryData(mesDemandesQuery),
   head: () => ({
-    meta: [{ title: 'Mon espace' }, { name: 'robots', content: 'noindex' }],
+    meta: [
+      { title: 'Mon espace' },
+      {
+        name: 'description',
+        content:
+          'Suivez votre voyage étape par étape et retrouvez vos conversations avec l’assistant.',
+      },
+      { name: 'robots', content: 'noindex' },
+    ],
   }),
   component: PageEspace,
 })

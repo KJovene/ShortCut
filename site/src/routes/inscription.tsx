@@ -6,6 +6,16 @@ import { Bandeau, Champ, classeBouton } from '@/components/Champ'
 import { ErreurFormulaire, type Inscription, profilQuery, sInscrire } from '@/lib/auth'
 
 export const Route = createFileRoute('/inscription')({
+  head: () => ({
+    meta: [
+      { title: 'Créer un compte' },
+      {
+        name: 'description',
+        content:
+          'Créez votre compte pour retrouver vos propositions de voyage et suivre leur confirmation.',
+      },
+    ],
+  }),
   component: PageInscription,
 })
 

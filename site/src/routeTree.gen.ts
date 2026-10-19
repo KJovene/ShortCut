@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as AgenceRouteImport } from './routes/agence'
 import { Route as CgvRouteImport } from './routes/cgv'
 import { Route as ConfidentialiteRouteImport } from './routes/confidentialite'
@@ -27,6 +28,11 @@ import { Route as PropositionIdRouteImport } from './routes/proposition/$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgenceRoute = AgenceRouteImport.update({
@@ -97,6 +103,7 @@ const PropositionIdRoute = PropositionIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/agence': typeof AgenceRoute
   '/cgv': typeof CgvRoute
   '/confidentialite': typeof ConfidentialiteRoute
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/agence'
     | '/cgv'
     | '/confidentialite'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$'
     | '/agence'
     | '/cgv'
     | '/confidentialite'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$'
     | '/agence'
     | '/cgv'
     | '/confidentialite'
@@ -197,6 +209,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
   AgenceRoute: typeof AgenceRoute
   CgvRoute: typeof CgvRoute
   ConfidentialiteRoute: typeof ConfidentialiteRoute
@@ -219,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agence': {
@@ -317,6 +337,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
   AgenceRoute: AgenceRoute,
   CgvRoute: CgvRoute,
   ConfidentialiteRoute: ConfidentialiteRoute,

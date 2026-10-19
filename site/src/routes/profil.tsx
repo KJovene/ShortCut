@@ -18,6 +18,13 @@ export const Route = createFileRoute('/profil')({
       throw redirect({ to: '/connexion' })
     }
   },
+  head: () => ({
+    meta: [
+      { title: 'Mon profil' },
+      { name: 'description', content: 'Vos coordonnées, votre e-mail et votre mot de passe.' },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: PageProfil,
 })
 
