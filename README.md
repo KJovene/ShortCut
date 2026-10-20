@@ -184,16 +184,20 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
   | `texte` | `{"texte": "…"}` | ajoute ce morceau à la bulle de l'assistant |
   | `outil` | `{"nom": "chercher_destinations"}` | peut montrer que l'assistant cherche |
   | `demande` | `{"fiche": {…}, "recapitulatifConfirme": false}` | met à jour le récapitulatif ; une fois confirmé, lance la proposition |
+  | `combinaison` | `{"destination": {…}, "niveaux": {…}, …}` | la combinaison retenue et ses trois niveaux |
+  | `proposition` | `{"jeton": "…", "version": 2}` | une nouvelle version vient d'être envoyée au client : lien vers « Ma proposition » |
   | `erreur` | `{"erreur": "…"}` | affiche le message, déjà rédigé pour le client |
   | `fin` | `{}` | la réponse est complète |
 
   C'est une requête POST : côté site, lire le flux avec `fetch` et `response.body.getReader()`, pas avec `EventSource` (GET seulement).
 - **Agent Conversation** (`api/src/Chatbot`) : Symfony appelle l'API Claude en streaming (`ClientClaude`, client HTTP `claude.client` qui porte la clé), exécute les outils demandés par le modèle (`Chatbot/Outil`, voir [`docs/outils.md`](docs/outils.md)) et rappelle Claude jusqu'à sa réponse finale (8 appels au plus par message). L'historique complet au format de l'API est gardé dans `Conversation::historique`, la conversation lisible dans `Conversation::messages`, chaque appel dans `JournalIA`. Le navigateur ne parle jamais à l'API Claude.
+- **Modification après une proposition** (US11, `NouvelleVersion`) : quand le client confirme un changement, la version suivante part de la précédente, qui garde sa combinaison (`Proposition::choix`) et la fiche du moment (`Proposition::exigences`). Dates, durée, voyageurs, budget, ville de départ, températures ou contraintes : la même combinaison est recalculée sans appel à Claude. Autre type, autre zone, autres envies, ou combinaison refusée : l'agent Recherche repart de la précédente. La rédaction écrit la version suivante, envoyée directement au client ; la précédente reste consultable.
 - **Page « Ma proposition »** : routes publiques, le lien unique (`jetonPublic`, 64 caractères) tient lieu d'accès. Le lien d'une version remplacée mène à la version qui fait foi (`versionDemandee` indique celle du lien).
 
   | Route | Effet |
   | --- | --- |
   | `GET /api/propositions/{jeton}` | la proposition : `etat` (`estimee` ou `confirmee`), mention, destination, argumentaire, totaux des niveaux, hypothèses, programme, prestations et leurs points forts, postes (`lignes`, sans prix d'achat), `actions` possibles |
+  | `GET /api/propositions/{jeton}/versions/{numero}` | une version reçue par le client, même remplacée (`versions` liste les numéros) |
   | `POST /api/propositions/{jeton}/demande-de-confirmation` | le client fait confirmer l'estimation : la demande passe « à confirmer » |
   | `POST /api/propositions/{jeton}/acceptation` | « J'accepte » sur la version confirmée : proposition et demande « acceptées » |
 

@@ -13,7 +13,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Page « Ma proposition » (#210) : routes publiques, le lien unique (jeton non devinable) tient lieu d'accès.
- * Le jeton d'une version remplacée mène à la version qui fait foi ; les actions portent sur celle-ci.
+ * Le jeton d'une version remplacée mène à la version qui fait foi ; les actions portent sur celle-ci. Chaque version
+ * reçue reste consultable par son numéro.
  */
 #[Route('/api/propositions/{jeton}', requirements: ['jeton' => '[0-9a-f]{64}'])]
 final class PropositionController extends AbstractController
@@ -30,6 +31,16 @@ final class PropositionController extends AbstractController
         [$demandee, $proposition] = $this->trouver($jeton);
 
         return $this->json($this->client->presenter($proposition, $demandee));
+    }
+
+    /** Une version précise, même remplacée : le client compare ses versions (#211, #212). */
+    #[Route('/versions/{numero}', name: 'api_proposition_version', methods: ['GET'], requirements: ['numero' => '\d+'])]
+    public function afficherUneVersion(string $jeton, int $numero): JsonResponse
+    {
+        [, $proposition] = $this->trouver($jeton);
+        $version = $this->client->version($proposition, $numero) ?? throw $this->createNotFoundException('Version introuvable.');
+
+        return $this->json($this->client->presenter($version));
     }
 
     /** Le client souhaite faire confirmer la proposition estimée par son conseiller. */

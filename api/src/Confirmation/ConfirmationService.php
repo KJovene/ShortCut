@@ -94,6 +94,8 @@ final class ConfirmationService
             ->setPourquoi($estimation->getPourquoi())
             ->setArgumentaire($estimation->getArgumentaire())
             ->setPrestations($estimation->getPrestations())
+            ->setChoix($estimation->getChoix())
+            ->setExigences($estimation->getExigences())
             ->setProgramme($estimation->getProgramme())
             ->setNiveauBudget($estimation->getNiveauBudget())
             ->setTotalCentimes($estimation->getTotalCentimes())

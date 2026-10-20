@@ -21,6 +21,7 @@ use Symfony\Component\Workflow\WorkflowInterface;
  * - le client demande la confirmation d'une estimation (demande « à confirmer »), puis accepte la version confirmée
  *   (proposition et demande « acceptées »).
  * Les prix d'achat des lignes ne sont jamais montrés : seuls les totaux, marge et frais compris.
+ * Chaque version envoyée reste consultable (`versions`, #211), même remplacée ; un brouillon jamais.
  */
 final class PropositionClient
 {
@@ -51,6 +52,21 @@ final class PropositionClient
         usort($visibles, static fn (Proposition $a, Proposition $b): int => $b->getVersion() <=> $a->getVersion());
 
         return $visibles[0] ?? $proposition;
+    }
+
+    /**
+     * Une version précise de la même demande, telle que le client l'a reçue ; null pour un brouillon ou un numéro
+     * inconnu.
+     */
+    public function version(Proposition $proposition, int $numero): ?Proposition
+    {
+        foreach (self::envoyees($proposition) as $version) {
+            if ($numero === $version->getVersion()) {
+                return $version;
+            }
+        }
+
+        return null;
     }
 
     /** Le client souhaite faire confirmer la proposition estimée : la demande passe « à confirmer ». */
@@ -136,6 +152,15 @@ final class PropositionClient
                 'adultes' => $demande->getAdultes(),
                 'enfants' => $demande->getEnfants(),
             ],
+            // Toutes les versions reçues par le client, de la plus ancienne à la plus récente.
+            'versions' => array_map(static fn (Proposition $v): array => [
+                'version' => $v->getVersion(),
+                'jeton' => $v->getJetonPublic(),
+                'etat' => TypeProposition::Confirmee === $v->getType() ? 'confirmee' : 'estimee',
+                'statut' => $v->getStatut()->value,
+                'creeLe' => $v->getCreeLe()->format(\DATE_ATOM),
+                'totalCentimes' => $v->getTotalCentimes(),
+            ], self::envoyees($proposition)),
             'actions' => [
                 'demanderConfirmation' => StatutProposition::Envoyee === $proposition->getStatut() && $this->workflowDemande->can($demande, 'demander_confirmation'),
                 'accepter' => $this->workflowProposition->can($proposition, 'accepter') && $this->workflowDemande->can($demande, 'accepter'),
@@ -156,6 +181,23 @@ final class PropositionClient
             'quantite' => $ligne->getQuantite(),
             'fiche' => null === $source ? null : \sprintf('/api/%s/%d', TypeLigne::Logement === $ligne->getType() ? 'logements' : 'activites', $source->getId()),
         ];
+    }
+
+    /**
+     * Les versions de la demande que le client a reçues (envoyées ou confirmées), de la plus ancienne à la plus
+     * récente. Un brouillon remplacé avant d'être envoyé n'a jamais été vu : il n'y est pas.
+     *
+     * @return list<Proposition>
+     */
+    private static function envoyees(Proposition $proposition): array
+    {
+        $versions = array_values(array_filter(
+            self::demande($proposition)->getPropositions()->toArray(),
+            static fn (Proposition $p): bool => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe(),
+        ));
+        usort($versions, static fn (Proposition $a, Proposition $b): int => $a->getVersion() <=> $b->getVersion());
+
+        return $versions;
     }
 
     private static function demande(Proposition $proposition): Demande

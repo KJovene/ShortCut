@@ -93,7 +93,8 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
                 ['jour' => 4, 'date' => '2027-10-24', 'titre' => 'Journée libre', 'description' => 'Jardin Majorelle, hammam ou shopping : chacun à son rythme.', 'activiteIds' => []],
                 ['jour' => 5, 'date' => '2027-10-25', 'titre' => 'Retour', 'description' => 'Petit-déjeuner au riad, transfert à l\'aéroport et vol retour vers Paris.', 'activiteIds' => []],
             ])
-            ->setCreeLe(new \DateTimeImmutable('-1 day'));
+            ->setCreeLe(new \DateTimeImmutable('-1 day'))
+            ->setEnvoyeeLe(new \DateTimeImmutable('-1 day'));
         $demande->addProposition($proposition);
         $manager->persist($proposition);
 

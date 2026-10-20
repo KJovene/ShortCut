@@ -28,6 +28,9 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * Sans combinaison possible (ticket #204), il propose les ajustements calculés par chercher_destinations (autres
  * dates, durée, autres destinations) et transmet au conseiller une période sans données ; s'il échoue sans rien
  * dire au client, le serveur transmet lui-même la demande.
+ *
+ * Après une modification du client (ticket #211, NouvelleVersion), il part de la combinaison de la version précédente
+ * et ne cherche que ce que le changement touche ; la rédaction écrit alors la version suivante.
  */
 final class AgentRecherche extends Agent
 {
@@ -53,11 +56,11 @@ final class AgentRecherche extends Agent
     /**
      * @return \Generator<int, ServerEvent>
      */
-    public function proposer(Conversation $conversation): \Generator
+    public function proposer(Conversation $conversation, ?Modification $modification = null): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Recherche);
-        $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => self::premierMessage($conversation)]]]]);
+        $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => self::premierMessage($conversation, $modification)]]]]);
 
         // Un paragraphe à part, à la suite de la réponse de l'agent Conversation.
         yield self::evenement('texte', ['texte' => "\n\n"]);
@@ -81,7 +84,7 @@ final class AgentRecherche extends Agent
         // Combinaison présentée au client : l'agent Rédaction en fait la proposition complète (#207).
         $combinaison = $tour->sortie('retenir_combinaison');
         if (null !== $combinaison && null === $tour->sortie('transmettre_au_conseiller')) {
-            yield from $this->redaction->rediger($conversation, (string) $combinaison['chiffrageId']);
+            yield from $this->redaction->rediger($conversation, (string) $combinaison['chiffrageId'], $modification);
         }
     }
 
@@ -89,11 +92,12 @@ final class AgentRecherche extends Agent
      * La fiche demande, et les messages du client : une activité ou un logement qu'il a nommé (« voir des dauphins »,
      * « dans un riad ») n'a pas de champ dans la fiche.
      */
-    private static function premierMessage(Conversation $conversation): string
+    private static function premierMessage(Conversation $conversation, ?Modification $modification): string
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
 
-        return "Le client vient de confirmer sa demande.\n\nFiche demande :\n"
+        return (null === $modification ? 'Le client vient de confirmer sa demande.' : $modification->pourLaRecherche())
+            ."\n\nFiche demande :\n"
             .json_encode(EnregistrerExigences::fiche($demande), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
             ."\n\nMessages du client, dans l'ordre :\n".self::messagesDuClient($conversation);
     }

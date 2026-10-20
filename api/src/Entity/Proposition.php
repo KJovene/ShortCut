@@ -71,6 +71,23 @@ class Proposition
     private array $prestations = [];
 
     /**
+     * La combinaison choisie, telle que retenir_combinaison l'a acceptée (destination, étapes et logements candidats,
+     * activités demandées et suggérées) : une modification du client la recalcule sans tout rechercher (#211).
+     *
+     * @var array{destination?: string, etapes?: list<array{dateDebut: string, nombreDeNuits: int, logementIds: list<int>}>, activitesDemandees?: list<int>, activitesSuggerees?: list<int>, pourquoi?: string}
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $choix = [];
+
+    /**
+     * La fiche demande au moment du chiffrage (EnregistrerExigences::fiche) : ce que le client a changé depuis.
+     *
+     * @var array<string, mixed>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $exigences = [];
+
+    /**
      * Programme jour par jour du niveau détaillé, du jour d'arrivée au jour du départ.
      *
      * @var list<array{jour: int, date: string, titre: string, description: string, activiteIds: list<int>}>
@@ -116,6 +133,10 @@ class Proposition
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?\DateTimeImmutable $confirmeeLe = null;
+
+    /** Envoi au client (prix estimés) ; null pour un brouillon jamais envoyé. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $envoyeeLe = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $creeLe;
@@ -206,6 +227,42 @@ class Proposition
     public function setDestination(?Destination $destination): static
     {
         $this->destination = $destination;
+
+        return $this;
+    }
+
+    /**
+     * @return array{destination?: string, etapes?: list<array{dateDebut: string, nombreDeNuits: int, logementIds: list<int>}>, activitesDemandees?: list<int>, activitesSuggerees?: list<int>, pourquoi?: string}
+     */
+    public function getChoix(): array
+    {
+        return $this->choix;
+    }
+
+    /**
+     * @param array{destination?: string, etapes?: list<array{dateDebut: string, nombreDeNuits: int, logementIds: list<int>}>, activitesDemandees?: list<int>, activitesSuggerees?: list<int>, pourquoi?: string} $choix
+     */
+    public function setChoix(array $choix): static
+    {
+        $this->choix = $choix;
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getExigences(): array
+    {
+        return $this->exigences;
+    }
+
+    /**
+     * @param array<string, mixed> $exigences
+     */
+    public function setExigences(array $exigences): static
+    {
+        $this->exigences = $exigences;
 
         return $this;
     }
@@ -380,6 +437,18 @@ class Proposition
     public function setConfirmeeLe(?\DateTimeImmutable $confirmeeLe): static
     {
         $this->confirmeeLe = $confirmeeLe;
+
+        return $this;
+    }
+
+    public function getEnvoyeeLe(): ?\DateTimeImmutable
+    {
+        return $this->envoyeeLe;
+    }
+
+    public function setEnvoyeeLe(?\DateTimeImmutable $envoyeeLe): static
+    {
+        $this->envoyeeLe = $envoyeeLe;
 
         return $this;
     }
