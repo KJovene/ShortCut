@@ -241,35 +241,11 @@ final class DemandeCrudTest extends WebTestCase
         self::assertSelectorTextContains('body', 'le chatbot ne répond plus');
         // Le chatbot a déjà passé la main : il reste à s'attribuer la demande.
         self::assertCount(1, $crawler->filter('form[action*="/attribuer"]'));
+        // Pas de messagerie entre conseiller et client : rien à « reprendre » sur la fiche.
         self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
     }
 
-    public function testUnConseillerReprendLaConversationEnUnClic(): void
-    {
-        $demande = $this->creerDemandeTransmise();
-        $demande->getConversation()?->setRepriseParConseiller(false);
-        $this->em->flush();
-        $id = $demande->getId();
-
-        $this->client->loginUser($this->lea);
-        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
-        $url = $crawler->filter('form[action*="/reprendre"]')->attr('action');
-
-        $this->client->request('POST', (string) $url);
-        self::assertResponseRedirects('/admin/demande/'.$id);
-
-        $this->em->clear();
-        $reprise = $this->em->find(Demande::class, $id);
-        self::assertSame($this->lea->getId(), $reprise?->getConseiller()?->getId(), 'Attribuée au passage.');
-        self::assertTrue($reprise->getConversation()?->isRepriseParConseiller());
-        self::assertNotNull($reprise->getConversation()->getFinLe());
-
-        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
-        self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
-        self::assertSelectorTextContains('.conversation', 'Je préfère parler à quelqu\'un.');
-    }
-
-    public function testSAttribuerLaDemandeReprendLaConversation(): void
+    public function testSAttribuerLaDemandeLaisseLeChatbotOuvertAuClient(): void
     {
         $demande = $this->creerDemandeTransmise();
         $demande->getConversation()?->setRepriseParConseiller(false);
@@ -286,35 +262,11 @@ final class DemandeCrudTest extends WebTestCase
         $this->em->clear();
         $priseEnCharge = $this->em->find(Demande::class, $id);
         self::assertSame($this->lea->getId(), $priseEnCharge?->getConseiller()?->getId());
-        self::assertTrue($priseEnCharge->getConversation()?->isRepriseParConseiller(), 'Le chatbot ne répond plus au client.');
-        self::assertNotNull($priseEnCharge->getConversation()->getFinLe());
+        // Le client peut encore ajuster sa fiche avec le chatbot depuis son espace.
+        self::assertFalse($priseEnCharge->getConversation()?->isRepriseParConseiller());
 
-        // Plus rien à reprendre ni à s'attribuer sur la fiche.
         $crawler = $this->client->request('GET', '/admin/demande/'.$id);
-        self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
         self::assertCount(0, $crawler->filter('form[action*="/attribuer"]'));
-    }
-
-    public function testUnConseillerNeReprendPasLaConversationDUnAutre(): void
-    {
-        $demande = $this->creerDemandeTransmise();
-        $demande->getConversation()?->setRepriseParConseiller(false);
-        $id = $demande->getId();
-
-        $this->client->loginUser($this->lea);
-        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
-        $url = $crawler->filter('form[action*="/reprendre"]')->attr('action');
-
-        // Hugo s'attribue la demande avant que Léa ne clique.
-        $this->em->find(Demande::class, $id)?->setConseiller($this->hugo);
-        $this->em->flush();
-
-        $this->client->request('POST', (string) $url);
-        self::assertResponseRedirects();
-        $this->em->clear();
-        $demande = $this->em->find(Demande::class, $id);
-        self::assertSame($this->hugo->getId(), $demande?->getConseiller()?->getId());
-        self::assertFalse($demande->getConversation()?->isRepriseParConseiller());
     }
 
     /** Demande du chatbot transmise au conseiller, sans conseiller attribué. */

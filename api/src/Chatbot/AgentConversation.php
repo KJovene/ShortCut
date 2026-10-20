@@ -70,6 +70,7 @@ final class AgentConversation extends Agent
             ['type' => 'text', 'text' => $message],
             // Ce que la fiche contient vraiment : le modèle voit ce qu'il a oublié d'enregistrer (#193).
             ['type' => 'text', 'text' => self::etatDeLaFiche($demande)],
+            ...self::dossierSuivi($demande),
         ]];
         $conversation->ajouterMessage('client', $message);
         $this->enregistrer($conversation, $tour->historique);
@@ -83,8 +84,9 @@ final class AgentConversation extends Agent
             }
         }
 
-        // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message.
-        if (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
+        // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. Un dossier
+        // déjà suivi par un conseiller n'est que mis à jour : c'est le conseiller qui prépare la suite.
+        if (null === $demande->getConseiller() && true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
             yield from $this->recherche->proposer($conversation);
         }
 
@@ -135,6 +137,25 @@ final class AgentConversation extends Agent
             json_encode((object) $remplis, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
             [] === $manquantes ? 'rien' : implode(', ', $manquantes),
         );
+    }
+
+    /**
+     * Le client revient depuis son espace sur un dossier qu'un conseiller suit déjà (« Modifier le voyage ») :
+     * le modèle ajuste la fiche sans relancer de proposition (prompts/conversation.md, « Dossier suivi »).
+     *
+     * @return list<array{type: string, text: string}>
+     */
+    private static function dossierSuivi(Demande $demande): array
+    {
+        $conseiller = $demande->getConseiller();
+        if (null === $conseiller) {
+            return [];
+        }
+
+        return [['type' => 'text', 'text' => \sprintf(
+            '<dossier_suivi>Ce dossier est suivi par %s, conseiller de l\'agence.</dossier_suivi>',
+            trim(($conseiller->getPrenom() ?? '').' '.$conseiller->getNom()),
+        )]];
     }
 
     /**

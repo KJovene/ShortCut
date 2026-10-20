@@ -73,6 +73,10 @@ final class EspaceClientTest extends WebTestCase
         self::assertSame('a_confirmer', $demandes[0]['statut']);
         self::assertSame(['prenom' => 'Léa', 'nom' => 'Compte de test'], $demandes[0]['conseiller']);
         self::assertSame('Du soleil en mai, à deux.', $demandes[0]['conversation']['messages'][0]['contenu']);
+        // « Modifier le voyage » : de quoi reprendre la conversation dans le chat.
+        self::assertSame($conversation->getJeton(), $demandes[0]['conversation']['jeton']);
+        self::assertFalse($demandes[0]['conversation']['repriseParConseiller']);
+        self::assertSame('Chypre', $demandes[0]['conversation']['fiche']['lieuOuZone']);
         self::assertNull($demandes[1]['conversation']);
         self::assertNotNull($demandes[0]['transmiseLe']);
         self::assertNull($demandes[1]['transmiseLe']);

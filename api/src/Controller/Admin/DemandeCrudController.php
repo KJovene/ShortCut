@@ -69,7 +69,7 @@ use Symfony\Component\Validator\Constraints\Range;
  * Les demandes prioritaires apparaissent en premier, puis les plus récentes.
  * La vue « À aiguiller » (?aiguiller=1) liste pour tous les demandes arrivées sans conseiller ;
  * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController). La fiche montre pourquoi le
- * chatbot a transmis la demande et la conversation, que le conseiller reprend avec « Reprendre la conversation ».
+ * chatbot a transmis la demande et la conversation ; le conseiller recontacte le client hors du site.
  * L'accès à une fiche (consultation, modification, suppression) est vérifié par DemandeVoter.
  * Depuis la fiche, « Confirmer la proposition » ouvre l'écran de confirmation (#209, ConfirmationService).
  *
@@ -146,25 +146,15 @@ final class DemandeCrudController extends AbstractCrudController
             ]))
             ->renderAsForm()
             ->displayIf(static fn (Demande $d): bool => null === $d->getConseiller());
-        // Le chatbot cesse de répondre au client ; la demande est attribuée au passage si besoin.
-        $reprendre = Action::new('reprendre', 'Reprendre la conversation', 'fa fa-comments')
-            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_reprendre', [
-                'id' => $d->getId(),
-                '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
-            ]))
-            ->renderAsForm()
-            ->displayIf(static fn (Demande $d): bool => null !== $d->getConversation() && !$d->getConversation()->isRepriseParConseiller());
 
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
             ->add(Crud::PAGE_INDEX, $attribuer)
             ->add(Crud::PAGE_DETAIL, $attribuer)
-            ->add(Crud::PAGE_DETAIL, $reprendre)
             ->add(Crud::PAGE_DETAIL, $confirmer)
             ->add(Crud::PAGE_DETAIL, $journal)
             ->setPermission('journalIA', 'ROLE_ADMIN')
             ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
-            ->setPermission('reprendre', DemandeVoter::ATTRIBUER)
             ->setPermission('confirmerProposition', DemandeVoter::MODIFIER)
             // Vérifié sur chaque fiche : un conseiller qui saisit l'URL d'une demande d'un autre reçoit un 403.
             ->setPermission(Action::DETAIL, DemandeVoter::VOIR)
