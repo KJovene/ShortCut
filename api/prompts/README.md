@@ -3,6 +3,7 @@
 | Fichier | Agent | Ticket |
 | --- | --- | --- |
 | `conversation.md` | Conversation : accueille le client et recueille ses exigences | #177 |
+| `recherche.md` | Recherche : choisit la destination, les logements et les activités, et explique son choix au client | #203 |
 
 Les commentaires `<!-- … -->` en tête de fichier ne sont pas envoyés au modèle. Les variables `{{…}}` sont remplacées par l'API avant chaque appel.
 
@@ -31,6 +32,18 @@ Chaque profil reprend une demande test de `api/tests/demandes`, où se trouvent 
 
 Pour chaque profil, tenter aussi au moins une fois : « Combien ça va coûter exactement ? » et « Il reste de la place ? ». Le chatbot doit expliquer qu'il ne donne ni prix ferme ni disponibilité.
 
+## Évaluation automatique (#195)
+
+`make evaluer` rejoue les 10 demandes test de `api/tests/demandes` avec l'agent Conversation réel (prompt, outils, base), puis compare la fiche demande obtenue à `exigencesAttendues`, exigence par exigence. `make evaluer d="01 04"` ne rejoue que ces demandes ; `make evaluer d="-r 3"` rejoue chaque demande trois fois, car le chatbot ne répond pas deux fois pareil.
+
+- **Client** : joué par Claude Sonnet 5.5, qui ne connaît que les messages du fichier de test et n'invente rien (`src/Chatbot/Evaluation/ClientSimule.php`).
+- **Comparaison** : les champs chiffrés, les dates et les booléens sont comparés à l'identique (`ComparateurFiche`). Le lieu, les envies et les contraintes sont jugés sur le sens par Claude Opus 5.5 (`Juge`), qui relit aussi la conversation : questions de la table d'adaptation jamais posées, exigences absentes du récapitulatif (critères de #193), prix ferme ou disponibilité annoncés.
+- **Taux d'exigences captées** = champs justes / champs que le client a exprimés (une valeur attendue nulle n'est pas une exigence, mais une valeur inventée à sa place est signalée « en trop »).
+- **Base** : chaque conversation tourne dans une transaction annulée à la fin ; `--garder` la conserve pour la relire dans le backoffice.
+- **Rapport** : `api/evaluations/evaluation-<date>.md` (hors dépôt), avec le tableau à coller dans le ticket, les écarts et chaque conversation.
+
+Appelle la vraie API Claude : environ 0,07 $ par demande test, soit 0,70 $ les dix (mesuré sur la demande 01 : 0,02 $ de chatbot, 0,02 $ de client simulé, 0,03 $ de juge).
+
 ## Grille de résultats
 
 Tests automatisés du 16/10/2026 : le client est joué par Claude Sonnet 5.5 à partir du profil, la conversation est notée par Claude Opus 5.5 (juge indépendant des deux modèles testés). Une conversation par profil et par modèle. « Exigences connues au message » = numéro du message client après lequel les dix exigences sont connues.
@@ -54,3 +67,27 @@ Tests automatisés du 16/10/2026 : le client est joué par Claude Sonnet 5.5 à 
 Corrections de la v2 : les températures, la flexibilité des dates et le nombre d'adultes sont toujours demandés ; l'objectif d'un événement d'entreprise et le type de besoin d'accessibilité aussi ; récapitulatif limité à huit lignes ; aucune affirmation sur le calendrier ou les jours fériés.
 
 Coût d'une conversation de recueil (mesuré) : environ 0,004 $ avec Haiku 5.5 et 0,13 $ avec Sonnet 5.5.
+
+## Essais de l'agent Recherche
+
+Essais réels du 20/10/2026 avec Claude Sonnet 5.5 (`recherche.md`), sur les 10 demandes test : fiche demande et messages du client tirés de `api/tests/demandes`, catalogue de démo, chaque essai dans une transaction annulée. « Niveaux identiques » = niveaux dont les logements et activités sont ceux de `attendu.budgetsParNiveau` (27 niveaux chiffrables, l'Islande passant au conseiller).
+
+| Version du prompt | Bonne destination | Hors contrainte | Islande transmise au conseiller | Niveaux identiques | Gras markdown | Mention « prix estimés » | Remarques |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| v1 | 10 / 10 | 0 | Oui | 12 / 27 | 9 messages | 9 / 9 | Activités demandées dans la conversation (dauphins, kayak, Colisée) seulement suggérées : l'agent ne voyait que la fiche ; logement simple absent de l'essentiel (Santorin) ; texte écrit avant un appel d'outil affiché au client |
+| v2 | 10 / 10 | 0 | Oui | 16 / 27 | 0 | 9 / 9 | Messages du client fournis ; « privatiser un riad » ignoré pour l'essentiel (kasbah) ; bungalow de surf en essentiel d'un voyage de noces |
+| v3 | 10 / 10 | 0 | Oui | 18 / 27 | 1 message | 9 / 9 | Riad aux trois niveaux ; à Santorin, « piscine privée » traitée comme un type de logement imposé (pas d'hôtel simple) ; autres écarts : choix d'activités suggérées (cours de pâtes, hammam, surf) |
+
+Corrections hors prompt après ces essais : l'agent Recherche n'envoie au client que son message final, sans le gras markdown, et les envies sont aussi rapprochées des équipements, catégories et noms des prestations.
+
+Aucune combinaison hors contrainte : `retenir_combinaison` revérifie chaque choix et aucun n'a été refusé. Coût mesuré d'une recherche : environ 27 000 tokens d'entrée et 1 500 de sortie, 7 à 21 secondes.
+
+### Sans combinaison possible (ticket #204, prompt v4)
+
+Essais réels du 20/10/2026, mêmes conditions. Aucun prix ni prestation inventés ; les ajustements cités sont ceux que calcule `chercher_destinations`.
+
+| Scénario | Outils appelés | Résultat |
+| --- | --- | --- |
+| Période non couverte : Islande du 16 au 22 janvier 2027 (demande test 04) | `chercher_destinations`, `transmettre_au_conseiller` | Transmis au conseiller ; climat saisi cité (0 °C, 90 mm) ; ajustements proposés : du 1er au 7 mai 2027, ou Costa Rica, Marrakech, Tenerife aux mêmes dates |
+| Capacité : chorale de 60 personnes à Santorin | `chercher_destinations` | Pas de transmission (un ajustement existe) : Rome, seule destination qui accueille 60 personnes, en précisant qu'elle ne répond pas aux envies |
+| Température : Lisbonne à 20 °C minimum début février, dates flexibles | `chercher_destinations` | Pas de transmission : Lisbonne du 1er au 5 juin 2027, ou Bali et Costa Rica aux mêmes dates |

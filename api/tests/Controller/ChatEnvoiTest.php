@@ -3,11 +3,13 @@
 namespace App\Tests\Controller;
 
 use App\Chatbot\AgentConversation;
+use App\Chatbot\AgentRecherche;
 use App\Entity\Conversation;
 use App\Entity\Destination;
 use App\Entity\JournalIA;
 use App\Entity\PeriodeClimatique;
 use App\Enum\MotifTransmission;
+use App\Enum\AgentIA;
 use App\Tests\Chatbot\FausseApiClaude;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -126,18 +128,61 @@ final class ChatEnvoiTest extends WebTestCase
         self::assertStringNotContainsString($cle, (string) $this->client->getInternalResponse()->getContent());
     }
 
-    public function testLaConfirmationDuRecapitulatifTermineLaConversation(): void
+    public function testLaConfirmationDuRecapitulatifEnchaineSurLAgentRecherche(): void
     {
         $jeton = $this->demarrer();
         $this->claude->prevoir(
-            FausseApiClaude::appelOutil('enregistrer_exigences', ['recapitulatifConfirme' => true]),
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['typeDeVoyage' => 'sejour', 'lieuOuZone' => 'Lisbonne', 'dateDebut' => '2027-05-14', 'recapitulatifConfirme' => true]),
             FausseApiClaude::texte('Merci, votre demande est complète.'),
+            FausseApiClaude::texte('Je vous propose Lisbonne.'),
         );
 
         $evenements = $this->envoyer($jeton, 'Oui, c’est bon');
 
         self::assertTrue($this->parType($evenements)['demande']['recapitulatifConfirme']);
-        self::assertNotNull($this->conversation($jeton)->getFinLe());
+        self::assertSame("Merci, votre demande est complète.\n\nJe vous propose Lisbonne.", $this->texte($evenements));
+        self::assertSame('fin', array_key_last($this->parType($evenements)));
+
+        // Le 3e appel est celui de l'agent Recherche : Sonnet 5.5, ses outils, la fiche dans son premier message.
+        $recherche = $this->claude->requetes[2]['corps'];
+        self::assertSame(AgentRecherche::MODELE, $recherche['model']);
+        self::assertSame(['chercher_destinations', 'chercher_logements', 'chercher_activites', 'retenir_combinaison', 'transmettre_au_conseiller'], array_column($recherche['tools'], 'name'));
+        self::assertCount(1, $recherche['messages']);
+        $premier = $recherche['messages'][0]['content'][0]['text'];
+        self::assertStringStartsWith("Le client vient de confirmer sa demande.\n\nFiche demande :\n{", $premier);
+        self::assertStringEndsWith("Messages du client, dans l'ordre :\n- Oui, c’est bon", $premier);
+
+        $conversation = $this->conversation($jeton);
+        self::assertNotNull($conversation->getFinLe());
+        self::assertSame(['Oui, c’est bon', 'Merci, votre demande est complète.', 'Je vous propose Lisbonne.'], array_column($conversation->getMessages(), 'contenu'));
+        // L'agent Conversation saura, au message suivant, ce que l'agent Recherche a proposé.
+        $historique = $conversation->getHistorique();
+        $derniere = end($historique);
+        self::assertInstanceOf(\stdClass::class, $derniere);
+        self::assertSame('assistant', $derniere->role);
+        self::assertSame("\n\nJe vous propose Lisbonne.", end($derniere->content)->text);
+        $journal = $this->em->getRepository(JournalIA::class)->findBy(['demande' => $conversation->getDemande()], ['id' => 'ASC']);
+        self::assertSame([AgentIA::Conversation, AgentIA::Conversation, AgentIA::Recherche], array_map(static fn (JournalIA $j) => $j->getAgent(), $journal));
+    }
+
+    public function testUnRecapitulatifSurUneFicheVideNEstPasConfirme(): void
+    {
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['lieuOuZone' => 'Lisbonne', 'recapitulatifConfirme' => true]),
+            FausseApiClaude::texte('Je reprends votre demande.'),
+        );
+
+        $this->envoyer($jeton, 'Oui, c’est bon');
+
+        $messages = $this->claude->requetes[1]['corps']['messages'];
+        $resultat = end($messages)['content'][0];
+        self::assertTrue($resultat['is_error']);
+        self::assertStringContainsString('le type de voyage, les dates', json_decode($resultat['content'], true)['erreur']);
+        $conversation = $this->conversation($jeton);
+        self::assertNull($conversation->getFinLe());
+        // Ce qui a été donné reste enregistré.
+        self::assertSame('Lisbonne', $conversation->getDemande()?->getLieuOuZone());
     }
 
     public function testUneErreurDeLApiEstAnnonceeSansDetailTechnique(): void

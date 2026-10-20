@@ -6,6 +6,7 @@ use App\Enum\MotifTransmission;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
 use App\Repository\DemandeRepository;
+use App\Texte\Correspondance;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -460,6 +461,32 @@ class Demande
         $this->contraintes = $contraintes;
 
         return $this;
+    }
+
+    /**
+     * Âges des enfants pour les activités ; un enfant dont l'âge n'est pas encore connu compte comme le plus
+     * jeune (0 an) : il n'est inscrit à aucune activité qui a un âge minimum.
+     *
+     * @return list<int>
+     */
+    public function agesDesEnfants(): array
+    {
+        return array_pad(\array_slice($this->agesEnfants, 0, $this->enfants), $this->enfants, 0);
+    }
+
+    /**
+     * Une contrainte de mobilité réduite (« fauteuil roulant », « PMR », « plain-pied »…) : seuls les logements et
+     * activités marqués accessibles conviennent.
+     */
+    public function aBesoinDAccessibilite(): bool
+    {
+        foreach ($this->contraintes as $contrainte) {
+            if (preg_match('/fauteuil|mobilite|pmr|handicap|accessib|plain.?pied|ascenseur|marcher/', Correspondance::normaliser($contrainte))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function getCreeLe(): \DateTimeImmutable

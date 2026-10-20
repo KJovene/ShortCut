@@ -187,11 +187,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [envoyer],
   )
 
-  const valeur = useMemo(
+  // Actions stables d'un rendu à l'autre : la fenêtre du chatbot rejoue son effet de focus quand `fermer`
+  // change, ce qui ferait perdre le focus au champ de saisie à chaque lettre tapée.
+  const actions = useMemo(
     () => ({
-      ...etat,
-      envoyer,
-      choisirAmbiance,
       ouvrir: (brouillon?: string) =>
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
       fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
@@ -203,7 +202,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setEtat((e) => ({ ...etatInitial(), ouvert: e.ouvert }))
       },
     }),
-    [etat, envoyer, choisirAmbiance],
+    [],
+  )
+
+  const valeur = useMemo(
+    () => ({ ...etat, ...actions, envoyer, choisirAmbiance }),
+    [etat, actions, envoyer, choisirAmbiance],
   )
 
   return <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
