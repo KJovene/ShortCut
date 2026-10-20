@@ -21,6 +21,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(columns: ['conseiller_id', 'prioritaire', 'cree_le'])]
 class Demande
 {
+    /** Voyages en cours au plus par client (décision du 20/10/2026) : au-delà, il en termine un d'abord. */
+    public const VOYAGES_EN_COURS_MAX = 3;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -201,6 +204,12 @@ class Demande
         $this->typeDeVoyage = $typeDeVoyage;
 
         return $this;
+    }
+
+    /** Un voyage en cours : ni accepté (il part en réservation), ni perdu. */
+    public function estEnCours(): bool
+    {
+        return !\in_array($this->statut, [StatutDemande::Acceptee, StatutDemande::Perdue], true);
     }
 
     public function getStatut(): StatutDemande

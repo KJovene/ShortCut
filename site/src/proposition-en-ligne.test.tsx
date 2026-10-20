@@ -64,7 +64,82 @@ const PROPOSITION: PropositionEnLigne = {
     adultes: 2,
     enfants: 0,
   },
+  versions: [
+    {
+      version: 1,
+      jeton: JETON,
+      etat: 'estimee',
+      statut: 'envoyee',
+      creeLe: '2026-10-16T15:00:00+02:00',
+      totalCentimes: 376200,
+    },
+  ],
   actions: { demanderConfirmation: true, accepter: false },
+}
+
+const JETON_V2 = 'd'.repeat(64)
+
+/**
+ * Version 2, après une modification du client (#211) : une semaine plus tard, un jour de plus, une croisière en
+ * plus, 166 € de plus. Le lien de la version 1 y mène.
+ */
+const VERSION_2: PropositionEnLigne = {
+  ...PROPOSITION,
+  jeton: JETON_V2,
+  versionDemandee: 1,
+  version: 2,
+  creeLe: '2026-10-18T10:00:00+02:00',
+  budgetsParNiveau: {
+    ...PROPOSITION.budgetsParNiveau,
+    equilibre: { totalCentimes: 392800, parPersonneCentimes: 196400 },
+  },
+  totalCentimes: 392800,
+  totalParPersonneCentimes: 196400,
+  hypotheses: ['Vols depuis Paris au tarif moyen de mai.', 'Croisière pour 2 participants.'],
+  programme: [
+    { jour: 1, date: '2027-05-17', titre: 'Arrivée à Oia', description: 'Transfert et dîner.' },
+    { jour: 2, date: '2027-05-18', titre: 'Croisière', description: 'Tour de la caldeira.' },
+    { jour: 3, date: '2027-05-19', titre: 'Coucher de soleil', description: 'Croisière du soir.' },
+  ],
+  prestations: [
+    ...PROPOSITION.prestations,
+    {
+      id: 9,
+      type: 'activite',
+      nom: 'Croisière au coucher du soleil',
+      pointsForts: ['Dîner à bord'],
+      niveaux: ['equilibre'],
+    },
+  ],
+  lignes: [
+    { ...PROPOSITION.lignes[0], dateDebut: '2027-05-17', dateFin: '2027-05-24' },
+    {
+      type: 'activite',
+      libelle: 'Croisière au coucher du soleil',
+      dateDebut: '2027-05-19',
+      dateFin: '2027-05-19',
+      quantite: 2,
+    },
+  ],
+  demande: { ...PROPOSITION.demande, dateDebut: '2027-05-17', dateFin: '2027-05-24' },
+  versions: [
+    { ...PROPOSITION.versions[0], statut: 'remplacee' },
+    {
+      version: 2,
+      jeton: JETON_V2,
+      etat: 'estimee',
+      statut: 'envoyee',
+      creeLe: '2026-10-18T10:00:00+02:00',
+      totalCentimes: 392800,
+    },
+  ],
+}
+
+const VERSION_1_REMPLACEE: PropositionEnLigne = {
+  ...PROPOSITION,
+  statut: 'remplacee',
+  versions: VERSION_2.versions,
+  actions: { demanderConfirmation: false, accepter: false },
 }
 
 function afficher(path: string) {
@@ -227,5 +302,83 @@ describe('« Ma proposition » par son lien unique (#208)', () => {
       await screen.findByRole('heading', { level: 1, name: 'Santorin, 2 jours' }),
     ).toBeVisible()
     expect(router.state.location.pathname).toBe(`/proposition/${JETON}`)
+  })
+})
+
+describe('Comparer deux versions (#212)', () => {
+  function simulerDeuxVersions() {
+    return simulerApi({
+      [`GET /api/propositions/${JETON}`]: { status: 200, body: VERSION_2 },
+      [`GET /api/propositions/${JETON}/versions/1`]: { status: 200, body: VERSION_1_REMPLACEE },
+    })
+  }
+
+  it('compare d’emblée la version actuelle à la précédente et surligne les changements', async () => {
+    simulerDeuxVersions()
+    afficher(`/proposition/${JETON}`)
+
+    const resume = await screen.findByRole('region', {
+      name: 'Ce qui a changé depuis la version 1',
+    })
+    expect(screen.getByRole('combobox', { name: 'Comparer avec' })).toHaveValue('1')
+    expect(resume).toHaveTextContent(/Dates : du 17 mai 2027 au 24 mai 2027/)
+    expect(resume).toHaveTextContent(/avant : du 10 mai 2027 au 17 mai 2027/)
+    expect(resume).toHaveTextContent(/Budget : \+166 € \(\+4,4 %\)/)
+    expect(resume).toHaveTextContent(/soit \+83 € par personne/)
+
+    // Le jour ajouté et les jours décalés, la croisière ajoutée, la nouvelle hypothèse.
+    const jour3 = screen.getByText('Coucher de soleil').closest('li')!
+    expect(within(jour3).getByText('Nouveau')).toBeInTheDocument()
+    const jour1 = screen.getByText('Arrivée à Oia').closest('li')!
+    expect(within(jour1).getByText('Modifié')).toBeInTheDocument()
+    const croisiere = screen.getByRole('heading', { name: 'Croisière au coucher du soleil' })
+    expect(within(croisiere.closest('article')!).getByText('Nouveau')).toBeInTheDocument()
+    expect(
+      within(screen.getByText('Croisière pour 2 participants.').closest('li')!).getByText(
+        'Nouveau',
+      ),
+    ).toBeInTheDocument()
+    // L'écart de budget, aussi à côté du total.
+    expect(screen.getByText(/par rapport à la version 1/)).toHaveTextContent('+166 € (+4,4 %)')
+  })
+
+  it('n’affiche plus rien de surligné sans version à comparer', async () => {
+    simulerDeuxVersions()
+    afficher(`/proposition/${JETON}`)
+    await screen.findByRole('region', { name: 'Ce qui a changé depuis la version 1' })
+
+    await userEvent
+      .setup()
+      .selectOptions(screen.getByRole('combobox', { name: 'Comparer avec' }), '')
+
+    expect(screen.queryByRole('region', { name: /Ce qui a changé/ })).toBeNull()
+    expect(screen.queryByText('Nouveau')).toBeNull()
+    expect(screen.queryByText('Modifié')).toBeNull()
+  })
+
+  it('affiche la version précédente telle qu’elle était, sans action possible', async () => {
+    simulerDeuxVersions()
+    afficher(`/proposition/${JETON}`)
+    await screen.findByRole('region', { name: 'Ce qui a changé depuis la version 1' })
+
+    const utilisateur = userEvent.setup()
+    await utilisateur.selectOptions(screen.getByRole('combobox', { name: 'Version affichée' }), '1')
+
+    expect(
+      await screen.findByText(/Vous consultez la version 1, remplacée par la version 2/),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Coucher de soleil')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Demander la confirmation' })).toBeNull()
+    // Comparée à la version 2, la croisière apparaît retirée.
+    await utilisateur.selectOptions(screen.getByRole('combobox', { name: 'Comparer avec' }), '2')
+    const differences = await screen.findByRole('region', {
+      name: 'Différences avec la version 2',
+    })
+    expect(differences).toHaveTextContent('−166 €')
+    const croisiere = screen.getByRole('heading', { name: 'Croisière au coucher du soleil' })
+    expect(within(croisiere.closest('article')!).getByText('Retiré')).toBeInTheDocument()
+
+    await utilisateur.click(screen.getByRole('button', { name: 'Voir la version actuelle' }))
+    expect(screen.getByText('Coucher de soleil')).toBeInTheDocument()
   })
 })

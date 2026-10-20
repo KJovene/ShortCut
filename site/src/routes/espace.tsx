@@ -17,6 +17,7 @@ import {
   prenomConseiller,
   statutClient,
   titreDemande,
+  VOYAGES_EN_COURS_MAX,
 } from '@/features/espace/espace'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { profilQuery } from '@/lib/auth'
@@ -49,8 +50,12 @@ function PageEspace() {
   const { data: demandes } = useSuspenseQuery(mesDemandesQuery)
   const ouvrirAssistant = useOuvrirAssistant()
 
-  // Le voyage suivi en tête de page : le plus récent encore en cours, sinon le plus récent.
-  const suivi = demandes.find(estEnCours) ?? demandes[0]
+  // Le voyage suivi en tête de page : celui que le client a choisi parmi ses voyages en cours, sinon le plus
+  // récent encore en cours, sinon le plus récent.
+  const enCours = demandes.filter(estEnCours)
+  const [choisi, setChoisi] = useState<number | null>(null)
+  const suivi = enCours.find((d) => d.id === choisi) ?? enCours[0] ?? demandes[0]
+  const complet = enCours.length >= VOYAGES_EN_COURS_MAX
   const prenom = profil?.prenom ?? profil?.nom
 
   return (
@@ -67,19 +72,56 @@ function PageEspace() {
             </em>
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => ouvrirAssistant()}
-          className="flex min-h-12 items-center gap-2 rounded-full bg-terre px-[22px] text-[15px] font-extrabold text-white hover:bg-rouille"
-        >
-          <span aria-hidden="true" className="text-xl leading-none">
-            +
-          </span>
-          Nouveau voyage
-        </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <button
+            type="button"
+            onClick={() => ouvrirAssistant()}
+            disabled={complet}
+            aria-describedby={complet ? 'voyages-max' : undefined}
+            className="flex min-h-12 items-center gap-2 rounded-full bg-terre px-[22px] text-[15px] font-extrabold text-white hover:bg-rouille disabled:cursor-not-allowed disabled:bg-beige disabled:text-taupe"
+          >
+            <span aria-hidden="true" className="text-xl leading-none">
+              +
+            </span>
+            Nouveau voyage
+          </button>
+          {complet && (
+            <p id="voyages-max" className="m-0 max-w-xs text-right text-[13px] text-taupe">
+              {VOYAGES_EN_COURS_MAX} voyages en cours, le maximum : poursuivez-en un, ou demandez à
+              votre conseiller d’en clore un.
+            </p>
+          )}
+        </div>
       </div>
 
-      {suivi ? <VoyageSuivi demande={suivi} /> : <AucunVoyage />}
+      {enCours.length > 1 && (
+        <div role="group" aria-label="Mes voyages en cours" className="flex flex-wrap gap-2.5">
+          {enCours.map((d) => {
+            const actif = d.id === suivi?.id
+            return (
+              <button
+                key={d.id}
+                type="button"
+                aria-pressed={actif}
+                onClick={() => setChoisi(d.id)}
+                className={cn(
+                  'flex min-h-12 flex-col items-start justify-center rounded-2xl border-[1.5px] px-4 py-2 text-left',
+                  actif
+                    ? 'border-encre bg-encre text-creme'
+                    : 'border-lin bg-white text-encre hover:border-beige',
+                )}
+              >
+                <span className="text-[15px] font-bold">{titreDemande(d)}</span>
+                <span className={cn('text-xs', actif ? 'text-sable' : 'text-taupe')}>
+                  {statutClient(d).label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {suivi ? <VoyageSuivi key={suivi.id} demande={suivi} /> : <AucunVoyage />}
 
       {demandes.some((d) => d.conversation) && <Conversations demandes={demandes} />}
     </div>

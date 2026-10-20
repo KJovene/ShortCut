@@ -6,6 +6,7 @@ use App\Chatbot\ContexteAgent;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\TypeDeVoyage;
+use App\Repository\DemandeRepository;
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -20,6 +21,7 @@ final class EnregistrerExigences implements Outil
         private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
         private readonly UtilisateurRepository $utilisateurs,
+        private readonly DemandeRepository $demandes,
     ) {
     }
 
@@ -202,6 +204,9 @@ final class EnregistrerExigences implements Outil
                 throw new OutilException(\sprintf('Coordonnées refusées : %s', $violations->get(0)->getMessage()));
             }
             $this->em->persist($utilisateur);
+        } elseif ($demande->getClient() !== $utilisateur
+            && $this->demandes->compterEnCoursDuClient($utilisateur, $demande) >= Demande::VOYAGES_EN_COURS_MAX) {
+            throw new OutilException(\sprintf('Coordonnées non enregistrées : ce client a déjà %d voyages en cours, le maximum. Dis-lui qu\'il peut poursuivre l\'un d\'eux depuis « Mon espace » sur le site, ou demander à son conseiller d\'en clore un pour en commencer un nouveau. N\'enregistre pas ses coordonnées sur cette demande.', Demande::VOYAGES_EN_COURS_MAX));
         }
 
         $demande->setClient($utilisateur);

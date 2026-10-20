@@ -58,7 +58,11 @@ function PagePropositionRoute() {
 
 function PropositionDuLien({ jeton }: { jeton: string }) {
   const { data: proposition } = useSuspenseQuery(propositionQuery(jeton))
-  return proposition ? <PropositionEnLigne proposition={proposition} /> : <PropositionIntrouvable />
+  return proposition ? (
+    <PropositionEnLigne jeton={jeton} proposition={proposition} />
+  ) : (
+    <PropositionIntrouvable />
+  )
 }
 
 const dateLongue = (iso: string) =>

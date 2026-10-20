@@ -150,13 +150,13 @@ Après une modification d'entité : `make migration`, relire le fichier créé d
 
 | Données | Contenu |
 | --- | --- |
-| Comptes | `admin@shortcut.test` (administrateur), `lea@shortcut.test` et `hugo@shortcut.test` (conseillers). Mot de passe : `shortcut` |
+| Comptes | `admin@shortcut.test` (administrateur), `lea@shortcut.test` et `hugo@shortcut.test` (conseillers), `client@shortcut.test` (Camille), `julien@shortcut.test` et `sarah@shortcut.test` (clients). Mot de passe : `shortcut` |
 | Destinations | Lisbonne, Marrakech, Santorin, Tenerife, Rome, Islande, Bali, Costa Rica : climat sur les 12 mois de 2027, description, points forts, photo |
 | Prestataires | 15 : 7 hébergeurs, 3 transporteurs (fourchettes de vols depuis Paris, Lyon et Bordeaux, transferts), 2 guides, 3 prestataires d'activités |
 | Prestations | 30 logements et 20 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
 | Règles de prix | Marge 20 %, frais de dossier de 100 à 200 € |
 | Pages du site | Accueil, types de voyages, l'agence, contact et pages légales (modèles « à valider ») |
-| Demandes | 8 demandes réparties entre Léa, Hugo et une non attribuée ; celle de Marrakech (Léa) a une première proposition envoyée et sa conversation, pour essayer l'écran « Confirmer la proposition » |
+| Demandes | 8 demandes réparties entre Léa, Hugo et une non attribuée, et entre trois clients. Camille a 3 voyages en cours, le maximum : Santorin (deux versions envoyées après une modification, à comparer sur « Ma proposition »), Marrakech (le client a demandé la confirmation : écran « Confirmer la proposition ») et Costa Rica (en discussion, transmise à un conseiller) |
 
 Chaque type de voyage a au moins une combinaison possible : séjour (Tenerife, Lisbonne…), circuit (Islande, Costa Rica), groupe (résidences de 30 à 60 places), noces (Santorin, Bali), entreprise (salles de séminaire à Lisbonne, Marrakech et Rome).
 

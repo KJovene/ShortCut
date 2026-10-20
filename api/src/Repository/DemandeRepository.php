@@ -99,6 +99,24 @@ class DemandeRepository extends ServiceEntityRepository
     }
 
     /**
+     * Voyages en cours du client (Demande::estEnCours), sans compter $sauf : la demande qu'on veut lui rattacher.
+     */
+    public function compterEnCoursDuClient(Utilisateur $client, ?Demande $sauf = null): int
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->select('COUNT(d.id)')
+            ->where('d.client = :client')
+            ->andWhere('d.statut NOT IN (:termines)')
+            ->setParameter('client', $client)
+            ->setParameter('termines', [StatutDemande::Acceptee, StatutDemande::Perdue]);
+        if (null !== $sauf?->getId()) {
+            $qb->andWhere('d.id <> :sauf')->setParameter('sauf', $sauf->getId());
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    /**
      * Historique d'un client pour sa fiche : ses demandes, les plus récentes d'abord, avec leur conversation.
      *
      * @return list<Demande>

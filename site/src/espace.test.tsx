@@ -170,3 +170,52 @@ describe('mon espace', () => {
     expect(screen.queryByRole('heading', { name: 'Mes conversations' })).not.toBeInTheDocument()
   })
 })
+
+describe('Mes voyages en cours', () => {
+  const MARRAKECH: DemandeClient = {
+    ...SANTORIN,
+    id: 229,
+    statut: 'proposition_envoyee',
+    typeDeVoyage: 'groupe',
+    lieuOuZone: 'Marrakech',
+    nombreDeJours: 5,
+    proposition: { ...SANTORIN.proposition!, jeton: 'e'.repeat(64), totalCentimes: 945200 },
+  }
+  const COSTA_RICA: DemandeClient = {
+    ...SANTORIN,
+    id: 230,
+    statut: 'nouvelle',
+    typeDeVoyage: 'sejour',
+    lieuOuZone: 'Costa Rica',
+    nombreDeJours: null,
+    conseiller: null,
+    proposition: null,
+  }
+
+  it('passe d’un voyage en cours à l’autre et bloque un 4e voyage', async () => {
+    simulerApi({
+      'GET /api/moi': { status: 200, body: CAMILLE },
+      'GET /api/moi/demandes': { status: 200, body: [COSTA_RICA, MARRAKECH, SANTORIN, ISLANDE] },
+    })
+    afficher('/espace')
+
+    const voyages = await screen.findByRole('group', { name: 'Mes voyages en cours' })
+    // Trois voyages en cours ; l'Islande, perdue, n'en fait pas partie.
+    expect(within(voyages).getAllByRole('button')).toHaveLength(3)
+    expect(screen.getByRole('region', { name: 'Costa Rica, Séjour' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Nouveau voyage/ })).toBeDisabled()
+    expect(screen.getByText(/3 voyages en cours, le maximum/)).toBeInTheDocument()
+
+    await userEvent.setup().click(within(voyages).getByRole('button', { name: /Marrakech/ }))
+
+    const marrakech = screen.getByRole('region', { name: 'Marrakech, 5 jours' })
+    expect(within(voyages).getByRole('button', { name: /Marrakech/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(within(marrakech).getByRole('link', { name: 'Voir ma proposition' })).toHaveAttribute(
+      'href',
+      `/proposition/${'e'.repeat(64)}`,
+    )
+  })
+})
