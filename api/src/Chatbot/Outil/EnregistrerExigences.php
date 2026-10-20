@@ -99,10 +99,7 @@ final class EnregistrerExigences implements Outil
             // Les exigences de ce message restent enregistrées ; seule la confirmation est refusée.
             $this->em->flush();
 
-            throw new OutilException(\sprintf(
-                'Récapitulatif non confirmé : la fiche ne contient pas encore %s. Enregistre d\'abord toutes les exigences déjà données par le client, y compris dans ses messages précédents, puis rappelle cet outil avec recapitulatifConfirme à true.',
-                implode(', ', $indispensables),
-            ));
+            throw new OutilException(\sprintf('Récapitulatif non confirmé : la fiche ne contient pas encore %s. Enregistre d\'abord toutes les exigences déjà données par le client, y compris dans ses messages précédents, puis rappelle cet outil avec recapitulatifConfirme à true.', implode(', ', $indispensables)));
         }
         if ($confirme) {
             // Le client a validé sa demande : la conversation de recueil est aboutie.

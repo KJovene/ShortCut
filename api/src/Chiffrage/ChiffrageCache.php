@@ -19,12 +19,14 @@ final class ChiffrageCache
 
     /**
      * @param array<string, mixed> $chiffrage
+     * @param string|null          $identifiant pour compléter un chiffrage déjà gardé (retenir_combinaison y ajoute
+     *                                          la combinaison et sa justification) ; un nouvel identifiant sinon
      *
      * @return string l'identifiant du chiffrage
      */
-    public function enregistrer(Demande $demande, array $chiffrage): string
+    public function enregistrer(Demande $demande, array $chiffrage, ?string $identifiant = null): string
     {
-        $identifiant = 'chf_'.bin2hex(random_bytes(4));
+        $identifiant ??= 'chf_'.bin2hex(random_bytes(4));
         $element = $this->cacheApp->getItem($this->cle($demande, $identifiant));
         $this->cacheApp->save($element->set($chiffrage)->expiresAfter(self::DUREE_SECONDES));
 

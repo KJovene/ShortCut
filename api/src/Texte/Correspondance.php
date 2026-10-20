@@ -66,4 +66,18 @@ final class Correspondance
 
         return $retenus;
     }
+
+    /**
+     * Les éléments de $cherches qui correspondent à au moins un de $proposes : les envies du client que l'offre
+     * satisfait, selon les mêmes règles (« plages » correspond à « plage », « gastronomique » à « gastronomie »).
+     *
+     * @param list<string> $cherches
+     * @param list<string> $proposes
+     *
+     * @return list<string>
+     */
+    public static function communs(array $cherches, array $proposes): array
+    {
+        return array_values(array_filter($cherches, static fn (string $cherche): bool => [] !== self::filtrer($cherche, $proposes)));
+    }
 }
