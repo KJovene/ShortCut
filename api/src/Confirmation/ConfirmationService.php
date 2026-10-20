@@ -13,7 +13,6 @@ use App\Entity\Prestation;
 use App\Entity\Proposition;
 use App\Entity\RegleDePrix;
 use App\Entity\Utilisateur;
-use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
 use App\Enum\TypeLigne;
@@ -22,6 +21,8 @@ use App\Enum\TypeProposition;
 use App\Repository\RegleDePrixRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 /**
  * Confirmation d'une proposition par le conseiller (#209) : seule la version confirmée engage l'agence.
@@ -31,6 +32,8 @@ use Psr\Clock\ClockInterface;
  *   frais de dossier, remplace un logement ou retire une activité ; la proposition envoyée reste intacte.
  * - Les écarts se mesurent ligne par ligne avec le prix estimé, et au total avec la proposition envoyée.
  * - Confirmer exige tous les prix : la marge de la règle de prix s'applique au coût confirmé, comme au chiffrage.
+ *   Les statuts suivent les workflows (#210) : la version passe « confirmée », l'estimation « remplacée » (le lien
+ *   du client mène désormais à la version confirmée) et la demande « confirmée ».
  */
 final class ConfirmationService
 {
@@ -39,6 +42,8 @@ final class ConfirmationService
         private readonly RegleDePrixRepository $reglesDePrix,
         private readonly BudgetCalculator $calculateur,
         private readonly ClockInterface $horloge,
+        #[Target('proposition')] private readonly WorkflowInterface $workflowProposition,
+        #[Target('demande')] private readonly WorkflowInterface $workflowDemande,
     ) {
     }
 
@@ -253,8 +258,8 @@ final class ConfirmationService
     }
 
     /**
-     * Confirme la version : tous les prix doivent être saisis. Les totaux deviennent ceux des prix confirmés et la
-     * demande passe « confirmée ».
+     * Confirme la version : tous les prix doivent être saisis. Les totaux deviennent ceux des prix confirmés ;
+     * l'estimation est remplacée et la demande passe « confirmée ».
      */
     public function confirmer(Proposition $version, Proposition $estimation, Utilisateur $conseiller): void
     {
@@ -264,18 +269,27 @@ final class ConfirmationService
             throw new ConfirmationImpossible(\sprintf('Saisissez d\'abord le prix confirmé de : %s.', implode(', ', $comparaison->manquantes)));
         }
 
+        $demande = $version->getDemande() ?? throw new \LogicException('Proposition sans demande.');
+        if (!$this->workflowDemande->can($demande, 'confirmer')) {
+            throw new ConfirmationImpossible(\sprintf('La demande est « %s » : seule une demande dont la proposition a été envoyée peut être confirmée.', $demande->getStatut()->label()));
+        }
+
         $total = (int) $comparaison->total->confirmeCentimes;
         $parPersonne = (int) $comparaison->parPersonne->confirmeCentimes;
         $maintenant = $this->horloge->now();
         $version
-            ->setStatut(StatutProposition::Confirmee)
             ->setTotalCentimes($total)
             ->setTotalParPersonneCentimes($parPersonne)
             ->setBudgetsParNiveau([$version->getNiveauBudget()->value => ['totalCentimes' => $total, 'parPersonneCentimes' => $parPersonne]])
             ->setHypotheses(self::hypothesesConfirmees($version, $estimation))
             ->setConfirmeePar($conseiller)
             ->setConfirmeeLe($maintenant);
-        $version->getDemande()?->setStatut(StatutDemande::Confirmee)->setModifieLe($maintenant);
+        $this->workflowProposition->apply($version, 'confirmer');
+        if ($this->workflowProposition->can($estimation, 'remplacer')) {
+            $this->workflowProposition->apply($estimation, 'remplacer');
+        }
+        $this->workflowDemande->apply($demande, 'confirmer');
+        $demande->setModifieLe($maintenant);
         $this->em->flush();
     }
 

@@ -6,6 +6,7 @@ use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
 use App\Enum\StatutProposition;
+use App\Enum\TypeProposition;
 use App\Repository\DemandeRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,7 +45,10 @@ final class EspaceClientController extends AbstractController
             'creeLe' => $demande->getCreeLe()->format(\DATE_ATOM),
             'conseiller' => null === $conseiller ? null : ['prenom' => $conseiller->getPrenom(), 'nom' => $conseiller->getNom()],
             'proposition' => null === $proposition ? null : [
+                // Lien de la page « Ma proposition ».
+                'jeton' => $proposition->getJetonPublic(),
                 'version' => $proposition->getVersion(),
+                'etat' => TypeProposition::Confirmee === $proposition->getType() ? 'confirmee' : 'estimee',
                 'statut' => $proposition->getStatut()->value,
                 'niveauBudget' => $proposition->getNiveauBudget()->label(),
                 'totalCentimes' => $proposition->getTotalCentimes(),

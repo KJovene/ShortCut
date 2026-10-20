@@ -45,6 +45,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\ClickableInterface;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -75,6 +76,7 @@ final class DemandeCrudController extends AbstractCrudController
         private readonly DemandeRepository $demandes,
         private readonly ConfirmationService $confirmations,
         private readonly FormFactoryInterface $formulaires,
+        #[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl,
     ) {
     }
 
@@ -298,6 +300,8 @@ final class DemandeCrudController extends AbstractCrudController
             ),
             'formulaire' => $formulaire?->createView(),
             'remplacements' => $remplacements,
+            // Page « Ma proposition » : le lien de l'estimation mène aussi à la version confirmée.
+            'lienClient' => \sprintf('%s/proposition/%s', rtrim($this->siteUrl, '/'), $version->getJetonPublic()),
         ]);
     }
 

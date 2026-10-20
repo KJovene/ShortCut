@@ -56,6 +56,8 @@
         {% else %}
             <strong>Version {{ version.version }} confirmée</strong>
             le {{ version.confirmeeLe|date('d/m/Y à H:i') }}{% if version.confirmeePar %} par {{ version.confirmeePar }}{% endif %} : c'est elle qui engage l'agence.
+            {{ version.statut.value == 'acceptee' ? 'Le client l\'a acceptée.' : 'Le client peut l\'accepter depuis sa page :' }}
+            <a href="{{ lienClient }}" target="_blank" rel="noopener">{{ lienClient }}</a>
         {% endif %}
     </div>
 

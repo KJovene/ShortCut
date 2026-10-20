@@ -1,0 +1,60 @@
+# Statuts gérés par le composant Workflow (#210) : chaque changement passe par une transition autorisée.
+# Les places sont les valeurs des énumérations StatutProposition et StatutDemande.
+framework:
+    workflows:
+        # Une version de proposition : le chatbot l'envoie (prix estimés) ou le conseiller la confirme ; une nouvelle
+        # version remplace la précédente ; le client accepte la version confirmée.
+        proposition:
+            type: state_machine
+            marking_store:
+                type: method
+                property: statut
+            supports:
+                - App\Entity\Proposition
+            initial_marking: brouillon
+            places: [brouillon, envoyee, confirmee, acceptee, refusee, remplacee]
+            transitions:
+                envoyer:
+                    from: brouillon
+                    to: envoyee
+                confirmer:
+                    from: brouillon
+                    to: confirmee
+                accepter:
+                    from: confirmee
+                    to: acceptee
+                refuser:
+                    from: [envoyee, confirmee]
+                    to: refusee
+                remplacer:
+                    from: [envoyee, confirmee]
+                    to: remplacee
+
+        # Le pipeline des conseillers : proposition envoyée par le chatbot, demandée en confirmation par le client,
+        # confirmée par le conseiller, acceptée par le client.
+        demande:
+            type: state_machine
+            marking_store:
+                type: method
+                property: statut
+            supports:
+                - App\Entity\Demande
+            initial_marking: nouvelle
+            places: [nouvelle, proposition_envoyee, a_confirmer, confirmee, acceptee, perdue]
+            transitions:
+                # Première proposition, ou nouvelle version après une modification du client.
+                envoyer_proposition:
+                    from: [nouvelle, proposition_envoyee, a_confirmer, confirmee]
+                    to: proposition_envoyee
+                demander_confirmation:
+                    from: proposition_envoyee
+                    to: a_confirmer
+                confirmer:
+                    from: [proposition_envoyee, a_confirmer]
+                    to: confirmee
+                accepter:
+                    from: confirmee
+                    to: acceptee
+                perdre:
+                    from: [nouvelle, proposition_envoyee, a_confirmer, confirmee]
+                    to: perdue

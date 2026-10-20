@@ -189,6 +189,16 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
 
   C'est une requête POST : côté site, lire le flux avec `fetch` et `response.body.getReader()`, pas avec `EventSource` (GET seulement).
 - **Agent Conversation** (`api/src/Chatbot`) : Symfony appelle l'API Claude en streaming (`ClientClaude`, client HTTP `claude.client` qui porte la clé), exécute les outils demandés par le modèle (`Chatbot/Outil`, voir [`docs/outils.md`](docs/outils.md)) et rappelle Claude jusqu'à sa réponse finale (8 appels au plus par message). L'historique complet au format de l'API est gardé dans `Conversation::historique`, la conversation lisible dans `Conversation::messages`, chaque appel dans `JournalIA`. Le navigateur ne parle jamais à l'API Claude.
+- **Page « Ma proposition »** : routes publiques, le lien unique (`jetonPublic`, 64 caractères) tient lieu d'accès. Le lien d'une version remplacée mène à la version qui fait foi (`versionDemandee` indique celle du lien).
+
+  | Route | Effet |
+  | --- | --- |
+  | `GET /api/propositions/{jeton}` | la proposition : `etat` (`estimee` ou `confirmee`), mention, totaux des niveaux, hypothèses, programme, prestations (sans prix d'achat), `actions` possibles |
+  | `POST /api/propositions/{jeton}/demande-de-confirmation` | le client fait confirmer l'estimation : la demande passe « à confirmer » |
+  | `POST /api/propositions/{jeton}/acceptation` | « J'accepte » sur la version confirmée : proposition et demande « acceptées » |
+
+  Une action impossible renvoie 409 et `{"erreur": "…"}`, déjà rédigé pour le client.
+- **Statuts** (`api/config/packages/workflow.yaml`) : deux machines à états du composant Workflow, `proposition` (brouillon, envoyée, confirmée, acceptée, refusée, remplacée) et `demande` (le pipeline : nouvelle, proposition envoyée, à confirmer, confirmée, acceptée, perdue). Les changements de statut passent par leurs transitions (`WorkflowInterface` avec `#[Target('demande')]`). Confirmer dans le backoffice crée une nouvelle version, qui remplace l'estimation (#209, #210).
 
 ## API du catalogue
 
