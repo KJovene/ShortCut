@@ -259,11 +259,8 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                   {conseiller} suit votre dossier : les changements importants ou particuliers
                   passent par votre conseiller.
                   {assistantDisponible(demande) &&
-                    ' Pour un ajustement léger (voyageurs, envies, contraintes), continuez la conversation avec l’assistant.'}
+                    ' Pour un ajustement léger (voyageurs, envies, contraintes), passez par l’assistant avec « Modifier le voyage ».'}
                 </span>
-                {demande.conversation && assistantDisponible(demande) && (
-                  <ContinuerLaConversation conversation={demande.conversation} />
-                )}
               </>
             ) : (
               <span className="text-[13px] leading-[1.45] text-taupe">
@@ -275,32 +272,6 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
         </div>
       </div>
     </section>
-  )
-}
-
-/** Rouvre le chat sur la conversation du voyage, pour un ajustement léger de la fiche. */
-function ContinuerLaConversation({
-  conversation,
-}: {
-  conversation: NonNullable<DemandeClient['conversation']>
-}) {
-  const { reprendre } = useChat()
-
-  return (
-    <button
-      type="button"
-      onClick={() =>
-        reprendre({
-          jeton: conversation.jeton,
-          messages: conversation.messages,
-          fiche: conversation.fiche,
-        })
-      }
-      className="mt-1 flex min-h-10 items-center gap-2 self-start rounded-full bg-terre px-4 text-[13px] font-extrabold text-white hover:bg-rouille"
-    >
-      <IconBulle size={16} />
-      Continuer la conversation
-    </button>
   )
 }
 

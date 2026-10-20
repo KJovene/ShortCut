@@ -278,8 +278,7 @@ describe('mon espace', () => {
       expect(screen.getByText(/ajustez les détails avec l’assistant/)).toBeInTheDocument()
     })
 
-    it('reprend la conversation depuis la carte du conseiller', async () => {
-      sessionStorage.clear()
+    it('renvoie de la carte du conseiller vers « Modifier le voyage » pour les ajustements', async () => {
       afficherEspace([
         {
           ...BALI,
@@ -290,15 +289,10 @@ describe('mon espace', () => {
 
       expect(
         await screen.findByText(
-          /les changements importants ou particuliers passent par votre conseiller/,
+          /changements importants ou particuliers passent par votre conseiller\. Pour un ajustement léger .* « Modifier le voyage »/,
         ),
       ).toBeInTheDocument()
-      await userEvent
-        .setup()
-        .click(screen.getByRole('button', { name: 'Continuer la conversation' }))
-
-      const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
-      expect(within(fenetre).getByText('Une villa à Bali en mai.')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Continuer la conversation' })).toBeNull()
     })
 
     it('passe par le conseiller une fois qu’il a repris la main', async () => {
