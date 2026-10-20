@@ -54,6 +54,30 @@ class DemandeRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** Demandes à aiguiller, communes à tous les conseillers (US06). */
+    public function compterAAiguiller(): int
+    {
+        return (int) $this->restreindreAAiguiller($this->createQueryBuilder('d'), 'd')
+            ->select('COUNT(d.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * Demandes arrivées sans conseiller et encore ouvertes (US06). Une demande ouverte par le chatbot n'arrive
+     * qu'une fois le récapitulatif confirmé ou un conseiller demandé : avant, ce n'est qu'une conversation
+     * en cours, souvent abandonnée. Une demande saisie au backoffice arrive dès sa création.
+     */
+    public function restreindreAAiguiller(QueryBuilder $qb, string $alias): QueryBuilder
+    {
+        return $qb
+            ->leftJoin($alias.'.conversation', 'conversationAAiguiller')
+            ->andWhere($alias.'.conseiller IS NULL')
+            ->andWhere($alias.'.statut NOT IN (:closesAAiguiller)')
+            ->andWhere(\sprintf('%s.prioritaire = true OR conversationAAiguiller.id IS NULL OR conversationAAiguiller.finLe IS NOT NULL', $alias))
+            ->setParameter('closesAAiguiller', [StatutDemande::Acceptee, StatutDemande::Perdue]);
+    }
+
     /**
      * Demandes qui attendent une action du conseiller : prioritaires, nouvelles ou à confirmer.
      * Les prioritaires d'abord, puis les plus anciennes (elles attendent depuis le plus longtemps).

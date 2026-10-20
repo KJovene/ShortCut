@@ -2,8 +2,10 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
+use App\Enum\MotifTransmission;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -34,7 +36,7 @@ final class DemandeFixtures extends Fixture implements DependentFixtureInterface
 
         foreach ($demandes as [$conseiller, $lieu, $type, $statut, $prioritaire, $recue]) {
             $date = new \DateTimeImmutable($recue);
-            $manager->persist((new Demande())
+            $manager->persist($demande = (new Demande())
                 ->setClient($client)
                 ->setConseiller(null === $conseiller ? null : $this->getReference($conseiller, Utilisateur::class))
                 ->setLieuOuZone($lieu)
@@ -47,8 +49,26 @@ final class DemandeFixtures extends Fixture implements DependentFixtureInterface
                 ->setCreeLe($date)
                 ->setModifieLe($date));
         }
+        // La dernière, non attribuée : le client a demandé un conseiller au chatbot (US06).
+        $this->transmettreAuConseiller($manager, $demande);
 
         $manager->flush();
+    }
+
+    private function transmettreAuConseiller(ObjectManager $manager, Demande $demande): void
+    {
+        $conversation = (new Conversation())
+            ->ajouterMessage('client', 'Bonjour, nous aimerions découvrir le Costa Rica à deux, une semaine de nature.')
+            ->ajouterMessage('assistant', 'Le Costa Rica, quelle belle idée ! À quelle période pensez-vous partir ?')
+            ->ajouterMessage('client', 'Plutôt en février. En fait, je préférerais en parler directement avec quelqu\'un.')
+            ->ajouterMessage('assistant', 'Bien sûr : un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.')
+            ->setRepriseParConseiller(true);
+        $demande->setConversation($conversation);
+        $demande->transmettre(
+            MotifTransmission::DemandeDuClient,
+            'Couple, une semaine de nature au Costa Rica en février, budget 3 000 €. Le client préfère échanger avec un conseiller ; dates et températures à préciser.',
+        );
+        $manager->persist($conversation);
     }
 
     public function getDependencies(): array

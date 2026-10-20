@@ -1,0 +1,20 @@
+{# Échanges entre le client et le chatbot, pour que le conseiller reprenne la conversation (US06). #}
+{% set conversation = entity.instance.conversation %}
+{% set auteurs = {client: 'Client', assistant: 'Assistant', conseiller: 'Conseiller'} %}
+{% if conversation is null or conversation.messages is empty %}
+    <span class="bo-vide">Aucun message</span>
+{% else %}
+    <p class="text-muted small mb-2">
+        Commencée le {{ conversation.debutLe|date('d/m/Y à H:i') }}
+        {%- if conversation.repriseParConseiller %} · reprise par un conseiller : le chatbot ne répond plus{% endif %}
+    </p>
+    <ol class="list-unstyled conversation mb-0">
+        {% for message in conversation.messages %}
+            <li class="mb-2">
+                <strong>{{ auteurs[message.role] ?? message.role|capitalize }}</strong>
+                <span class="text-muted small">{{ message.le|date('d/m/Y H:i') }}</span>
+                <div>{{ message.contenu|nl2br }}</div>
+            </li>
+        {% endfor %}
+    </ol>
+{% endif %}

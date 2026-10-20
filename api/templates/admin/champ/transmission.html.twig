@@ -1,0 +1,11 @@
+{# Pourquoi le chatbot a passé la main au conseiller (US06), avec le résumé qu'il a écrit pour lui. #}
+{% set demande = entity.instance %}
+{% if demande.motifTransmission %}
+    <div class="bo-transmission">
+        <span class="bo-statut bo-statut--prioritaire">{{ demande.motifTransmission.label }}</span>
+        <span class="text-muted small">le {{ demande.transmiseLe|date('d/m/Y à H:i') }}</span>
+        {% if demande.resumeTransmission %}<p class="mt-2 mb-0">{{ demande.resumeTransmission|nl2br }}</p>{% endif %}
+    </div>
+{% else %}
+    <span class="bo-vide">Non</span>
+{% endif %}

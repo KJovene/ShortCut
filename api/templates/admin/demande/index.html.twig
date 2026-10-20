@@ -1,18 +1,23 @@
 {% extends '@EasyAdmin/crud/index.html.twig' %}
 
-{# Onglets par statut : chacun applique le filtre « Statut » en gardant les autres filtres actifs. #}
+{# Onglets : « À aiguiller » (demandes sans conseiller, US06), puis un onglet par statut qui applique
+   le filtre « Statut » en gardant les autres filtres actifs. #}
 {% block main %}
     {% set filtres = app.request.query.all('filters') %}
-    {% set statut_actif = filtres.statut.value ?? null %}
+    {% set statut_actif = vue_a_aiguiller ? false : (filtres.statut.value ?? null) %}
     {% set autres_filtres = filtres|filter((valeur, nom) => nom != 'statut') %}
 
     <nav class="bo-onglets" aria-label="Statut des demandes">
-        <a href="{{ ea_url().unset('page').set('filters', autres_filtres) }}"
+        <a href="{{ ea_url().unset('page').unset('filters').set('aiguiller', 1) }}"
+           class="bo-onglet"{% if vue_a_aiguiller %} aria-current="page"{% endif %}>
+            À aiguiller <span class="bo-onglet-nombre">{{ a_aiguiller }}</span>
+        </a>
+        <a href="{{ ea_url().unset('page').unset('aiguiller').set('filters', autres_filtres) }}"
            class="bo-onglet"{% if statut_actif is null %} aria-current="page"{% endif %}>
             Toutes <span class="bo-onglet-nombre">{{ compteurs|reduce((total, n) => total + n, 0) }}</span>
         </a>
         {% for statut in statuts %}
-            <a href="{{ ea_url().unset('page').set('filters', autres_filtres|merge({statut: {comparison: '=', value: statut.value}})) }}"
+            <a href="{{ ea_url().unset('page').unset('aiguiller').set('filters', autres_filtres|merge({statut: {comparison: '=', value: statut.value}})) }}"
                class="bo-onglet"{% if statut_actif == statut.value %} aria-current="page"{% endif %}>
                 {{ statut.label }} <span class="bo-onglet-nombre">{{ compteurs[statut.value] }}</span>
             </a>
