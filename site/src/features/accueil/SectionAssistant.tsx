@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
-import type { Destination } from '@/data/catalogue'
+import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { useChat } from '@/features/chat/chatContext'
 import { ChatAccueil } from '@/features/chat/components/ChatAccueil'
 import { ChatWorkspace } from '@/features/chat/components/ChatWorkspace'
 import { ID_SECTION_ASSISTANT } from '@/features/chat/useOuvrirAssistant'
 
-function Polaroid({ d, rotation }: { d: Destination; rotation: string }) {
+function Polaroid({ d, rotation }: { d: DestinationPublique | undefined; rotation: string }) {
+  if (!d) return null
   return (
     <div
       className="bg-white p-2.5 pb-9 shadow-[0_14px_30px_rgba(43,29,20,0.18)]"
@@ -24,8 +25,8 @@ export function SectionAssistant({
   suggestion,
   photos,
 }: {
-  suggestion: Destination
-  photos: Destination[]
+  suggestion: DestinationPublique | undefined
+  photos: DestinationPublique[]
 }) {
   const { statut } = useChat()
   const section = useRef<HTMLElement>(null)
@@ -72,7 +73,7 @@ export function SectionAssistant({
             <Polaroid d={photos[1]} rotation="3deg" />
           </div>
           <div className="flex min-w-0 flex-1 justify-center">
-            <ChatAccueil suggestion={`Comme ${suggestion.ville}, à mes dates`} />
+            <ChatAccueil suggestion={suggestion && `Comme ${suggestion.ville}, à mes dates`} />
           </div>
           <div
             aria-hidden="true"

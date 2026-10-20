@@ -73,6 +73,13 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
                 ->setPointsForts($d['pointsForts'])
                 ->setTempsDeTrajet($d['tempsDeTrajet'])
                 ->setPhoto($this->photos->copier('destinations', $d['photo']))
+                ->setPhotoAlt($d['photoAlt'])
+                ->setNom($d['nom'])
+                ->setAccroche($d['accroche'])
+                ->setTypesDeVoyage($d['typesDeVoyage'])
+                ->setMoisIdeal($d['moisIdeal'])
+                ->setLatitude($d['latitude'])
+                ->setLongitude($d['longitude'])
                 ->setPubliee(true)
                 ->setMiseEnAvant($d['miseEnAvant']);
 

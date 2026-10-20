@@ -173,7 +173,18 @@ final class RetenirCombinaison implements Outil
         ];
 
         // La combinaison rejoint le chiffrage en cache : l'agent de rédaction la retrouve par le même identifiant.
-        $this->cache->enregistrer($demande, $chiffrage + ['combinaison' => $combinaison], $chiffrage['chiffrageId']);
+        // Le choix et la fiche du moment suivent jusqu'à la proposition, pour la recalculer après une modification (#211).
+        $this->cache->enregistrer($demande, $chiffrage + [
+            'combinaison' => $combinaison,
+            'choix' => [
+                'destination' => $slug,
+                'etapes' => array_map(static fn (array $e): array => ['dateDebut' => $e['debut']->format('Y-m-d'), 'nombreDeNuits' => $e['nuits'], 'logementIds' => $e['logementIds']], $etapes),
+                'activitesDemandees' => $demandees,
+                'activitesSuggerees' => $suggerees,
+                'pourquoi' => $pourquoi,
+            ],
+            'exigences' => EnregistrerExigences::fiche($demande),
+        ], $chiffrage['chiffrageId']);
 
         return [
             'chiffrageId' => $chiffrage['chiffrageId'],

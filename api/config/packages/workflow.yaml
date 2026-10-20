@@ -50,8 +50,9 @@ framework:
                 demander_confirmation:
                     from: proposition_envoyee
                     to: a_confirmer
+                # Seulement à la demande du client (« Demander la confirmation » sur sa page).
                 confirmer:
-                    from: [proposition_envoyee, a_confirmer]
+                    from: a_confirmer
                     to: confirmee
                 accepter:
                     from: confirmee

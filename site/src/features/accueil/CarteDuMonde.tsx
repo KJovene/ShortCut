@@ -1,20 +1,18 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, type CSSProperties } from 'react'
+import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
 import {
-  formatEuros,
-  labelType,
-  MOIS,
-  prixAPartirDe,
-  type Destination,
-  type TypeDeVoyage,
-} from '@/data/catalogue'
+  libelleTypePrincipal,
+  type DestinationPublique,
+  type DestinationSurCarte,
+} from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
 import { estVisible, position } from './carte'
 
 interface Props {
-  destinations: Destination[]
-  active: Destination
+  destinations: DestinationSurCarte[]
+  active: DestinationSurCarte
   type: TypeDeVoyage | 'tous'
   onActiver: (slug: string) => void
 }
@@ -25,7 +23,7 @@ function Epingle({
   visible,
   onActiver,
 }: {
-  d: Destination
+  d: DestinationSurCarte
   active: boolean
   visible: boolean
   onActiver: () => void
@@ -34,7 +32,7 @@ function Epingle({
   return (
     <button
       type="button"
-      aria-label={`${d.nom}, ${labelType(d.types[0]).toLowerCase()}`}
+      aria-label={`${d.nom}, ${libelleTypePrincipal(d).toLowerCase()}`}
       aria-pressed={active}
       onMouseEnter={onActiver}
       onFocus={onActiver}
@@ -70,7 +68,7 @@ function CarteVoyage({
   className,
   style,
 }: {
-  d: Destination
+  d: DestinationPublique
   className?: string
   style?: CSSProperties
 }) {
@@ -87,9 +85,11 @@ function CarteVoyage({
     >
       <div className="relative h-[150px] overflow-hidden md:h-[210px]">
         <img src={d.photo} alt={d.alt} className="block size-full object-cover" />
-        <span className="absolute right-3 bottom-3 rounded-full bg-white px-3 py-0.5 font-display text-[22px] font-semibold md:text-[26px]">
-          {d.temperatures[d.moisIdeal]} °C
-        </span>
+        {d.temperatures[d.moisIdeal] !== null && (
+          <span className="absolute right-3 bottom-3 rounded-full bg-white px-3 py-0.5 font-display text-[22px] font-semibold md:text-[26px]">
+            {d.temperatures[d.moisIdeal]} °C
+          </span>
+        )}
       </div>
       <div className="hidden grid-cols-3 gap-1 px-1 pt-1 md:grid">
         {['0% 70%', '50% 30%', '100% 90%'].map((pos) => (
@@ -104,7 +104,7 @@ function CarteVoyage({
       </div>
       <div className="flex flex-col gap-2 px-[18px] pt-3.5 pb-[18px]">
         <span className="text-xs font-extrabold tracking-[1px] text-rouille uppercase">
-          {labelType(d.types[0])} · idéal en {mois}
+          {libelleTypePrincipal(d)} · idéal en {mois}
         </span>
         <h2 className="m-0 font-display text-2xl leading-tight font-semibold md:text-[26px]">
           <Link to="/destinations/$slug" params={{ slug: d.slug }} className="hover:text-terre">
@@ -113,10 +113,12 @@ function CarteVoyage({
         </h2>
         <p className="m-0 text-sm leading-relaxed text-taupe">{d.accroche}</p>
         <div className="mt-1 flex items-center justify-between gap-2.5">
-          <span className="text-[13px] text-taupe">
-            dès <strong className="text-[17px] text-encre">{formatEuros(prixAPartirDe(d))}</strong>{' '}
-            / pers.
-          </span>
+          {d.prixAPartirDe !== null && (
+            <span className="text-[13px] text-taupe">
+              dès <strong className="text-[17px] text-encre">{formatEuros(d.prixAPartirDe)}</strong>{' '}
+              / pers.
+            </span>
+          )}
           <button
             type="button"
             onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${mois}, `)}
@@ -199,7 +201,7 @@ export function CarteDuMonde({ destinations, active, type, onActiver }: Props) {
   )
 }
 
-function CarteVoyageMobile({ d }: { d: Destination }) {
+function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
   const ouvrirAssistant = useOuvrirAssistant()
   return (
     <article
@@ -209,7 +211,9 @@ function CarteVoyageMobile({ d }: { d: Destination }) {
       <img src={d.photo} alt={d.alt} className="block w-[120px] shrink-0 object-cover" />
       <div className="flex min-w-0 flex-1 flex-col gap-1 px-3.5 py-3">
         <span className="text-[11px] font-extrabold tracking-[0.8px] text-rouille uppercase">
-          {labelType(d.types[0])} · {d.temperatures[d.moisIdeal]} °C en {MOIS[d.moisIdeal]}
+          {libelleTypePrincipal(d)}
+          {d.temperatures[d.moisIdeal] !== null &&
+            ` · ${d.temperatures[d.moisIdeal]} °C en ${MOIS[d.moisIdeal]}`}
         </span>
         <h2 className="m-0 font-display text-xl font-semibold">
           <Link to="/destinations/$slug" params={{ slug: d.slug }}>
@@ -218,9 +222,11 @@ function CarteVoyageMobile({ d }: { d: Destination }) {
         </h2>
         <p className="m-0 text-xs leading-snug text-taupe">{d.accroche}</p>
         <div className="mt-1 flex items-center justify-between gap-1.5">
-          <span className="text-xs text-taupe">
-            dès <strong className="text-encre">{formatEuros(prixAPartirDe(d))}</strong>
-          </span>
+          {d.prixAPartirDe !== null && (
+            <span className="text-xs text-taupe">
+              dès <strong className="text-encre">{formatEuros(d.prixAPartirDe)}</strong>
+            </span>
+          )}
           <button
             type="button"
             onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)}

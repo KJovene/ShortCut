@@ -49,6 +49,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Form\ClickableInterface;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -61,6 +62,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\PositiveOrZero;
 use Symfony\Component\Validator\Constraints\Range;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 /**
  * Demandes des clients, point d'entrée du conseiller chaque matin (US01) :
@@ -83,6 +85,7 @@ final class DemandeCrudController extends AbstractCrudController
         private readonly ConfirmationService $confirmations,
         private readonly FormFactoryInterface $formulaires,
         #[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl,
+        #[Target('demande')] private readonly WorkflowInterface $workflowDemande,
     ) {
     }
 
@@ -126,11 +129,20 @@ final class DemandeCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        // Seulement quand une proposition a été envoyée au client : un brouillon du chatbot se relit d'abord (#207).
+        // Seulement quand le client a demandé la confirmation de sa proposition (#210), ou pour la consulter.
         $confirmer = Action::new('confirmerProposition', 'Confirmer la proposition', 'fa fa-file-signature')
             ->linkToCrudAction('confirmation')
-            ->displayIf(fn (Demande $demande): bool => null !== $this->confirmations->estimation($demande))
+            ->displayIf(fn (Demande $demande): bool => $this->confirmations->confirmationOuverte($demande))
             ->asPrimaryAction();
+        // Le statut ne se choisit pas dans le formulaire : il suit le workflow « demande ». Seule la perte se décide.
+        $perdre = Action::new('perdre', 'Marquer comme perdue', 'fa fa-ban')
+            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_perdre', [
+                'id' => $d->getId(),
+                '_token' => $this->container->get('security.csrf.token_manager')->getToken('perdre_'.$d->getId())->getValue(),
+            ]))
+            ->renderAsForm()
+            ->askConfirmation('Marquer cette demande comme perdue ? Le client ne pourra plus accepter sa proposition.', 'Marquer comme perdue')
+            ->displayIf(fn (Demande $d): bool => $this->workflowDemande->can($d, 'perdre'));
         // US13 : le responsable ouvre en un clic le journal des appels IA de la demande.
         $journal = Action::new('journalIA', 'Journal IA', 'fa fa-list')
             ->linkToUrl(fn (Demande $d): string => $this->container->get(AdminUrlGeneratorInterface::class)
@@ -139,7 +151,7 @@ final class DemandeCrudController extends AbstractCrudController
                 ->set('filters', ['demande' => ['comparison' => '=', 'value' => $d->getId()]])
                 ->generateUrl());
         // En POST, jeton CSRF dans l'URL : le formulaire généré par EasyAdmin n'a pas de corps.
-        $attribuer =Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
+        $attribuer = Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
             ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_attribuer', [
                 'id' => $d->getId(),
                 '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
@@ -153,6 +165,8 @@ final class DemandeCrudController extends AbstractCrudController
             ->add(Crud::PAGE_DETAIL, $attribuer)
             ->add(Crud::PAGE_DETAIL, $confirmer)
             ->add(Crud::PAGE_DETAIL, $journal)
+            ->add(Crud::PAGE_DETAIL, $perdre)
+            ->setPermission('perdre', DemandeVoter::MODIFIER)
             ->setPermission('journalIA', 'ROLE_ADMIN')
             ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
             ->setPermission('confirmerProposition', DemandeVoter::MODIFIER)
@@ -228,7 +242,9 @@ final class DemandeCrudController extends AbstractCrudController
         yield ChoiceField::new('statut', 'Statut')
             ->setChoices(self::choix(StatutDemande::cases()))
             ->setFormTypeOption('choice_value', static fn (?StatutDemande $s) => $s?->value)
-            ->setTemplatePath('admin/champ/statut_demande.html.twig');
+            ->setTemplatePath('admin/champ/statut_demande.html.twig')
+            // Les transitions du workflow « demande » le font avancer (envoi, demande du client, confirmation…).
+            ->hideOnForm();
         yield AssociationField::new('client', 'Client')
             ->setQueryBuilder(static fn (QueryBuilder $qb) => $qb
                 ->andWhere('entity.role = :client')
@@ -296,7 +312,13 @@ final class DemandeCrudController extends AbstractCrudController
         $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
         $estimation = $this->confirmations->estimation($demande)
             ?? throw $this->createNotFoundException('Cette demande n\'a pas encore de proposition envoyée au client.');
-        $version = $this->confirmations->versionDeConfirmation($demande, $estimation);
+        try {
+            $version = $this->confirmations->versionDeConfirmation($demande, $estimation);
+        } catch (ConfirmationImpossible $e) {
+            $this->addFlash('warning', $e->getMessage());
+
+            return $this->redirectVersLaDemande($demande);
+        }
 
         $formulaire = null;
         if (StatutProposition::Brouillon === $version->getStatut()) {
@@ -430,8 +452,37 @@ final class DemandeCrudController extends AbstractCrudController
             throw $this->createAccessDeniedException('Jeton de sécurité invalide : rechargez la page.');
         }
         $estimation = $this->confirmations->estimation($demande) ?? throw $this->createNotFoundException();
+        if (!$this->confirmations->confirmationOuverte($demande)) {
+            throw $this->createAccessDeniedException('Le client n\'a pas demandé la confirmation de sa proposition.');
+        }
 
         return $this->confirmations->versionDeConfirmation($demande, $estimation);
+    }
+
+    /** La demande est perdue (le client renonce, ne répond plus) : transition « perdre » du workflow. */
+    #[AdminRoute('/{id}/perdre', name: 'perdre', options: ['methods' => ['POST']])]
+    public function perdre(#[MapEntity(id: 'id')] Demande $demande, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
+        if (!$this->isCsrfTokenValid('perdre_'.$demande->getId(), $request->query->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton de sécurité invalide : rechargez la page.');
+        }
+        if ($this->workflowDemande->can($demande, 'perdre')) {
+            $this->workflowDemande->apply($demande, 'perdre');
+            $demande->setModifieLe(new \DateTimeImmutable());
+            $em->flush();
+            $this->addFlash('success', 'Demande marquée comme perdue.');
+        } else {
+            $this->addFlash('warning', \sprintf('La demande est « %s » : elle ne peut plus être perdue.', $demande->getStatut()->label()));
+        }
+
+        return $this->redirectVersLaDemande($demande);
+    }
+
+    private function redirectVersLaDemande(Demande $demande): Response
+    {
+        return $this->redirect($this->container->get(AdminUrlGeneratorInterface::class)
+            ->setController(self::class)->setAction(Action::DETAIL)->setEntityId($demande->getId())->generateUrl());
     }
 
     private function redirectVersLaConfirmation(Demande $demande): Response

@@ -162,6 +162,7 @@ final class PropositionTest extends WebTestCase
 
     public function testUnBrouillonOuUnJetonInconnuRestentIntrouvables(): void
     {
+        $this->post($this->estimation->getJetonPublic(), 'demande-de-confirmation');
         $brouillon = static::getContainer()->get(ConfirmationService::class)->versionDeConfirmation($this->demande, $this->estimation);
 
         $this->client->request('GET', '/api/propositions/'.$brouillon->getJetonPublic());
@@ -170,12 +171,15 @@ final class PropositionTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
-    /** Le conseiller confirme tous les prix tels qu'estimés. */
+    /** Le client demande la confirmation (s'il ne l'a pas déjà fait), le conseiller confirme les prix estimés. */
     private function confirmer(): Proposition
     {
         $service = static::getContainer()->get(ConfirmationService::class);
         $demande = $this->em->find(Demande::class, $this->demande->getId()) ?? throw new \LogicException();
         $estimation = $service->estimation($demande) ?? throw new \LogicException();
+        if (StatutDemande::PropositionEnvoyee === $demande->getStatut()) {
+            static::getContainer()->get(PropositionClient::class)->demanderConfirmation($estimation);
+        }
         $version = $service->versionDeConfirmation($demande, $estimation);
         $prix = [];
         foreach ($version->getLignes() as $ligne) {

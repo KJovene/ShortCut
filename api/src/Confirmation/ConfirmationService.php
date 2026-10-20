@@ -13,6 +13,7 @@ use App\Entity\Prestation;
 use App\Entity\Proposition;
 use App\Entity\RegleDePrix;
 use App\Entity\Utilisateur;
+use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
 use App\Enum\TypeLigne;
@@ -73,17 +74,31 @@ final class ConfirmationService
     }
 
     /**
+     * L'écran de confirmation est-il ouvert pour cette demande ? Une confirmation commencée ou aboutie se consulte ;
+     * une nouvelle ne commence qu'à la demande du client (demande « à confirmer »).
+     */
+    public function confirmationOuverte(Demande $demande): bool
+    {
+        $estimation = $this->estimation($demande);
+
+        return null !== $estimation
+            && (StatutDemande::AConfirmer === $demande->getStatut() || null !== $this->versionExistante($demande, $estimation));
+    }
+
+    /**
      * La version qui confirme cette estimation : le brouillon en cours, la version déjà confirmée, ou un brouillon
-     * créé à l'instant à partir de l'estimation.
+     * créé à l'instant à partir de l'estimation, si le client a demandé la confirmation.
+     *
+     * @throws ConfirmationImpossible si le client n'a pas demandé la confirmation
      */
     public function versionDeConfirmation(Demande $demande, Proposition $estimation): Proposition
     {
-        $existante = self::derniere(array_filter(
-            $demande->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => self::confirmeLEstimation($p) && $p->getVersion() > $estimation->getVersion(),
-        ));
+        $existante = $this->versionExistante($demande, $estimation);
         if (null !== $existante) {
             return $existante;
+        }
+        if (StatutDemande::AConfirmer !== $demande->getStatut()) {
+            throw new ConfirmationImpossible(\sprintf('La demande est « %s » : le client n\'a pas demandé la confirmation de sa proposition. Elle se confirme quand il l\'a demandée depuis sa page « Ma proposition ».', $demande->getStatut()->label()));
         }
 
         $version = (new Proposition())
@@ -94,6 +109,8 @@ final class ConfirmationService
             ->setPourquoi($estimation->getPourquoi())
             ->setArgumentaire($estimation->getArgumentaire())
             ->setPrestations($estimation->getPrestations())
+            ->setChoix($estimation->getChoix())
+            ->setExigences($estimation->getExigences())
             ->setProgramme($estimation->getProgramme())
             ->setNiveauBudget($estimation->getNiveauBudget())
             ->setTotalCentimes($estimation->getTotalCentimes())
@@ -373,6 +390,14 @@ final class ConfirmationService
         }
 
         return $hypotheses;
+    }
+
+    private function versionExistante(Demande $demande, Proposition $estimation): ?Proposition
+    {
+        return self::derniere(array_filter(
+            $demande->getPropositions()->toArray(),
+            static fn (Proposition $p): bool => self::confirmeLEstimation($p) && $p->getVersion() > $estimation->getVersion(),
+        ));
     }
 
     /** Version de confirmation en cours ou aboutie ; une version remplacée par un nouvel envoi ne compte plus. */

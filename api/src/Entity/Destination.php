@@ -8,12 +8,15 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use App\ApiPlatform\Filtre\ClimatFilter;
 use App\ApiPlatform\Filtre\EnvieFilter;
 use App\ApiPlatform\Filtre\MoisFilter;
+use App\ApiPlatform\PublieeExtension;
+use App\Enum\TypeDeVoyage;
 use App\Repository\DestinationRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -21,6 +24,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -28,6 +32,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * Destination du catalogue, avec son climat par période.
  * Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+ * Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
  */
 #[ApiResource(
     operations: [
@@ -68,6 +73,45 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(),
         new Patch(),
         new Delete(security: "is_granted('ROLE_ADMIN')"),
+        // Site public : destinations publiées seulement (PublieeExtension), sans les données internes.
+        new GetCollection(
+            uriTemplate: '/public/destinations',
+            itemUriTemplate: '/public/destinations/{slug}',
+            normalizationContext: ['groups' => ['public:read']],
+            security: "is_granted('PUBLIC_ACCESS')",
+            extraProperties: [PublieeExtension::PUBLIEES => true],
+            parameters: [
+                'miseEnAvant' => new QueryParameter(filter: new ExactFilter(), property: 'miseEnAvant', nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, castToArray: false),
+                'mois' => new QueryParameter(
+                    filter: new ClimatFilter(),
+                    description: 'Mois du voyage, au format AAAA-MM. Combiné à temperatureMin ou temperatureMax, la température porte sur ce mois.',
+                    schema: ['type' => 'string', 'pattern' => '^\\d{4}-(0[1-9]|1[0-2])$', 'example' => '2027-05'],
+                    constraints: [new Assert\Regex(MoisFilter::FORMAT, message: 'Le mois doit être au format AAAA-MM, par exemple 2027-05.')],
+                    castToArray: false,
+                ),
+                'temperatureMin' => new QueryParameter(
+                    filter: new ClimatFilter(),
+                    description: 'Température moyenne minimale, en °C.',
+                    schema: ['type' => 'number'],
+                    constraints: [new Assert\Range(min: -50, max: 60)],
+                    castToArray: false,
+                ),
+                'temperatureMax' => new QueryParameter(
+                    filter: new ClimatFilter(),
+                    description: 'Température moyenne maximale, en °C.',
+                    schema: ['type' => 'number'],
+                    constraints: [new Assert\Range(min: -50, max: 60)],
+                    castToArray: false,
+                ),
+            ],
+        ),
+        new Get(
+            uriTemplate: '/public/destinations/{slug}',
+            uriVariables: ['slug' => new Link(fromClass: self::class, identifiers: ['slug'])],
+            normalizationContext: ['groups' => ['public:read']],
+            security: "is_granted('PUBLIC_ACCESS')",
+            extraProperties: [PublieeExtension::PUBLIEES => true],
+        ),
     ],
     normalizationContext: ['groups' => ['destination:public', 'destination:interne']],
     denormalizationContext: ['groups' => ['destination:ecriture']],
@@ -90,18 +134,18 @@ class Destination
     #[ORM\Column(type: Types::STRING, length: 100)]
     #[Assert\NotBlank(message: 'Indiquez le pays.')]
     #[Assert\Length(max: 100)]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?string $pays = null;
 
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?string $region = null;
 
     #[ORM\Column(type: Types::STRING, length: 100)]
     #[Assert\NotBlank(message: 'Indiquez la ville.')]
     #[Assert\Length(max: 100)]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?string $ville = null;
 
     /** Adresse de la fiche sur le site. */
@@ -109,7 +153,7 @@ class Destination
     #[Assert\NotBlank(message: 'Indiquez l\'adresse de la fiche (slug).')]
     #[Assert\Length(max: 150)]
     #[Assert\Regex('/^[a-z0-9]+(-[a-z0-9]+)*$/', message: 'Le slug ne contient que des minuscules sans accent, des chiffres et des tirets (ex. « costa-rica »).')]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?string $slug = null;
 
     /**
@@ -122,7 +166,7 @@ class Destination
         new Assert\Type('int', message: 'Un temps de trajet est un nombre entier de minutes.'),
         new Assert\Range(min: 1, max: 2880),
     ])]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private array $tempsDeTrajet = [];
 
     /**
@@ -131,12 +175,12 @@ class Destination
     #[ORM\Column(type: Types::JSON)]
     #[Assert\Count(max: 10)]
     #[Assert\All([new Assert\NotBlank(), new Assert\Length(max: 150)])]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private array $pointsForts = [];
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 5000)]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -144,13 +188,58 @@ class Destination
     #[Groups(['destination:public', 'destination:ecriture'])]
     private ?string $photo = null;
 
+    /** Description de la photo pour les lecteurs d'écran. */
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    #[Assert\Length(max: 255)]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private ?string $photoAlt = null;
+
+    /** Nom affiché sur le site (« Lisbonne, Portugal », « Islande ») ; vide : ville et pays. */
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
+    #[Assert\Length(max: 150)]
+    #[Groups(['destination:public', 'destination:ecriture'])]
+    private ?string $nom = null;
+
+    /** Une phrase d'accroche, affichée sur la carte du monde de l'accueil. */
+    #[ORM\Column(type: Types::STRING, length: 200, nullable: true)]
+    #[Assert\Length(max: 200)]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private ?string $accroche = null;
+
+    /**
+     * Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).
+     *
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Assert\Choice(callback: [TypeDeVoyage::class, 'valeurs'], multiple: true, multipleMessage: 'Type de voyage inconnu.')]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private array $typesDeVoyage = [];
+
+    /** Meilleur mois pour partir, de 1 (janvier) à 12 (décembre). */
+    #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    #[Assert\Range(min: 1, max: 12)]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private ?int $moisIdeal = null;
+
+    /** Position sur la carte du monde de l'accueil. */
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\Range(min: -90, max: 90)]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private ?float $latitude = null;
+
+    #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\Range(min: -180, max: 180)]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private ?float $longitude = null;
+
     #[ORM\Column(type: Types::BOOLEAN)]
     #[Groups(['destination:interne', 'destination:ecriture'])]
     private bool $publiee = false;
 
     /** Affichée sur la page d'accueil. */
     #[ORM\Column(type: Types::BOOLEAN)]
-    #[Groups(['destination:public', 'destination:ecriture'])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private bool $miseEnAvant = false;
 
     /**
@@ -160,7 +249,7 @@ class Destination
      */
     #[ORM\OneToMany(targetEntity: PeriodeClimatique::class, mappedBy: 'destination', orphanRemoval: true)]
     #[ORM\OrderBy(['debut' => 'ASC'])]
-    #[Groups(['destination:public'])]
+    #[Groups(['destination:public', 'public:read'])]
     private Collection $periodesClimatiques;
 
     /**
@@ -344,6 +433,111 @@ class Destination
     public function setMiseEnAvant(bool $miseEnAvant): static
     {
         $this->miseEnAvant = $miseEnAvant;
+
+        return $this;
+    }
+
+    /** Adresse de la photo sur le site public. */
+    #[Groups(['public:read'])]
+    #[SerializedName('photo')]
+    public function getUrlPhoto(): ?string
+    {
+        return null === $this->photo ? null : '/uploads/destinations/'.$this->photo;
+    }
+
+    public function getPhotoAlt(): ?string
+    {
+        return $this->photoAlt;
+    }
+
+    public function setPhotoAlt(?string $photoAlt): static
+    {
+        $this->photoAlt = $photoAlt;
+
+        return $this;
+    }
+
+    public function getNom(): ?string
+    {
+        return $this->nom;
+    }
+
+    public function setNom(?string $nom): static
+    {
+        $this->nom = $nom;
+
+        return $this;
+    }
+
+    #[Groups(['public:read'])]
+    #[SerializedName('nom')]
+    public function getNomAffiche(): string
+    {
+        return $this->nom ?? \sprintf('%s, %s', $this->ville, $this->pays);
+    }
+
+    public function getAccroche(): ?string
+    {
+        return $this->accroche;
+    }
+
+    public function setAccroche(?string $accroche): static
+    {
+        $this->accroche = $accroche;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getTypesDeVoyage(): array
+    {
+        return $this->typesDeVoyage;
+    }
+
+    /**
+     * @param list<string> $typesDeVoyage
+     */
+    public function setTypesDeVoyage(array $typesDeVoyage): static
+    {
+        $this->typesDeVoyage = $typesDeVoyage;
+
+        return $this;
+    }
+
+    public function getMoisIdeal(): ?int
+    {
+        return $this->moisIdeal;
+    }
+
+    public function setMoisIdeal(?int $moisIdeal): static
+    {
+        $this->moisIdeal = $moisIdeal;
+
+        return $this;
+    }
+
+    public function getLatitude(): ?float
+    {
+        return $this->latitude;
+    }
+
+    public function setLatitude(?float $latitude): static
+    {
+        $this->latitude = $latitude;
+
+        return $this;
+    }
+
+    public function getLongitude(): ?float
+    {
+        return $this->longitude;
+    }
+
+    public function setLongitude(?float $longitude): static
+    {
+        $this->longitude = $longitude;
 
         return $this;
     }

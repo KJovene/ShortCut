@@ -12,6 +12,7 @@ import { ApiError } from '@/lib/api'
 export const estJetonProposition = (id: string) => /^[0-9a-f]{64}$/.test(id)
 
 const NIVEAU = z.enum(['essentiel', 'equilibre', 'confort'])
+const ETAT = z.enum(['estimee', 'confirmee'])
 const Budget = z.object({ totalCentimes: z.number(), parPersonneCentimes: z.number() })
 
 export const PropositionEnLigne = z.object({
@@ -19,7 +20,7 @@ export const PropositionEnLigne = z.object({
   /** Version du lien ouvert, quand elle a été remplacée par celle-ci. */
   versionDemandee: z.number().nullable(),
   version: z.number(),
-  etat: z.enum(['estimee', 'confirmee']),
+  etat: ETAT,
   statut: z.string(),
   mention: z.string(),
   creeLe: z.string(),
@@ -63,6 +64,17 @@ export const PropositionEnLigne = z.object({
     adultes: z.number(),
     enfants: z.number(),
   }),
+  /** Toutes les versions reçues par le client, de la plus ancienne à la plus récente (#211). */
+  versions: z.array(
+    z.object({
+      version: z.number(),
+      jeton: z.string(),
+      etat: ETAT,
+      statut: z.string(),
+      creeLe: z.string(),
+      totalCentimes: z.number(),
+    }),
+  ),
   actions: z.object({ demanderConfirmation: z.boolean(), accepter: z.boolean() }),
 })
 export type PropositionEnLigne = z.infer<typeof PropositionEnLigne>
@@ -93,6 +105,22 @@ export const propositionQuery = (jeton: string) =>
   queryOptions({
     queryKey: ['propositions', jeton],
     queryFn: () => chargerProposition(jeton),
+  })
+
+/** Une version précise de la même proposition, même remplacée : GET /api/propositions/{jeton}/versions/{numero}. */
+export async function chargerVersion(jeton: string, numero: number): Promise<PropositionEnLigne> {
+  const response = await fetch(`/api/propositions/${jeton}/versions/${numero}`, {
+    headers: { Accept: 'application/json' },
+  })
+  return lire(response)
+}
+
+export const versionQuery = (jeton: string, numero: number) =>
+  queryOptions({
+    queryKey: ['propositions', jeton, 'versions', numero],
+    queryFn: () => chargerVersion(jeton, numero),
+    // Une version reçue ne change plus : seul son statut peut évoluer, la page actuelle le montre.
+    staleTime: Infinity,
   })
 
 export type ActionProposition = 'demande-de-confirmation' | 'acceptation'

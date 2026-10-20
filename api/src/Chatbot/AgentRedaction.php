@@ -10,8 +10,10 @@ use App\Chiffrage\ChiffrageCache;
 use App\Chiffrage\Periode;
 use App\Entity\Conversation;
 use App\Entity\Demande;
+use App\Entity\Proposition;
 use App\Enum\AgentIA;
 use App\Enum\NiveauBudget;
+use App\Proposition\PropositionService;
 use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,6 +30,9 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * Le conseiller relit le brouillon et l'envoie au client depuis la fiche demande du backoffice. Le client lit
  * seulement un message du serveur qui le lui annonce. Si la rédaction échoue, le serveur transmet la demande au
  * conseiller et prévient le client.
+ *
+ * Après une modification du client (ticket #211), il écrit la version suivante en reprenant le programme précédent ;
+ * elle part directement au client et la précédente reste consultable.
  */
 final class AgentRedaction extends Agent
 {
@@ -35,6 +40,7 @@ final class AgentRedaction extends Agent
     public const MODELE = 'claude-sonnet-5-5';
 
     public const MESSAGE_BROUILLON = 'Votre proposition détaillée, avec le programme jour par jour, est prête : votre conseiller la vérifie et vous l\'envoie dès qu\'il l\'a validée.';
+    public const MESSAGE_NOUVELLE_VERSION = 'Votre proposition détaillée est à jour : la version %d est sur votre page « Ma proposition », la version %d reste consultable.';
 
     /**
      * @param iterable<Outil> $outils
@@ -50,6 +56,7 @@ final class AgentRedaction extends Agent
         private readonly ChiffrageCache $cache,
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
+        private readonly PropositionService $propositions,
     ) {
         parent::__construct($claude, $em, $logger, $outils, $fichierPrompt);
     }
@@ -57,7 +64,7 @@ final class AgentRedaction extends Agent
     /**
      * @return \Generator<int, ServerEvent>
      */
-    public function rediger(Conversation $conversation, string $chiffrageId): \Generator
+    public function rediger(Conversation $conversation, string $chiffrageId, ?Modification $modification = null): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Chiffrage);
@@ -65,16 +72,25 @@ final class AgentRedaction extends Agent
         $tour = null;
 
         if (null !== $chiffrage && isset($chiffrage['combinaison'])) {
-            $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => $this->premierMessage($conversation, $chiffrageId, $chiffrage)]]]]);
+            $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => $this->premierMessage($conversation, $chiffrageId, $chiffrage, $modification)]]]]);
             foreach ($this->boucle($contexte, $tour, static function (): void {}) as $evenement) {
                 // Rien de ce que l'agent écrit ne va au client ; ses erreurs sont traitées ci-dessous.
                 if ('outil' === $evenement->getType()) {
                     yield $evenement;
                 }
             }
-            if (null !== $tour->sortie('enregistrer_proposition')) {
-                $this->ajouterALaConversation($conversation, self::MESSAGE_BROUILLON);
-                yield self::evenement('texte', ['texte' => "\n\n".self::MESSAGE_BROUILLON]);
+            $enregistree = $tour->sortie('enregistrer_proposition');
+            if (null !== $enregistree) {
+                $envoyee = null === $modification ? null : $this->envoyer($demande, (int) $enregistree['version']);
+                $message = null === $envoyee
+                    ? self::MESSAGE_BROUILLON
+                    : \sprintf(self::MESSAGE_NOUVELLE_VERSION, $envoyee->getVersion(), $modification->reference->getVersion());
+                $this->ajouterALaConversation($conversation, $message);
+                if (null !== $envoyee) {
+                    // Le site peut ouvrir la nouvelle version ; le lien des précédentes y mène aussi (#210).
+                    yield self::evenement('proposition', ['jeton' => $envoyee->getJetonPublic(), 'version' => $envoyee->getVersion()]);
+                }
+                yield self::evenement('texte', ['texte' => "\n\n".$message]);
 
                 return;
             }
@@ -98,7 +114,7 @@ final class AgentRedaction extends Agent
      *
      * @param array<string, mixed> $chiffrage
      */
-    private function premierMessage(Conversation $conversation, string $chiffrageId, array $chiffrage): string
+    private function premierMessage(Conversation $conversation, string $chiffrageId, array $chiffrage, ?Modification $modification): string
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         /** @var array{destination: array{slug: string}, etapes: list<array{dateDebut: string, nombreDeNuits: int, logements: list<array{id: int, nom: string}>}>, justification: array<string, mixed>, niveaux: array<string, array{logements: list<array{id: int, nom: string}>, activites: list<array{id: int, nom: string}>, transport: string, totalEuros: int|float, parPersonneEuros: int|float}>} $combinaison */
@@ -107,7 +123,9 @@ final class AgentRedaction extends Agent
         $destination = $this->destinations->findOneBy(['slug' => $combinaison['destination']['slug']]);
 
         $sections = [
-            'Le client a confirmé sa demande et la combinaison ci-dessous lui a été présentée dans le chat. Rédige sa proposition et enregistre-la.',
+            null === $modification
+                ? 'Le client a confirmé sa demande et la combinaison ci-dessous lui a été présentée dans le chat. Rédige sa proposition et enregistre-la.'
+                : 'Le client a modifié sa demande et la combinaison mise à jour ci-dessous lui a été présentée dans le chat. Rédige la version suivante de sa proposition et enregistre-la.',
             'chiffrageId : '.$chiffrageId,
             \sprintf('Niveau à détailler (niveauDetaille) : %s.', $niveau->value),
             "Calendrier, un jour de programme par ligne :\n".self::calendrier($combinaison['etapes'], $combinaison['niveaux'][$niveau->value]['logements']),
@@ -128,8 +146,33 @@ final class AgentRedaction extends Agent
             ], $combinaison['niveaux'])),
             'Prestations retenues (à présenter toutes, et elles seules) : '.self::json($this->fiches($combinaison['niveaux'])),
         ];
+        if (null !== $modification) {
+            $sections[] = $modification->pourLaRedaction();
+        }
 
         return implode("\n\n", $sections);
+    }
+
+    /**
+     * Envoie au client la version qui vient d'être enregistrée (modification, #211) ; null si la demande ne le permet
+     * plus (acceptée, perdue) : elle reste alors en brouillon pour le conseiller.
+     */
+    private function envoyer(Demande $demande, int $version): ?Proposition
+    {
+        foreach ($demande->getPropositions() as $proposition) {
+            if ($version !== $proposition->getVersion()) {
+                continue;
+            }
+            try {
+                $this->propositions->envoyer($proposition);
+
+                return $proposition;
+            } catch (\DomainException) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /**

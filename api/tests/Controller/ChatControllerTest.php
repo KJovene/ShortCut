@@ -2,9 +2,11 @@
 
 namespace App\Tests\Controller;
 
+use App\Controller\ChatController;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\Role;
+use App\Enum\StatutDemande;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -59,6 +61,25 @@ final class ChatControllerTest extends WebTestCase
         ['demande' => $demande] = $this->demarrer();
 
         self::assertSame($client, $this->em->find(Demande::class, $demande)?->getClient());
+    }
+
+    /** 3 voyages en cours au plus par client : le 4e attend qu'un autre soit accepté ou perdu. */
+    public function testUnClientNOuvrePasUnQuatriemeVoyageEnCours(): void
+    {
+        $client = $this->creerCompte('zoe.fontaine@exemple.test', Role::Client);
+        $this->client->loginUser($client);
+        $this->demarrer();
+        $this->demarrer();
+        $this->demarrer();
+
+        $this->client->request('POST', '/api/chat/conversations');
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(ChatController::MESSAGE_VOYAGES_MAX, $this->reponse()['erreur']);
+
+        // Un voyage perdu ne compte plus : la place se libère.
+        $this->em->getRepository(Demande::class)->findOneBy(['client' => $client])?->setStatut(StatutDemande::Perdue);
+        $this->em->flush();
+        $this->demarrer();
     }
 
     public function testLaDemandeDUnVisiteurOuDUnConseillerResteSansClient(): void

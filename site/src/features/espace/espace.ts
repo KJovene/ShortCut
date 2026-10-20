@@ -100,6 +100,9 @@ export function statutClient(demande: DemandeClient): { label: string; classe: s
 }
 
 /** Une demande en cours : ni réservée, ni clôturée. */
+/** Voyages en cours au plus par client (Demande::VOYAGES_EN_COURS_MAX côté API). */
+export const VOYAGES_EN_COURS_MAX = 3
+
 export function estEnCours(demande: DemandeClient) {
   return demande.statut !== 'acceptee' && demande.statut !== 'perdue'
 }

@@ -40,6 +40,7 @@ final class AgentConversation extends Agent
         #[Autowire('%kernel.project_dir%/prompts/conversation.md')]
         string $fichierPrompt,
         private readonly AgentRecherche $recherche,
+        private readonly NouvelleVersion $nouvelleVersion,
     ) {
         parent::__construct($claude, $em, $logger, $outils, $fichierPrompt);
     }
@@ -84,10 +85,13 @@ final class AgentConversation extends Agent
             }
         }
 
-        // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. Un dossier
-        // déjà suivi par un conseiller n'est que mis à jour : c'est le conseiller qui prépare la suite.
-        if (null === $demande->getConseiller() && true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
-            yield from $this->recherche->proposer($conversation);
+        // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a déjà
+        // une proposition, c'est une modification : la version suivante se recalcule à partir d'elle (#211).
+        if (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
+            $reference = $this->nouvelleVersion->reference($demande);
+            yield from null === $reference
+                ? $this->recherche->proposer($conversation)
+                : $this->nouvelleVersion->recalculer($conversation, $reference);
         }
 
         yield self::evenement('fin', new \stdClass());
