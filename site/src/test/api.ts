@@ -1,12 +1,13 @@
 import { vi } from 'vitest'
+import { DESTINATIONS_DE_DEMO } from './destinations'
 import { PAGES_DE_DEMO } from './pages'
 
 type Reponse = { status: number; body?: unknown }
 
 /**
  * Remplace fetch par une API simulée : « POST /api/connexion » → réponse.
- * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages/{slug} sert
- * les contenus de démo et le reste répond 404.
+ * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages/{slug} et
+ * GET /api/public/destinations(/{slug}) servent les données de démo et le reste répond 404.
  */
 export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
   const restantes = new Map(Object.entries(routes).map(([cle, r]) => [cle, [r].flat()]))
@@ -40,6 +41,14 @@ function reponseParDefaut(cle: string): Reponse {
   const page = /^GET \/api\/pages\/(.+)$/.exec(cle)?.[1]
   if (page && PAGES_DE_DEMO[page]) {
     return { status: 200, body: PAGES_DE_DEMO[page] }
+  }
+  if (cle === 'GET /api/public/destinations') {
+    return { status: 200, body: DESTINATIONS_DE_DEMO }
+  }
+  const slug = /^GET \/api\/public\/destinations\/(.+)$/.exec(cle)?.[1]
+  const destination = DESTINATIONS_DE_DEMO.find((d) => d.slug === slug)
+  if (destination) {
+    return { status: 200, body: destination }
   }
   return { status: 404, body: {} }
 }

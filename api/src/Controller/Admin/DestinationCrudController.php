@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Admin\FiltreClimat;
 use App\Entity\Destination;
+use App\Enum\TypeDeVoyage;
 use App\Form\TrajetType;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -12,10 +13,12 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\CollectionField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\Field;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\SlugField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -81,6 +84,9 @@ final class DestinationCrudController extends AbstractCrudController
             ->setFileConstraints(new Image(maxSize: '5M'))
             ->setRequired(false)
             ->setHelp('JPEG ou PNG, 5 Mo maximum. Paysage de préférence : elle sert de bandeau sur le site.');
+        yield TextField::new('photoAlt', 'Description de la photo')
+            ->setHelp('Lue par les lecteurs d\'écran à la place de la photo (ex. « Le Colisée de Rome sous un ciel clair »).')
+            ->hideOnIndex();
         yield TextField::new('ville', 'Ville');
         yield TextField::new('pays', 'Pays');
         yield TextField::new('region', 'Région');
@@ -94,6 +100,19 @@ final class DestinationCrudController extends AbstractCrudController
             ->setHelp('Affichée sur la page d\'accueil du site.');
 
         yield FormField::addFieldset('Présentation');
+        yield TextField::new('nom', 'Nom affiché')
+            ->setHelp('Nom sur le site, ex. « Lisbonne, Portugal » ou « Islande ». Vide : la ville et le pays.')
+            ->hideOnIndex();
+        yield ChoiceField::new('typesDeVoyage', 'Types de voyage')
+            ->setChoices(array_combine(
+                array_map(static fn (TypeDeVoyage $type): string => $type->label(), TypeDeVoyage::cases()),
+                TypeDeVoyage::valeurs(),
+            ))
+            ->allowMultipleChoices()
+            ->setHelp('Le premier est le type principal : il fixe les frais de dossier du prix « à partir de » affiché sur le site.');
+        yield TextField::new('accroche', 'Accroche')
+            ->setHelp('Une phrase, affichée sur la carte du monde de l\'accueil.')
+            ->hideOnIndex();
         yield TextareaField::new('description', 'Description')->hideOnIndex();
         yield ArrayField::new('pointsForts', 'Points forts')
             ->setRequired(false)
@@ -107,6 +126,22 @@ final class DestinationCrudController extends AbstractCrudController
         yield Field::new('tempsDeTrajet', 'Temps de trajet')
             ->setTemplatePath('admin/champ/temps_de_trajet.html.twig')
             ->onlyOnDetail();
+
+        yield ChoiceField::new('moisIdeal', 'Meilleur mois')
+            ->setChoices(['Janvier' => 1, 'Février' => 2, 'Mars' => 3, 'Avril' => 4, 'Mai' => 5, 'Juin' => 6, 'Juillet' => 7, 'Août' => 8, 'Septembre' => 9, 'Octobre' => 10, 'Novembre' => 11, 'Décembre' => 12])
+            ->setRequired(false)
+            ->setHelp('Mis en avant sur le site, avec la température de ce mois.')
+            ->hideOnIndex();
+        yield NumberField::new('latitude', 'Latitude')
+            ->setNumDecimals(1)
+            ->setRequired(false)
+            ->setHelp('Position de l\'épingle sur la carte du monde de l\'accueil, ex. 38,7 pour Lisbonne.')
+            ->hideOnIndex();
+        yield NumberField::new('longitude', 'Longitude')
+            ->setNumDecimals(1)
+            ->setRequired(false)
+            ->setHelp('Ex. -9,1 pour Lisbonne (ouest négatif).')
+            ->hideOnIndex();
 
         yield FormField::addFieldset('Climat')->onlyOnDetail();
         yield Field::new('periodesClimatiques', 'Climat par période')

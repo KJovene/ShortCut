@@ -11,6 +11,14 @@ enum TypeDeVoyage: string
     case Noces = 'noces';
     case Entreprise = 'entreprise';
 
+    /**
+     * @return list<string>
+     */
+    public static function valeurs(): array
+    {
+        return array_map(static fn (self $type): string => $type->value, self::cases());
+    }
+
     public function label(): string
     {
         return match ($this) {

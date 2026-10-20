@@ -4,6 +4,8 @@ info:
   description: |-
     API de l'agence ShortCut. Le catalogue (destinations, prestataires, logements, activités, tarifs)
     est réservé aux conseillers connectés : la session ouverte par /api/connexion sert ici aussi.
+    Le site public lit, sans connexion, les destinations publiées (/api/public/destinations), leur climat
+    et des exemples avec un prix « à partir de », ainsi que les pages du site (/api/pages/{slug}).
   version: 1.0.0
 servers:
   -
@@ -958,6 +960,150 @@ paths:
             schema:
               $ref: '#/components/schemas/Destination-destination.ecriture.jsonMergePatch'
         required: true
+  /api/public/destinations:
+    get:
+      operationId: api_publicdestinations_get_collection
+      tags:
+        - Destination
+      responses:
+        '200':
+          description: 'Destination collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'Destination.jsonld-public.read collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Destination.jsonld-public.read' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Destination-public.read'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of Destination resources.'
+      description: 'Retrieves the collection of Destination resources.'
+      parameters:
+        -
+          name: page
+          in: query
+          description: 'The collection page number'
+          required: false
+          deprecated: false
+          schema:
+            type: integer
+            default: 1
+          style: form
+          explode: true
+        -
+          name: miseEnAvant
+          in: query
+          description: 'Destination miseEnAvant'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+          style: form
+          explode: true
+        -
+          name: mois
+          in: query
+          description: 'Mois du voyage, au format AAAA-MM. Combiné à temperatureMin ou temperatureMax, la température porte sur ce mois.'
+          required: false
+          deprecated: false
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+            example: 2027-05
+          style: form
+          explode: true
+        -
+          name: temperatureMin
+          in: query
+          description: 'Température moyenne minimale, en °C.'
+          required: false
+          deprecated: false
+          schema:
+            type: number
+          style: form
+          explode: true
+        -
+          name: temperatureMax
+          in: query
+          description: 'Température moyenne maximale, en °C.'
+          required: false
+          deprecated: false
+          schema:
+            type: number
+          style: form
+          explode: true
+  '/api/public/destinations/{slug}':
+    get:
+      operationId: api_publicdestinations_slug_get
+      tags:
+        - Destination
+      responses:
+        '200':
+          description: 'Destination resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Destination.jsonld-public.read'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destination-public.read'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a Destination resource.'
+      description: 'Retrieves a Destination resource.'
+      parameters:
+        -
+          name: slug
+          in: path
+          description: 'Destination identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
   /api/logements:
     get:
       operationId: api_logements_get_collection
@@ -1452,6 +1598,60 @@ paths:
             schema:
               $ref: '#/components/schemas/Logement-prestation.ecriture.jsonMergePatch'
         required: true
+  '/api/pages/{slug}':
+    get:
+      operationId: api_pages_slug_get
+      tags:
+        - PageDuSite
+      responses:
+        '200':
+          description: 'PageDuSite resource'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/PageDuSite.jsonld-public.read'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageDuSite-public.read'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+        '404':
+          description: 'Not found'
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves a PageDuSite resource.'
+      description: 'Retrieves a PageDuSite resource.'
+      parameters:
+        -
+          name: slug
+          in: path
+          description: 'PageDuSite identifier'
+          required: true
+          deprecated: false
+          schema:
+            type: string
+          style: simple
+          explode: false
   /api/prestataires:
     get:
       operationId: api_prestataires_get_collection
@@ -2124,6 +2324,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       required:
         - nom
         - destination
@@ -2202,6 +2403,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       properties:
         nom:
           maxLength: 150
@@ -2276,6 +2478,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       properties:
         id:
           readOnly: true
@@ -2466,6 +2669,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
     ConstraintViolation:
       type: object
       description: 'Unprocessable entity'
@@ -2561,6 +2765,7 @@ components:
       description: |-
         Destination du catalogue, avec son climat par période.
         Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
       required:
         - pays
         - ville
@@ -2602,6 +2807,55 @@ components:
           type:
             - string
             - 'null'
+        photoAlt:
+          maxLength: 255
+          description: "Description de la photo pour les lecteurs d'écran."
+          type:
+            - string
+            - 'null'
+        nom:
+          maxLength: 150
+          description: 'Nom affiché sur le site (« Lisbonne, Portugal », « Islande ») ; vide : ville et pays.'
+          type:
+            - string
+            - 'null'
+        accroche:
+          maxLength: 200
+          description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+          type:
+            - string
+            - 'null'
+        typesDeVoyage:
+          type: array
+          items:
+            type: string
+            enum:
+              - sejour
+              - circuit
+              - groupe
+              - noces
+              - entreprise
+          description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        moisIdeal:
+          minimum: 1
+          maximum: 12
+          description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+          type:
+            - integer
+            - 'null'
+        latitude:
+          minimum: -90
+          maximum: 90
+          description: "Position sur la carte du monde de l'accueil."
+          type:
+            - number
+            - 'null'
+        longitude:
+          minimum: -180
+          maximum: 180
+          type:
+            - number
+            - 'null'
         publiee:
           default: false
           type: boolean
@@ -2614,6 +2868,7 @@ components:
       description: |-
         Destination du catalogue, avec son climat par période.
         Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
       properties:
         pays:
           maxLength: 100
@@ -2651,6 +2906,55 @@ components:
           type:
             - string
             - 'null'
+        photoAlt:
+          maxLength: 255
+          description: "Description de la photo pour les lecteurs d'écran."
+          type:
+            - string
+            - 'null'
+        nom:
+          maxLength: 150
+          description: 'Nom affiché sur le site (« Lisbonne, Portugal », « Islande ») ; vide : ville et pays.'
+          type:
+            - string
+            - 'null'
+        accroche:
+          maxLength: 200
+          description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+          type:
+            - string
+            - 'null'
+        typesDeVoyage:
+          type: array
+          items:
+            type: string
+            enum:
+              - sejour
+              - circuit
+              - groupe
+              - noces
+              - entreprise
+          description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        moisIdeal:
+          minimum: 1
+          maximum: 12
+          description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+          type:
+            - integer
+            - 'null'
+        latitude:
+          minimum: -90
+          maximum: 90
+          description: "Position sur la carte du monde de l'accueil."
+          type:
+            - number
+            - 'null'
+        longitude:
+          minimum: -180
+          maximum: 180
+          type:
+            - number
+            - 'null'
         publiee:
           default: false
           type: boolean
@@ -2663,6 +2967,7 @@ components:
       description: |-
         Destination du catalogue, avec son climat par période.
         Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
       properties:
         id:
           readOnly: true
@@ -2703,6 +3008,55 @@ components:
           type:
             - string
             - 'null'
+        photoAlt:
+          maxLength: 255
+          description: "Description de la photo pour les lecteurs d'écran."
+          type:
+            - string
+            - 'null'
+        nom:
+          maxLength: 150
+          description: 'Nom affiché sur le site (« Lisbonne, Portugal », « Islande ») ; vide : ville et pays.'
+          type:
+            - string
+            - 'null'
+        accroche:
+          maxLength: 200
+          description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+          type:
+            - string
+            - 'null'
+        typesDeVoyage:
+          type: array
+          items:
+            type: string
+            enum:
+              - sejour
+              - circuit
+              - groupe
+              - noces
+              - entreprise
+          description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        moisIdeal:
+          minimum: 1
+          maximum: 12
+          description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+          type:
+            - integer
+            - 'null'
+        latitude:
+          minimum: -90
+          maximum: 90
+          description: "Position sur la carte du monde de l'accueil."
+          type:
+            - number
+            - 'null'
+        longitude:
+          minimum: -180
+          maximum: 180
+          type:
+            - number
+            - 'null'
         publiee:
           default: false
           type: boolean
@@ -2720,6 +3074,110 @@ components:
         - pays
         - ville
         - slug
+    Destination-public.read:
+      type: object
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
+      required:
+        - pays
+        - ville
+        - slug
+      properties:
+        pays:
+          maxLength: 100
+          type: string
+        region:
+          maxLength: 100
+          type:
+            - string
+            - 'null'
+        ville:
+          maxLength: 100
+          type: string
+        slug:
+          maxLength: 150
+          pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+          description: 'Adresse de la fiche sur le site.'
+          type: string
+        tempsDeTrajet:
+          description: 'Minutes de trajet, indexées par ville de départ.'
+          type: object
+          additionalProperties:
+            type: integer
+        pointsForts:
+          maxItems: 10
+          type: array
+          items:
+            type: string
+        description:
+          maxLength: 5000
+          type:
+            - string
+            - 'null'
+        photoAlt:
+          maxLength: 255
+          description: "Description de la photo pour les lecteurs d'écran."
+          type:
+            - string
+            - 'null'
+        accroche:
+          maxLength: 200
+          description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+          type:
+            - string
+            - 'null'
+        typesDeVoyage:
+          type: array
+          items:
+            type: string
+            enum:
+              - sejour
+              - circuit
+              - groupe
+              - noces
+              - entreprise
+          description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        moisIdeal:
+          minimum: 1
+          maximum: 12
+          description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+          type:
+            - integer
+            - 'null'
+        latitude:
+          minimum: -90
+          maximum: 90
+          description: "Position sur la carte du monde de l'accueil."
+          type:
+            - number
+            - 'null'
+        longitude:
+          minimum: -180
+          maximum: 180
+          type:
+            - number
+            - 'null'
+        miseEnAvant:
+          description: "Affichée sur la page d'accueil."
+          default: false
+          type: boolean
+        periodesClimatiques:
+          readOnly: true
+          description: "Climat en lecture seule dans l'API : il se saisit dans le backoffice."
+          type: array
+          items:
+            $ref: '#/components/schemas/PeriodeClimatique-public.read'
+        photo:
+          readOnly: true
+          description: 'Adresse de la photo sur le site public.'
+          type:
+            - string
+            - 'null'
+        nom:
+          readOnly: true
+          type: string
     Destination.jsonld-destination.public_destination.interne:
       allOf:
         -
@@ -2766,6 +3224,55 @@ components:
               type:
                 - string
                 - 'null'
+            photoAlt:
+              maxLength: 255
+              description: "Description de la photo pour les lecteurs d'écran."
+              type:
+                - string
+                - 'null'
+            nom:
+              maxLength: 150
+              description: 'Nom affiché sur le site (« Lisbonne, Portugal », « Islande ») ; vide : ville et pays.'
+              type:
+                - string
+                - 'null'
+            accroche:
+              maxLength: 200
+              description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+              type:
+                - string
+                - 'null'
+            typesDeVoyage:
+              type: array
+              items:
+                type: string
+                enum:
+                  - sejour
+                  - circuit
+                  - groupe
+                  - noces
+                  - entreprise
+              description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+            moisIdeal:
+              minimum: 1
+              maximum: 12
+              description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+              type:
+                - integer
+                - 'null'
+            latitude:
+              minimum: -90
+              maximum: 90
+              description: "Position sur la carte du monde de l'accueil."
+              type:
+                - number
+                - 'null'
+            longitude:
+              minimum: -180
+              maximum: 180
+              type:
+                - number
+                - 'null'
             publiee:
               default: false
               type: boolean
@@ -2786,6 +3293,115 @@ components:
       description: |-
         Destination du catalogue, avec son climat par période.
         Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
+    Destination.jsonld-public.read:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          required:
+            - pays
+            - ville
+            - slug
+          properties:
+            pays:
+              maxLength: 100
+              type: string
+            region:
+              maxLength: 100
+              type:
+                - string
+                - 'null'
+            ville:
+              maxLength: 100
+              type: string
+            slug:
+              maxLength: 150
+              pattern: '^([a-z0-9]+(-[a-z0-9]+)*)$'
+              description: 'Adresse de la fiche sur le site.'
+              type: string
+            tempsDeTrajet:
+              description: 'Minutes de trajet, indexées par ville de départ.'
+              type: object
+              additionalProperties:
+                type: integer
+            pointsForts:
+              maxItems: 10
+              type: array
+              items:
+                type: string
+            description:
+              maxLength: 5000
+              type:
+                - string
+                - 'null'
+            photoAlt:
+              maxLength: 255
+              description: "Description de la photo pour les lecteurs d'écran."
+              type:
+                - string
+                - 'null'
+            accroche:
+              maxLength: 200
+              description: "Une phrase d'accroche, affichée sur la carte du monde de l'accueil."
+              type:
+                - string
+                - 'null'
+            typesDeVoyage:
+              type: array
+              items:
+                type: string
+                enum:
+                  - sejour
+                  - circuit
+                  - groupe
+                  - noces
+                  - entreprise
+              description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+            moisIdeal:
+              minimum: 1
+              maximum: 12
+              description: 'Meilleur mois pour partir, de 1 (janvier) à 12 (décembre).'
+              type:
+                - integer
+                - 'null'
+            latitude:
+              minimum: -90
+              maximum: 90
+              description: "Position sur la carte du monde de l'accueil."
+              type:
+                - number
+                - 'null'
+            longitude:
+              minimum: -180
+              maximum: 180
+              type:
+                - number
+                - 'null'
+            miseEnAvant:
+              description: "Affichée sur la page d'accueil."
+              default: false
+              type: boolean
+            periodesClimatiques:
+              readOnly: true
+              description: "Climat en lecture seule dans l'API : il se saisit dans le backoffice."
+              type: array
+              items:
+                $ref: '#/components/schemas/PeriodeClimatique.jsonld-public.read'
+            photo:
+              readOnly: true
+              description: 'Adresse de la photo sur le site public.'
+              type:
+                - string
+                - 'null'
+            nom:
+              readOnly: true
+              type: string
+      description: |-
+        Destination du catalogue, avec son climat par période.
+        Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+        Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
     Error:
       type: object
       description: 'A representation of common errors.'
@@ -2951,6 +3567,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       required:
         - nom
         - destination
@@ -3029,6 +3646,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       properties:
         nom:
           maxLength: 150
@@ -3103,6 +3721,7 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
       properties:
         id:
           readOnly: true
@@ -3293,7 +3912,100 @@ components:
         Logement ou activité proposé par un prestataire dans une destination.
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+        Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
+    PageDuSite-public.read:
+      type: object
+      description: |-
+        Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+        Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+        répond 404 comme une page inconnue.
+      required:
+        - titre
+        - slug
+      properties:
+        titre:
+          type: string
+        slug:
+          type: string
+        seoTitre:
+          type:
+            - string
+            - 'null'
+        seoDescription:
+          type:
+            - string
+            - 'null'
+        contenu:
+          readOnly: true
+          description: 'Contenu lu par le site : une page encore vide donne un texte vide.'
+          type: string
+        photos:
+          readOnly: true
+          description: "Adresses des photos, servies par l'API sous /uploads/pages."
+          type: array
+          items:
+            type: string
+    PageDuSite.jsonld-public.read:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          required:
+            - titre
+            - slug
+          properties:
+            titre:
+              type: string
+            slug:
+              type: string
+            seoTitre:
+              type:
+                - string
+                - 'null'
+            seoDescription:
+              type:
+                - string
+                - 'null'
+            contenu:
+              readOnly: true
+              description: 'Contenu lu par le site : une page encore vide donne un texte vide.'
+              type: string
+            photos:
+              readOnly: true
+              description: "Adresses des photos, servies par l'API sous /uploads/pages."
+              type: array
+              items:
+                type: string
+      description: |-
+        Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+        Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+        répond 404 comme une page inconnue.
     PeriodeClimatique-destination.public_destination.interne:
+      type: object
+      required:
+        - debut
+        - fin
+        - temperatureMoyenne
+      properties:
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        temperatureMoyenne:
+          minimum: -50
+          maximum: 60
+          description: 'En °C.'
+          type: number
+        pluieMm:
+          minimum: 0
+          description: 'Précipitations sur la période, en mm.'
+          type:
+            - integer
+            - 'null'
+    PeriodeClimatique-public.read:
       type: object
       required:
         - debut
@@ -3341,11 +4053,33 @@ components:
           type:
             - integer
             - 'null'
+    PeriodeClimatique.jsonld-public.read:
+      type: object
+      required:
+        - debut
+        - fin
+        - temperatureMoyenne
+      properties:
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+        temperatureMoyenne:
+          minimum: -50
+          maximum: 60
+          description: 'En °C.'
+          type: number
+        pluieMm:
+          minimum: 0
+          description: 'Précipitations sur la période, en mm.'
+          type:
+            - integer
+            - 'null'
     Prestataire-prestataire.ecriture:
       type: object
-      description: |-
-        Hébergeur, transporteur, guide ou prestataire d'activités.
-        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
       required:
         - nom
         - type
@@ -3397,9 +4131,7 @@ components:
                   type: string
     Prestataire-prestataire.ecriture.jsonMergePatch:
       type: object
-      description: |-
-        Hébergeur, transporteur, guide ou prestataire d'activités.
-        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
       properties:
         nom:
           maxLength: 150
@@ -3448,9 +4180,7 @@ components:
                   type: string
     Prestataire-prestataire.lecture:
       type: object
-      description: |-
-        Hébergeur, transporteur, guide ou prestataire d'activités.
-        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
       properties:
         id:
           readOnly: true
@@ -3557,15 +4287,10 @@ components:
           required:
             - nom
             - type
-      description: |-
-        Hébergeur, transporteur, guide ou prestataire d'activités.
-        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
     Tarif-prestation.public_prestation.interne_prestation.tarifs:
       type: object
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
       properties:
         id:
           readOnly: true
@@ -3597,10 +4322,7 @@ components:
         - prixCentimes
     Tarif-tarif.ecriture:
       type: object
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
       required:
         - prestation
         - debut
@@ -3634,10 +4356,7 @@ components:
             - 'null'
     Tarif-tarif.ecriture.jsonMergePatch:
       type: object
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
       properties:
         prestation:
           type: string
@@ -3666,10 +4385,7 @@ components:
             - 'null'
     Tarif-tarif.lecture:
       type: object
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
       properties:
         id:
           readOnly: true
@@ -3742,10 +4458,7 @@ components:
             - debut
             - fin
             - prixCentimes
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
     Tarif.jsonld-tarif.lecture:
       allOf:
         -
@@ -3789,10 +4502,7 @@ components:
             - debut
             - fin
             - prixCentimes
-      description: |-
-        Prix d'un logement ou d'une activité sur une période.
-        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
   responses: {  }
   parameters: {  }
   examples: {  }
@@ -3806,28 +4516,32 @@ tags:
     description: |-
       Destination du catalogue, avec son climat par période.
       Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
+      Groupe `public:read` : réponses des opérations publiques /api/public/… (voir aussi DestinationPubliqueNormalizer).
+  -
+    name: PageDuSite
+    description: |-
+      Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+      Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+      répond 404 comme une page inconnue.
   -
     name: Prestataire
-    description: |-
-      Hébergeur, transporteur, guide ou prestataire d'activités.
-      Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
+    description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
   -
     name: Logement
     description: |-
       Logement ou activité proposé par un prestataire dans une destination.
       Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
       Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
   -
     name: Activite
     description: |-
       Logement ou activité proposé par un prestataire dans une destination.
       Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
       Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+      Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
   -
     name: Tarif
-    description: |-
-      Prix d'un logement ou d'une activité sur une période.
-      Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
-      Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
+    description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
 webhooks: {  }
 

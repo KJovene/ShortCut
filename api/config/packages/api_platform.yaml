@@ -4,6 +4,8 @@ api_platform:
     description: |
         API de l'agence ShortCut. Le catalogue (destinations, prestataires, logements, activités, tarifs)
         est réservé aux conseillers connectés : la session ouverte par /api/connexion sert ici aussi.
+        Le site public lit, sans connexion, les destinations publiées (/api/public/destinations), leur climat
+        et des exemples avec un prix « à partir de », ainsi que les pages du site (/api/pages/{slug}).
     formats:
         jsonld: ['application/ld+json']
         json: ['application/json']

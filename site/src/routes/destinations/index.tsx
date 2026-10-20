@@ -1,8 +1,11 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { z } from 'zod'
 import { CarteDestination } from '@/components/ui/CarteDestination'
 import { EnTetePage } from '@/components/ui/EnTetePage'
-import { DESTINATIONS, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
 
@@ -16,6 +19,7 @@ const filtresSchema = z.object({
 
 export const Route = createFileRoute('/destinations/')({
   validateSearch: filtresSchema,
+  loader: ({ context }) => context.queryClient.ensureQueryData(destinationsQuery()),
   head: () => ({
     meta: [
       { title: 'Destinations · Où partir, et quand ?' },
@@ -26,6 +30,8 @@ export const Route = createFileRoute('/destinations/')({
       },
     ],
   }),
+  pendingComponent: PageEnChargement,
+  errorComponent: PageIndisponible,
   component: DestinationsPage,
 })
 
@@ -38,11 +44,13 @@ function DestinationsPage() {
   const { mois, temperature, type } = Route.useSearch()
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
+  const { data: destinations } = useSuspenseQuery(destinationsQuery())
 
-  const resultats = DESTINATIONS.filter(
+  const resultats = destinations.filter(
     (d) =>
       (type === undefined || d.types.includes(type)) &&
-      (temperature === undefined || d.temperatures[mois ?? d.moisIdeal] >= temperature),
+      (temperature === undefined ||
+        (d.temperatures[mois ?? d.moisIdeal] ?? -Infinity) >= temperature),
   )
 
   const changer = (filtres: Partial<z.infer<typeof filtresSchema>>) =>
