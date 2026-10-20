@@ -49,7 +49,7 @@ final class OutilsDeRechercheTest extends KernelTestCase
         // test les a retirés, ils sont construits ici avec les mêmes dépôts.
         $destinations = $this->em->getRepository(Destination::class);
         $prestations = $this->em->getRepository(Prestation::class);
-        $this->destinations = new ChercherDestinations($destinations, $prestations, new MockClock('2026-10-19'));
+        $this->destinations = new ChercherDestinations($destinations, $this->em, $prestations, new MockClock('2026-10-19'));
         $this->logements = new ChercherLogements($destinations, $prestations);
         $this->activites = new ChercherActivites($destinations, $prestations);
         $this->contexte = new ContexteAgent(new Demande(), new Conversation(), AgentIA::Recherche);

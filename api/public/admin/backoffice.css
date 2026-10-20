@@ -387,3 +387,168 @@ fieldset.form-fieldset,
     object-fit: cover;
     border-radius: 6px;
 }
+
+/* Écran de confirmation d'une proposition (#209) */
+.bo-bandeau {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid #F2D9A6;
+    border-radius: 12px;
+    background: #FFF8E8;
+    color: #5C4200;
+    font-size: 14px;
+}
+
+.bo-bandeau--confirmee {
+    border-color: #BFE3CB;
+    background: #EFF8F2;
+    color: #1F6B3A;
+}
+
+.bo-confirmation {
+    margin-bottom: 20px;
+}
+
+.bo-confirmation .bo-tableau {
+    min-width: 860px;
+}
+
+.bo-confirmation tfoot th {
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--bo-texte);
+    border-top: 1px solid var(--bo-bordure-douce);
+    padding: 10px 8px 10px 18px;
+}
+
+.bo-confirmation tfoot td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.bo-confirmation tfoot .bo-total th,
+.bo-confirmation tfoot .bo-total td {
+    border-top: 2px solid var(--bo-bordure);
+    font-weight: 800;
+}
+
+.bo-type {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--bo-libelle);
+}
+
+.bo-nowrap { white-space: nowrap; }
+
+.bo-saisie {
+    width: 170px;
+}
+
+.bo-saisie .input-group {
+    flex-wrap: nowrap;
+}
+
+.bo-saisie input {
+    text-align: right;
+}
+
+.bo-ecart {
+    display: inline-block;
+    font-weight: 600;
+}
+
+.bo-ecart small {
+    display: block;
+    font-size: 12px;
+}
+
+.bo-ecart--hausse { color: #8F2A1C; }
+.bo-ecart--baisse { color: #1F6B3A; }
+.bo-ecart--egal { color: var(--bo-texte-doux); }
+
+.bo-ecart--fort {
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #F9DED6;
+    font-weight: 800;
+}
+
+.bo-ecart--fort.bo-ecart--baisse {
+    background: #DDF1E4;
+}
+
+.bo-remplacer summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.bo-remplacer summary::-webkit-details-marker {
+    display: none;
+}
+
+.bo-remplacer-choix {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    min-width: 280px;
+}
+
+.bo-carte-pied {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--bo-bordure);
+}
+
+.bo-carte-pied p {
+    margin: 0;
+    max-width: 640px;
+    font-size: 13px;
+}
+
+.bo-boutons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.bo-carte-corps {
+    padding: 14px 18px;
+    font-size: 14px;
+}
+
+.bo-carte-corps h3 {
+    margin-top: 12px;
+}
+
+.bo-carte-corps h3:first-child {
+    margin-top: 0;
+}
+
+.bo-colonnes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+.bo-programme,
+.bo-liste {
+    padding-left: 18px;
+}
+
+.bo-programme li {
+    margin-bottom: 6px;
+}
+
+.bo-conversation {
+    max-height: 480px;
+    overflow-y: auto;
+}

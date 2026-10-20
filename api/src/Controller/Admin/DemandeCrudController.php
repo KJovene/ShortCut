@@ -2,11 +2,17 @@
 
 namespace App\Controller\Admin;
 
+use App\Confirmation\ConfirmationImpossible;
+use App\Confirmation\ConfirmationService;
 use App\Controller\AiguillageController;
 use App\Entity\Demande;
+use App\Entity\Prestation;
+use App\Entity\Proposition;
 use App\Entity\Utilisateur;
+use App\Enum\NiveauBudget;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
+use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
 use App\Form\TexteSuggereType;
 use App\Repository\DemandeRepository;
@@ -14,6 +20,7 @@ use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -39,7 +46,20 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Form\ClickableInterface;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\MoneyType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\PositiveOrZero;
+use Symfony\Component\Validator\Constraints\Range;
 
 /**
  * Demandes des clients, point d'entrée du conseiller chaque matin (US01) :
@@ -50,14 +70,19 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
  * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController). La fiche montre pourquoi le
  * chatbot a transmis la demande et la conversation, que le conseiller reprend avec « Reprendre la conversation ».
  * L'accès à une fiche (consultation, modification, suppression) est vérifié par DemandeVoter.
+ * Depuis la fiche, « Confirmer la proposition » ouvre l'écran de confirmation (#209, ConfirmationService).
  *
  * @extends AbstractCrudController<Demande>
  */
 #[IsGranted('ROLE_CONSEILLER')]
 final class DemandeCrudController extends AbstractCrudController
 {
-    public function __construct(private readonly DemandeRepository $demandes)
-    {
+    public function __construct(
+        private readonly DemandeRepository $demandes,
+        private readonly ConfirmationService $confirmations,
+        private readonly FormFactoryInterface $formulaires,
+        #[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl,
+    ) {
     }
 
     public static function getEntityFqcn(): string
@@ -100,6 +125,11 @@ final class DemandeCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        // Seulement quand une proposition a été envoyée au client : un brouillon du chatbot se relit d'abord (#207).
+        $confirmer = Action::new('confirmerProposition', 'Confirmer la proposition', 'fa fa-file-signature')
+            ->linkToCrudAction('confirmation')
+            ->displayIf(fn (Demande $demande): bool => null !== $this->confirmations->estimation($demande))
+            ->asPrimaryAction();
         // En POST, jeton CSRF dans l'URL : le formulaire généré par EasyAdmin n'a pas de corps.
         $attribuer = Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
             ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_attribuer', [
@@ -122,8 +152,10 @@ final class DemandeCrudController extends AbstractCrudController
             ->add(Crud::PAGE_INDEX, $attribuer)
             ->add(Crud::PAGE_DETAIL, $attribuer)
             ->add(Crud::PAGE_DETAIL, $reprendre)
+            ->add(Crud::PAGE_DETAIL, $confirmer)
             ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
             ->setPermission('reprendre', DemandeVoter::ATTRIBUER)
+            ->setPermission('confirmerProposition', DemandeVoter::MODIFIER)
             // Vérifié sur chaque fiche : un conseiller qui saisit l'URL d'une demande d'un autre reçoit un 403.
             ->setPermission(Action::DETAIL, DemandeVoter::VOIR)
             ->setPermission(Action::EDIT, DemandeVoter::MODIFIER)
@@ -252,6 +284,159 @@ final class DemandeCrudController extends AbstractCrudController
         yield Field::new('propositions', 'Dernière version')
             ->setTemplatePath('admin/champ/proposition.html.twig')
             ->onlyOnDetail();
+    }
+
+    /**
+     * Écran de confirmation (#209) : prix confirmés de chaque ligne et frais de dossier, écarts avec l'estimation,
+     * puis confirmation. Une proposition confirmée s'affiche en lecture seule.
+     */
+    #[AdminRoute('/{id}/confirmation', name: 'confirmation', options: ['methods' => ['GET', 'POST']])]
+    public function confirmation(#[MapEntity(id: 'id')] Demande $demande, Request $request): Response
+    {
+        $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
+        $estimation = $this->confirmations->estimation($demande)
+            ?? throw $this->createNotFoundException('Cette demande n\'a pas encore de proposition envoyée au client.');
+        $version = $this->confirmations->versionDeConfirmation($demande, $estimation);
+
+        $formulaire = null;
+        if (StatutProposition::Brouillon === $version->getStatut()) {
+            $formulaire = $this->formulaireDesPrix($version);
+            $formulaire->handleRequest($request);
+            if ($formulaire->isSubmitted() && $formulaire->isValid()) {
+                $prix = [];
+                foreach ($version->getLignes() as $ligne) {
+                    $prix[(int) $ligne->getId()] = $formulaire->get('ligne_'.$ligne->getId())->getData();
+                }
+                $this->confirmations->saisir($version, $prix, (int) $formulaire->get('fraisDeDossier')->getData());
+
+                $bouton = $formulaire->get('confirmer');
+                if (!$bouton instanceof ClickableInterface || !$bouton->isClicked()) {
+                    $this->addFlash('success', 'Prix enregistrés.');
+                } elseif (($conseiller = $this->getUser()) instanceof Utilisateur) {
+                    try {
+                        $this->confirmations->confirmer($version, $estimation, $conseiller);
+                        $this->addFlash('success', \sprintf('Proposition confirmée : la version %d fait foi.', $version->getVersion()));
+                    } catch (ConfirmationImpossible $e) {
+                        $this->addFlash('danger', $e->getMessage());
+                    }
+                }
+
+                return $this->redirectVersLaConfirmation($demande);
+            }
+        }
+
+        $remplacements = [];
+        foreach ($version->getLignes() as $ligne) {
+            foreach ($this->confirmations->logementsDeRemplacement($ligne) as $logement) {
+                try {
+                    $estime = $this->confirmations->estimerLogement($logement, $ligne, $demande);
+                    $remplacements[(int) $ligne->getId()][] = ['logement' => $logement, 'centimes' => $estime['centimes'], 'raison' => null];
+                } catch (ConfirmationImpossible $e) {
+                    $remplacements[(int) $ligne->getId()][] = ['logement' => $logement, 'centimes' => null, 'raison' => $e->getMessage()];
+                }
+            }
+        }
+
+        return $this->render('admin/demande/confirmation.html.twig', [
+            'demande' => $demande,
+            'estimation' => $estimation,
+            'version' => $version,
+            'lignes' => ConfirmationService::lignesTriees($version),
+            'comparaison' => $this->confirmations->comparer($version, $estimation),
+            'marge' => $this->confirmations->margePourcentage(),
+            'niveaux' => array_combine(
+                array_map(static fn (NiveauBudget $n): string => $n->value, NiveauBudget::cases()),
+                array_map(static fn (NiveauBudget $n): string => $n->label(), NiveauBudget::cases()),
+            ),
+            'formulaire' => $formulaire?->createView(),
+            'remplacements' => $remplacements,
+            // Page « Ma proposition » : le lien de l'estimation mène aussi à la version confirmée.
+            'lienClient' => \sprintf('%s/proposition/%s', rtrim($this->siteUrl, '/'), $version->getJetonPublic()),
+        ]);
+    }
+
+    /** Retire une activité de la version en préparation. */
+    #[AdminRoute('/{id}/confirmation/retirer', name: 'confirmation_retirer', options: ['methods' => ['POST']])]
+    public function retirerUneActivite(#[MapEntity(id: 'id')] Demande $demande, Request $request): Response
+    {
+        $version = $this->brouillonAModifier($demande, $request, 'retirer');
+        try {
+            $this->confirmations->retirer($version, $request->request->getInt('ligne'));
+            $this->addFlash('success', 'Activité retirée de la proposition.');
+        } catch (ConfirmationImpossible $e) {
+            $this->addFlash('danger', $e->getMessage());
+        }
+
+        return $this->redirectVersLaConfirmation($demande);
+    }
+
+    /** Remplace un logement de la version en préparation par un autre de la même destination. */
+    #[AdminRoute('/{id}/confirmation/remplacer', name: 'confirmation_remplacer', options: ['methods' => ['POST']])]
+    public function remplacerUnLogement(#[MapEntity(id: 'id')] Demande $demande, Request $request, EntityManagerInterface $em): Response
+    {
+        $version = $this->brouillonAModifier($demande, $request, 'remplacer');
+        $logement = $em->find(Prestation::class, $request->request->getInt('logement'));
+        try {
+            if (null === $logement) {
+                throw new ConfirmationImpossible('Choisissez le logement de remplacement.');
+            }
+            $ligne = $this->confirmations->remplacer($version, $request->request->getInt('ligne'), $logement);
+            $this->addFlash('success', \sprintf('Logement remplacé par %s : saisissez son prix confirmé.', $ligne->getLibelle()));
+        } catch (ConfirmationImpossible $e) {
+            $this->addFlash('danger', $e->getMessage());
+        }
+
+        return $this->redirectVersLaConfirmation($demande);
+    }
+
+    /**
+     * Un champ par ligne (prix confirmé, total de la ligne) et les frais de dossier. Les prix sont obligatoires
+     * pour confirmer, pas pour enregistrer : le bouton « Enregistrer » ne déclenche pas la validation du navigateur.
+     *
+     * @return FormInterface<mixed>
+     */
+    private function formulaireDesPrix(Proposition $version): FormInterface
+    {
+        [$min, $max] = $this->confirmations->bornesDesFrais();
+        $prix = ['currency' => 'EUR', 'divisor' => 100, 'input' => 'integer', 'required' => true, 'label' => false];
+
+        $constructeur = $this->formulaires->createNamedBuilder('confirmation', FormType::class);
+        foreach ($version->getLignes() as $ligne) {
+            $constructeur->add('ligne_'.$ligne->getId(), MoneyType::class, $prix + [
+                'data' => $ligne->getPrixConfirmeCentimes(),
+                'constraints' => [new PositiveOrZero()],
+                'attr' => ['aria-label' => 'Prix confirmé : '.$ligne->getLibelle()],
+            ]);
+        }
+
+        return $constructeur
+            ->add('fraisDeDossier', MoneyType::class, $prix + [
+                'data' => $version->getFraisDeDossierCentimes(),
+                'constraints' => [new NotNull(), new Range(min: $min, max: $max, notInRangeMessage: \sprintf(
+                    'Les frais de dossier vont de %d à %d €.', intdiv($min, 100), intdiv($max, 100),
+                ))],
+                'attr' => ['aria-label' => 'Frais de dossier confirmés'],
+            ])
+            ->add('enregistrer', SubmitType::class, ['label' => 'Enregistrer', 'attr' => ['formnovalidate' => true, 'class' => 'btn btn-secondary']])
+            ->add('confirmer', SubmitType::class, ['label' => 'Confirmer la proposition', 'attr' => ['class' => 'btn btn-primary']])
+            ->getForm();
+    }
+
+    /** Le brouillon de la demande, après vérification du droit de modifier et du jeton CSRF. */
+    private function brouillonAModifier(Demande $demande, Request $request, string $operation): Proposition
+    {
+        $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
+        if (!$this->isCsrfTokenValid('confirmation_'.$operation.'_'.$demande->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Jeton de sécurité invalide : rechargez la page.');
+        }
+        $estimation = $this->confirmations->estimation($demande) ?? throw $this->createNotFoundException();
+
+        return $this->confirmations->versionDeConfirmation($demande, $estimation);
+    }
+
+    private function redirectVersLaConfirmation(Demande $demande): Response
+    {
+        return $this->redirectToRoute('admin_demande_confirmation', ['id' => $demande->getId()]);
     }
 
     private function estAdministrateur(): bool

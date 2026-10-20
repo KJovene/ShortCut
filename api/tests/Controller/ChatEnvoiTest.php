@@ -8,8 +8,8 @@ use App\Entity\Conversation;
 use App\Entity\Destination;
 use App\Entity\JournalIA;
 use App\Entity\PeriodeClimatique;
-use App\Enum\MotifTransmission;
 use App\Enum\AgentIA;
+use App\Enum\MotifTransmission;
 use App\Tests\Chatbot\FausseApiClaude;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -285,7 +285,8 @@ final class ChatEnvoiTest extends WebTestCase
         $messages = $this->claude->requetes[1]['corps']['messages'];
         $sortie = json_decode(end($messages)['content'][0]['content'], true, flags: \JSON_THROW_ON_ERROR);
         self::assertArrayNotHasKey('donneesManquantes', $sortie);
-        self::assertSame('cairns', $sortie['destinations'][0]['slug']);
+        // Sans logement tarifé, Cairns est écartée (#202) : son climat est saisi, la demande n'est pas transmise.
+        self::assertSame('cairns', $sortie['ecartees'][0]['slug']);
         self::assertFalse($this->conversation($jeton)->getDemande()?->isPrioritaire());
     }
 

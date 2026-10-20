@@ -8,7 +8,6 @@ use App\Entity\Demande;
 use App\Entity\LigneDePrestation;
 use App\Entity\Proposition;
 use App\Enum\NiveauBudget;
-use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeLigne;
 use App\Enum\TypeProposition;
@@ -16,12 +15,14 @@ use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Serializer\Exception\ExceptionInterface;
 use Symfony\Component\Serializer\Exception\NotNormalizableValueException;
 use Symfony\Component\Serializer\Exception\PartialDenormalizationException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 /**
  * Enregistre une version de proposition (ticket #207, docs/outils.md « enregistrer_proposition ») : le texte rédigé
@@ -32,7 +33,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * activités du niveau détaillé placées dans le programme. Toutes les raisons d'un refus sont données d'un coup.
  *
  * La version est enregistrée en brouillon : le client ne la voit qu'une fois que le conseiller l'a relue et envoyée
- * (envoyer(), depuis la fiche demande du backoffice).
+ * (envoyer(), depuis la fiche demande du backoffice). Les statuts changent par les workflows « proposition » et
+ * « demande » (config/packages/workflow.yaml, #210).
  */
 final class PropositionService
 {
@@ -44,6 +46,8 @@ final class PropositionService
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
         private readonly ClockInterface $horloge,
+        #[Target('proposition')] private readonly WorkflowInterface $workflowProposition,
+        #[Target('demande')] private readonly WorkflowInterface $workflowDemande,
     ) {
     }
 
@@ -143,18 +147,27 @@ final class PropositionService
      */
     public function envoyer(Proposition $proposition): void
     {
-        if (StatutProposition::Brouillon !== $proposition->getStatut()) {
+        if (TypeProposition::Premiere !== $proposition->getType()) {
+            throw new \DomainException('Une version de confirmation ne s\'envoie pas : elle se confirme depuis « Confirmer la proposition ».');
+        }
+        if (!$this->workflowProposition->can($proposition, 'envoyer')) {
             throw new \DomainException(\sprintf('La version %d est déjà %s.', $proposition->getVersion(), mb_strtolower($proposition->getStatut()->label())));
         }
         $demande = $proposition->getDemande() ?? throw new \LogicException('Proposition sans demande.');
+        if (!$this->workflowDemande->can($demande, 'envoyer_proposition')) {
+            throw new \DomainException(\sprintf('La demande est « %s » : une nouvelle proposition ne peut plus lui être envoyée.', $demande->getStatut()->label()));
+        }
 
+        // Les versions encore valables (envoyée, confirmée ou en cours de confirmation) sont remplacées ; une version
+        // acceptée par le client reste telle quelle.
         foreach ($demande->getPropositions() as $autre) {
-            if ($autre !== $proposition && StatutProposition::Remplacee !== $autre->getStatut()) {
-                $autre->setStatut(StatutProposition::Remplacee);
+            if ($autre !== $proposition && $this->workflowProposition->can($autre, 'remplacer')) {
+                $this->workflowProposition->apply($autre, 'remplacer');
             }
         }
-        $proposition->setStatut(StatutProposition::Envoyee);
-        $demande->setStatut(StatutDemande::PropositionEnvoyee)->setModifieLe($this->horloge->now());
+        $this->workflowProposition->apply($proposition, 'envoyer');
+        $this->workflowDemande->apply($demande, 'envoyer_proposition');
+        $demande->setModifieLe($this->horloge->now());
         $this->em->flush();
     }
 
@@ -216,8 +229,8 @@ final class PropositionService
         $derniere = 0;
         foreach ($demande->getPropositions() as $precedente) {
             $derniere = max($derniere, $precedente->getVersion());
-            if (StatutProposition::Brouillon === $precedente->getStatut()) {
-                $precedente->setStatut(StatutProposition::Remplacee);
+            if (StatutProposition::Brouillon === $precedente->getStatut() && TypeProposition::Premiere === $precedente->getType()) {
+                $this->workflowProposition->apply($precedente, 'remplacer');
             }
         }
 
