@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { Fiche } from './api'
 import type { Conversation, Message } from './assistant'
 
 export interface EtatChat {
@@ -18,6 +19,13 @@ export interface EtatChat {
   brouillon: string
 }
 
+/** Conversation déjà commencée, reprise depuis l'espace client (« Modifier le voyage »). */
+export interface Reprise {
+  jeton: string
+  messages: { role: string; contenu: string }[]
+  fiche: Fiche
+}
+
 export interface ActionsChat {
   envoyer: (texte: string) => void
   choisirAmbiance: (slug: string) => void
@@ -25,6 +33,8 @@ export interface ActionsChat {
   fermer: () => void
   setBrouillon: (texte: string) => void
   recommencer: () => void
+  /** Recharge une conversation existante et ouvre le chat pour la continuer. */
+  reprendre: (reprise: Reprise) => void
 }
 
 export const ChatContext = createContext<(EtatChat & ActionsChat) | null>(null)

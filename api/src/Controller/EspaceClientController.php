@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Chatbot\Outil\EnregistrerExigences;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
@@ -57,8 +58,15 @@ final class EspaceClientController extends AbstractController
                 'totalParPersonneCentimes' => $proposition->getTotalParPersonneCentimes(),
             ],
             'conversation' => null === $conversation ? null : [
+                // « Modifier le voyage » : le client reprend sa conversation dans le chat, sur n'importe quel
+                // navigateur. Le jeton n'est remis qu'au client de la demande.
+                'jeton' => $conversation->getJeton(),
+                // Un conseiller a repris la main : le chatbot ne répond plus, le client passe par un rendez-vous.
+                'repriseParConseiller' => $conversation->isRepriseParConseiller(),
                 'debutLe' => $conversation->getDebutLe()->format(\DATE_ATOM),
                 'messages' => $conversation->getMessages(),
+                // Fiche au format du chat (événement « demande »), pour son récapitulatif.
+                'fiche' => EnregistrerExigences::fiche($demande),
             ],
         ];
     }

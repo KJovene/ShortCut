@@ -1,9 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
-import { IconBulle, IconCoche } from '@/components/ui/icons'
+import { IconBulle, IconCoche, IconPersonne } from '@/components/ui/icons'
 import { formatEuros, MOIS } from '@/data/catalogue'
 import {
+  assistantDisponible,
   auteurMessage,
   dateCourte,
   type DemandeClient,
@@ -19,6 +20,8 @@ import {
   titreDemande,
   VOYAGES_EN_COURS_MAX,
 } from '@/features/espace/espace'
+import { urlRendezVous } from '@/features/espace/rendezVous'
+import { useChat } from '@/features/chat/chatContext'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { profilQuery } from '@/lib/auth'
 import { cn } from '@/lib/cn'
@@ -195,6 +198,8 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
 
         {demande.statut !== 'perdue' && <Etapes demande={demande} />}
 
+        {estEnCours(demande) && <ModifierVoyage demande={demande} />}
+
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3.5">
           <div className="flex flex-col gap-1.5 rounded-[18px] bg-creme px-[18px] py-4">
             {demande.proposition ? (
@@ -251,8 +256,10 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                   </strong>
                 </div>
                 <span className="text-[13px] leading-[1.45] text-taupe">
-                  {conseiller} suit votre dossier : prix, disponibilités et modifications passent
-                  désormais par votre conseiller.
+                  {conseiller} suit votre dossier : les changements importants ou particuliers
+                  passent par votre conseiller.
+                  {assistantDisponible(demande) &&
+                    ' Pour un ajustement léger (voyageurs, envies, contraintes), passez par l’assistant avec « Modifier le voyage ».'}
                 </span>
               </>
             ) : (
@@ -265,6 +272,101 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
         </div>
       </div>
     </section>
+  )
+}
+
+/**
+ * « Modifier le voyage » : un rendez-vous avec le conseiller pour les changements importants (Calendly), ou la
+ * conversation avec l'assistant pour un ajustement léger, tant qu'aucun conseiller n'a repris la main.
+ */
+function ModifierVoyage({ demande }: { demande: DemandeClient }) {
+  const [ouvert, setOuvert] = useState(false)
+  const { reprendre } = useChat()
+  const conseiller = prenomConseiller(demande)
+  const conversation = demande.conversation
+  const rendezVous = urlRendezVous()
+
+  return (
+    <div className="flex flex-col gap-3 rounded-[18px] border-[1.5px] border-lin p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 text-sm text-taupe">Une date, un voyageur ou une envie à changer ?</p>
+        <button
+          type="button"
+          aria-expanded={ouvert}
+          aria-controls="modifier-voyage"
+          onClick={() => setOuvert((o) => !o)}
+          className="flex min-h-11 items-center rounded-full border-[1.5px] border-encre px-5 text-sm font-bold hover:bg-sable"
+        >
+          Modifier le voyage
+        </button>
+      </div>
+
+      {ouvert && (
+        <div
+          id="modifier-voyage"
+          className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3"
+        >
+          {rendezVous && (
+            <a
+              href={rendezVous}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-start gap-3 rounded-2xl bg-creme p-4 text-encre no-underline hover:bg-sable"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-encre text-creme"
+              >
+                <IconPersonne size={20} />
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <strong>
+                  Prendre rendez-vous avec {conseiller ?? 'un conseiller'}
+                  <span className="sr-only"> (nouvel onglet)</span>
+                </strong>
+                <span className="text-[13px] text-taupe">
+                  Pour changer de destination, de dates ou de budget : choisissez un créneau.
+                </span>
+              </span>
+            </a>
+          )}
+
+          {conversation && assistantDisponible(demande) ? (
+            <button
+              type="button"
+              onClick={() =>
+                reprendre({
+                  jeton: conversation.jeton,
+                  messages: conversation.messages,
+                  fiche: conversation.fiche,
+                })
+              }
+              className="flex items-start gap-3 rounded-2xl bg-creme p-4 text-left hover:bg-sable"
+            >
+              <span
+                aria-hidden="true"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full bg-terre text-white"
+              >
+                <IconBulle size={20} />
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <strong>Continuer avec l’assistant</strong>
+                <span className="text-[13px] text-taupe">
+                  Pour un ajustement léger : nombre de voyageurs, envies, contraintes.
+                </span>
+              </span>
+            </button>
+          ) : (
+            <p className="m-0 rounded-2xl bg-creme p-4 text-[13px] text-taupe">
+              {conseiller
+                ? `${conseiller} suit désormais votre dossier : les changements import passent par votre conseiller`
+                : 'Les changements de ce dossier passent par un conseiller de l’agence'}
+              {rendezVous ? ', sur rendez-vous.' : '.'}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -480,8 +582,10 @@ function Fil({ demande }: { demande: DemandeClient }) {
       </div>
       {conseiller && (
         <p className="m-0 border-t border-sable px-[22px] py-3.5 text-[13px] text-taupe">
-          Dossier suivi par <strong className="text-encre">{conseiller}</strong> : pour modifier
-          votre voyage, passez par votre conseiller.
+          Dossier suivi par <strong className="text-encre">{conseiller}</strong>
+          {assistantDisponible(demande)
+            ? ' : ajustez les détails avec l’assistant (« Modifier le voyage »), votre conseiller voit chaque changement.'
+            : ' : pour modifier votre voyage, passez par votre conseiller.'}
         </p>
       )}
     </article>

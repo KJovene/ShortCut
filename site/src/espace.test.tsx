@@ -17,6 +17,27 @@ const CAMILLE: Profil = {
   role: 'ROLE_CLIENT',
 }
 
+/** Fiche de la demande au format du chat (EnregistrerExigences::fiche). */
+const FICHE: NonNullable<DemandeClient['conversation']>['fiche'] = {
+  typeDeVoyage: 'noces',
+  lieuOuZone: 'Santorin',
+  villeDepart: 'Paris',
+  dateDebut: '2027-05-10',
+  dateFin: '2027-05-20',
+  datesFlexibles: false,
+  nombreDeJours: 10,
+  temperatureMin: 25,
+  temperatureMax: null,
+  adultes: 2,
+  enfants: 0,
+  agesEnfants: [],
+  budgetEuros: 4000,
+  budgetParPersonne: false,
+  transportInclus: true,
+  envies: ['plage'],
+  contraintes: [],
+}
+
 const SANTORIN: DemandeClient = {
   id: 228,
   statut: 'a_confirmer',
@@ -39,6 +60,10 @@ const SANTORIN: DemandeClient = {
     totalParPersonneCentimes: 188100,
   },
   conversation: {
+    jeton: 'j'.repeat(64),
+    // Prise en charge par Claire : elle a repris la conversation, le chatbot ne répond plus.
+    repriseParConseiller: true,
+    fiche: FICHE,
     debutLe: '2026-10-16T15:00:00+02:00',
     messages: [
       { role: 'client', contenu: 'Du soleil en mai, à deux.', le: '2026-10-16T15:00:00+02:00' },
@@ -61,6 +86,9 @@ const ISLANDE: DemandeClient = {
   transmiseLe: null,
   proposition: null,
   conversation: {
+    jeton: 'k'.repeat(64),
+    repriseParConseiller: false,
+    fiche: { ...FICHE, typeDeVoyage: 'circuit', lieuOuZone: 'Islande' },
     debutLe: '2026-09-14T10:00:00+02:00',
     messages: [
       { role: 'client', contenu: 'Voir les aurores boréales.', le: '2026-09-14T10:00:00+02:00' },
@@ -80,6 +108,7 @@ function afficher(path: string) {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 })
 
@@ -168,6 +197,136 @@ describe('mon espace', () => {
       await screen.findByRole('heading', { name: 'Pas encore de voyage en cours' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Mes conversations' })).not.toBeInTheDocument()
+  })
+
+  describe('« Modifier le voyage »', () => {
+    /** Demande encore entre les mains de l'assistant : aucun conseiller n'a repris la conversation. */
+    const BALI: DemandeClient = {
+      ...SANTORIN,
+      id: 240,
+      statut: 'nouvelle',
+      lieuOuZone: 'Bali',
+      conseiller: null,
+      transmiseLe: null,
+      proposition: null,
+      conversation: {
+        ...SANTORIN.conversation!,
+        jeton: 'm'.repeat(64),
+        repriseParConseiller: false,
+        messages: [
+          { role: 'client', contenu: 'Une villa à Bali en mai.', le: '2026-10-18T10:00:00+02:00' },
+          {
+            role: 'assistant',
+            contenu: 'Pour combien de personnes ?',
+            le: '2026-10-18T10:00:05+02:00',
+          },
+        ],
+        fiche: { ...FICHE, lieuOuZone: 'Bali' },
+      },
+    }
+
+    function afficherEspace(demandes: DemandeClient[]) {
+      const api = simulerApi({
+        'GET /api/moi': { status: 200, body: CAMILLE },
+        'GET /api/moi/demandes': { status: 200, body: demandes },
+      })
+      afficher('/espace')
+      return api
+    }
+
+    it('reprend la conversation avec l’assistant pour un changement léger', async () => {
+      sessionStorage.clear()
+      const api = afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: /Continuer avec l’assistant/ }))
+
+      const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(fenetre).getByText('Une villa à Bali en mai.')).toBeInTheDocument()
+      expect(within(fenetre).getByText('Pour combien de personnes ?')).toBeInTheDocument()
+
+      // Le message part dans la même conversation, authentifiée par son jeton.
+      await user.type(
+        within(fenetre).getByRole('textbox', { name: 'Votre message' }),
+        'Nous serons 4{Enter}',
+      )
+      await vi.waitFor(() =>
+        expect(api.fetch).toHaveBeenCalledWith(
+          '/api/chat',
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({ 'X-Conversation-Token': 'm'.repeat(64) }),
+          }),
+        ),
+      )
+    })
+
+    it('garde l’assistant pour les détails quand le dossier est simplement pris en charge', async () => {
+      afficherEspace([
+        {
+          ...BALI,
+          conseiller: { prenom: 'Hugo', nom: 'Bernard' },
+          conversation: { ...BALI.conversation!, repriseParConseiller: false },
+        },
+      ])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+
+      expect(screen.getByRole('button', { name: /Continuer avec l’assistant/ })).toBeInTheDocument()
+      expect(screen.getByText(/ajustez les détails avec l’assistant/)).toBeInTheDocument()
+    })
+
+    it('renvoie de la carte du conseiller vers « Modifier le voyage » pour les ajustements', async () => {
+      afficherEspace([
+        {
+          ...BALI,
+          conseiller: { prenom: 'Hugo', nom: 'Bernard' },
+          conversation: { ...BALI.conversation!, repriseParConseiller: false },
+        },
+      ])
+
+      expect(
+        await screen.findByText(
+          /changements importants ou particuliers passent par votre conseiller\. Pour un ajustement léger .* « Modifier le voyage »/,
+        ),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Continuer la conversation' })).toBeNull()
+    })
+
+    it('passe par le conseiller une fois qu’il a repris la main', async () => {
+      afficherEspace([SANTORIN])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+
+      expect(screen.queryByRole('button', { name: /Continuer avec l’assistant/ })).toBeNull()
+      expect(screen.getByText(/Claire suit désormais votre dossier/)).toBeInTheDocument()
+    })
+
+    it('propose un rendez-vous Calendly quand la page de l’agence est réglée', async () => {
+      vi.stubEnv('VITE_CALENDLY_URL', 'https://calendly.com/detour/modifier-mon-voyage')
+      afficherEspace([SANTORIN])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+
+      const lien = screen.getByRole('link', { name: /Prendre rendez-vous avec Claire/ })
+      expect(lien).toHaveAttribute('href', 'https://calendly.com/detour/modifier-mon-voyage')
+      expect(lien).toHaveAttribute('target', '_blank')
+    })
+
+    it('n’affiche pas de rendez-vous tant que la page Calendly n’est pas réglée', async () => {
+      vi.stubEnv('VITE_CALENDLY_URL', '')
+      afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+
+      expect(screen.queryByRole('link', { name: /Prendre rendez-vous/ })).toBeNull()
+      expect(screen.getByRole('button', { name: /Continuer avec l’assistant/ })).toBeInTheDocument()
+    })
   })
 })
 

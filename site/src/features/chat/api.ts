@@ -13,7 +13,7 @@ const EN_TETE_JETON = 'X-Conversation-Token'
 const conversationSchema = z.object({ jeton: z.string(), demande: z.number() })
 
 /** Fiche demande renvoyée par l'outil enregistrer_exigences (montants en euros). */
-const ficheSchema = z.object({
+export const ficheSchema = z.object({
   typeDeVoyage: z.enum(['sejour', 'circuit', 'groupe', 'noces', 'entreprise']).nullable(),
   lieuOuZone: z.string().nullable(),
   villeDepart: z.string().nullable(),

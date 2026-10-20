@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { DESTINATIONS, labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { ficheSchema } from '@/features/chat/api'
 import { ApiError } from '@/lib/api'
 
 const STATUTS = [
@@ -40,7 +41,17 @@ export const DemandeClient = z.object({
       totalParPersonneCentimes: z.number(),
     })
     .nullable(),
-  conversation: z.object({ debutLe: z.string(), messages: z.array(Message) }).nullable(),
+  conversation: z
+    .object({
+      /** Jeton du chat : le client reprend sa conversation pour un changement léger. */
+      jeton: z.string(),
+      /** Un conseiller a repris la main : le chatbot ne répond plus. */
+      repriseParConseiller: z.boolean(),
+      debutLe: z.string(),
+      messages: z.array(Message),
+      fiche: ficheSchema,
+    })
+    .nullable(),
 })
 export type DemandeClient = z.infer<typeof DemandeClient>
 
@@ -117,6 +128,14 @@ function etapesFaites(demande: DemandeClient) {
   return 1
 }
 
+/**
+ * Le client peut ajuster sa fiche avec l'assistant (« Modifier le voyage ») : la demande vient du chat et aucun
+ * conseiller n'a repris la conversation, ce qui fait taire le chatbot. Une simple prise en charge le laisse ouvert.
+ */
+export function assistantDisponible(demande: DemandeClient) {
+  return demande.conversation !== null && !demande.conversation.repriseParConseiller
+}
+
 /** Les quatre étapes du voyage, de la demande à la réservation des prestations (maquette E-Espace). */
 export function etapes(demande: DemandeClient): Etape[] {
   const conseiller = prenomConseiller(demande)
@@ -124,14 +143,14 @@ export function etapes(demande: DemandeClient): Etape[] {
   const titres: [string, string][] = [
     [
       'Demande envoyée',
-      conseiller
-        ? `${dateCourte(demande.creeLe)} · vous pouviez modifier votre dossier avec l’assistant`
-        : `${dateCourte(demande.creeLe)} · vous pouvez encore la modifier avec l’assistant`,
+      assistantDisponible(demande)
+        ? `${dateCourte(demande.creeLe)} · vous pouvez encore l’ajuster avec l’assistant`
+        : `${dateCourte(demande.creeLe)} · avec l’assistant`,
     ],
     conseiller
       ? [
           `Prise en charge par ${conseiller}`,
-          `${depuis}pour toute modification, passez par votre conseiller`,
+          `${depuis}les changements importants passent par votre conseiller`,
         ]
       : ['Prise en charge', 'Un conseiller de l’agence va suivre votre dossier'],
     [

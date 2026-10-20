@@ -8,8 +8,10 @@ use App\Entity\Conversation;
 use App\Entity\Destination;
 use App\Entity\JournalIA;
 use App\Entity\PeriodeClimatique;
+use App\Entity\Utilisateur;
 use App\Enum\AgentIA;
 use App\Enum\MotifTransmission;
+use App\Enum\Role;
 use App\Tests\Chatbot\FausseApiClaude;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -166,6 +168,30 @@ final class ChatEnvoiTest extends WebTestCase
         // Chaque appel garde sa durée et les outils que Claude a appelés.
         self::assertSame(['enregistrer_exigences'], $journal[0]->getOutils());
         self::assertNotContains(null, array_map(static fn (JournalIA $j) => $j->getDureeMs(), $journal));
+    }
+
+    public function testUnDossierSuiviParUnConseillerEstMisAJourSansNouvelleRecherche(): void
+    {
+        $jeton = $this->demarrer();
+        $lea = (new Utilisateur())->setEmail('lea.chat@shortcut.test')->setPrenom('Léa')->setNom('Dubois')->setRole(Role::Conseiller);
+        $this->em->persist($lea);
+        $this->em->flush();
+        $this->conversation($jeton)->getDemande()?->setConseiller($this->em->getReference(Utilisateur::class, $lea->getId()));
+        $this->em->flush();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['typeDeVoyage' => 'sejour', 'lieuOuZone' => 'Lisbonne', 'dateDebut' => '2027-05-14', 'adultes' => 4, 'recapitulatifConfirme' => true]),
+            FausseApiClaude::texte('C’est noté : vous serez 4. Léa en tient compte.'),
+        );
+
+        $evenements = $this->envoyer($jeton, 'Finalement nous serons 4');
+
+        self::assertSame('C’est noté : vous serez 4. Léa en tient compte.', $this->texte($evenements));
+        // Le modèle sait que le dossier est suivi (prompts/conversation.md, « Dossier suivi par un conseiller »).
+        $message = $this->claude->requetes[0]['corps']['messages'][0]['content'];
+        self::assertContains('<dossier_suivi>Ce dossier est suivi par Léa Dubois, conseiller de l\'agence.</dossier_suivi>', array_column($message, 'text'));
+        // La fiche est mise à jour, sans relancer l'agent Recherche : c'est le conseiller qui prépare la suite.
+        self::assertCount(2, $this->claude->requetes);
+        self::assertSame(4, $this->conversation($jeton)->getDemande()?->getAdultes());
     }
 
     public function testUnRecapitulatifSurUneFicheVideNEstPasConfirme(): void

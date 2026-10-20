@@ -3,7 +3,7 @@ import { DESTINATIONS } from '@/data/catalogue'
 import { ApiError } from '@/lib/api'
 import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { MESSAGE_ACCUEIL, nouvelId, type Message } from './assistant'
-import { ChatContext, type EtatChat } from './chatContext'
+import { ChatContext, type EtatChat, type Reprise } from './chatContext'
 import { type Demande, demandeVide } from './demande'
 
 const CLE = 'chat'
@@ -200,6 +200,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         enCours.current = false
         // Sans jeton : le prochain message ouvre une nouvelle conversation côté API.
         setEtat((e) => ({ ...etatInitial(), ouvert: e.ouvert }))
+      },
+      reprendre: ({ jeton, messages, fiche }: Reprise) => {
+        annulation.current?.abort()
+        enCours.current = false
+        // La conversation de l'API remplace celle du navigateur : mêmes messages, même fiche, même jeton.
+        setEtat({
+          ...etatInitial(),
+          statut: 'conversation',
+          jeton,
+          messages: messages.map((m): Message =>
+            m.role === 'client'
+              ? { id: nouvelId(), auteur: 'client', texte: m.contenu }
+              : { id: nouvelId(), auteur: 'assistant', texte: m.contenu },
+          ),
+          conversation: { demande: ficheVersDemande(fiche, demandeVide()), demandes: [] },
+          ouvert: true,
+        })
       },
     }),
     [],
