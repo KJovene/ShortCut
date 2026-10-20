@@ -4,6 +4,7 @@
 | --- | --- | --- |
 | `conversation.md` | Conversation : accueille le client et recueille ses exigences | #177 |
 | `recherche.md` | Recherche : choisit la destination, les logements et les activités, et explique son choix au client | #203 |
+| `redaction.md` | Chiffrage et rédaction : rédige la première proposition (programme jour par jour, points forts, argumentaire) et l'enregistre ; évaluée par `make evaluer-proposition` (voir `docs/outils.md`) | #207 |
 
 Les commentaires `<!-- … -->` en tête de fichier ne sont pas envoyés au modèle. Les variables `{{…}}` sont remplacées par l'API avant chaque appel.
 

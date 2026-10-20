@@ -20,6 +20,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity('jetonPublic')]
 class Proposition
 {
+    /** Mention affichée avec toute première proposition (décision D11). */
+    public const MENTION = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -43,8 +46,34 @@ class Proposition
     #[ORM\Column(type: Types::STRING, length: 64, unique: true)]
     private string $jetonPublic;
 
+    #[ORM\ManyToOne(targetEntity: Destination::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Destination $destination = null;
+
+    /** Pourquoi cette proposition répond au client, en quelques phrases. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $pourquoi = null;
+
     /**
-     * @var list<array{jour: int, titre: string, description: string}>
+     * Chaque exigence du client et ce qui y répond.
+     *
+     * @var list<array{exigence: string, reponse: string}>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $argumentaire = [];
+
+    /**
+     * Logements et activités retenus par au moins un niveau, avec leurs points forts.
+     *
+     * @var list<array{id: int, type: string, nom: string, pointsForts: list<string>, niveaux: list<string>}>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    private array $prestations = [];
+
+    /**
+     * Programme jour par jour du niveau détaillé, du jour d'arrivée au jour du départ.
+     *
+     * @var list<array{jour: int, date: string, titre: string, description: string, activiteIds: list<int>}>
      */
     #[ORM\Column(type: Types::JSON)]
     private array $programme = [];
@@ -169,8 +198,68 @@ class Proposition
         return $this;
     }
 
+    public function getDestination(): ?Destination
+    {
+        return $this->destination;
+    }
+
+    public function setDestination(?Destination $destination): static
+    {
+        $this->destination = $destination;
+
+        return $this;
+    }
+
+    public function getPourquoi(): ?string
+    {
+        return $this->pourquoi;
+    }
+
+    public function setPourquoi(?string $pourquoi): static
+    {
+        $this->pourquoi = $pourquoi;
+
+        return $this;
+    }
+
     /**
-     * @return list<array{jour: int, titre: string, description: string}>
+     * @return list<array{exigence: string, reponse: string}>
+     */
+    public function getArgumentaire(): array
+    {
+        return $this->argumentaire;
+    }
+
+    /**
+     * @param list<array{exigence: string, reponse: string}> $argumentaire
+     */
+    public function setArgumentaire(array $argumentaire): static
+    {
+        $this->argumentaire = $argumentaire;
+
+        return $this;
+    }
+
+    /**
+     * @return list<array{id: int, type: string, nom: string, pointsForts: list<string>, niveaux: list<string>}>
+     */
+    public function getPrestations(): array
+    {
+        return $this->prestations;
+    }
+
+    /**
+     * @param list<array{id: int, type: string, nom: string, pointsForts: list<string>, niveaux: list<string>}> $prestations
+     */
+    public function setPrestations(array $prestations): static
+    {
+        $this->prestations = $prestations;
+
+        return $this;
+    }
+
+    /**
+     * @return list<array{jour: int, date: string, titre: string, description: string, activiteIds: list<int>}>
      */
     public function getProgramme(): array
     {
@@ -178,7 +267,7 @@ class Proposition
     }
 
     /**
-     * @param list<array{jour: int, titre: string, description: string}> $programme
+     * @param list<array{jour: int, date: string, titre: string, description: string, activiteIds: list<int>}> $programme
      */
     public function setProgramme(array $programme): static
     {

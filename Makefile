@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
-        migration migrate fixtures db-reset db-test db-ui schema openapi evaluer \
+        migration migrate fixtures db-reset db-test db-ui schema openapi evaluer evaluer-proposition \
         dev site-sh site-install site-build \
         test test-api coverage test-site lint lint-api lint-site stan fix check
 
@@ -118,6 +118,9 @@ openapi: ## Exporte la documentation OpenAPI de l'API (docs/openapi.yaml)
 
 evaluer: ## Évalue le chatbot sur les demandes test (API Claude réelle, payant ; ex. make evaluer d="01 04")
 	$(CONSOLE) app:chatbot:evaluer $(d)
+
+evaluer-proposition: ## Génère la première proposition des demandes test : délai et durée du programme (API Claude réelle, payant)
+	$(CONSOLE) app:proposition:evaluer $(d)
 
 ## —— Site ————————————————————————————————————————————————
 dev: ## Suit les logs du site (http://localhost:5173), démarré par make up

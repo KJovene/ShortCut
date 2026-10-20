@@ -247,6 +247,11 @@ final class DemandeCrudController extends AbstractCrudController
         yield Field::new('conversation', 'Échanges')
             ->onlyOnDetail()
             ->setTemplatePath('admin/champ/conversation.html.twig');
+        // Brouillon préparé par le chatbot : le conseiller le relit puis l'envoie au client (#207).
+        yield FormField::addFieldset('Proposition')->onlyOnDetail();
+        yield Field::new('propositions', 'Dernière version')
+            ->setTemplatePath('admin/champ/proposition.html.twig')
+            ->onlyOnDetail();
     }
 
     private function estAdministrateur(): bool

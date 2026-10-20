@@ -1,0 +1,60 @@
+{# Dernière proposition de la demande : brouillon préparé par le chatbot, à relire puis envoyer au client (#207). #}
+{% set demande = entity.instance %}
+{% set proposition = demande.propositions|filter(p => p.statut.value != 'remplacee')|sort((a, b) => b.version <=> a.version)|first %}
+{% if not proposition %}
+    <span class="bo-vide">Aucune proposition : le chatbot la prépare quand le client confirme sa demande.</span>
+{% else %}
+    <p>
+        <strong>Version {{ proposition.version }}</strong> · {{ proposition.statut.label }} ·
+        {{ proposition.destination ? proposition.destination.ville ~ ' · ' : '' }}niveau détaillé {{ proposition.niveauBudget.label|lower }}
+        · {{ (proposition.totalCentimes / 100)|number_format(2, ',', ' ') }} € estimés
+    </p>
+    {% if proposition.pourquoi %}<p>{{ proposition.pourquoi }}</p>{% endif %}
+
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead><tr><th scope="col">Jour</th><th scope="col">Programme</th></tr></thead>
+        <tbody>
+            {% for jour in proposition.programme %}
+                <tr>
+                    <td>Jour {{ jour.jour }}<br>{{ jour.date|date('d/m/Y') }}</td>
+                    <td><strong>{{ jour.titre }}</strong><br>{{ jour.description }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead><tr><th scope="col">Poste ({{ proposition.niveauBudget.label|lower }})</th><th scope="col">Calcul</th><th scope="col">Prix estimé</th></tr></thead>
+        <tbody>
+            {% for ligne in proposition.lignes %}
+                <tr>
+                    <td>{{ ligne.type.label }} : {{ ligne.libelle }}</td>
+                    <td>{{ ligne.calcul ?? '—' }}</td>
+                    <td>{{ (ligne.prixEstimeCentimes / 100)|number_format(2, ',', ' ') }} €</td>
+                </tr>
+            {% endfor %}
+            {% for niveau, budget in proposition.budgetsParNiveau %}
+                <tr>
+                    <td colspan="2">Total {{ niveau }}, marge et frais de dossier compris</td>
+                    <td>{{ (budget.totalCentimes / 100)|number_format(2, ',', ' ') }} €</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+
+    {% if proposition.argumentaire is not empty %}
+        <ul>
+            {% for argument in proposition.argumentaire %}
+                <li><strong>{{ argument.exigence }}</strong> : {{ argument.reponse }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if proposition.statut.value == 'brouillon' and is_granted('DEMANDE_MODIFIER', demande) %}
+        <form method="post" action="{{ path('admin_proposition_envoyer', {id: proposition.id}) }}"
+              onsubmit="return confirm('Envoyer cette proposition au client ?');">
+            <input type="hidden" name="_token" value="{{ csrf_token('envoyer-proposition-' ~ proposition.id) }}">
+            <button type="submit" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Envoyer la proposition au client</button>
+        </form>
+    {% endif %}
+{% endif %}

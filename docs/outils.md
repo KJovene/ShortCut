@@ -449,25 +449,29 @@ Le résultat est gardé en cache 24 heures sous la demande courante, avec son `c
 
 ### `enregistrer_proposition`
 
-Enregistre une nouvelle version de la proposition à partir d'un chiffrage : programme jour par jour, lignes de prestation et budgets des trois niveaux. Les montants viennent uniquement du chiffrage, jamais du modèle. La version précédente passe à « remplacée ».
+Enregistre une nouvelle version de la proposition à partir d'un chiffrage retenu (`retenir_combinaison`) : programme jour par jour, points forts des prestations, argumentaire, lignes de prestation et budgets des trois niveaux. Les montants viennent uniquement du chiffrage, jamais du modèle. La version est enregistrée en **brouillon** : le conseiller la relit sur la fiche demande du backoffice, puis l'envoie au client.
+
+Ticket #207 : l'agent Chiffrage et rédaction (`App\Chatbot\AgentRedaction`, `prompts/redaction.md`) prend la suite de l'agent Recherche dès qu'une combinaison est retenue. Son premier message contient tout ce qu'il faut : `chiffrageId`, niveau à détailler (équilibré, ou l'essentiel si l'équilibré dépasse le budget du client), calendrier jour par jour, fiche et messages du client, faits vérifiés, niveaux et fiche de chaque prestation retenue. Il n'écrit rien dans la conversation : le tour s'arrête dès que l'outil a réussi, et le serveur dit au client que son conseiller vérifie sa proposition avant de la lui envoyer. S'il échoue, le serveur transmet la demande au conseiller et prévient le client.
 
 Entrée :
 
 ```json
 {
   "name": "enregistrer_proposition",
-  "description": "Enregistre la proposition de la demande en cours à partir d'un chiffrage déjà calculé, avec le programme jour par jour que tu as rédigé. Renvoie le lien que le client peut ouvrir.",
+  "description": "Enregistre et envoie au client la proposition de la demande en cours, à partir du chiffrage retenu : programme jour par jour, points forts de chaque logement et activité, argumentaire. Les prix viennent du chiffrage : n'en écris aucun. Si la proposition est refusée, corrige chaque point signalé et rappelle l'outil.",
   "strict": true,
   "input_schema": {
     "type": "object",
     "properties": {
-      "chiffrageId": {"type": "string"},
-      "niveauDetaille": {"type": "string", "enum": ["essentiel", "equilibre", "confort"], "description": "Niveau dont les lignes de prestation sont détaillées ; équilibré par défaut."},
-      "pourquoi": {"type": "string", "description": "Pourquoi cette destination répond aux exigences : températures aux dates, temps de trajet, ambiance."},
-      "programme": {"type": "array", "items": {"type": "object", "properties": {"jour": {"type": "integer"}, "titre": {"type": "string"}, "description": {"type": "string"}}, "required": ["jour", "titre", "description"], "additionalProperties": false}},
+      "chiffrageId": {"type": "string", "description": "Identifiant du chiffrage donné dans le premier message."},
+      "niveauDetaille": {"type": "string", "enum": ["essentiel", "equilibre", "confort"], "description": "Niveau que décrit le programme : celui conseillé dans le premier message."},
+      "pourquoi": {"type": "string", "description": "Deux ou trois phrases au client : pourquoi ce voyage lui correspond."},
+      "argumentaire": {"type": "array", "items": {"type": "object", "properties": {"exigence": {"type": "string"}, "reponse": {"type": "string"}}, "required": ["exigence", "reponse"], "additionalProperties": false}},
+      "prestations": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "integer"}, "pointsForts": {"type": "array", "items": {"type": "string"}}}, "required": ["id", "pointsForts"], "additionalProperties": false}},
+      "programme": {"type": "array", "items": {"type": "object", "properties": {"jour": {"type": "integer"}, "titre": {"type": "string"}, "description": {"type": "string"}, "activiteIds": {"type": "array", "items": {"type": "integer"}}}, "required": ["jour", "titre", "description", "activiteIds"], "additionalProperties": false}},
       "resumeDesChangements": {"type": "string", "description": "Pour une nouvelle version : ce qui a changé par rapport à la précédente."}
     },
-    "required": ["chiffrageId", "niveauDetaille", "pourquoi", "programme"],
+    "required": ["chiffrageId", "niveauDetaille", "pourquoi", "argumentaire", "prestations", "programme"],
     "additionalProperties": false
   }
 }
@@ -477,15 +481,22 @@ Sortie :
 
 ```json
 {
-  "version": 2,
-  "statut": "envoyee",
-  "lienClient": "/ma-proposition/3b9d…e41f",
-  "totalEuros": { "essentiel": 2286, "equilibre": 4956, "confort": 5502 },
-  "mention": "Première proposition, prix estimés, à confirmer par votre conseiller"
+  "version": 1,
+  "statut": "brouillon",
+  "nombreDeJours": 8,
+  "niveauDetaille": "equilibre",
+  "totalEuros": { "essentiel": 4554, "equilibre": 4956, "confort": 5502 }
 }
 ```
 
-Service : `PropositionService::enregistrer(ContexteAgent, chiffrageId, …)` vérifie que le chiffrage appartient à la demande courante, que le programme compte autant de jours que le séjour, crée la `Proposition` (type « première », statut « envoyée ») et ses `LigneDePrestation`, et passe la demande au statut « proposition envoyée ».
+Service : `App\Proposition\PropositionService`.
+
+- `lire()` dénormalise l'entrée avec le Serializer (`PropositionRedigee`, sans champ inconnu) et la valide avec le Validator : textes non vides et bornés, un à dix arguments, un à quatre points forts par prestation, jours numérotés 1, 2, 3… dans l'ordre.
+- `enregistrer()` vérifie ensuite la rédaction contre le chiffrage de la demande courante : un jour de programme par jour de voyage (**nuits + 1**, du jour d'arrivée au jour du départ), des points forts pour chaque prestation retenue par au moins un niveau et pour elles seules, chaque activité du niveau détaillé placée dans un jour (`activiteIds`) et aucune autre. Toutes les raisons d'un refus sont renvoyées d'un coup au modèle.
+- Il crée la `Proposition` (type « première », statut « brouillon », version suivante), avec la destination, l'argumentaire, les prestations présentées, le programme daté et les budgets des trois niveaux, puis les `LigneDePrestation` du niveau détaillé (logement daté par étape, transports estimés, activités, détail du calcul). Un brouillon précédent passe à « remplacée » ; une version déjà envoyée reste visible du client. La demande garde son statut.
+- `envoyer()` est appelé par le conseiller (bouton « Envoyer la proposition au client » sur la fiche demande, route `admin_proposition_envoyer`, réservée à qui peut modifier la demande) : le brouillon passe à « envoyée », les autres versions à « remplacée », la demande à « proposition envoyée ».
+
+`make evaluer-proposition [d="01 07"]` rejoue les demandes test à partir de leur fiche attendue avec les agents Recherche et Rédaction réels, et mesure le délai entre la confirmation et la proposition enregistrée (objectif : moins de 2 minutes) ainsi que le nombre de jours du programme. Les programmes sont écrits dans `api/evaluations/` pour relecture. Résultat du 20/10/2026 : 9 propositions sur 9 en 21 à 38 secondes, durée exacte ; la demande 04 (période sans tarif) passe au conseiller comme attendu.
 
 ### `transmettre_au_conseiller`
 
@@ -533,8 +544,8 @@ Code : `TransmettreAuConseiller` passe `Conversation::repriseParConseiller` à `
 | `chercher_logements` | | ✓ | | ✓ |
 | `chercher_activites` | | ✓ | | ✓ |
 | `retenir_combinaison` | | ✓ | | |
-| `calculer_budget` | | | ✓ | ✓ |
+| `calculer_budget` | | | | ✓ |
 | `enregistrer_proposition` | | | ✓ | ✓ |
 | `transmettre_au_conseiller` | ✓ | ✓ | ✓ | ✓ |
 
-Chaque agent ne reçoit que ses outils dans sa requête : l'agent Conversation ne peut ni chiffrer ni enregistrer de proposition.
+Chaque agent ne reçoit que ses outils dans sa requête : l'agent Conversation ne peut ni chiffrer ni enregistrer de proposition. L'agent Chiffrage et rédaction n'appelle pas `calculer_budget` : il reçoit le chiffrage déjà fait par `retenir_combinaison`.
