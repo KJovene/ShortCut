@@ -7,6 +7,7 @@ use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Entity\Conversation;
+use App\Entity\Demande;
 use App\Enum\AgentIA;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,7 +51,11 @@ final class AgentConversation extends Agent
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Conversation);
 
         $tour = new Tour($conversation->getHistorique());
-        $tour->historique[] = ['role' => 'user', 'content' => [['type' => 'text', 'text' => $message]]];
+        $tour->historique[] = ['role' => 'user', 'content' => [
+            ['type' => 'text', 'text' => $message],
+            // Ce que la fiche contient vraiment : le modèle voit ce qu'il a oublié d'enregistrer (#193).
+            ['type' => 'text', 'text' => self::etatDeLaFiche($demande)],
+        ]];
         $conversation->ajouterMessage('client', $message);
         $this->enregistrer($conversation, $tour->historique);
 
@@ -94,6 +99,27 @@ final class AgentConversation extends Agent
     protected function appelsMax(): int
     {
         return 8;
+    }
+
+    /**
+     * Fiche enregistrée avant ce message et exigences encore inconnues. Les champs vides ou à leur valeur par
+     * défaut sont omis : « 1 adulte » ne doit pas passer pour une information donnée par le client.
+     */
+    private static function etatDeLaFiche(Demande $demande): string
+    {
+        $parDefaut = EnregistrerExigences::fiche(new Demande());
+        $remplis = array_filter(
+            EnregistrerExigences::fiche($demande),
+            static fn (mixed $valeur, string $champ) => null !== $valeur && [] !== $valeur && $valeur !== $parDefaut[$champ],
+            \ARRAY_FILTER_USE_BOTH,
+        );
+        $manquantes = EnregistrerExigences::manquantes($demande);
+
+        return \sprintf(
+            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s.</etat_de_la_fiche>',
+            json_encode((object) $remplis, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
+            [] === $manquantes ? 'rien' : implode(', ', $manquantes),
+        );
     }
 
     /**

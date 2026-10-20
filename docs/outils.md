@@ -94,15 +94,15 @@ Entrée :
       "dateFin": {"type": "string", "description": "AAAA-MM-JJ"},
       "datesFlexibles": {"type": "boolean"},
       "nombreDeJours": {"type": "integer", "description": "Nombre de nuits sur place."},
-      "temperatureMin": {"type": "integer", "description": "Température moyenne minimale souhaitée, en °C."},
+      "temperatureMin": {"type": "integer", "description": "Température moyenne minimale souhaitée, en °C, seulement si le client donne un chiffre ou accepte celui que tu proposes. « De la chaleur » va dans envies, sans chiffre."},
       "temperatureMax": {"type": "integer"},
       "adultes": {"type": "integer"},
       "enfants": {"type": "integer"},
       "agesEnfants": {"type": "array", "items": {"type": "integer"}},
-      "budgetEuros": {"type": "integer"},
+      "budgetEuros": {"type": "integer", "description": "Le montant tel que le client le donne, sans calcul : « 900 € par personne » donne 900 avec budgetParPersonne à true."},
       "budgetParPersonne": {"type": "boolean", "description": "true : le budget est par personne ; false : c'est un total."},
       "transportInclus": {"type": "boolean"},
-      "envies": {"type": "array", "items": {"type": "string"}, "description": "Activités, ambiance, rythme (« plage », « gastronomie »). Pas la destination : elle va dans lieuOuZone."},
+      "envies": {"type": "array", "items": {"type": "string"}, "description": "Activités, ambiance, rythme (« plage », « gastronomie »), y compris l'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Pas la destination : elle va dans lieuOuZone."},
       "contraintes": {"type": "array", "items": {"type": "string"}, "description": "Mobilité réduite (avec le type de besoin), régime, allergie (avec sa gravité), santé, animaux."},
       "client": {"type": "object", "properties": {"prenom": {"type": "string"}, "email": {"type": "string"}, "telephone": {"type": "string"}}, "required": [], "additionalProperties": false},
       "recapitulatifConfirme": {"type": "boolean"}
@@ -129,7 +129,7 @@ Sortie : la fiche telle qu'enregistrée et ce qui manque encore.
 }
 ```
 
-Service : `DemandeService::enregistrerExigences(ContexteAgent, ExigencesDto)` convertit le budget en centimes, valide la fiche (`Demande` et ses contraintes), crée ou met à jour le `Client` lié à la demande, met à jour `modifieLe`. Quand `recapitulatifConfirme` passe à `true`, l'orchestrateur enchaîne sur l'agent Recherche.
+Service : `DemandeService::enregistrerExigences(ContexteAgent, ExigencesDto)` convertit le budget en centimes, valide la fiche (`Demande` et ses contraintes), crée ou met à jour le `Client` lié à la demande, met à jour `modifieLe`. Quand `recapitulatifConfirme` passe à `true`, l'orchestrateur enchaîne sur l'agent Recherche. La confirmation est refusée (erreur renvoyée au modèle, exigences du message gardées) tant que la fiche n'a pas de type de voyage, de lieu ou de dates (#193).
 
 ### `chercher_destinations`
 
