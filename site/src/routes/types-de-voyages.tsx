@@ -2,11 +2,18 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconFleche } from '@/components/ui/icons'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
-import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
+import {
+  decouperContenu,
+  metaPage,
+  pageQuery,
+  photoNommee,
+  trouverSection,
+} from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/types-de-voyages')({
   loader: ({ context }) => {
@@ -48,14 +55,7 @@ function TypesPage() {
 
   return (
     <>
-      <EnTetePage
-        surtitre="Nos voyages"
-        titre={
-          <>
-            Tous les voyages, <em className="font-normal text-terre">sur mesure</em>
-          </>
-        }
-      >
+      <EnTetePage surtitre="Nos voyages" titre={<TitreMisEnValeur texte={page.titre} />}>
         <p className="m-0 max-w-[640px]">
           Quel que soit votre projet, l'assistant pose les questions propres à votre type de voyage
           : étapes d'un circuit, taille du groupe, date du mariage ou objectif de l'entreprise.
@@ -65,7 +65,7 @@ function TypesPage() {
       <section className="mx-auto flex max-w-[1376px] flex-col gap-6 px-4 pb-16 sm:px-8 sm:pb-24">
         {TYPES_DE_VOYAGE.map((t, i) => {
           const section = trouverSection(contenu, titreType(t), t.label, t.pluriel)
-          const photo = page.photos.find((p) => p.endsWith(`/${t.valeur}.jpg`))
+          const photo = photoNommee(page.photos, t.valeur)
           const nb = destinations?.filter((d) => d.types.includes(t.valeur)).length
           return (
             <article
