@@ -567,3 +567,15 @@ fieldset.form-fieldset,
     white-space: pre-wrap;
     word-break: break-word;
 }
+
+/* Contenus du site : l'éditeur ne garde que ce que le site affiche (intertitres et listes). Le site lit le
+   texte seul : gras, liens, citations et code n'y apparaîtraient pas ; les pièces jointes ne sont enregistrées
+   nulle part, les photos ont leur champ. */
+trix-toolbar [data-trix-button-group="text-tools"],
+trix-toolbar [data-trix-button-group="file-tools"],
+trix-toolbar [data-trix-attribute="quote"],
+trix-toolbar [data-trix-attribute="code"],
+trix-toolbar [data-trix-action="decreaseNestingLevel"],
+trix-toolbar [data-trix-action="increaseNestingLevel"] {
+    display: none;
+}
