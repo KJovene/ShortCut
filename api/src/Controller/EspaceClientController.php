@@ -44,6 +44,8 @@ final class EspaceClientController extends AbstractController
             'enfants' => $demande->getEnfants(),
             'creeLe' => $demande->getCreeLe()->format(\DATE_ATOM),
             'conseiller' => null === $conseiller ? null : ['prenom' => $conseiller->getPrenom(), 'nom' => $conseiller->getNom()],
+            // Le chatbot a passé la main à un conseiller : la demande ne se modifie plus avec l'assistant.
+            'transmiseLe' => $demande->getTransmiseLe()?->format(\DATE_ATOM),
             'proposition' => null === $proposition ? null : [
                 // Lien de la page « Ma proposition ».
                 'jeton' => $proposition->getJetonPublic(),

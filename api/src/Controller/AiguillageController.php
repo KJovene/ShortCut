@@ -37,9 +37,13 @@ final class AiguillageController extends AbstractController
         $this->denyAccessUnlessGranted(DemandeVoter::ATTRIBUER, $demande);
 
         $demande->setConseiller($utilisateur)->setModifieLe(new \DateTimeImmutable());
+        // Prendre le dossier en charge, c'est aussi reprendre la conversation : le chatbot cesse de répondre.
+        $reprise = $this->reprendreConversation($demande);
         $em->flush();
 
-        $this->addFlash('success', \sprintf('La demande n° %d vous est attribuée.', $demande->getId()));
+        $this->addFlash('success', $reprise
+            ? \sprintf('La demande n° %d vous est attribuée : vous reprenez la conversation, le chatbot ne répond plus au client.', $demande->getId())
+            : \sprintf('La demande n° %d vous est attribuée.', $demande->getId()));
 
         return $this->redirectToRoute('admin_demande_detail', ['entityId' => $demande->getId()]);
     }
@@ -54,7 +58,9 @@ final class AiguillageController extends AbstractController
     ): Response {
         $this->verifierJeton($request);
 
-        $conversation = $demande->getConversation() ?? throw $this->createNotFoundException('Cette demande n\'a pas de conversation.');
+        if (null === $demande->getConversation()) {
+            throw $this->createNotFoundException('Cette demande n\'a pas de conversation.');
+        }
         // L'administrateur peut reprendre la conversation d'une demande suivie par un autre conseiller.
         if (!$this->isGranted('ROLE_ADMIN') && null !== ($refus = $this->dejaAttribuee($demande, $utilisateur))) {
             return $refus;
@@ -65,16 +71,29 @@ final class AiguillageController extends AbstractController
         }
         $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
 
-        $conversation->setRepriseParConseiller(true);
-        if (null === $conversation->getFinLe()) {
-            $conversation->setFinLe(new \DateTimeImmutable());
-        }
+        $this->reprendreConversation($demande);
         $demande->setModifieLe(new \DateTimeImmutable());
         $em->flush();
 
         $this->addFlash('success', \sprintf('Vous reprenez la conversation de la demande n° %d : le chatbot ne répond plus au client.', $demande->getId()));
 
         return $this->redirectToRoute('admin_demande_detail', ['entityId' => $demande->getId()]);
+    }
+
+    /** Le conseiller prend la main sur la conversation ; vrai si elle n'était pas déjà reprise. */
+    private function reprendreConversation(Demande $demande): bool
+    {
+        $conversation = $demande->getConversation();
+        if (null === $conversation || $conversation->isRepriseParConseiller()) {
+            return false;
+        }
+
+        $conversation->setRepriseParConseiller(true);
+        if (null === $conversation->getFinLe()) {
+            $conversation->setFinLe(new \DateTimeImmutable());
+        }
+
+        return true;
     }
 
     private function verifierJeton(Request $request): void

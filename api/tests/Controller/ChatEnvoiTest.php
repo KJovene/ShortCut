@@ -163,6 +163,9 @@ final class ChatEnvoiTest extends WebTestCase
         self::assertSame("\n\nJe vous propose Lisbonne.", end($derniere->content)->text);
         $journal = $this->em->getRepository(JournalIA::class)->findBy(['demande' => $conversation->getDemande()], ['id' => 'ASC']);
         self::assertSame([AgentIA::Conversation, AgentIA::Conversation, AgentIA::Recherche], array_map(static fn (JournalIA $j) => $j->getAgent(), $journal));
+        // Chaque appel garde sa durée et les outils que Claude a appelés.
+        self::assertSame(['enregistrer_exigences'], $journal[0]->getOutils());
+        self::assertNotContains(null, array_map(static fn (JournalIA $j) => $j->getDureeMs(), $journal));
     }
 
     public function testUnRecapitulatifSurUneFicheVideNEstPasConfirme(): void
@@ -196,6 +199,13 @@ final class ChatEnvoiTest extends WebTestCase
         self::assertStringStartsWith('L\'assistant est momentanément indisponible.', $parType['erreur']['erreur']);
         self::assertArrayHasKey('fin', $parType);
         self::assertStringNotContainsString('Détail interne', (string) $this->client->getInternalResponse()->getContent());
+
+        // US13 : l'appel en échec figure au journal, avec l'erreur et sa durée, pour le responsable.
+        $journal = $this->em->getRepository(JournalIA::class)->findBy(['demande' => $this->conversation($jeton)->getDemande()]);
+        self::assertCount(1, $journal);
+        self::assertSame(AgentIA::Conversation, $journal[0]->getAgent());
+        self::assertNotNull($journal[0]->getErreur());
+        self::assertNotNull($journal[0]->getDureeMs());
 
         // Le message du client est gardé : la conversation peut reprendre.
         $this->claude->prevoir(FausseApiClaude::texte('Me revoilà.'));
