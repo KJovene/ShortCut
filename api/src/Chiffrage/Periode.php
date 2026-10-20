@@ -36,6 +36,18 @@ final class Periode
         return \sprintf('du %s au %s', $arrivee->format('d/m/Y'), $arrivee->modify(\sprintf('+%d days', $nuits))->format('d/m/Y'));
     }
 
+    /**
+     * « vendredi 14 mai 2027 », « samedi 1er mai 2027 ». Sans IntlDateFormatter : l'image PHP n'embarque que les
+     * données ICU anglaises.
+     */
+    public static function jour(\DateTimeImmutable $date): string
+    {
+        $jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        $numero = (int) $date->format('j');
+
+        return \sprintf('%s %s %s %s', $jours[(int) $date->format('N') - 1], 1 === $numero ? '1er' : $numero, self::mois($date), $date->format('Y'));
+    }
+
     private static function mois(\DateTimeImmutable $date): string
     {
         return self::MOIS[(int) $date->format('n') - 1];

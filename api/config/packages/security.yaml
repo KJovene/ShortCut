@@ -20,8 +20,9 @@ security:
             security: false
 
         # Chatbot public : sans session, authentifié par le jeton de sa conversation.
+        # L'ouverture d'une conversation passe par « main » pour lire la session d'un client connecté.
         chatbot:
-            pattern: ^/api/chat
+            pattern: ^/api/chat(?!/conversations$)
             stateless: true
             lazy: true
             provider: visiteurs_chatbot

@@ -24,7 +24,6 @@ use Symfony\Component\Workflow\WorkflowInterface;
  */
 final class PropositionClient
 {
-    public const MENTION_ESTIMEE = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
     public const MENTION_CONFIRMEE = 'Proposition confirmée par votre conseiller : prix vérifiés auprès des prestataires.';
 
     public function __construct(
@@ -108,7 +107,7 @@ final class PropositionClient
             'version' => $proposition->getVersion(),
             'etat' => $confirmee ? 'confirmee' : 'estimee',
             'statut' => $proposition->getStatut()->value,
-            'mention' => $confirmee ? self::MENTION_CONFIRMEE : self::MENTION_ESTIMEE,
+            'mention' => $confirmee ? self::MENTION_CONFIRMEE : Proposition::MENTION,
             'creeLe' => $proposition->getCreeLe()->format(\DATE_ATOM),
             'confirmeeLe' => $proposition->getConfirmeeLe()?->format(\DATE_ATOM),
             'niveauBudget' => $proposition->getNiveauBudget()->value,
@@ -116,9 +115,18 @@ final class PropositionClient
             'totalCentimes' => $proposition->getTotalCentimes(),
             'totalParPersonneCentimes' => $proposition->getTotalParPersonneCentimes(),
             'fraisDeDossierCentimes' => $proposition->getFraisDeDossierCentimes(),
+            'destination' => null === $proposition->getDestination() ? null : [
+                'slug' => $proposition->getDestination()->getSlug(),
+                'ville' => $proposition->getDestination()->getVille(),
+            ],
+            'pourquoi' => $proposition->getPourquoi(),
+            'argumentaire' => $proposition->getArgumentaire(),
             'hypotheses' => $proposition->getHypotheses(),
             'programme' => $proposition->getProgramme(),
-            'prestations' => array_map(self::prestation(...), ConfirmationService::lignesTriees($proposition)),
+            // Logements et activités retenus, avec leurs points forts et les niveaux qui les retiennent (#207).
+            'prestations' => $proposition->getPrestations(),
+            // Les postes du niveau détaillé, sans leur prix d'achat.
+            'lignes' => array_map(self::ligne(...), ConfirmationService::lignesTriees($proposition)),
             'demande' => [
                 'statut' => $demande->getStatut()->value,
                 'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
@@ -135,8 +143,8 @@ final class PropositionClient
         ];
     }
 
-    /** @return array<string, mixed> une prestation, sans son prix d'achat */
-    private static function prestation(LigneDePrestation $ligne): array
+    /** @return array<string, mixed> un poste, sans son prix d'achat */
+    private static function ligne(LigneDePrestation $ligne): array
     {
         $source = $ligne->getPrestation();
 

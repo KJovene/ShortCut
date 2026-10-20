@@ -45,6 +45,7 @@ final class AgentRecherche extends Agent
         iterable $outils,
         #[Autowire('%kernel.project_dir%/prompts/recherche.md')]
         string $fichierPrompt,
+        private readonly AgentRedaction $redaction,
     ) {
         parent::__construct($claude, $em, $logger, $outils, $fichierPrompt);
     }
@@ -76,6 +77,12 @@ final class AgentRecherche extends Agent
         } finally {
             $this->ajouterALaConversation($conversation, $tour->reponse);
         }
+
+        // Combinaison présentée au client : l'agent Rédaction en fait la proposition complète (#207).
+        $combinaison = $tour->sortie('retenir_combinaison');
+        if (null !== $combinaison && null === $tour->sortie('transmettre_au_conseiller')) {
+            yield from $this->redaction->rediger($conversation, (string) $combinaison['chiffrageId']);
+        }
     }
 
     /**
@@ -85,14 +92,10 @@ final class AgentRecherche extends Agent
     private static function premierMessage(Conversation $conversation): string
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
-        $messages = array_map(
-            static fn (array $m): string => '- '.str_replace("\n", ' ', $m['contenu']),
-            array_values(array_filter($conversation->getMessages(), static fn (array $m): bool => 'client' === $m['role'])),
-        );
 
         return "Le client vient de confirmer sa demande.\n\nFiche demande :\n"
             .json_encode(EnregistrerExigences::fiche($demande), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
-            ."\n\nMessages du client, dans l'ordre :\n".implode("\n", $messages);
+            ."\n\nMessages du client, dans l'ordre :\n".self::messagesDuClient($conversation);
     }
 
     protected function diffuserAuFilDeLEau(): bool
@@ -124,26 +127,5 @@ final class AgentRecherche extends Agent
     protected function appelsMax(): int
     {
         return 12;
-    }
-
-    /**
-     * La réponse rejoint les messages affichés et, dans l'historique de l'agent Conversation, la fin de sa dernière
-     * réponse : au message suivant du client, il sait ce qui a été proposé.
-     */
-    private function ajouterALaConversation(Conversation $conversation, string $reponse): void
-    {
-        if ('' === trim($reponse)) {
-            return;
-        }
-
-        $conversation->ajouterMessage('assistant', trim($reponse));
-        // L'historique est fait d'objets (Conversation::getHistorique()) : le dernier message est modifié en place.
-        $historique = $conversation->getHistorique();
-        $dernier = end($historique);
-        if ($dernier instanceof \stdClass && 'assistant' === ($dernier->role ?? null) && \is_array($dernier->content ?? null)) {
-            $dernier->content[] = (object) ['type' => 'text', 'text' => "\n\n".trim($reponse)];
-            $conversation->setHistorique($historique);
-        }
-        $this->em->flush();
     }
 }

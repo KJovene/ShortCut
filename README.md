@@ -193,7 +193,7 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
 
   | Route | Effet |
   | --- | --- |
-  | `GET /api/propositions/{jeton}` | la proposition : `etat` (`estimee` ou `confirmee`), mention, totaux des niveaux, hypothèses, programme, prestations (sans prix d'achat), `actions` possibles |
+  | `GET /api/propositions/{jeton}` | la proposition : `etat` (`estimee` ou `confirmee`), mention, destination, argumentaire, totaux des niveaux, hypothèses, programme, prestations et leurs points forts, postes (`lignes`, sans prix d'achat), `actions` possibles |
   | `POST /api/propositions/{jeton}/demande-de-confirmation` | le client fait confirmer l'estimation : la demande passe « à confirmer » |
   | `POST /api/propositions/{jeton}/acceptation` | « J'accepte » sur la version confirmée : proposition et demande « acceptées » |
 

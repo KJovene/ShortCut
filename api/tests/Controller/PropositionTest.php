@@ -10,6 +10,7 @@ use App\Entity\Proposition;
 use App\Entity\Utilisateur;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
+use App\Proposition\PropositionService;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -58,15 +59,17 @@ final class PropositionTest extends WebTestCase
 
         self::assertSame('estimee', $proposition['etat']);
         self::assertSame('envoyee', $proposition['statut']);
-        self::assertSame(PropositionClient::MENTION_ESTIMEE, $proposition['mention']);
+        self::assertSame(Proposition::MENTION, $proposition['mention']);
         self::assertSame(945200, $proposition['totalCentimes']);
         self::assertNull($proposition['versionDemandee']);
         self::assertSame(['demanderConfirmation' => true, 'accepter' => false], $proposition['actions']);
-        self::assertCount(5, $proposition['prestations']);
-        self::assertSame('Riad Dar Yasmine, riad entier', $proposition['prestations'][0]['libelle']);
-        self::assertStringStartsWith('/api/logements/', $proposition['prestations'][0]['fiche']);
+        self::assertSame('marrakech', $proposition['destination']['slug']);
+        self::assertSame(['Privatisé pour le groupe', 'Piscine sur le patio'], $proposition['prestations'][0]['pointsForts']);
+        self::assertCount(5, $proposition['lignes']);
+        self::assertSame('Riad Dar Yasmine, riad entier', $proposition['lignes'][0]['libelle']);
+        self::assertStringStartsWith('/api/logements/', $proposition['lignes'][0]['fiche']);
         // Les lignes sont des prix d'achat : jamais montrés au client.
-        self::assertStringNotContainsString('prix', strtolower((string) json_encode($proposition['prestations'])));
+        self::assertStringNotContainsString('prix', strtolower((string) json_encode($proposition['lignes'])));
     }
 
     public function testLeClientDemandeLaConfirmationUneSeuleFois(): void
@@ -129,6 +132,32 @@ final class PropositionTest extends WebTestCase
         $this->expectException(ConfirmationImpossible::class);
         $this->expectExceptionMessage('La demande est « Perdue »');
         $this->confirmer();
+    }
+
+    /** #207 : seul un brouillon du chatbot s'envoie ; une nouvelle estimation remplace la version confirmée. */
+    public function testUneNouvelleEstimationEnvoyeeRemplaceLaVersionConfirmee(): void
+    {
+        $confirmee = $this->confirmer();
+        $service = static::getContainer()->get(PropositionService::class);
+        try {
+            $service->envoyer($confirmee);
+            self::fail('Une version de confirmation ne doit pas s\'envoyer.');
+        } catch (\DomainException $e) {
+            self::assertStringContainsString('ne s\'envoie pas', $e->getMessage());
+        }
+
+        $demande = $this->em->find(Demande::class, $this->demande->getId()) ?? throw new \LogicException();
+        $nouvelle = (new Proposition())->setVersion(3);
+        $demande->addProposition($nouvelle);
+        $this->em->persist($nouvelle);
+        $this->em->flush();
+        $service->envoyer($nouvelle);
+
+        $this->em->clear();
+        self::assertSame(StatutProposition::Remplacee, $this->em->find(Proposition::class, $confirmee->getId())?->getStatut());
+        self::assertSame(StatutDemande::PropositionEnvoyee, $this->em->find(Demande::class, $this->demande->getId())?->getStatut());
+        // Le lien de la version confirmée mène à la nouvelle estimation.
+        self::assertSame(3, $this->get($confirmee->getJetonPublic())['version']);
     }
 
     public function testUnBrouillonOuUnJetonInconnuRestentIntrouvables(): void

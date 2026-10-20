@@ -2,8 +2,9 @@
 # Les places sont les valeurs des énumérations StatutProposition et StatutDemande.
 framework:
     workflows:
-        # Une version de proposition : le chatbot l'envoie (prix estimés) ou le conseiller la confirme ; une nouvelle
-        # version remplace la précédente ; le client accepte la version confirmée.
+        # Une version de proposition : le chatbot la rédige en brouillon, le conseiller l'envoie (prix estimés) ou
+        # confirme une version ; une nouvelle version remplace la précédente, même un brouillon jamais envoyé ; le
+        # client accepte la version confirmée.
         proposition:
             type: state_machine
             marking_store:
@@ -27,7 +28,7 @@ framework:
                     from: [envoyee, confirmee]
                     to: refusee
                 remplacer:
-                    from: [envoyee, confirmee]
+                    from: [brouillon, envoyee, confirmee]
                     to: remplacee
 
         # Le pipeline des conseillers : proposition envoyée par le chatbot, demandée en confirmation par le client,

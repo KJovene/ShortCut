@@ -4,6 +4,8 @@ namespace App\Chatbot;
 
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\OutilException;
+use App\Chiffrage\Periode;
+use App\Entity\Conversation;
 use App\Entity\JournalIA;
 use App\Enum\AgentIA;
 use Doctrine\ORM\EntityManagerInterface;
@@ -65,6 +67,15 @@ abstract class Agent
     protected function maxTokens(): int
     {
         return 16000;
+    }
+
+    /**
+     * Outil dont le succès termine le tour, sans attendre de réponse finale du modèle (un appel à Claude de moins).
+     * Null : le tour se termine sur la réponse finale.
+     */
+    protected function outilFinal(): ?string
+    {
+        return null;
     }
 
     /**
@@ -148,6 +159,10 @@ abstract class Agent
                 $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, $resultats);
                 $enregistrer($tour->historique);
 
+                if (null !== $this->outilFinal() && null !== $tour->sortie($this->outilFinal())) {
+                    break;
+                }
+
                 if ($this->appelsMax() === $appel) {
                     $this->logger->warning('Agent {agent} : {max} appels sans réponse finale.', ['agent' => $nom, 'max' => $this->appelsMax()]);
                     yield self::evenement('erreur', ['erreur' => 'Je n\'ai pas réussi à terminer. Pouvez-vous reformuler votre message ?']);
@@ -163,6 +178,36 @@ abstract class Agent
     protected function outil(string $nom): Outil
     {
         return $this->outils[$nom] ?? throw new \LogicException(\sprintf('L\'agent %s n\'a pas l\'outil %s.', $this->agent()->label(), $nom));
+    }
+
+    /**
+     * La réponse rejoint les messages affichés et, dans l'historique de l'agent Conversation, la fin de sa dernière
+     * réponse : au message suivant du client, il sait ce qui a été proposé.
+     */
+    protected function ajouterALaConversation(Conversation $conversation, string $reponse): void
+    {
+        if ('' === trim($reponse)) {
+            return;
+        }
+
+        $conversation->ajouterMessage('assistant', trim($reponse));
+        // L'historique est fait d'objets (Conversation::getHistorique()) : le dernier message est modifié en place.
+        $historique = $conversation->getHistorique();
+        $dernier = end($historique);
+        if ($dernier instanceof \stdClass && 'assistant' === ($dernier->role ?? null) && \is_array($dernier->content ?? null)) {
+            $dernier->content[] = (object) ['type' => 'text', 'text' => "\n\n".trim($reponse)];
+            $conversation->setHistorique($historique);
+        }
+        $this->em->flush();
+    }
+
+    /** Les messages du client, un par ligne : ce qu'il a nommé (« voir des dauphins ») n'a pas toujours de champ dans la fiche. */
+    protected static function messagesDuClient(Conversation $conversation): string
+    {
+        return implode("\n", array_map(
+            static fn (array $m): string => '- '.str_replace("\n", ' ', $m['contenu']),
+            array_values(array_filter($conversation->getMessages(), static fn (array $m): bool => 'client' === $m['role'])),
+        ));
     }
 
     protected static function evenement(string $type, mixed $donnees): ServerEvent
@@ -255,9 +300,8 @@ abstract class Agent
     {
         $contenu = (string) file_get_contents($this->fichierPrompt);
         $contenu = (string) preg_replace('/^\s*<!--.*?-->\s*/s', '', $contenu);
-        $date = (new \IntlDateFormatter('fr_FR', \IntlDateFormatter::FULL, \IntlDateFormatter::NONE, 'Europe/Paris'))
-            ->format(new \DateTimeImmutable());
+        $date = Periode::jour(new \DateTimeImmutable('now', new \DateTimeZone('Europe/Paris')));
 
-        return str_replace('{{date_du_jour}}', (string) $date, trim($contenu));
+        return str_replace('{{date_du_jour}}', $date, trim($contenu));
     }
 }

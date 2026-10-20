@@ -8,11 +8,13 @@ use App\Entity\Destination;
 use App\Entity\PeriodeClimatique;
 use App\Entity\Prestation;
 use App\Entity\TarifParPeriode;
+use App\Enum\MotifTransmission;
 use App\Enum\TypeDeVoyage;
 use App\Enum\TypePrestation;
 use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 use App\Texte\Correspondance;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 
 /**
@@ -20,6 +22,8 @@ use Psr\Clock\ClockInterface;
  * Aux dates données, une destination n'est retenue que si chaque mois du voyage respecte les températures
  * souhaitées et qu'au moins un logement a un tarif pour chaque nuit (#202) ; sinon elle est rangée dans
  * `ecartees` avec la raison, pour que l'agent propose d'autres dates ou passe la main au conseiller.
+ * Si aucune destination cherchée n'a de climat saisi sur toutes les dates, la demande est transmise à un conseiller
+ * (US06, motif « données manquantes ») : elle devient prioritaire, mais le client peut continuer avec d'autres dates.
  */
 final class ChercherDestinations implements Outil
 {
@@ -31,6 +35,7 @@ final class ChercherDestinations implements Outil
 
     public function __construct(
         private readonly DestinationRepository $destinations,
+        private readonly EntityManagerInterface $em,
         private readonly PrestationRepository $prestations,
         private readonly ClockInterface $horloge,
     ) {
@@ -70,18 +75,18 @@ final class ChercherDestinations implements Outil
 
     public function executer(ContexteAgent $contexte, array $entree): array
     {
-        return $this->rechercher($entree, max(1, min(10, Entree::entier($entree, 'limite') ?? self::LIMITE_PAR_DEFAUT)));
+        return $this->rechercher($entree, max(1, min(10, Entree::entier($entree, 'limite') ?? self::LIMITE_PAR_DEFAUT)), $contexte);
     }
 
     /**
      * La recherche, sans limite si $limite est null : retenir_combinaison vérifie ainsi une destination même
-     * au-delà des premiers résultats.
+     * au-delà des premiers résultats. Sans $contexte, une période sans données n'est pas signalée au conseiller.
      *
      * @param array<mixed> $entree
      *
      * @return array<string, mixed>
      */
-    public function rechercher(array $entree, ?int $limite): array
+    public function rechercher(array $entree, ?int $limite, ?ContexteAgent $contexte = null): array
     {
         // Mode non strict : le serveur vérifie lui-même l'entrée.
         $zone = Entree::chaine($entree, 'zone');
@@ -124,9 +129,18 @@ final class ChercherDestinations implements Outil
         }
 
         $retenues = [];
+        $sansDonnees = [];
+        $uneCouverte = false;
         foreach ($candidates as $destination) {
             $prestationsDeLaDestination = $prestations[$destination->getId()] ?? [];
             $climat = null === $debut ? [] : self::climatAuxDates($destination, $debut, $debut->modify(\sprintf('+%d days', $nuits)));
+            if (null !== $debut) {
+                if (self::couvre($climat, $debut, $debut->modify(\sprintf('+%d days', $nuits)))) {
+                    $uneCouverte = true;
+                } else {
+                    $sansDonnees[] = $destination;
+                }
+            }
             $logements = self::logementsPourLeGroupe($prestationsDeLaDestination, $groupe);
             $raison = null === $debut ? self::raisonDAccueil($logements, $groupe) : self::raison($destination, $logements, $groupe, $debut, $nuits, $temperatureMin, $temperatureMax);
             if (null !== $raison) {
@@ -171,7 +185,60 @@ final class ChercherDestinations implements Outil
             ], $ailleurs);
         }
 
+        if (null !== $debut && [] !== $sansDonnees && !$uneCouverte) {
+            $resultat['donneesManquantes'] = [
+                'destinations' => array_map(static fn (Destination $d) => $d->getSlug(), $sansDonnees),
+                'consigne' => 'L\'agence n\'a pas encore de données pour ces dates. Dis-le simplement au client, propose-lui d\'autres dates si elles lui conviennent, et précise qu\'un conseiller a été prévenu et complétera sa demande.',
+            ];
+            if (null !== $contexte) {
+                $this->signalerAuConseiller($contexte, $sansDonnees, $debut, $debut->modify(\sprintf('+%d days', $nuits)));
+            }
+        }
+
         return $resultat;
+    }
+
+    /**
+     * Rend la demande prioritaire (US06). Une demande déjà transmise garde son premier motif et son résumé.
+     *
+     * @param list<Destination> $sansDonnees
+     */
+    private function signalerAuConseiller(ContexteAgent $contexte, array $sansDonnees, \DateTimeImmutable $debut, \DateTimeImmutable $fin): void
+    {
+        if (null !== $contexte->demande->getMotifTransmission()) {
+            return;
+        }
+
+        $contexte->demande->transmettre(MotifTransmission::DonneesManquantes, \sprintf(
+            'Aucun climat saisi du %s au %s pour : %s. Saisir la période dans le catalogue, puis compléter la demande.',
+            $debut->format('d/m/Y'),
+            $fin->format('d/m/Y'),
+            implode(', ', array_map(static fn (Destination $d) => (string) $d->getVille(), $sansDonnees)),
+        ));
+        $this->em->flush();
+    }
+
+    /**
+     * Les périodes climatiques couvrent-elles chaque jour du séjour ?
+     *
+     * @param list<array{debut: string, fin: string, temperatureMoyenne: float|null, pluieMm: int|null}> $climat
+     */
+    private static function couvre(array $climat, \DateTimeImmutable $debut, \DateTimeImmutable $fin): bool
+    {
+        usort($climat, static fn (array $a, array $b) => $a['debut'] <=> $b['debut']);
+
+        // Dates au format AAAA-MM-JJ : l'ordre des chaînes est celui des dates.
+        $jour = $debut->format('Y-m-d');
+        foreach ($climat as $periode) {
+            if ($periode['debut'] > $jour) {
+                return false;
+            }
+            if ($periode['fin'] >= $jour) {
+                $jour = (new \DateTimeImmutable($periode['fin']))->modify('+1 day')->format('Y-m-d');
+            }
+        }
+
+        return $jour > $fin->format('Y-m-d');
     }
 
     /**

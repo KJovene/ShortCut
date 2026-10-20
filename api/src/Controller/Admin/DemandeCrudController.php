@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Confirmation\ConfirmationImpossible;
 use App\Confirmation\ConfirmationService;
+use App\Controller\AiguillageController;
 use App\Entity\Demande;
 use App\Entity\Prestation;
 use App\Entity\Proposition;
@@ -36,6 +37,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\Field;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -64,6 +66,9 @@ use Symfony\Component\Validator\Constraints\Range;
  * - conseiller : uniquement les demandes qui lui sont attribuées ;
  * - administrateur : toutes les demandes, avec un filtre par conseiller.
  * Les demandes prioritaires apparaissent en premier, puis les plus récentes.
+ * La vue « À aiguiller » (?aiguiller=1) liste pour tous les demandes arrivées sans conseiller ;
+ * chacune s'attribue en un clic avec « M'attribuer » (US06, AiguillageController). La fiche montre pourquoi le
+ * chatbot a transmis la demande et la conversation, que le conseiller reprend avec « Reprendre la conversation ».
  * L'accès à une fiche (consultation, modification, suppression) est vérifié par DemandeVoter.
  * Depuis la fiche, « Confirmer la proposition » ouvre l'écran de confirmation (#209, ConfirmationService).
  *
@@ -90,7 +95,11 @@ final class DemandeCrudController extends AbstractCrudController
         return $crud
             ->setEntityLabelInSingular('Demande')
             ->setEntityLabelInPlural('Demandes')
-            ->setPageTitle(Crud::PAGE_INDEX, $this->estAdministrateur() ? 'Toutes les demandes' : 'Mes demandes')
+            ->setPageTitle(Crud::PAGE_INDEX, match (true) {
+                $this->enVueAAiguiller() => 'Demandes à aiguiller',
+                $this->estAdministrateur() => 'Toutes les demandes',
+                default => 'Mes demandes',
+            })
             ->setDefaultSort(['prioritaire' => 'DESC', 'creeLe' => 'DESC'])
             ->setSearchFields(['lieuOuZone', 'villeDepart', 'client.nom', 'client.prenom', 'client.email'])
             // Onglets par statut au-dessus de la liste.
@@ -107,6 +116,8 @@ final class DemandeCrudController extends AbstractCrudController
                 !$this->estAdministrateur() && $user instanceof Utilisateur ? $user : null,
             ));
             $responseParameters->set('statuts', StatutDemande::cases());
+            $responseParameters->set('a_aiguiller', $this->demandes->compterAAiguiller());
+            $responseParameters->set('vue_a_aiguiller', $this->enVueAAiguiller());
         }
 
         return $responseParameters;
@@ -114,14 +125,36 @@ final class DemandeCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        // Seulement quand une proposition a été envoyée au client : un brouillon du chatbot se relit d'abord (#207).
         $confirmer = Action::new('confirmerProposition', 'Confirmer la proposition', 'fa fa-file-signature')
             ->linkToCrudAction('confirmation')
-            ->displayIf(static fn (Demande $demande): bool => !$demande->getPropositions()->isEmpty())
+            ->displayIf(fn (Demande $demande): bool => null !== $this->confirmations->estimation($demande))
             ->asPrimaryAction();
+        // En POST, jeton CSRF dans l'URL : le formulaire généré par EasyAdmin n'a pas de corps.
+        $attribuer = Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
+            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_attribuer', [
+                'id' => $d->getId(),
+                '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
+            ]))
+            ->renderAsForm()
+            ->displayIf(static fn (Demande $d): bool => null === $d->getConseiller());
+        // Le chatbot cesse de répondre au client ; la demande est attribuée au passage si besoin.
+        $reprendre = Action::new('reprendre', 'Reprendre la conversation', 'fa fa-comments')
+            ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_reprendre', [
+                'id' => $d->getId(),
+                '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
+            ]))
+            ->renderAsForm()
+            ->displayIf(static fn (Demande $d): bool => null !== $d->getConversation() && !$d->getConversation()->isRepriseParConseiller());
 
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
+            ->add(Crud::PAGE_INDEX, $attribuer)
+            ->add(Crud::PAGE_DETAIL, $attribuer)
+            ->add(Crud::PAGE_DETAIL, $reprendre)
             ->add(Crud::PAGE_DETAIL, $confirmer)
+            ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
+            ->setPermission('reprendre', DemandeVoter::ATTRIBUER)
             ->setPermission('confirmerProposition', DemandeVoter::MODIFIER)
             // Vérifié sur chaque fiche : un conseiller qui saisit l'URL d'une demande d'un autre reçoit un 403.
             ->setPermission(Action::DETAIL, DemandeVoter::VOIR)
@@ -150,12 +183,15 @@ final class DemandeCrudController extends AbstractCrudController
 
     /**
      * Restreint la liste aux demandes du conseiller connecté ; l'administrateur voit tout.
+     * La vue « À aiguiller » est la même pour tous : les demandes arrivées sans conseiller.
      */
     public function createIndexQueryBuilder(SearchDto $searchDto, EntityDto $entityDto, FieldCollection $fields, FilterCollection $filters): QueryBuilder
     {
         $qb = parent::createIndexQueryBuilder($searchDto, $entityDto, $fields, $filters);
 
-        if (!$this->estAdministrateur()) {
+        if ($this->enVueAAiguiller()) {
+            $this->demandes->restreindreAAiguiller($qb, 'entity');
+        } elseif (!$this->estAdministrateur()) {
             $qb->andWhere('entity.conseiller = :conseillerConnecte')
                 ->setParameter('conseillerConnecte', $this->getUser());
         }
@@ -234,6 +270,20 @@ final class DemandeCrudController extends AbstractCrudController
         yield BooleanField::new('transportInclus', 'Transport inclus')->renderAsSwitch(false)->hideOnIndex();
         yield ArrayField::new('envies', 'Envies')->hideOnIndex();
         yield ArrayField::new('contraintes', 'Contraintes')->hideOnIndex();
+
+        // US06 : pourquoi le chatbot a passé la main, et l'échange à reprendre.
+        yield FormField::addFieldset('Conversation avec le chatbot')->onlyOnDetail();
+        yield Field::new('motifTransmission', 'Transmise au conseiller')
+            ->onlyOnDetail()
+            ->setTemplatePath('admin/champ/transmission.html.twig');
+        yield Field::new('conversation', 'Échanges')
+            ->onlyOnDetail()
+            ->setTemplatePath('admin/champ/conversation.html.twig');
+        // Brouillon préparé par le chatbot : le conseiller le relit puis l'envoie au client (#207).
+        yield FormField::addFieldset('Proposition')->onlyOnDetail();
+        yield Field::new('propositions', 'Dernière version')
+            ->setTemplatePath('admin/champ/proposition.html.twig')
+            ->onlyOnDetail();
     }
 
     /**
@@ -392,6 +442,11 @@ final class DemandeCrudController extends AbstractCrudController
     private function estAdministrateur(): bool
     {
         return $this->isGranted('ROLE_ADMIN');
+    }
+
+    private function enVueAAiguiller(): bool
+    {
+        return (bool) $this->container->get('request_stack')->getCurrentRequest()?->query->getBoolean('aiguiller');
     }
 
     /**

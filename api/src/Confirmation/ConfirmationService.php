@@ -47,12 +47,28 @@ final class ConfirmationService
     ) {
     }
 
-    /** La dernière proposition chiffrée par le chatbot et envoyée au client, ou null s'il n'y en a pas. */
+    /**
+     * La dernière proposition chiffrée par le chatbot et envoyée au client, ou null s'il n'y en a pas. Une fois
+     * confirmée, elle est « remplacée » : c'est alors la dernière première proposition qui précède la version
+     * confirmée. Un brouillon du chatbot, jamais envoyé, ne compte pas (#207).
+     */
     public function estimation(Demande $demande): ?Proposition
     {
+        $propositions = $demande->getPropositions()->toArray();
+        $envoyee = self::derniere(array_filter(
+            $propositions,
+            static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType() && StatutProposition::Envoyee === $p->getStatut(),
+        ));
+        $confirmee = self::derniere(array_filter($propositions, static fn (Proposition $p): bool => self::confirmeLEstimation($p)));
+        if (null !== $envoyee || null === $confirmee) {
+            return $envoyee;
+        }
+
         return self::derniere(array_filter(
-            $demande->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType() && StatutProposition::Brouillon !== $p->getStatut(),
+            $propositions,
+            static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType()
+                && StatutProposition::Remplacee === $p->getStatut()
+                && $p->getVersion() < $confirmee->getVersion(),
         ));
     }
 
@@ -64,7 +80,7 @@ final class ConfirmationService
     {
         $existante = self::derniere(array_filter(
             $demande->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => TypeProposition::Confirmee === $p->getType() && $p->getVersion() > $estimation->getVersion(),
+            static fn (Proposition $p): bool => self::confirmeLEstimation($p) && $p->getVersion() > $estimation->getVersion(),
         ));
         if (null !== $existante) {
             return $existante;
@@ -74,6 +90,10 @@ final class ConfirmationService
             ->setVersion(1 + max(array_map(static fn (Proposition $p): int => $p->getVersion(), $demande->getPropositions()->toArray())))
             ->setType(TypeProposition::Confirmee)
             ->setStatut(StatutProposition::Brouillon)
+            ->setDestination($estimation->getDestination())
+            ->setPourquoi($estimation->getPourquoi())
+            ->setArgumentaire($estimation->getArgumentaire())
+            ->setPrestations($estimation->getPrestations())
             ->setProgramme($estimation->getProgramme())
             ->setNiveauBudget($estimation->getNiveauBudget())
             ->setTotalCentimes($estimation->getTotalCentimes())
@@ -93,6 +113,7 @@ final class ConfirmationService
                 ->setDateDebut($ligne->getDateDebut())
                 ->setDateFin($ligne->getDateFin())
                 ->setQuantite($ligne->getQuantite())
+                ->setCalcul($ligne->getCalcul())
                 ->setPrixEstimeCentimes($ligne->getPrixEstimeCentimes());
             $version->addLigne($copie);
             $this->em->persist($copie);
@@ -152,6 +173,7 @@ final class ConfirmationService
             ->setPrestataire($logement->getPrestataire())
             ->setLibelle((string) $logement->getNom())
             ->setQuantite($estimation['unites'])
+            ->setCalcul($estimation['calcul'])
             ->setPrixEstimeCentimes($estimation['centimes'])
             ->setPrixConfirmeCentimes(null);
         $this->em->flush();
@@ -185,7 +207,7 @@ final class ConfirmationService
      * Prix estimé d'un logement pour les dates de la ligne et les voyageurs de la demande, avec les règles du
      * chiffrage (tarif de chaque nuit, unités, séjour minimum).
      *
-     * @return array{centimes: int, unites: int}
+     * @return array{centimes: int, unites: int, calcul: string}
      *
      * @throws ConfirmationImpossible si le logement n'est pas chiffrable à ces dates
      */
@@ -220,8 +242,11 @@ final class ConfirmationService
 
         $niveau = $resultat->niveaux['essentiel'] ?? throw new \LogicException('Chiffrage sans niveau essentiel.');
 
+        $poste = $niveau->postes(Poste::HEBERGEMENT)[0];
+
         return [
-            'centimes' => $niveau->postes(Poste::HEBERGEMENT)[0]->centimes,
+            'centimes' => $poste->centimes,
+            'calcul' => $poste->calcul,
             'unites' => (int) ceil(self::voyageurs($demande) / max(1, $logement->getCapacite())),
         ];
     }
@@ -348,6 +373,12 @@ final class ConfirmationService
         }
 
         return $hypotheses;
+    }
+
+    /** Version de confirmation en cours ou aboutie ; une version remplacée par un nouvel envoi ne compte plus. */
+    private static function confirmeLEstimation(Proposition $proposition): bool
+    {
+        return TypeProposition::Confirmee === $proposition->getType() && StatutProposition::Remplacee !== $proposition->getStatut();
     }
 
     private static function exigerUnBrouillon(Proposition $version): void
