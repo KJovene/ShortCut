@@ -2,6 +2,9 @@
 
 namespace App\Tests\Controller;
 
+use App\Entity\Demande;
+use App\Entity\Utilisateur;
+use App\Enum\Role;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -48,6 +51,27 @@ final class ChatControllerTest extends WebTestCase
         self::assertSame('nouvelle', $this->reponse()['statut']);
     }
 
+    public function testLaDemandeDUnClientConnecteLuiEstRattachee(): void
+    {
+        $client = $this->creerCompte('zoe.fontaine@exemple.test', Role::Client);
+        $this->client->loginUser($client);
+
+        ['demande' => $demande] = $this->demarrer();
+
+        self::assertSame($client, $this->em->find(Demande::class, $demande)?->getClient());
+    }
+
+    public function testLaDemandeDUnVisiteurOuDUnConseillerResteSansClient(): void
+    {
+        ['demande' => $anonyme] = $this->demarrer();
+
+        $this->client->loginUser($this->creerCompte('lea.dubois@exemple.test', Role::Conseiller));
+        ['demande' => $duConseiller] = $this->demarrer();
+
+        self::assertNull($this->em->find(Demande::class, $anonyme)?->getClient());
+        self::assertNull($this->em->find(Demande::class, $duConseiller)?->getClient());
+    }
+
     public function testLeChatbotNePeutPasLireLaDemandeDUnAutreClient(): void
     {
         ['jeton' => $jeton] = $this->demarrer();
@@ -82,6 +106,15 @@ final class ChatControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(429);
         self::assertResponseHasHeader('Retry-After');
         self::assertStringStartsWith('Vous envoyez trop de messages.', $this->reponse()['erreur']);
+    }
+
+    private function creerCompte(string $email, Role $role): Utilisateur
+    {
+        $utilisateur = (new Utilisateur())->setEmail($email)->setNom('Test')->setRole($role);
+        $this->em->persist($utilisateur);
+        $this->em->flush();
+
+        return $utilisateur;
     }
 
     /**

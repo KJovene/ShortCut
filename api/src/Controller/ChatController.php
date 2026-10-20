@@ -5,6 +5,8 @@ namespace App\Controller;
 use App\Chatbot\AgentConversation;
 use App\Entity\Conversation;
 use App\Entity\Demande;
+use App\Entity\Utilisateur;
+use App\Enum\Role;
 use App\Repository\ConversationRepository;
 use App\Security\VisiteurChatbot;
 use App\Security\Voter\DemandeVoter;
@@ -59,11 +61,17 @@ final class ChatController extends AbstractController
         return new EventStreamResponse(static fn () => $agent->repondre($conversation, $message));
     }
 
-    /** Ouvre une conversation et sa demande vide ; le jeton renvoyé authentifie les appels suivants. */
+    /**
+     * Ouvre une conversation et sa demande vide ; le jeton renvoyé authentifie les appels suivants.
+     * Un client connecté sur le site est rattaché d'office à la demande.
+     */
     #[Route('/conversations', name: 'chat_demarrer', methods: ['POST'])]
-    public function demarrer(EntityManagerInterface $em): JsonResponse
+    public function demarrer(EntityManagerInterface $em, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
     {
         $demande = new Demande();
+        if (Role::Client === $utilisateur?->getRole()) {
+            $demande->setClient($utilisateur);
+        }
         $conversation = new Conversation();
         $demande->setConversation($conversation);
 
