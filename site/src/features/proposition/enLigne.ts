@@ -123,6 +123,10 @@ export const versionQuery = (jeton: string, numero: number) =>
     staleTime: Infinity,
   })
 
+/** Le PDF d'une version (#213) : GET /api/propositions/{jeton}/versions/{numero}/pdf. */
+export const pdfProposition = (jeton: string, numero: number) =>
+  `/api/propositions/${jeton}/versions/${numero}/pdf`
+
 export type ActionProposition = 'demande-de-confirmation' | 'acceptation'
 
 /** « Demander la confirmation » d'une proposition estimée, ou « J'accepte » une proposition confirmée. */

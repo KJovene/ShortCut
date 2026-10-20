@@ -176,6 +176,11 @@ describe('« Ma proposition » par son lien unique (#208)', () => {
     expect(screen.getByRole('heading', { name: 'Suite avec vue caldeira' })).toBeInTheDocument()
     expect(screen.getAllByText('3 762 €').length).toBeGreaterThan(0)
     expect(document.title).toBe('Ma proposition · Santorin, 2 jours')
+    // Le PDF de la version affichée, généré par l'API (#213).
+    expect(screen.getByRole('link', { name: 'Télécharger le PDF' })).toHaveAttribute(
+      'href',
+      `/api/propositions/${JETON}/versions/1/pdf`,
+    )
   })
 
   it('transmet la demande de confirmation au conseiller', async () => {

@@ -16,6 +16,7 @@ import {
 import {
   type ActionProposition,
   agirSurProposition,
+  pdfProposition,
   photoPrestation,
   type PropositionEnLigne as Proposition,
   propositionQuery,
@@ -220,14 +221,15 @@ function Page({
             )}
           </div>
           <div className="no-print flex flex-wrap gap-2.5 pt-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold hover:bg-sable"
+            {/* PDF généré par l'API (#213), pour la version affichée. */}
+            <a
+              href={pdfProposition(jeton, p.version)}
+              download
+              className="flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold text-encre no-underline hover:bg-sable"
             >
               <IconTelecharger size={18} />
               Télécharger le PDF
-            </button>
+            </a>
             <Link
               to="/espace"
               className="flex min-h-11 items-center rounded-full px-[18px] text-sm font-bold text-rouille hover:bg-sable"
