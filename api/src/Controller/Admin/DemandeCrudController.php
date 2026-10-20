@@ -46,6 +46,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\ChoiceFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGeneratorInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Form\ClickableInterface;
@@ -130,8 +131,15 @@ final class DemandeCrudController extends AbstractCrudController
             ->linkToCrudAction('confirmation')
             ->displayIf(fn (Demande $demande): bool => null !== $this->confirmations->estimation($demande))
             ->asPrimaryAction();
+        // US13 : le responsable ouvre en un clic le journal des appels IA de la demande.
+        $journal = Action::new('journalIA', 'Journal IA', 'fa fa-list')
+            ->linkToUrl(fn (Demande $d): string => $this->container->get(AdminUrlGeneratorInterface::class)
+                ->setController(JournalIACrudController::class)
+                ->setAction(Action::INDEX)
+                ->set('filters', ['demande' => ['comparison' => '=', 'value' => $d->getId()]])
+                ->generateUrl());
         // En POST, jeton CSRF dans l'URL : le formulaire généré par EasyAdmin n'a pas de corps.
-        $attribuer = Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
+        $attribuer =Action::new('attribuer', 'M\'attribuer', 'fa fa-hand')
             ->linkToUrl(fn (Demande $d): string => $this->generateUrl('admin_demande_attribuer', [
                 'id' => $d->getId(),
                 '_token' => $this->container->get('security.csrf.token_manager')->getToken(AiguillageController::JETON)->getValue(),
@@ -153,6 +161,8 @@ final class DemandeCrudController extends AbstractCrudController
             ->add(Crud::PAGE_DETAIL, $attribuer)
             ->add(Crud::PAGE_DETAIL, $reprendre)
             ->add(Crud::PAGE_DETAIL, $confirmer)
+            ->add(Crud::PAGE_DETAIL, $journal)
+            ->setPermission('journalIA', 'ROLE_ADMIN')
             ->setPermission('attribuer', DemandeVoter::ATTRIBUER)
             ->setPermission('reprendre', DemandeVoter::ATTRIBUER)
             ->setPermission('confirmerProposition', DemandeVoter::MODIFIER)

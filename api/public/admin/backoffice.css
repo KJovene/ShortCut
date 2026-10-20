@@ -552,3 +552,18 @@ fieldset.form-fieldset,
     max-height: 480px;
     overflow-y: auto;
 }
+
+/* Journal IA : entrée et sortie d'un appel, en JSON indenté */
+.bo-json {
+    margin: 0;
+    max-height: 480px;
+    overflow: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--bo-bordure);
+    border-radius: 10px;
+    background: var(--gray-50);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
