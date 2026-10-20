@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Tests\Agent;
+namespace App\Tests\Chatbot\Outil;
 
-use App\Agent\ContexteAgent;
-use App\Agent\EntreeInvalide;
-use App\Agent\Outil\CalculerBudget;
+use App\Chatbot\ContexteAgent;
+use App\Chatbot\Outil\CalculerBudget;
+use App\Chatbot\Outil\OutilException;
 use App\Chiffrage\ArbitrageCalculator;
 use App\Chiffrage\BudgetCalculator;
 use App\Chiffrage\ChiffrageCache;
@@ -44,7 +44,7 @@ final class CalculerBudgetTest extends KernelTestCase
         $loader = self::getContainer()->get('doctrine.fixtures.loader');
         (new ORMExecutor($this->em, new ORMPurger($this->em)))->execute($loader->getFixtures());
 
-        // Personne n'appelle encore l'outil (la boucle d'agent arrive avec #192) : le conteneur de test l'a retiré.
+        // Construit ici avec une horloge fixe et un cache en mémoire.
         $this->cache = new ChiffrageCache(new ArrayAdapter());
         $calculateur = new BudgetCalculator();
         $this->outil = new CalculerBudget(
@@ -67,11 +67,13 @@ final class CalculerBudgetTest extends KernelTestCase
 
     public function testLeSchemaSuitLaSpecification(): void
     {
+        $definition = $this->outil->definition();
         self::assertSame('calculer_budget', $this->outil->nom());
-        self::assertTrue($this->outil->strict());
-        self::assertStringContainsString('Ne calcule jamais de prix toi-même', $this->outil->description());
+        self::assertSame('calculer_budget', $definition['name']);
+        self::assertTrue($definition['strict']);
+        self::assertStringContainsString('Ne calcule jamais de prix toi-même', $definition['description']);
 
-        $schema = $this->outil->schemaEntree();
+        $schema = $definition['input_schema'];
         self::assertSame(['destination', 'etapes', 'activitesDemandees', 'activitesSuggerees'], $schema['required']);
         self::assertFalse($schema['additionalProperties']);
         self::assertFalse($schema['properties']['etapes']['items']['additionalProperties']);
@@ -148,7 +150,7 @@ final class CalculerBudgetTest extends KernelTestCase
         self::assertSame(['prestation' => 'Guesthouse Reykjavik Centre', 'date' => '2027-01-16', 'raison' => 'Aucun tarif saisi à cette date.'], $sortie['nonChiffrable']);
     }
 
-    public function testUneEntreeInvalideRenvoieUnMessageQueLeModelePeutCorriger(): void
+    public function testUneOutilExceptionRenvoieUnMessageQueLeModelePeutCorriger(): void
     {
         $contexte = $this->contexte($this->demandeDeNoces());
         $fira = $this->ids('Hôtel Fira Blue, chambre triple');
@@ -169,7 +171,7 @@ final class CalculerBudgetTest extends KernelTestCase
             try {
                 $this->outil->executer($contexte, $entree);
                 self::fail('Entrée acceptée : '.$message);
-            } catch (EntreeInvalide $e) {
+            } catch (OutilException $e) {
                 self::assertStringContainsString($message, $e->getMessage());
             }
         }
@@ -189,12 +191,12 @@ final class CalculerBudgetTest extends KernelTestCase
         try {
             $this->outil->executer($this->contexte($sansType), $entree);
             self::fail('Chiffrage sans type de voyage.');
-        } catch (EntreeInvalide $e) {
+        } catch (OutilException $e) {
             self::assertStringContainsString('type de voyage', $e->getMessage());
         }
 
         $sansVille = $this->demandeDeNoces()->setVilleDepart(null);
-        $this->expectException(EntreeInvalide::class);
+        $this->expectException(OutilException::class);
         $this->expectExceptionMessage('La ville de départ du client n\'est pas encore connue');
         $this->outil->executer($this->contexte($sansVille), $entree);
     }
@@ -220,7 +222,7 @@ final class CalculerBudgetTest extends KernelTestCase
         // pour l'équilibré, avec un budget assez large pour qu'il faille les explorer.
         $demande->setBudgetCentimes(100_000_000);
 
-        $this->expectException(EntreeInvalide::class);
+        $this->expectException(OutilException::class);
         $this->expectExceptionMessageMatches('/Trop de combinaisons/');
         $this->outil->executer($this->contexte($demande), [
             'destination' => 'santorin',

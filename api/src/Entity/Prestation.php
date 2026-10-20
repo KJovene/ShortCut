@@ -495,6 +495,17 @@ class Prestation
         return $this->tarifs;
     }
 
+    /**
+     * Ce à quoi une envie du client peut correspondre : envies, équipements, catégorie et nom (« piscine privée »,
+     * « dauphins », « plage »).
+     *
+     * @return list<string>
+     */
+    public function motsCles(): array
+    {
+        return array_values(array_filter([...$this->envies, ...$this->equipements, (string) $this->categorie, (string) $this->nom], static fn (string $m): bool => '' !== $m));
+    }
+
     /** Le tarif qui s'applique ce jour-là, ou null si aucune période ne le couvre. */
     public function tarifLe(\DateTimeImmutable $date): ?TarifParPeriode
     {

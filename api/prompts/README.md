@@ -3,6 +3,7 @@
 | Fichier | Agent | Ticket |
 | --- | --- | --- |
 | `conversation.md` | Conversation : accueille le client et recueille ses exigences | #177 |
+| `recherche.md` | Recherche : choisit la destination, les logements et les activités, et explique son choix au client | #203 |
 
 Les commentaires `<!-- … -->` en tête de fichier ne sont pas envoyés au modèle. Les variables `{{…}}` sont remplacées par l'API avant chaque appel.
 
@@ -54,3 +55,17 @@ Tests automatisés du 16/10/2026 : le client est joué par Claude Sonnet 5.5 à 
 Corrections de la v2 : les températures, la flexibilité des dates et le nombre d'adultes sont toujours demandés ; l'objectif d'un événement d'entreprise et le type de besoin d'accessibilité aussi ; récapitulatif limité à huit lignes ; aucune affirmation sur le calendrier ou les jours fériés.
 
 Coût d'une conversation de recueil (mesuré) : environ 0,004 $ avec Haiku 5.5 et 0,13 $ avec Sonnet 5.5.
+
+## Essais de l'agent Recherche
+
+Essais réels du 20/10/2026 avec Claude Sonnet 5.5 (`recherche.md`), sur les 10 demandes test : fiche demande et messages du client tirés de `api/tests/demandes`, catalogue de démo, chaque essai dans une transaction annulée. « Niveaux identiques » = niveaux dont les logements et activités sont ceux de `attendu.budgetsParNiveau` (27 niveaux chiffrables, l'Islande passant au conseiller).
+
+| Version du prompt | Bonne destination | Hors contrainte | Islande transmise au conseiller | Niveaux identiques | Gras markdown | Mention « prix estimés » | Remarques |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| v1 | 10 / 10 | 0 | Oui | 12 / 27 | 9 messages | 9 / 9 | Activités demandées dans la conversation (dauphins, kayak, Colisée) seulement suggérées : l'agent ne voyait que la fiche ; logement simple absent de l'essentiel (Santorin) ; texte écrit avant un appel d'outil affiché au client |
+| v2 | 10 / 10 | 0 | Oui | 16 / 27 | 0 | 9 / 9 | Messages du client fournis ; « privatiser un riad » ignoré pour l'essentiel (kasbah) ; bungalow de surf en essentiel d'un voyage de noces |
+| v3 | 10 / 10 | 0 | Oui | 18 / 27 | 1 message | 9 / 9 | Riad aux trois niveaux ; à Santorin, « piscine privée » traitée comme un type de logement imposé (pas d'hôtel simple) ; autres écarts : choix d'activités suggérées (cours de pâtes, hammam, surf) |
+
+Corrections hors prompt après ces essais : l'agent Recherche n'envoie au client que son message final, sans le gras markdown, et les envies sont aussi rapprochées des équipements, catégories et noms des prestations.
+
+Aucune combinaison hors contrainte : `retenir_combinaison` revérifie chaque choix et aucun n'a été refusé. Coût mesuré d'une recherche : environ 27 000 tokens d'entrée et 1 500 de sortie, 7 à 21 secondes.

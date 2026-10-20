@@ -64,6 +64,19 @@ final class ChercherDestinations implements Outil
 
     public function executer(ContexteAgent $contexte, array $entree): array
     {
+        return $this->rechercher($entree, max(1, min(10, Entree::entier($entree, 'limite') ?? self::LIMITE_PAR_DEFAUT)));
+    }
+
+    /**
+     * La recherche, sans limite si $limite est null : retenir_combinaison vérifie ainsi une destination même
+     * au-delà des premiers résultats.
+     *
+     * @param array<mixed> $entree
+     *
+     * @return array<string, mixed>
+     */
+    public function rechercher(array $entree, ?int $limite): array
+    {
         // Mode non strict : le serveur vérifie lui-même l'entrée.
         $zone = Entree::chaine($entree, 'zone');
         $villeDepart = Entree::chaine($entree, 'villeDepart');
@@ -72,7 +85,6 @@ final class ChercherDestinations implements Outil
         $temperatureMin = Entree::entier($entree, 'temperatureMin');
         $temperatureMax = Entree::entier($entree, 'temperatureMax');
         $envies = Entree::chaines($entree, 'envies');
-        $limite = max(1, min(10, Entree::entier($entree, 'limite') ?? self::LIMITE_PAR_DEFAUT));
 
         if (null !== $debut && null !== $fin && $fin < $debut) {
             throw new OutilException('dateFin doit être postérieure à dateDebut.');
@@ -122,7 +134,7 @@ final class ChercherDestinations implements Outil
                 continue;
             }
 
-            $enviesDeLaDestination = array_merge(...array_map(static fn (Prestation $p): array => $p->getEnvies(), $prestationsDeLaDestination));
+            $enviesDeLaDestination = array_merge(...array_map(static fn (Prestation $p): array => $p->motsCles(), $prestationsDeLaDestination));
             $correspondantes = Correspondance::communs($envies, array_values(array_unique($enviesDeLaDestination)));
             $retenues[] = [[-\count($correspondantes), $destination->getVille()], [
                 'slug' => $destination->getSlug(),

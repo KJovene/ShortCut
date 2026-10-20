@@ -261,32 +261,42 @@ final class OutilsDeRechercheTest extends KernelTestCase
         ]);
         $proposees = array_column($resultat['activites'], 'nom');
 
-        foreach ($demande['attendu']['candidats']['activitesDemandees'] as $nom) {
-            self::assertContains($nom, $proposees, $fichier);
-        }
-        foreach ($demande['attendu']['exclusions'] as $exclusion) {
-            self::assertNotContains($exclusion['prestation'], $proposees, $fichier);
-        }
-        foreach ($resultat['activites'] as $activite) {
-            self::assertGreaterThanOrEqual($activite['participants'], $activite['capacite'] * $activite['sessions'], $fichier.' '.$activite['nom']);
-            self::assertGreaterThan(0, $activite['prixParPersonneEuros'], $fichier.' '.$activite['nom']);
-        }
         if ($demande['attendu']['passageAuConseiller']) {
             self::assertSame([], $proposees, $fichier);
+
+            return;
+        }
+        $candidats = $demande['attendu']['candidats'];
+        foreach ([...$candidats['activitesDemandees'], ...($candidats['activitesOptionnelles'] ?? [])] as $nom) {
+            self::assertContains($nom, $proposees, $fichier);
+        }
+        // Une activité exclue pour la famille n'est proposée qu'aux voyageurs qui ont l'âge (Teide : les adultes).
+        $parNom = array_column($resultat['activites'], null, 'nom');
+        foreach ($demande['attendu']['exclusions'] as $exclusion) {
+            if (isset($parNom[$exclusion['prestation']])) {
+                self::assertNotSame([], $parNom[$exclusion['prestation']]['exclus'], $fichier.' '.$exclusion['prestation']);
+            }
+        }
+        foreach ($resultat['activites'] as $activite) {
+            self::assertGreaterThan(0, $activite['participants'], $fichier.' '.$activite['nom']);
+            self::assertGreaterThanOrEqual($activite['participants'], $activite['capacite'] * $activite['sessions'], $fichier.' '.$activite['nom']);
+            self::assertGreaterThan(0, $activite['prixParPersonneEuros'], $fichier.' '.$activite['nom']);
         }
     }
 
     public function testLesRaisonsDesActivitesEcartees(): void
     {
-        // Famille à Tenerife : les enfants ont 6 et 9 ans ; l'aîné seul, 11 ans, peut plonger.
+        // Famille à Tenerife, enfants de 6 et 9 ans : ce que toute la famille peut faire d'abord, puis ce que seuls
+        // les parents peuvent faire, avec les enfants exclus. Rien n'est écarté pour l'âge.
         $tenerife = $this->activites->executer($this->contexte, ['destination' => 'tenerife', 'date' => '2027-02-13', 'adultes' => 2, 'agesEnfants' => [9, 6], 'accessibleObligatoire' => false]);
-        self::assertSame(['Observation des baleines et dauphins'], array_column($tenerife['activites'], 'nom'));
         self::assertSame([
-            ['nom' => 'Baptême de plongée', 'raison' => 'Âge minimum 10 ans : les enfants de 6 et 9 ans ne peuvent pas participer.'],
-            ['nom' => 'Randonnée guidée au Teide', 'raison' => 'Âge minimum 12 ans : les enfants de 6 et 9 ans ne peuvent pas participer.'],
-        ], $tenerife['ecartees']);
+            ['Observation des baleines et dauphins', 4, []],
+            ['Baptême de plongée', 2, ['enfant de 6 ans', 'enfant de 9 ans']],
+            ['Randonnée guidée au Teide', 2, ['enfant de 6 ans', 'enfant de 9 ans']],
+        ], array_map(static fn (array $a): array => [$a['nom'], $a['participants'], $a['exclus']], $tenerife['activites']));
+        self::assertSame([], $tenerife['ecartees']);
         $aine = $this->activites->executer($this->contexte, ['destination' => 'tenerife', 'date' => '2027-02-13', 'adultes' => 2, 'agesEnfants' => [11], 'accessibleObligatoire' => false]);
-        self::assertContains(['nom' => 'Randonnée guidée au Teide', 'raison' => 'Âge minimum 12 ans : l\'enfant de 11 ans ne peut pas participer.'], $aine['ecartees']);
+        self::assertSame([3, []], [$aine['activites'][1]['participants'], $aine['activites'][1]['exclus']], 'L\'aîné de 11 ans peut plonger.');
 
         $lisbonne = $this->activites->executer($this->contexte, ['destination' => 'lisbonne', 'date' => '2027-05-14', 'adultes' => 2, 'agesEnfants' => [], 'accessibleObligatoire' => true]);
         self::assertSame([['nom' => 'Visite guidée de l\'Alfama et du tram 28', 'raison' => 'Non accessible : un voyageur a besoin d\'une activité accessible.']], $lisbonne['ecartees']);

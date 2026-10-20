@@ -1,10 +1,8 @@
 <?php
 
-namespace App\Agent\Outil;
+namespace App\Chatbot\Outil;
 
-use App\Agent\ContexteAgent;
-use App\Agent\EntreeInvalide;
-use App\Agent\Outil;
+use App\Chatbot\ContexteAgent;
 use App\Chiffrage\Arbitrage;
 use App\Chiffrage\ArbitrageCalculator;
 use App\Chiffrage\BudgetCalculator;
@@ -54,53 +52,49 @@ final class CalculerBudget implements Outil
         return 'calculer_budget';
     }
 
-    public function description(): string
-    {
-        return 'Calcule les budgets essentiel, équilibré et confort de la demande en cours, selon les règles de prix de l\'agence. Donne pour chaque étape les logements compatibles, puis les activités demandées par le client et celles que tu suggères. Ne calcule jamais de prix toi-même : reprends les montants renvoyés.';
-    }
-
-    public function schemaEntree(): array
+    public function definition(): array
     {
         $ids = ['type' => 'array', 'items' => ['type' => 'integer']];
 
         return [
-            'type' => 'object',
-            'properties' => [
-                'destination' => ['type' => 'string', 'description' => 'Slug renvoyé par chercher_destinations, en minuscules (ex. « santorin »).'],
-                'etapes' => [
-                    'type' => 'array',
-                    'description' => 'Une étape pour un séjour, plusieurs pour un circuit, dans l\'ordre du voyage.',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'dateDebut' => ['type' => 'string', 'description' => 'Première nuit de l\'étape, AAAA-MM-JJ.'],
-                            'nombreDeNuits' => ['type' => 'integer'],
-                            'logementIds' => $ids + ['description' => 'Logements compatibles pour cette étape.'],
+            'name' => $this->nom(),
+            'description' => 'Calcule les budgets essentiel, équilibré et confort de la demande en cours, selon les règles de prix de l\'agence. Donne pour chaque étape les logements compatibles, puis les activités demandées par le client et celles que tu suggères. Ne calcule jamais de prix toi-même : reprends les montants renvoyés.',
+            // Outil qui écrit (cache du chiffrage) : mode strict, voir docs/outils.md « Schémas ».
+            'strict' => true,
+            'input_schema' => [
+                'type' => 'object',
+                'properties' => [
+                    'destination' => ['type' => 'string', 'description' => 'Slug renvoyé par chercher_destinations, en minuscules (ex. « santorin »).'],
+                    'etapes' => [
+                        'type' => 'array',
+                        'description' => 'Une étape pour un séjour, plusieurs pour un circuit, dans l\'ordre du voyage.',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'dateDebut' => ['type' => 'string', 'description' => 'Première nuit de l\'étape, AAAA-MM-JJ.'],
+                                'nombreDeNuits' => ['type' => 'integer'],
+                                'logementIds' => $ids + ['description' => 'Logements compatibles pour cette étape.'],
+                            ],
+                            'required' => ['dateDebut', 'nombreDeNuits', 'logementIds'],
+                            'additionalProperties' => false,
                         ],
-                        'required' => ['dateDebut', 'nombreDeNuits', 'logementIds'],
-                        'additionalProperties' => false,
                     ],
+                    'activitesDemandees' => $ids + ['description' => 'Activités que le client a explicitement demandées (incluses à tous les niveaux).'],
+                    'activitesSuggerees' => $ids + ['description' => 'Activités en accord avec ses envies (ajoutées selon le niveau et le budget).'],
                 ],
-                'activitesDemandees' => $ids + ['description' => 'Activités que le client a explicitement demandées (incluses à tous les niveaux).'],
-                'activitesSuggerees' => $ids + ['description' => 'Activités en accord avec ses envies (ajoutées selon le niveau et le budget).'],
+                'required' => ['destination', 'etapes', 'activitesDemandees', 'activitesSuggerees'],
+                'additionalProperties' => false,
             ],
-            'required' => ['destination', 'etapes', 'activitesDemandees', 'activitesSuggerees'],
-            'additionalProperties' => false,
         ];
-    }
-
-    public function strict(): bool
-    {
-        return true;
     }
 
     public function executer(ContexteAgent $contexte, array $entree): array
     {
         $demande = $contexte->demande;
         $type = $demande->getTypeDeVoyage()
-            ?? throw new EntreeInvalide('Le type de voyage n\'est pas encore connu : enregistre-le avec enregistrer_exigences avant de chiffrer.');
+            ?? throw new OutilException('Le type de voyage n\'est pas encore connu : enregistre-le avec enregistrer_exigences avant de chiffrer.');
         if ($demande->isTransportInclus() && null === $demande->getVilleDepart()) {
-            throw new EntreeInvalide('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
+            throw new OutilException('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
         }
         $destination = $this->destination($entree['destination'] ?? null);
         $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
@@ -110,7 +104,7 @@ final class CalculerBudget implements Outil
                 typeDeVoyage: $type,
                 destination: $destination,
                 adultes: $demande->getAdultes(),
-                agesEnfants: self::agesEnfants($demande),
+                agesEnfants: $demande->agesDesEnfants(),
                 villeDepart: $demande->getVilleDepart(),
                 transportInclus: $demande->isTransportInclus(),
                 budgetCentimes: $demande->getBudgetCentimes(),
@@ -122,11 +116,9 @@ final class CalculerBudget implements Outil
                 margePourcentage: $regle->getMargePourcentage(),
                 fraisDeDossierCentimes: $regle->getFraisDeDossierCentimes($type),
             ));
-        } catch (EntreeInvalide $e) {
-            throw $e;
         } catch (\InvalidArgumentException $e) {
             // Trop de combinaisons, étape vide… : un message que le modèle peut corriger.
-            throw new EntreeInvalide($e->getMessage(), previous: $e);
+            throw new OutilException($e->getMessage(), previous: $e);
         }
 
         $sortie = $this->sortie($resultat);
@@ -150,11 +142,11 @@ final class CalculerBudget implements Outil
     private function destination(mixed $slug): Destination
     {
         if (!\is_string($slug) || '' === trim($slug)) {
-            throw new EntreeInvalide('Indique la destination (slug renvoyé par chercher_destinations).');
+            throw new OutilException('Indique la destination (slug renvoyé par chercher_destinations).');
         }
 
         return $this->destinations->publieeCorrespondant($slug)
-            ?? throw new EntreeInvalide(\sprintf('La destination « %s » n\'existe pas dans le catalogue.', $slug));
+            ?? throw new OutilException(\sprintf('La destination « %s » n\'existe pas dans le catalogue.', $slug));
     }
 
     /**
@@ -163,7 +155,7 @@ final class CalculerBudget implements Outil
     private function etapes(mixed $etapes, Destination $destination): array
     {
         if (!\is_array($etapes) || [] === $etapes) {
-            throw new EntreeInvalide('Donne au moins une étape, avec ses logements compatibles.');
+            throw new OutilException('Donne au moins une étape, avec ses logements compatibles.');
         }
 
         $liste = [];
@@ -173,15 +165,15 @@ final class CalculerBudget implements Outil
                 ? \DateTimeImmutable::createFromFormat('!Y-m-d', $etape['dateDebut'])
                 : false;
             if (false === $date || $date->format('Y-m-d') !== $etape['dateDebut']) {
-                throw new EntreeInvalide(\sprintf('Étape %d : la date de début doit être au format AAAA-MM-JJ.', $numero));
+                throw new OutilException(\sprintf('Étape %d : la date de début doit être au format AAAA-MM-JJ.', $numero));
             }
             $nuits = $etape['nombreDeNuits'] ?? null;
             if (!\is_int($nuits) || $nuits < 1 || $nuits > 60) {
-                throw new EntreeInvalide(\sprintf('Étape %d : le nombre de nuits doit être compris entre 1 et 60.', $numero));
+                throw new OutilException(\sprintf('Étape %d : le nombre de nuits doit être compris entre 1 et 60.', $numero));
             }
             $logements = $this->prestations($etape['logementIds'] ?? [], TypePrestation::Logement, $destination);
             if ([] === $logements) {
-                throw new EntreeInvalide(\sprintf('Étape %d : donne au moins un logement compatible (logementIds).', $numero));
+                throw new OutilException(\sprintf('Étape %d : donne au moins un logement compatible (logementIds).', $numero));
             }
             $liste[] = new Etape($date, $nuits, $logements);
         }
@@ -197,7 +189,7 @@ final class CalculerBudget implements Outil
     private function prestations(mixed $ids, TypePrestation $type, Destination $destination): array
     {
         if (!\is_array($ids)) {
-            throw new EntreeInvalide('Les identifiants de prestations doivent être une liste de nombres.');
+            throw new OutilException('Les identifiants de prestations doivent être une liste de nombres.');
         }
 
         $quoi = TypePrestation::Logement === $type ? 'Le logement' : 'L\'activité';
@@ -205,25 +197,12 @@ final class CalculerBudget implements Outil
         foreach (array_unique($ids) as $id) {
             $prestation = \is_int($id) ? $this->prestations->find($id) : null;
             if (null === $prestation || $type !== $prestation->getType() || $prestation->getDestination()?->getId() !== $destination->getId()) {
-                throw new EntreeInvalide(\sprintf('%s %s n\'existe pas à %s : utilise les identifiants renvoyés par les outils de recherche.', $quoi, json_encode($id), $destination->getVille()));
+                throw new OutilException(\sprintf('%s %s n\'existe pas à %s : utilise les identifiants renvoyés par les outils de recherche.', $quoi, json_encode($id), $destination->getVille()));
             }
             $prestations[] = $prestation;
         }
 
         return $prestations;
-    }
-
-    /**
-     * Âges des enfants ; un enfant dont l'âge n'est pas encore connu compte comme le plus jeune (0 an) :
-     * il n'est pas inscrit aux activités qui ont un âge minimum.
-     *
-     * @return list<int>
-     */
-    private static function agesEnfants(Demande $demande): array
-    {
-        $ages = \array_slice($demande->getAgesEnfants(), 0, $demande->getEnfants());
-
-        return array_pad($ages, $demande->getEnfants(), 0);
     }
 
     /**

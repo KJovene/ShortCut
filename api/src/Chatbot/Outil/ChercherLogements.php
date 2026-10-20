@@ -86,7 +86,7 @@ final class ChercherLogements implements Outil
             }
 
             $tarifs = array_values(array_filter($tarifs)); // aucune nuit sans tarif, vérifié par raison()
-            $correspondantes = Correspondance::communs($envies, $logement->getEnvies());
+            $correspondantes = Correspondance::communs($envies, $logement->motsCles());
             $cout = $unites * array_sum(array_map(static fn (TarifParPeriode $t): int => (int) $t->getPrixCentimes(), $tarifs));
             $logements[] = [[-\count($correspondantes), $cout, $logement->getNom()], [
                 'logementId' => $logement->getId(),

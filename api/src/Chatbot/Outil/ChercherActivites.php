@@ -12,9 +12,10 @@ use App\Repository\PrestationRepository;
 use App\Texte\Correspondance;
 
 /**
- * Activités d'une destination ouvertes à tout le groupe (docs/outils.md, ticket #202) : âge minimum, accessibilité,
- * durée et tarif au premier jour du voyage, comme pour le chiffrage. Une capacité trop petite ne l'écarte pas :
- * l'activité se fait en plusieurs sessions.
+ * Activités d'une destination (docs/outils.md, ticket #202) : accessibilité, durée et tarif au premier jour du
+ * voyage, comme pour le chiffrage. Un enfant trop jeune n'écarte pas l'activité : elle est proposée aux seuls
+ * voyageurs qui ont l'âge minimum (`participants`, `exclus`), comme le chiffrage la compte. Une capacité trop
+ * petite ne l'écarte pas non plus : l'activité se fait en plusieurs sessions.
  */
 final class ChercherActivites implements Outil
 {
@@ -33,7 +34,7 @@ final class ChercherActivites implements Outil
     {
         return [
             'name' => $this->nom(),
-            'description' => 'Liste les activités compatibles d\'une destination du catalogue, ouvertes à tous les voyageurs selon leur âge, avec le prix par personne aux dates. Utilise l\'identifiant renvoyé (activiteId) pour calculer le budget. Les prix sont des prix d\'achat, hors marge : ne les annonce jamais au client, seuls les montants de calculer_budget le sont.',
+            'description' => 'Liste les activités compatibles d\'une destination du catalogue, avec les voyageurs qui ont l\'âge d\'y participer et le prix par personne aux dates. Une activité qui exclut un enfant ne se propose qu\'aux autres voyageurs, en le disant. Utilise l\'identifiant renvoyé (activiteId) pour calculer le budget. Les prix sont des prix d\'achat, hors marge : ne les annonce jamais au client, seuls les montants de calculer_budget le sont.',
             'strict' => false,
             'input_schema' => [
                 'type' => 'object',
@@ -62,18 +63,23 @@ final class ChercherActivites implements Outil
         $envies = Entree::chaines($entree, 'envies');
         $dureeMax = Entree::entier($entree, 'dureeMaxMinutes', 1);
 
-        $participants = $adultes + \count($agesEnfants);
         $activites = [];
         $ecartees = [];
         foreach ($this->prestations->duCatalogue([$destination], TypePrestation::Activite) as $activite) {
-            $raison = self::raison($activite, $agesEnfants, $accessible, $dureeMax, $jour);
+            $raison = self::raison($activite, $accessible, $dureeMax, $jour);
             if (null !== $raison) {
                 $ecartees[] = ['nom' => $activite->getNom(), 'raison' => $raison];
                 continue;
             }
 
-            $correspondantes = Correspondance::communs($envies, $activite->getEnvies());
-            $activites[] = [[-\count($correspondantes), $activite->getNom()], [
+            // Les adultes ont toujours l'âge minimum : seuls les enfants peuvent être exclus.
+            $ageMinimum = $activite->getAgeMinimum() ?? 0;
+            $tropJeunes = array_values(array_filter($agesEnfants, static fn (int $age): bool => $age < $ageMinimum));
+            sort($tropJeunes);
+            $participants = $adultes + \count($agesEnfants) - \count($tropJeunes);
+            $correspondantes = Correspondance::communs($envies, $activite->motsCles());
+            // Ce que toute la famille peut faire d'abord, puis les envies.
+            $activites[] = [[[] !== $tropJeunes, -\count($correspondantes), $activite->getNom()], [
                 'activiteId' => $activite->getId(),
                 'nom' => $activite->getNom(),
                 'prestataire' => $activite->getPrestataire()?->getNom(),
@@ -82,6 +88,7 @@ final class ChercherActivites implements Outil
                 'dureeMinutes' => $activite->getDureeMinutes(),
                 'ageMinimum' => $activite->getAgeMinimum(),
                 'participants' => $participants,
+                'exclus' => array_map(static fn (int $age): string => \sprintf('enfant de %d ans', $age), $tropJeunes),
                 'capacite' => $activite->getCapacite(),
                 'sessions' => (int) ceil($participants / max(1, $activite->getCapacite())),
                 'accessible' => $activite->isAccessible(),
@@ -109,26 +116,11 @@ final class ChercherActivites implements Outil
 
     /**
      * Pourquoi l'activité ne convient pas, ou null si elle convient.
-     *
-     * @param list<int> $agesEnfants
      */
-    private static function raison(Prestation $activite, array $agesEnfants, bool $accessible, ?int $dureeMax, \DateTimeImmutable $jour): ?string
+    private static function raison(Prestation $activite, bool $accessible, ?int $dureeMax, \DateTimeImmutable $jour): ?string
     {
         if ($accessible && !$activite->isAccessible()) {
             return 'Non accessible : un voyageur a besoin d\'une activité accessible.';
-        }
-
-        $ageMinimum = $activite->getAgeMinimum() ?? 0;
-        $tropJeunes = array_values(array_filter($agesEnfants, static fn (int $age): bool => $age < $ageMinimum));
-        sort($tropJeunes);
-        if ([] !== $tropJeunes) {
-            return \sprintf(
-                'Âge minimum %d ans : %s de %s ans ne %s pas participer.',
-                $ageMinimum,
-                1 === \count($tropJeunes) ? 'l\'enfant' : 'les enfants',
-                self::enumerer($tropJeunes),
-                1 === \count($tropJeunes) ? 'peut' : 'peuvent',
-            );
         }
 
         $duree = $activite->getDureeMinutes();
@@ -141,18 +133,6 @@ final class ChercherActivites implements Outil
         }
 
         return null;
-    }
-
-    /**
-     * « 9 », « 6 et 9 », « 4, 6 et 9 ».
-     *
-     * @param list<int> $nombres
-     */
-    private static function enumerer(array $nombres): string
-    {
-        $dernier = array_pop($nombres);
-
-        return [] === $nombres ? (string) $dernier : implode(', ', $nombres).' et '.$dernier;
     }
 
     /** « 3 h », « 2 h 30 », « 45 min ». */
