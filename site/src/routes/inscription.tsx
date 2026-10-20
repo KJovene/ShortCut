@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Bandeau, Champ, classeBouton } from '@/components/Champ'
+import { EcranAuthentification } from '@/components/EcranAuthentification'
 import { ErreurFormulaire, type Inscription, profilQuery, sInscrire } from '@/lib/auth'
 
 export const Route = createFileRoute('/inscription')({
@@ -49,12 +50,23 @@ function PageInscription() {
     inscription.error instanceof ErreurFormulaire ? inscription.error.erreurs[champ] : undefined
 
   return (
-    <section className="mx-auto max-w-sm">
-      <h1 className="text-3xl font-bold">Créer un compte</h1>
-      <p className="mt-2 text-slate-600">Retrouvez vos demandes de voyage et vos propositions.</p>
-
+    <EcranAuthentification
+      titre="Créer un compte"
+      sousTitre="Suivez vos demandes de voyage et leurs propositions, du premier message à la réservation."
+      pied={
+        <>
+          Déjà un compte ?{' '}
+          <Link
+            to="/connexion"
+            className="font-bold text-rouille underline-offset-2 hover:underline"
+          >
+            Se connecter
+          </Link>
+        </>
+      }
+    >
       <form
-        className="mt-8 space-y-5"
+        className="flex flex-col gap-5"
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
@@ -63,33 +75,35 @@ function PageInscription() {
       >
         {inscription.isError && <Bandeau ton="erreur">{inscription.error.message}</Bandeau>}
 
-        <form.Field name="prenom">
-          {(field) => (
-            <Champ
-              id="prenom"
-              label="Prénom"
-              autoComplete="given-name"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              erreur={field.state.meta.errors[0]?.message ?? erreurServeur('prenom')}
-            />
-          )}
-        </form.Field>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <form.Field name="prenom">
+            {(field) => (
+              <Champ
+                id="prenom"
+                label="Prénom"
+                autoComplete="given-name"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={field.handleChange}
+                erreur={field.state.meta.errors[0]?.message ?? erreurServeur('prenom')}
+              />
+            )}
+          </form.Field>
 
-        <form.Field name="nom">
-          {(field) => (
-            <Champ
-              id="nom"
-              label="Nom"
-              autoComplete="family-name"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={field.handleChange}
-              erreur={field.state.meta.errors[0]?.message ?? erreurServeur('nom')}
-            />
-          )}
-        </form.Field>
+          <form.Field name="nom">
+            {(field) => (
+              <Champ
+                id="nom"
+                label="Nom"
+                autoComplete="family-name"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={field.handleChange}
+                erreur={field.state.meta.errors[0]?.message ?? erreurServeur('nom')}
+              />
+            )}
+          </form.Field>
+        </div>
 
         <form.Field name="email">
           {(field) => (
@@ -126,13 +140,6 @@ function PageInscription() {
           {inscription.isPending ? 'Création…' : 'Créer mon compte'}
         </button>
       </form>
-
-      <p className="mt-6 text-sm text-slate-600">
-        Déjà un compte ?{' '}
-        <Link to="/connexion" className="text-blue-700 underline">
-          Se connecter
-        </Link>
-      </p>
-    </section>
+    </EcranAuthentification>
   )
 }
