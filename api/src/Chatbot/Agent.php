@@ -99,9 +99,12 @@ abstract class Agent
     protected function boucle(ContexteAgent $contexte, Tour $tour, \Closure $enregistrer): \Generator
     {
         $nom = $this->agent()->label();
+        $debutDuTour = 0;
+        $chrono = 0;
         try {
             for ($appel = 1; $appel <= $this->appelsMax(); ++$appel) {
                 $debutDuTour = \count($tour->historique) - 1;
+                $chrono = hrtime(true);
                 $flux = $this->claude->diffuser($this->parametres($tour->historique));
                 $enAttente = '';
                 foreach ($flux as $texte) {
@@ -113,6 +116,7 @@ abstract class Agent
                     yield self::evenement('texte', ['texte' => $texte]);
                 }
                 $resultat = $flux->getReturn();
+                $dureeMs = self::millisecondes($chrono);
                 if ('' !== $enAttente && 'tool_use' !== $resultat->stopReason) {
                     // Le widget affiche du texte brut : le gras markdown y resterait en astérisques.
                     $enAttente = str_replace('**', '', $enAttente);
@@ -122,7 +126,7 @@ abstract class Agent
 
                 if (\in_array($resultat->stopReason, ['refusal', 'max_tokens'], true)) {
                     // Réponse incomplète : elle n'entre pas dans l'historique, ses outils ne sont pas exécutés.
-                    $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, []);
+                    $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, [], $dureeMs);
                     $this->logger->warning('Agent {agent} : réponse interrompue ({raison}).', ['agent' => $nom, 'raison' => $resultat->stopReason]);
                     yield self::evenement('erreur', ['erreur' => 'Je n\'ai pas pu terminer ma réponse. Pouvez-vous reformuler votre message ?']);
                     break;
@@ -130,7 +134,7 @@ abstract class Agent
 
                 $tour->historique[] = ['role' => 'assistant', 'content' => $resultat->contenu()];
                 if ('tool_use' !== $resultat->stopReason) {
-                    $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, []);
+                    $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, [], $dureeMs);
                     $enregistrer($tour->historique);
                     break;
                 }
@@ -157,7 +161,7 @@ abstract class Agent
                 }
                 // Tous les résultats dans un seul message, juste après l'appel.
                 $tour->historique[] = ['role' => 'user', 'content' => $resultats];
-                $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, $resultats);
+                $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, $resultats, $dureeMs);
                 $enregistrer($tour->historique);
 
                 if (null !== $this->outilFinal() && null !== $tour->sortie($this->outilFinal())) {
@@ -170,6 +174,8 @@ abstract class Agent
                 }
             }
         } catch (ErreurClaude $e) {
+            // Un appel en échec figure aussi au journal : le responsable voit tout ce qui a été tenté.
+            $this->journaliserEchec($contexte, $tour->historique, $debutDuTour, $e, self::millisecondes($chrono));
             $this->logger->error('Agent {agent} : {erreur}', ['agent' => $nom, 'erreur' => $e->getMessage(), 'exception' => $e]);
             yield self::evenement('erreur', ['erreur' => $e->messagePourLeClient()]);
         }
@@ -287,7 +293,7 @@ abstract class Agent
      * @param list<mixed>                $historique
      * @param list<array<string, mixed>> $resultatsOutils
      */
-    private function journaliser(ContexteAgent $contexte, array $historique, int $debutDuTour, MessageClaude $resultat, array $resultatsOutils): void
+    private function journaliser(ContexteAgent $contexte, array $historique, int $debutDuTour, MessageClaude $resultat, array $resultatsOutils, int $dureeMs): void
     {
         $journal = (new JournalIA())
             ->setAgent($contexte->agent)
@@ -296,10 +302,36 @@ abstract class Agent
             ->setEntree(['messages' => \array_slice($historique, $debutDuTour, 1)])
             ->setSortie(['contenu' => $resultat->contenu(), 'stopReason' => $resultat->stopReason, 'resultatsOutils' => $resultatsOutils])
             ->setTokensEntree($resultat->tokensEntree)
-            ->setTokensSortie($resultat->tokensSortie);
+            ->setTokensSortie($resultat->tokensSortie)
+            ->setDureeMs($dureeMs);
 
         $this->em->persist($journal);
         $this->em->flush();
+    }
+
+    /**
+     * L'appel n'a pas abouti (API indisponible, délai dépassé…) : la ligne garde ce qui a été envoyé et l'erreur.
+     *
+     * @param list<mixed> $historique
+     */
+    private function journaliserEchec(ContexteAgent $contexte, array $historique, int $debutDuTour, ErreurClaude $erreur, int $dureeMs): void
+    {
+        $journal = (new JournalIA())
+            ->setAgent($contexte->agent)
+            ->setDemande($contexte->demande)
+            ->setModele($this->modele())
+            ->setEntree(['messages' => \array_slice($historique, $debutDuTour, 1)])
+            ->setSortie(['erreur' => $erreur->getMessage()])
+            ->setDureeMs($dureeMs);
+
+        $this->em->persist($journal);
+        $this->em->flush();
+    }
+
+    /** Millisecondes écoulées depuis un relevé de hrtime(true) ; 0 si l'appel n'a pas commencé. */
+    private static function millisecondes(int $depuis): int
+    {
+        return 0 === $depuis ? 0 : intdiv(hrtime(true) - $depuis, 1_000_000);
     }
 
     /** Prompt système sans son commentaire de tête, avec la date du jour. */

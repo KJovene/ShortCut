@@ -1,5 +1,7 @@
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
+import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { IconTelecharger } from '@/components/ui/icons'
 import {
   formatDuree,
@@ -10,14 +12,32 @@ import {
   type Prestation,
 } from '@/data/catalogue'
 import { useChat } from '@/features/chat/chatContext'
+import {
+  estJetonProposition,
+  propositionQuery,
+  titreProposition,
+} from '@/features/proposition/enLigne'
 import { NIVEAUX, type Niveau } from '@/features/proposition/proposition'
+import { PropositionEnLigne } from '@/features/proposition/PropositionEnLigne'
 import { trouverProposition } from '@/features/proposition/store'
 import { cn } from '@/lib/cn'
 
+/**
+ * « Ma proposition » : par son lien unique (jeton), la proposition envoyée par le conseiller, lue dans l'API ;
+ * « exemple » et les propositions de démonstration restent calculées dans le navigateur.
+ */
 export const Route = createFileRoute('/proposition/$id')({
-  head: () => ({
+  loader: ({ context, params }) =>
+    estJetonProposition(params.id)
+      ? context.queryClient.ensureQueryData(propositionQuery(params.id))
+      : null,
+  head: ({ loaderData }) => ({
     meta: [
-      { title: 'Ma proposition de voyage' },
+      {
+        title: loaderData
+          ? `Ma proposition · ${titreProposition(loaderData)}`
+          : 'Ma proposition de voyage',
+      },
       {
         name: 'description',
         content: 'Votre proposition de voyage sur mesure, à confirmer par votre conseiller.',
@@ -26,8 +46,20 @@ export const Route = createFileRoute('/proposition/$id')({
       { name: 'robots', content: 'noindex' },
     ],
   }),
-  component: PropositionPage,
+  pendingComponent: PageEnChargement,
+  errorComponent: PageIndisponible,
+  component: PagePropositionRoute,
 })
+
+function PagePropositionRoute() {
+  const { id } = Route.useParams()
+  return estJetonProposition(id) ? <PropositionDuLien jeton={id} /> : <PropositionPage />
+}
+
+function PropositionDuLien({ jeton }: { jeton: string }) {
+  const { data: proposition } = useSuspenseQuery(propositionQuery(jeton))
+  return proposition ? <PropositionEnLigne proposition={proposition} /> : <PropositionIntrouvable />
+}
 
 const dateLongue = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(

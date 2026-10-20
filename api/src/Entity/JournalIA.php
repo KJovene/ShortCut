@@ -47,6 +47,10 @@ class JournalIA
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     private ?int $tokensSortie = null;
 
+    /** Durée de l'appel à Claude, réponse diffusée comprise ; null pour les lignes antérieures à son ajout. */
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $dureeMs = null;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $creeLe;
 
@@ -154,6 +158,48 @@ class JournalIA
         $this->tokensSortie = $tokensSortie;
 
         return $this;
+    }
+
+    public function getDureeMs(): ?int
+    {
+        return $this->dureeMs;
+    }
+
+    public function setDureeMs(?int $dureeMs): static
+    {
+        $this->dureeMs = $dureeMs;
+
+        return $this;
+    }
+
+    /**
+     * Outils que Claude a demandé d'appeler dans sa réponse, dans l'ordre.
+     *
+     * @return list<string>
+     */
+    public function getOutils(): array
+    {
+        $contenu = $this->sortie['contenu'] ?? [];
+        $outils = [];
+        foreach (\is_array($contenu) ? $contenu : [] as $bloc) {
+            if (\is_array($bloc) && 'tool_use' === ($bloc['type'] ?? null) && \is_string($bloc['name'] ?? null)) {
+                $outils[] = $bloc['name'];
+            }
+        }
+
+        return $outils;
+    }
+
+    /** Client de la demande, pour le journal du backoffice ; null pour un appel hors demande. */
+    public function getClient(): ?Utilisateur
+    {
+        return $this->demande?->getClient();
+    }
+
+    /** Message d'erreur d'un appel qui a échoué ; null si Claude a répondu. */
+    public function getErreur(): ?string
+    {
+        return \is_string($this->sortie['erreur'] ?? null) ? $this->sortie['erreur'] : null;
     }
 
     public function getCreeLe(): \DateTimeImmutable

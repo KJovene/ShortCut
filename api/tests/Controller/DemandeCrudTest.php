@@ -269,6 +269,32 @@ final class DemandeCrudTest extends WebTestCase
         self::assertSelectorTextContains('.conversation', 'Je préfère parler à quelqu\'un.');
     }
 
+    public function testSAttribuerLaDemandeReprendLaConversation(): void
+    {
+        $demande = $this->creerDemandeTransmise();
+        $demande->getConversation()?->setRepriseParConseiller(false);
+        $this->em->flush();
+        $id = $demande->getId();
+
+        $this->client->loginUser($this->lea);
+        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
+        $url = $crawler->filter('form[action*="/attribuer"]')->attr('action');
+
+        $this->client->request('POST', (string) $url);
+        self::assertResponseRedirects('/admin/demande/'.$id);
+
+        $this->em->clear();
+        $priseEnCharge = $this->em->find(Demande::class, $id);
+        self::assertSame($this->lea->getId(), $priseEnCharge?->getConseiller()?->getId());
+        self::assertTrue($priseEnCharge->getConversation()?->isRepriseParConseiller(), 'Le chatbot ne répond plus au client.');
+        self::assertNotNull($priseEnCharge->getConversation()->getFinLe());
+
+        // Plus rien à reprendre ni à s'attribuer sur la fiche.
+        $crawler = $this->client->request('GET', '/admin/demande/'.$id);
+        self::assertCount(0, $crawler->filter('form[action*="/reprendre"]'));
+        self::assertCount(0, $crawler->filter('form[action*="/attribuer"]'));
+    }
+
     public function testUnConseillerNeReprendPasLaConversationDUnAutre(): void
     {
         $demande = $this->creerDemandeTransmise();
