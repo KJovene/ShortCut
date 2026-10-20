@@ -28,8 +28,11 @@ const SANTORIN: DemandeClient = {
   enfants: 0,
   creeLe: '2026-10-16T15:02:00+02:00',
   conseiller: { prenom: 'Claire', nom: 'Martin' },
+  transmiseLe: '2026-10-16T15:10:00+02:00',
   proposition: {
+    jeton: 'a'.repeat(64),
     version: 1,
+    etat: 'estimee',
     statut: 'envoyee',
     niveauBudget: 'Équilibré',
     totalCentimes: 376200,
@@ -55,6 +58,7 @@ const ISLANDE: DemandeClient = {
   typeDeVoyage: 'circuit',
   lieuOuZone: 'Islande',
   conseiller: null,
+  transmiseLe: null,
   proposition: null,
   conversation: {
     debutLe: '2026-09-14T10:00:00+02:00',
@@ -97,14 +101,42 @@ describe('mon espace', () => {
 
     const voyage = await screen.findByRole('region', { name: 'Santorin, 10 jours' })
     expect(within(voyage).getByText('Dossier D-0228 · 2 adultes · mai 2027')).toBeInTheDocument()
-    expect(within(voyage).getByText('En cours de confirmation')).toBeInTheDocument()
+    expect(within(voyage).getByText('Pris en charge par Claire')).toBeInTheDocument()
     expect(within(voyage).getByText('3 762 €')).toBeInTheDocument()
+    expect(within(voyage).getByText(/prix estimé/)).toBeInTheDocument()
     expect(within(voyage).getByText('Claire Martin')).toBeInTheDocument()
 
     const enCours = within(voyage)
       .getAllByRole('listitem')
       .find((etape) => etape.getAttribute('aria-current') === 'step')
-    expect(enCours).toHaveTextContent('Confirmation par Claire')
+    expect(enCours).toHaveTextContent('Prise en charge par Claire')
+    expect(enCours).toHaveTextContent('Depuis le 16 oct.')
+    expect(within(voyage).getAllByRole('listitem')).toHaveLength(4)
+  })
+
+  it('avance à la finalisation une fois la version confirmée', async () => {
+    simulerApi({
+      'GET /api/moi': { status: 200, body: CAMILLE },
+      'GET /api/moi/demandes': {
+        status: 200,
+        body: [
+          {
+            ...SANTORIN,
+            statut: 'confirmee',
+            proposition: { ...SANTORIN.proposition!, version: 2, etat: 'confirmee' },
+          },
+        ],
+      },
+    })
+    afficher('/espace')
+
+    const voyage = await screen.findByRole('region', { name: 'Santorin, 10 jours' })
+    expect(within(voyage).getByText('Confirmée, à valider')).toBeInTheDocument()
+    expect(within(voyage).getByText(/prix confirmé par votre conseiller/)).toBeInTheDocument()
+    const enCours = within(voyage)
+      .getAllByRole('listitem')
+      .find((etape) => etape.getAttribute('aria-current') === 'step')
+    expect(enCours).toHaveTextContent('Finalisation')
   })
 
   it('affiche la conversation choisie', async () => {
@@ -116,10 +148,12 @@ describe('mon espace', () => {
 
     const fil = await screen.findByRole('article', { name: 'Conversation sélectionnée' })
     expect(within(fil).getByText('Votre proposition est prête.')).toBeInTheDocument()
+    expect(fil).toHaveTextContent('Dossier suivi par Claire')
 
     await userEvent.setup().click(screen.getByRole('button', { name: /^Islande/ }))
 
     expect(within(fil).getByText('Voir les aurores boréales.')).toBeInTheDocument()
+    expect(fil).not.toHaveTextContent('Dossier suivi par')
     expect(screen.getByRole('button', { name: /^Islande/ })).toHaveAttribute('aria-pressed', 'true')
   })
 

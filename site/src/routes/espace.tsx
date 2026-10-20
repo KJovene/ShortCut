@@ -15,7 +15,7 @@ import {
   metaDemande,
   moisDeDepart,
   prenomConseiller,
-  STATUT_CLIENT,
+  statutClient,
   titreDemande,
 } from '@/features/espace/espace'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
@@ -110,7 +110,7 @@ function AucunVoyage() {
 function VoyageSuivi({ demande }: { demande: DemandeClient }) {
   const destination = destinationDe(demande)
   const mois = moisDeDepart(demande)
-  const statut = STATUT_CLIENT[demande.statut]
+  const statut = statutClient(demande)
   const conseiller = prenomConseiller(demande)
 
   return (
@@ -166,8 +166,8 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                 <span className="text-[13px] text-taupe">
                   {demande.proposition.niveauBudget} ·{' '}
                   {formatEuros(demande.proposition.totalParPersonneCentimes / 100)} par personne ·{' '}
-                  {demande.statut === 'confirmee' || demande.statut === 'acceptee'
-                    ? 'prix confirmé'
+                  {demande.proposition.etat === 'confirmee'
+                    ? 'prix confirmé par votre conseiller'
                     : 'prix estimé'}
                 </span>
               </>
@@ -202,8 +202,8 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                   </strong>
                 </div>
                 <span className="text-[13px] leading-[1.45] text-taupe">
-                  {conseiller} vérifie les prix et les disponibilités, et vous répond sous deux
-                  jours ouvrés.
+                  {conseiller} suit votre dossier : prix, disponibilités et modifications passent
+                  désormais par votre conseiller.
                 </span>
               </>
             ) : (
@@ -243,7 +243,7 @@ function Etapes({ demande }: { demande: DemandeClient }) {
   return (
     <ol
       aria-label="Étapes du voyage"
-      className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-5 sm:gap-0"
+      className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-4 sm:gap-0"
     >
       {liste.map((etape, i) => {
         const style = STYLE_ETAPE[etape.etat]
@@ -334,7 +334,7 @@ function CarteConversation({
   onChoisir: () => void
 }) {
   const destination = destinationDe(demande)
-  const statut = STATUT_CLIENT[demande.statut]
+  const statut = statutClient(demande)
 
   return (
     <button
@@ -390,6 +390,7 @@ const STYLE_MESSAGE = {
 
 function Fil({ demande }: { demande: DemandeClient }) {
   const messages = demande.conversation!.messages
+  const conseiller = prenomConseiller(demande)
   const date = new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -428,6 +429,12 @@ function Fil({ demande }: { demande: DemandeClient }) {
           </p>
         ))}
       </div>
+      {conseiller && (
+        <p className="m-0 border-t border-sable px-[22px] py-3.5 text-[13px] text-taupe">
+          Dossier suivi par <strong className="text-encre">{conseiller}</strong> : pour modifier
+          votre voyage, passez par votre conseiller.
+        </p>
+      )}
     </article>
   )
 }

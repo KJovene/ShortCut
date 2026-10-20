@@ -6,6 +6,7 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
+use App\Enum\MotifTransmission;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
@@ -58,7 +59,8 @@ final class EspaceClientTest extends WebTestCase
         $conversation = (new Conversation())->setMessages([
             ['role' => 'client', 'contenu' => 'Du soleil en mai, à deux.', 'le' => '2026-10-16T15:02:00+02:00'],
         ]);
-        $recente->setConversation($conversation);
+        $recente->setConversation($conversation)
+            ->transmettre(MotifTransmission::DemandeDuClient, 'Le client veut parler à un conseiller.');
         $this->em->persist($conversation);
         $this->em->flush();
 
@@ -72,6 +74,8 @@ final class EspaceClientTest extends WebTestCase
         self::assertSame(['prenom' => 'Léa', 'nom' => 'Compte de test'], $demandes[0]['conseiller']);
         self::assertSame('Du soleil en mai, à deux.', $demandes[0]['conversation']['messages'][0]['contenu']);
         self::assertNull($demandes[1]['conversation']);
+        self::assertNotNull($demandes[0]['transmiseLe']);
+        self::assertNull($demandes[1]['transmiseLe']);
     }
 
     public function testLesBrouillonsDePropositionRestentCachesAuClient(): void

@@ -26,9 +26,14 @@ export const DemandeClient = z.object({
   enfants: z.number(),
   creeLe: z.string(),
   conseiller: z.object({ prenom: z.string().nullable(), nom: z.string() }).nullable(),
+  /** Date à laquelle l'assistant a passé la main à un conseiller ; null s'il ne l'a pas fait. */
+  transmiseLe: z.string().nullable(),
   proposition: z
     .object({
+      jeton: z.string(),
       version: z.number(),
+      /** Prix estimés par l'assistant, ou confirmés par le conseiller. */
+      etat: z.enum(['estimee', 'confirmee']),
       statut: z.string(),
       niveauBudget: z.string(),
       totalCentimes: z.number(),
@@ -53,14 +58,34 @@ export const mesDemandesQuery = queryOptions({
   queryFn: chargerMesDemandes,
 })
 
-/** Libellé et couleurs du statut, du point de vue du client. */
-export const STATUT_CLIENT: Record<StatutDemande, { label: string; classe: string }> = {
-  nouvelle: { label: 'Demande envoyée', classe: 'bg-[#E3EDF8] text-[#1E4E8C]' },
-  proposition_envoyee: { label: 'Proposition reçue', classe: 'bg-[#FFF1D0] text-[#7A5200]' },
-  a_confirmer: { label: 'En cours de confirmation', classe: 'bg-[#FFF1D0] text-[#7A5200]' },
-  confirmee: { label: 'Confirmée, à valider', classe: 'bg-[#DDF1E4] text-[#1F6B3A]' },
-  acceptee: { label: 'Voyage réservé', classe: 'bg-vert-fonce text-white' },
-  perdue: { label: 'Clôturée', classe: 'bg-[#EFEAE4] text-[#5A4A3E]' },
+const CLASSE_STATUT = {
+  info: 'bg-[#E3EDF8] text-[#1E4E8C]',
+  attente: 'bg-[#FFF1D0] text-[#7A5200]',
+  succes: 'bg-[#DDF1E4] text-[#1F6B3A]',
+  fini: 'bg-vert-fonce text-white',
+  clos: 'bg-[#EFEAE4] text-[#5A4A3E]',
+} as const
+
+/**
+ * Libellé et couleurs du statut, du point de vue du client. Tant que la demande est entre les mains d'un
+ * conseiller, c'est lui que le client voit : « Pris en charge par Claire ».
+ */
+export function statutClient(demande: DemandeClient): { label: string; classe: string } {
+  const conseiller = prenomConseiller(demande)
+  switch (demande.statut) {
+    case 'confirmee':
+      return { label: 'Confirmée, à valider', classe: CLASSE_STATUT.succes }
+    case 'acceptee':
+      return { label: 'Voyage accepté', classe: CLASSE_STATUT.fini }
+    case 'perdue':
+      return { label: 'Clôturée', classe: CLASSE_STATUT.clos }
+    default:
+      if (conseiller)
+        return { label: `Pris en charge par ${conseiller}`, classe: CLASSE_STATUT.attente }
+      return demande.statut === 'nouvelle'
+        ? { label: 'Demande envoyée', classe: CLASSE_STATUT.info }
+        : { label: 'Proposition reçue', classe: CLASSE_STATUT.attente }
+  }
 }
 
 /** Une demande en cours : ni réservée, ni clôturée. */
@@ -76,39 +101,50 @@ export interface Etape {
   etat: EtatEtape
 }
 
-/** Nombre d'étapes franchies selon le statut ; la suivante est l'étape en cours. */
-const ETAPES_FAITES: Record<StatutDemande, number> = {
-  nouvelle: 1,
-  proposition_envoyee: 2,
-  a_confirmer: 2,
-  confirmee: 3,
-  acceptee: 4,
-  perdue: 0,
-}
-
 const dateCourte = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso))
 
-const heure = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso))
+/**
+ * Nombre d'étapes franchies ; l'étape suivante est l'étape en cours. La prise en charge dure jusqu'à la
+ * confirmation du conseiller, la finalisation jusqu'à l'accord du client, puis viennent les réservations.
+ */
+function etapesFaites(demande: DemandeClient) {
+  if (demande.statut === 'acceptee') return 3
+  if (demande.statut === 'confirmee') return 2
+  return 1
+}
 
-/** Les cinq étapes du voyage, de la demande à la réservation. */
+/** Les quatre étapes du voyage, de la demande à la réservation des prestations (maquette E-Espace). */
 export function etapes(demande: DemandeClient): Etape[] {
-  const conseiller = prenomConseiller(demande) ?? 'votre conseiller'
+  const conseiller = prenomConseiller(demande)
+  const depuis = demande.transmiseLe ? `Depuis le ${dateCourte(demande.transmiseLe)} · ` : ''
   const titres: [string, string][] = [
-    ['Demande envoyée', `${dateCourte(demande.creeLe)}, ${heure(demande.creeLe)}`],
-    ['Proposition reçue', 'Prix estimé par l’assistant'],
-    [`Confirmation par ${conseiller}`, 'Prix et disponibilités'],
-    ['Votre accord', 'Vous validez la version confirmée'],
-    ['Réservation', 'Avec votre conseiller'],
+    [
+      'Demande envoyée',
+      conseiller
+        ? `${dateCourte(demande.creeLe)} · vous pouviez modifier votre dossier avec l’assistant`
+        : `${dateCourte(demande.creeLe)} · vous pouvez encore la modifier avec l’assistant`,
+    ],
+    conseiller
+      ? [
+          `Prise en charge par ${conseiller}`,
+          `${depuis}pour toute modification, passez par votre conseiller`,
+        ]
+      : ['Prise en charge', 'Un conseiller de l’agence va suivre votre dossier'],
+    [
+      'Finalisation',
+      conseiller
+        ? `Échanges avec ${conseiller} pour finaliser votre voyage`
+        : 'Échanges avec votre conseiller pour finaliser votre voyage',
+    ],
+    ['Réservation des prestations', 'Vols, hôtels et activités réservés'],
   ]
-  const faites = demande.statut === 'perdue' ? 0 : ETAPES_FAITES[demande.statut]
+  const faites = etapesFaites(demande)
 
   return titres.map(([titre, detail], i) => ({
     titre,
     detail,
-    etat:
-      i < faites ? 'faite' : i === faites && demande.statut !== 'perdue' ? 'en-cours' : 'a-venir',
+    etat: i < faites ? 'faite' : i === faites ? 'en-cours' : 'a-venir',
   }))
 }
 
