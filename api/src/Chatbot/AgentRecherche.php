@@ -24,6 +24,10 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  *
  * Il a son propre échange avec Claude, qui commence par la fiche demande ; seule sa réponse finale rejoint la
  * conversation, à la suite de celle de l'agent Conversation, pour que celui-ci sache ce qui a été proposé.
+ *
+ * Sans combinaison possible (ticket #204), il propose les ajustements calculés par chercher_destinations (autres
+ * dates, durée, autres destinations) et transmet au conseiller une période sans données ; s'il échoue sans rien
+ * dire au client, le serveur transmet lui-même la demande.
  */
 final class AgentRecherche extends Agent
 {
@@ -58,6 +62,17 @@ final class AgentRecherche extends Agent
         yield self::evenement('texte', ['texte' => "\n\n"]);
         try {
             yield from $this->boucle($contexte, $tour, static function (): void {});
+
+            // Ni combinaison, ni transmission, ni réponse (erreur de l'API, trop d'appels) : le client n'est jamais
+            // laissé sans suite, la demande part chez un conseiller (ticket #204).
+            if (null === $tour->sortie('retenir_combinaison') && null === $tour->sortie('transmettre_au_conseiller') && '' === trim($tour->reponse)) {
+                $transmission = $this->outil('transmettre_au_conseiller')->executer($contexte, [
+                    'motif' => 'autre',
+                    'resume' => 'La recherche automatique n\'a pas abouti (erreur ou réponse incomplète de l\'agent Recherche) : la proposition est à construire à partir de la fiche demande.',
+                ]);
+                $tour->reponse = 'Je n\'ai pas pu terminer votre proposition. '.$transmission['messagePourLeClient'];
+                yield self::evenement('texte', ['texte' => $tour->reponse]);
+            }
         } finally {
             $this->ajouterALaConversation($conversation, $tour->reponse);
         }

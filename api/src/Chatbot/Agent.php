@@ -159,6 +159,12 @@ abstract class Agent
         }
     }
 
+    /** Un outil de l'agent, pour que le serveur l'appelle lui-même. */
+    protected function outil(string $nom): Outil
+    {
+        return $this->outils[$nom] ?? throw new \LogicException(\sprintf('L\'agent %s n\'a pas l\'outil %s.', $this->agent()->label(), $nom));
+    }
+
     protected static function evenement(string $type, mixed $donnees): ServerEvent
     {
         return new ServerEvent(json_encode($donnees, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE), $type);

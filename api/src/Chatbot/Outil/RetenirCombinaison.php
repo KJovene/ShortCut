@@ -90,7 +90,7 @@ final class RetenirCombinaison implements Outil
         $slug = (string) $destination->getSlug();
         $accessible = $demande->aBesoinDAccessibilite();
 
-        // 1. La destination, avec les critères de la fiche : zone, températures et tarifs aux dates.
+        // 1. La destination, avec les critères de la fiche : zone, groupe, températures et tarifs aux dates.
         $recherche = $this->chercherDestinations->rechercher(array_filter([
             'zone' => $demande->getLieuOuZone(),
             'dateDebut' => $premiereNuit->format('Y-m-d'),
@@ -99,6 +99,8 @@ final class RetenirCombinaison implements Outil
             'temperatureMax' => $demande->getTemperatureMax(),
             'envies' => $demande->getEnvies(),
             'villeDepart' => $demande->getVilleDepart(),
+            'voyageurs' => $demande->getAdultes() + $demande->getEnfants(),
+            'accessibleObligatoire' => $accessible,
         ], static fn ($v): bool => null !== $v), null);
         $resultatDestination = self::parSlug($recherche['destinations'], $slug);
         if (null === $resultatDestination) {

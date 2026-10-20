@@ -19,6 +19,7 @@ use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Clock\MockClock;
 
 /**
  * Outils de recherche (#202) sur le jeu de démo : les dix demandes test retrouvent leur destination, leurs
@@ -48,7 +49,7 @@ final class OutilsDeRechercheTest extends KernelTestCase
         // test les a retirés, ils sont construits ici avec les mêmes dépôts.
         $destinations = $this->em->getRepository(Destination::class);
         $prestations = $this->em->getRepository(Prestation::class);
-        $this->destinations = new ChercherDestinations($destinations, $prestations);
+        $this->destinations = new ChercherDestinations($destinations, $prestations, new MockClock('2026-10-19'));
         $this->logements = new ChercherLogements($destinations, $prestations);
         $this->activites = new ChercherActivites($destinations, $prestations);
         $this->contexte = new ContexteAgent(new Demande(), new Conversation(), AgentIA::Recherche);
@@ -130,7 +131,59 @@ final class OutilsDeRechercheTest extends KernelTestCase
         self::assertSame(['plage', 'famille'], $tenerife['enviesCorrespondantes']);
         self::assertSame(270, $tenerife['tempsDeTrajetMinutes']);
         self::assertSame(114, $tenerife['aPartirDeParNuitEuros'], 'Hôtel Teide Nature, 95 € en haute saison d\'hiver (× 1,2).');
-        self::assertContains(['slug' => 'lisbonne', 'raison' => '13 °C en moyenne aux dates, moins que les 18 °C souhaités.'], $resultat['ecartees']);
+        // Lisbonne est écartée avec son climat, et les premières dates où elle conviendrait : 19 °C en mai.
+        $lisbonne = current(array_filter($resultat['ecartees'], static fn (array $e): bool => 'lisbonne' === $e['slug']));
+        self::assertSame([
+            'slug' => 'lisbonne',
+            'raison' => '13 °C en moyenne aux dates, moins que les 18 °C souhaités.',
+            'climatAuxDates' => [['debut' => '2027-02-01', 'fin' => '2027-02-28', 'temperatureMoyenne' => 13.0, 'pluieMm' => 90]],
+            'datesPossibles' => [['dateDebut' => '2027-05-01', 'dateFin' => '2027-05-08']],
+        ], $lisbonne);
+    }
+
+    /**
+     * Islande en janvier (#204) : aucun tarif. L'outil dit pourquoi, donne le climat saisi, les premières dates
+     * possibles (mai, aucune avant aujourd'hui) et d'autres destinations aux mêmes dates : rien n'est à inventer.
+     */
+    public function testUnePeriodeNonCouverteDonneDesAjustements(): void
+    {
+        $resultat = $this->destinations->executer($this->contexte, [
+            'zone' => 'Islande', 'dateDebut' => '2027-01-16', 'dateFin' => '2027-01-22', 'envies' => ['nature', 'aurores boréales'],
+        ]);
+
+        self::assertSame([], $resultat['destinations']);
+        $islande = $resultat['ecartees'][0];
+        self::assertSame('islande', $islande['slug']);
+        self::assertSame(0.0, $islande['climatAuxDates'][0]['temperatureMoyenne']);
+        self::assertSame([['dateDebut' => '2027-05-01', 'dateFin' => '2027-05-07']], $islande['datesPossibles']);
+        self::assertArrayNotHasKey('nuitsPossibles', $islande);
+
+        self::assertCount(3, $resultat['autresDestinations']);
+        foreach ($resultat['autresDestinations'] as $autre) {
+            self::assertNotSame('islande', $autre['slug']);
+            self::assertContains('nature', $autre['enviesCorrespondantes']);
+            self::assertNotNull($autre['aPartirDeParNuitEuros']);
+        }
+    }
+
+    public function testUnGroupeSansLogementAssezGrandEstOrienteVersDAutresDestinations(): void
+    {
+        // 60 choristes : aucun logement de Santorin ne les accueille, quelles que soient les dates.
+        $resultat = $this->destinations->executer($this->contexte, [
+            'zone' => 'Santorin', 'dateDebut' => '2027-06-10', 'dateFin' => '2027-06-14', 'voyageurs' => 60,
+        ]);
+
+        self::assertSame([], $resultat['destinations']);
+        self::assertSame([['slug' => 'santorin', 'raison' => 'Aucun logement pour 60 voyageurs : proposer d\'autres destinations ou passer la main au conseiller.']], $resultat['ecartees']);
+        self::assertSame(['rome'], array_column($resultat['autresDestinations'], 'slug'), 'Seul le Roma Congressi Hotel accueille 60 personnes.');
+    }
+
+    public function testUneDureePlusCourtePeutSuffire(): void
+    {
+        // Les tarifs islandais s'arrêtent au 30 septembre : sur 7 nuits à partir du 26, seules 5 sont couvertes.
+        $islande = $this->destinations->executer($this->contexte, ['zone' => 'Islande', 'dateDebut' => '2027-09-26', 'dateFin' => '2027-10-03']);
+        self::assertSame(5, $islande['ecartees'][0]['nuitsPossibles']);
+        self::assertSame([['dateDebut' => '2027-09-24', 'dateFin' => '2027-10-01']], array_slice($islande['ecartees'][0]['datesPossibles'], 0, 1));
     }
 
     public function testUneTemperatureDemandeLesDates(): void

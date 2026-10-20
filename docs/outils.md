@@ -153,6 +153,8 @@ Entrée :
       "typeDeVoyage": {"type": "string", "enum": ["sejour", "circuit", "groupe", "noces", "entreprise"]},
       "envies": {"type": "array", "items": {"type": "string"}, "description": "Les destinations qui y répondent le mieux sont listées en premier."},
       "villeDepart": {"type": "string", "description": "Pour renvoyer le temps de trajet."},
+      "voyageurs": {"type": "integer", "description": "Adultes et enfants : écarte les destinations sans logement pour le groupe."},
+      "accessibleObligatoire": {"type": "boolean", "description": "true si un voyageur a besoin d'un logement accessible."},
       "limite": {"type": "integer", "description": "Nombre maximum de résultats (5 par défaut)."}
     },
     "required": [],
@@ -176,15 +178,25 @@ Sortie :
       "aPartirDeParNuitEuros": 150
     }
   ],
-  "ecartees": [{ "slug": "islande", "raison": "Aucun logement n'a de tarif pour chaque nuit du 16/01/2027 au 22/01/2027 : proposer d'autres dates ou passer la main au conseiller." }]
+  "ecartees": [
+    {
+      "slug": "islande",
+      "raison": "Aucun logement n'a de tarif pour chaque nuit du 16/01/2027 au 22/01/2027 : proposer d'autres dates ou passer la main au conseiller.",
+      "climatAuxDates": [{ "debut": "2027-01-01", "fin": "2027-01-31", "temperatureMoyenne": 0, "pluieMm": 90 }],
+      "datesPossibles": [{ "dateDebut": "2027-05-01", "dateFin": "2027-05-07" }]
+    }
+  ],
+  "autresDestinations": [{ "slug": "costa-rica", "ville": "La Fortuna", "pays": "Costa Rica", "enviesCorrespondantes": ["nature"], "aPartirDeParNuitEuros": 144 }]
 }
 ```
 
 Règles :
 
 - **Zone** : rapprochée de la ville, du pays, de la région et du slug, sans tenir compte des accents. Une zone qui ne correspond à rien (« soleil, plage ») renvoie tout le catalogue avec une `remarque`.
+- **Groupe** : avec `voyageurs` (et `accessibleObligatoire`), seuls comptent les logements qui accueillent le groupe, selon les règles de `chercher_logements`. Une destination qui n'en a aucun est écartée (« Aucun logement pour 60 voyageurs »), sans autres dates à proposer.
 - **Température** : chaque période climatique qui chevauche les dates doit respecter `temperatureMin` et `temperatureMax`. Un voyage à cheval sur un mois trop frais est écarté. Sans données de climat aux dates, la destination est écartée, car la température ne peut pas être garantie. Une température sans dates est refusée.
 - **Tarifs aux dates** : une destination n'est retenue que si au moins un de ses logements a un tarif pour chaque nuit, du départ à la veille du retour. Sinon, elle va dans `ecartees`, pour que l'agent propose d'autres dates ou passe la main au conseiller. `aPartirDeParNuitEuros` est le prix de nuit le plus bas parmi ces logements : c'est un prix d'achat, sans marge. Plus de 60 nuits entre les deux dates sont refusées, car ce sont les dates du voyage, pas une saison.
+- **Ajustements** (ticket #204) : chaque destination écartée aux dates demandées donne son climat saisi (`climatAuxDates`) et ce qui la rendrait possible, calculé sur les données, jamais par le modèle. `datesPossibles` : les départs les plus proches, avant et après, où le même voyage convient (températures et tarifs), dans les six mois et jamais avant aujourd'hui. `nuitsPossibles` : la durée la plus longue qui convient aux dates demandées, si elle existe. Quand une zone est demandée et que toutes ses destinations sont écartées, `autresDestinations` donne jusqu'à trois destinations du catalogue qui conviennent aux mêmes dates et critères.
 - **Envies** : `enviesCorrespondantes` liste les envies du client présentes dans les logements ou activités de la destination, selon `App\Texte\Correspondance` : leurs envies, équipements, catégories et noms (`Prestation::motsCles()`, « piscine privée », « dauphins »). Les logements et activités calculent leurs `enviesCorrespondantes` de la même façon. Les destinations qui en ont le plus viennent en premier ; à égalité, elles sont rangées par ville. Les envies classent les résultats sans les filtrer : une envie floue garde tout le catalogue.
 
 ### `chercher_logements`

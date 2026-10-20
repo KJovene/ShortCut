@@ -99,6 +99,27 @@ final class AgentRechercheTest extends WebTestCase
         self::assertSame(AgentRecherche::MODELE, $this->claude->requetes[2]['corps']['model']);
     }
 
+    /** #204 : une recherche qui échoue sans rien dire au client transmet d'elle-même la demande au conseiller. */
+    public function testUneRechercheSansSuiteEstTransmiseAuConseiller(): void
+    {
+        $jeton = $this->demanderLisbonneEnFauteuil();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['recapitulatifConfirme' => true]),
+            FausseApiClaude::texte('Parfait, je cherche votre voyage.'),
+            FausseApiClaude::erreur(529, 'Overloaded'),
+        );
+
+        $evenements = $this->envoyer($jeton, 'Oui, c’est tout bon');
+
+        self::assertContains('erreur', array_column($evenements, 0));
+        self::assertSame('fin', end($evenements)[0]);
+        $conversation = $this->conversation($jeton);
+        self::assertTrue($conversation->isRepriseParConseiller());
+        self::assertTrue($conversation->getDemande()?->isPrioritaire());
+        $messages = $conversation->getMessages();
+        self::assertSame('Je n\'ai pas pu terminer votre proposition. Un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.', end($messages)['contenu']);
+    }
+
     /** Une conversation dont la fiche est complète : il ne manque que la confirmation du client. */
     private function demanderLisbonneEnFauteuil(): string
     {

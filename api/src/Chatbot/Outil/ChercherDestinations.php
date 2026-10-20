@@ -13,6 +13,7 @@ use App\Enum\TypePrestation;
 use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 use App\Texte\Correspondance;
+use Psr\Clock\ClockInterface;
 
 /**
  * Destinations publiées compatibles avec une zone, des dates, un climat et des envies (docs/outils.md).
@@ -25,10 +26,13 @@ final class ChercherDestinations implements Outil
     private const LIMITE_PAR_DEFAUT = 5;
     /** Au-delà, ce ne sont plus les dates d'un voyage mais une saison : l'agent doit préciser. */
     private const NUITS_MAX = 60;
+    /** Jusqu'où chercher d'autres dates pour une destination écartée, de part et d'autre des dates demandées. */
+    public const FENETRE_JOURS = 182;
 
     public function __construct(
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
+        private readonly ClockInterface $horloge,
     ) {
     }
 
@@ -54,6 +58,8 @@ final class ChercherDestinations implements Outil
                     'typeDeVoyage' => ['type' => 'string', 'enum' => array_map(static fn (TypeDeVoyage $t) => $t->value, TypeDeVoyage::cases())],
                     'envies' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Les destinations qui y répondent le mieux sont listées en premier.'],
                     'villeDepart' => ['type' => 'string', 'description' => 'Pour renvoyer le temps de trajet.'],
+                    'voyageurs' => ['type' => 'integer', 'description' => 'Adultes et enfants : écarte les destinations sans logement pour le groupe.'],
+                    'accessibleObligatoire' => ['type' => 'boolean', 'description' => 'true si un voyageur a besoin d\'un logement accessible.'],
                     'limite' => ['type' => 'integer', 'description' => 'Nombre maximum de résultats (5 par défaut).'],
                 ],
                 'required' => [],
@@ -85,6 +91,7 @@ final class ChercherDestinations implements Outil
         $temperatureMin = Entree::entier($entree, 'temperatureMin');
         $temperatureMax = Entree::entier($entree, 'temperatureMax');
         $envies = Entree::chaines($entree, 'envies');
+        $groupe = ['voyageurs' => Entree::entier($entree, 'voyageurs', 1, 1000), 'accessible' => Entree::booleen($entree, 'accessibleObligatoire') ?? false];
 
         if (null !== $debut && null !== $fin && $fin < $debut) {
             throw new OutilException('dateFin doit être postérieure à dateDebut.');
@@ -119,20 +126,18 @@ final class ChercherDestinations implements Outil
         $retenues = [];
         foreach ($candidates as $destination) {
             $prestationsDeLaDestination = $prestations[$destination->getId()] ?? [];
-            $climat = null === $debut || null === $fin ? [] : self::climatAuxDates($destination, $debut, $fin);
-            $raison = self::raisonClimat($climat, $temperatureMin, $temperatureMax);
-            $aPartirDe = null === $debut ? null : self::aPartirDeParNuit($prestationsDeLaDestination, $debut, $nuits);
-            if (null === $raison && null !== $debut && null === $aPartirDe) {
-                $raison = \sprintf(
-                    'Aucun logement n\'a de tarif pour chaque nuit du %s au %s : proposer d\'autres dates ou passer la main au conseiller.',
-                    $debut->format('d/m/Y'),
-                    $debut->modify(\sprintf('+%d days', $nuits))->format('d/m/Y'),
-                );
-            }
+            $climat = null === $debut ? [] : self::climatAuxDates($destination, $debut, $debut->modify(\sprintf('+%d days', $nuits)));
+            $logements = self::logementsPourLeGroupe($prestationsDeLaDestination, $groupe);
+            $raison = null === $debut ? self::raisonDAccueil($logements, $groupe) : self::raison($destination, $logements, $groupe, $debut, $nuits, $temperatureMin, $temperatureMax);
             if (null !== $raison) {
-                $resultat['ecartees'][] = ['slug' => $destination->getSlug(), 'raison' => $raison];
+                // Pas de logement pour le groupe : aucune autre date n'y changerait rien.
+                $resultat['ecartees'][] = ['slug' => $destination->getSlug(), 'raison' => $raison] + (null === $debut || null !== self::raisonDAccueil($logements, $groupe) ? [] : [
+                    'climatAuxDates' => $climat,
+                    ...$this->ajustements($destination, $logements, $groupe, $debut, $nuits, $temperatureMin, $temperatureMax),
+                ]);
                 continue;
             }
+            $aPartirDe = null === $debut ? null : self::aPartirDeParNuit($logements, $debut, $nuits);
 
             $enviesDeLaDestination = array_merge(...array_map(static fn (Prestation $p): array => $p->motsCles(), $prestationsDeLaDestination));
             $correspondantes = Correspondance::communs($envies, array_values(array_unique($enviesDeLaDestination)));
@@ -154,7 +159,112 @@ final class ChercherDestinations implements Outil
         usort($retenues, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
         $resultat['destinations'] = array_column(\array_slice($retenues, 0, $limite), 1);
 
+        // Rien dans la zone demandée : les destinations du catalogue qui conviennent aux mêmes dates et critères.
+        if (null !== $zone && !isset($resultat['remarque']) && [] === $resultat['destinations'] && [] !== $resultat['ecartees']) {
+            $ailleurs = $this->rechercher(['zone' => null] + $entree, 3)['destinations'];
+            $resultat['autresDestinations'] = array_map(static fn (array $d): array => [
+                'slug' => $d['slug'],
+                'ville' => $d['ville'],
+                'pays' => $d['pays'],
+                'enviesCorrespondantes' => $d['enviesCorrespondantes'],
+                'aPartirDeParNuitEuros' => $d['aPartirDeParNuitEuros'],
+            ], $ailleurs);
+        }
+
         return $resultat;
+    }
+
+    /**
+     * Les logements de la destination qui peuvent accueillir le groupe (mêmes règles que chercher_logements) ; tous
+     * si le nombre de voyageurs n'est pas donné.
+     *
+     * @param list<Prestation>                             $prestations
+     * @param array{voyageurs: int|null, accessible: bool} $groupe
+     *
+     * @return list<Prestation>
+     */
+    private static function logementsPourLeGroupe(array $prestations, array $groupe): array
+    {
+        return array_values(array_filter($prestations, static fn (Prestation $p): bool => TypePrestation::Logement === $p->getType()
+            && (null === $groupe['voyageurs'] || null === ChercherLogements::raisonDAccueil($p, $groupe['voyageurs'], $groupe['accessible']))));
+    }
+
+    /**
+     * @param list<Prestation>                             $logements logements pour le groupe
+     * @param array{voyageurs: int|null, accessible: bool} $groupe
+     */
+    private static function raisonDAccueil(array $logements, array $groupe): ?string
+    {
+        if (null === $groupe['voyageurs'] || [] !== $logements) {
+            return null;
+        }
+
+        return \sprintf(
+            'Aucun logement %spour %s : proposer d\'autres destinations ou passer la main au conseiller.',
+            $groupe['accessible'] ? 'accessible ' : '',
+            Montant::quantite($groupe['voyageurs'], 'voyageur'),
+        );
+    }
+
+    /**
+     * Pourquoi la destination ne convient pas à ces dates, ou null si elle convient : un logement pour le groupe,
+     * les températures sur chaque mois du voyage, puis un logement avec un tarif pour chaque nuit.
+     *
+     * @param list<Prestation>                             $logements logements pour le groupe
+     * @param array{voyageurs: int|null, accessible: bool} $groupe
+     */
+    private static function raison(Destination $destination, array $logements, array $groupe, \DateTimeImmutable $debut, int $nuits, ?int $temperatureMin, ?int $temperatureMax): ?string
+    {
+        $fin = $debut->modify(\sprintf('+%d days', $nuits));
+        $raison = self::raisonDAccueil($logements, $groupe)
+            ?? self::raisonClimat(self::climatAuxDates($destination, $debut, $fin), $temperatureMin, $temperatureMax);
+        if (null === $raison && null === self::aPartirDeParNuit($logements, $debut, $nuits)) {
+            $raison = \sprintf(
+                'Aucun logement n\'a de tarif pour chaque nuit du %s au %s : proposer d\'autres dates ou passer la main au conseiller.',
+                $debut->format('d/m/Y'),
+                $fin->format('d/m/Y'),
+            );
+        }
+
+        return $raison;
+    }
+
+    /**
+     * Ce qui rendrait la destination possible, calculé sur les données saisies (ticket #204) : les dates les plus
+     * proches, avant et après, où le même voyage convient (dans les six mois, jamais avant aujourd'hui), et la durée
+     * la plus longue possible aux dates demandées. L'agent les propose au client ; il n'en invente aucune.
+     *
+     * @param list<Prestation>                             $logements logements pour le groupe
+     * @param array{voyageurs: int|null, accessible: bool} $groupe
+     *
+     * @return array{datesPossibles: list<array{dateDebut: string, dateFin: string}>, nuitsPossibles?: int}
+     */
+    private function ajustements(Destination $destination, array $logements, array $groupe, \DateTimeImmutable $debut, int $nuits, ?int $temperatureMin, ?int $temperatureMax): array
+    {
+        $aujourdhui = $this->horloge->now()->setTime(0, 0);
+        $possibles = ['avant' => null, 'apres' => null];
+        for ($ecart = 1; $ecart <= self::FENETRE_JOURS && \in_array(null, $possibles, true); ++$ecart) {
+            foreach (['apres' => $ecart, 'avant' => -$ecart] as $sens => $decalage) {
+                $autre = $debut->modify(\sprintf('%+d days', $decalage));
+                if (null === $possibles[$sens] && $autre >= $aujourdhui
+                    && null === self::raison($destination, $logements, $groupe, $autre, $nuits, $temperatureMin, $temperatureMax)) {
+                    $possibles[$sens] = $autre;
+                }
+            }
+        }
+
+        $ajustements = ['datesPossibles' => array_values(array_map(
+            static fn (\DateTimeImmutable $d): array => ['dateDebut' => $d->format('Y-m-d'), 'dateFin' => $d->modify(\sprintf('+%d days', $nuits))->format('Y-m-d')],
+            array_filter([$possibles['avant'], $possibles['apres']]),
+        ))];
+        for ($moins = $nuits - 1; $moins >= 1; --$moins) {
+            if (null === self::raison($destination, $logements, $groupe, $debut, $moins, $temperatureMin, $temperatureMax)) {
+                $ajustements['nuitsPossibles'] = $moins;
+                break;
+            }
+        }
+
+        return $ajustements;
     }
 
     private static function correspond(Destination $destination, string $zone): bool

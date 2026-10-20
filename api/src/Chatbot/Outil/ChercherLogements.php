@@ -77,9 +77,9 @@ final class ChercherLogements implements Outil
                 continue;
             }
 
-            $unites = (int) ceil($voyageurs / max(1, $logement->getCapacite()));
+            $unites = self::unites($logement, $voyageurs);
             $tarifs = $logement->tarifsDesNuits($premiereNuit, $nuits);
-            $raison = self::raison($logement, $voyageurs, $unites, $accessible, $premiereNuit, $nuits, $tarifs);
+            $raison = self::raison($logement, $voyageurs, $accessible, $premiereNuit, $nuits, $tarifs);
             if (null !== $raison) {
                 $ecartes[] = ['nom' => $logement->getNom(), 'raison' => $raison];
                 continue;
@@ -128,12 +128,38 @@ final class ChercherLogements implements Outil
      *
      * @param list<TarifParPeriode|null> $tarifs
      */
-    private static function raison(Prestation $logement, int $voyageurs, int $unites, bool $accessible, \DateTimeImmutable $premiereNuit, int $nuits, array $tarifs): ?string
+    private static function raison(Prestation $logement, int $voyageurs, bool $accessible, \DateTimeImmutable $premiereNuit, int $nuits, array $tarifs): ?string
+    {
+        $raison = self::raisonDAccueil($logement, $voyageurs, $accessible);
+        if (null !== $raison) {
+            return $raison;
+        }
+
+        $sansTarif = array_search(null, $tarifs, true);
+        if (false !== $sansTarif) {
+            return \sprintf('Aucun tarif saisi pour la nuit du %s.', $premiereNuit->modify(\sprintf('+%d days', $sansTarif))->format('d/m/Y'));
+        }
+
+        // Le séjour minimum est celui de la période de la première nuit, comme pour le chiffrage.
+        $minimum = $tarifs[0]?->getSejourMinimumNuits();
+        if (null !== $minimum && $minimum > $nuits) {
+            return \sprintf('Séjour minimum de %s pour un séjour de %s.', Montant::quantite($minimum, 'nuit'), Montant::quantite($nuits, 'nuit'));
+        }
+
+        return null;
+    }
+
+    /**
+     * Pourquoi le logement ne peut pas accueillir le groupe, quelles que soient les dates : accessibilité, puis
+     * capacité. Partagé avec chercher_destinations, qui écarte une destination sans logement pour le groupe.
+     */
+    public static function raisonDAccueil(Prestation $logement, int $voyageurs, bool $accessible): ?string
     {
         if ($accessible && !$logement->isAccessible()) {
             return 'Non accessible : un voyageur a besoin d\'un logement accessible.';
         }
 
+        $unites = self::unites($logement, $voyageurs);
         $chambres = $logement->getChambres() ?? 1;
         if ($unites > 1 && $chambres > 1) {
             return \sprintf(
@@ -152,18 +178,13 @@ final class ChercherLogements implements Outil
             );
         }
 
-        $sansTarif = array_search(null, $tarifs, true);
-        if (false !== $sansTarif) {
-            return \sprintf('Aucun tarif saisi pour la nuit du %s.', $premiereNuit->modify(\sprintf('+%d days', $sansTarif))->format('d/m/Y'));
-        }
-
-        // Le séjour minimum est celui de la période de la première nuit, comme pour le chiffrage.
-        $minimum = $tarifs[0]?->getSejourMinimumNuits();
-        if (null !== $minimum && $minimum > $nuits) {
-            return \sprintf('Séjour minimum de %s pour un séjour de %s.', Montant::quantite($minimum, 'nuit'), Montant::quantite($nuits, 'nuit'));
-        }
-
         return null;
+    }
+
+    /** Chambres ou unités nécessaires : ⌈ voyageurs ÷ capacité ⌉, comme pour le chiffrage. */
+    private static function unites(Prestation $logement, int $voyageurs): int
+    {
+        return (int) ceil($voyageurs / max(1, $logement->getCapacite()));
     }
 
     /**

@@ -69,3 +69,13 @@ Essais réels du 20/10/2026 avec Claude Sonnet 5.5 (`recherche.md`), sur les 10 
 Corrections hors prompt après ces essais : l'agent Recherche n'envoie au client que son message final, sans le gras markdown, et les envies sont aussi rapprochées des équipements, catégories et noms des prestations.
 
 Aucune combinaison hors contrainte : `retenir_combinaison` revérifie chaque choix et aucun n'a été refusé. Coût mesuré d'une recherche : environ 27 000 tokens d'entrée et 1 500 de sortie, 7 à 21 secondes.
+
+### Sans combinaison possible (ticket #204, prompt v4)
+
+Essais réels du 20/10/2026, mêmes conditions. Aucun prix ni prestation inventés ; les ajustements cités sont ceux que calcule `chercher_destinations`.
+
+| Scénario | Outils appelés | Résultat |
+| --- | --- | --- |
+| Période non couverte : Islande du 16 au 22 janvier 2027 (demande test 04) | `chercher_destinations`, `transmettre_au_conseiller` | Transmis au conseiller ; climat saisi cité (0 °C, 90 mm) ; ajustements proposés : du 1er au 7 mai 2027, ou Costa Rica, Marrakech, Tenerife aux mêmes dates |
+| Capacité : chorale de 60 personnes à Santorin | `chercher_destinations` | Pas de transmission (un ajustement existe) : Rome, seule destination qui accueille 60 personnes, en précisant qu'elle ne répond pas aux envies |
+| Température : Lisbonne à 20 °C minimum début février, dates flexibles | `chercher_destinations` | Pas de transmission : Lisbonne du 1er au 5 juin 2027, ou Bali et Costa Rica aux mêmes dates |
