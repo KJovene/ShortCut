@@ -1,0 +1,275 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{#
+ # Écran de confirmation (#209) : le conseiller vérifie chaque prix auprès des prestataires, ajuste les prestations,
+ # voit les écarts avec l'estimation, puis confirme. À côté : la proposition envoyée et la conversation du client.
+ #}
+
+{% macro ecart(ecart) %}
+    {%- if ecart.centimes is null -%}
+        <span class="bo-discret">À saisir</span>
+    {%- else -%}
+        {%- set sens = ecart.centimes > 0 ? 'hausse' : (ecart.centimes < 0 ? 'baisse' : 'egal') -%}
+        <span class="bo-ecart bo-ecart--{{ sens }}{{ ecart.important ? ' bo-ecart--fort' }}"
+              {%- if ecart.important %} title="Écart de plus de {{ constant('App\\Confirmation\\Ecart::SEUIL_POURCENTAGE') }} %"{% endif %}>
+            {{ ecart.centimes|ecart_euros }}
+            {%- if ecart.pourcentage is not null %} <small>{{ ecart.pourcentage|ecart_pourcentage }}</small>{% endif %}
+        </span>
+    {%- endif -%}
+{% endmacro %}
+
+{% macro montant(centimes) %}{{ centimes is null ? '—' : centimes|euros }}{% endmacro %}
+
+{% block page_title %}Confirmation · demande n° {{ demande.id }}{% endblock %}
+
+{% block content_title %}{{ formulaire is null ? 'Proposition confirmée' : 'Confirmer la proposition' }}{% endblock %}
+
+{% block page_actions %}
+    <a class="btn btn-secondary" href="{{ ea_url().setController('App\\Controller\\Admin\\DemandeCrudController').setAction('detail').setEntityId(demande.id) }}">
+        <i class="fa fa-arrow-left"></i> Retour à la demande
+    </a>
+{% endblock %}
+
+{% block main %}
+    {% import _self as m %}
+    {% set auteurs = {client: 'Client', assistant: 'Assistant', conseiller: 'Conseiller'} %}
+    {% set fiches = {
+        logement: 'App\\Controller\\Admin\\LogementCrudController',
+        activite: 'App\\Controller\\Admin\\ActiviteCrudController',
+    } %}
+    {% set brouillon = formulaire is not null %}
+    {% if brouillon %}{% form_theme formulaire 'bootstrap_5_layout.html.twig' %}{% endif %}
+
+    <p class="bo-intro">
+        {{ demande.client ?? 'Client inconnu' }} ·
+        {{ demande.typeDeVoyage ? demande.typeDeVoyage.label : 'Type à préciser' }} · {{ demande.lieuOuZone ?? 'Destination à préciser' }}
+        {%- if demande.dateDebut %} · du {{ demande.dateDebut|date('d/m/Y') }}{% if demande.dateFin %} au {{ demande.dateFin|date('d/m/Y') }}{% endif %}{% endif %}
+        · {{ demande.adultes }} adulte{{ demande.adultes > 1 ? 's' }}{% if demande.enfants %}, {{ demande.enfants }} enfant{{ demande.enfants > 1 ? 's' }}{% endif %}
+        · niveau {{ version.niveauBudget.label|lower }}
+    </p>
+
+    <div class="bo-bandeau{{ brouillon ? '' : ' bo-bandeau--confirmee' }}" role="status">
+        {% if brouillon %}
+            <strong>Version {{ version.version }} en préparation.</strong>
+            Elle part de la proposition envoyée au client (version {{ estimation.version }}, le {{ estimation.creeLe|date('d/m/Y') }}),
+            qui reste inchangée. {{ comparaison.manquantes|length }} prix sur {{ lignes|length }} reste{{ comparaison.manquantes|length > 1 ? 'nt' }} à saisir.
+        {% else %}
+            <strong>Version {{ version.version }} confirmée</strong>
+            le {{ version.confirmeeLe|date('d/m/Y à H:i') }}{% if version.confirmeePar %} par {{ version.confirmeePar }}{% endif %} : c'est elle qui engage l'agence.
+        {% endif %}
+    </div>
+
+    <section class="bo-carte bo-confirmation" aria-labelledby="titre-prix">
+        <header class="bo-carte-entete">
+            <h2 id="titre-prix">Prix confirmés</h2>
+            {% if brouillon %}<span class="bo-discret">Saisissez le total de chaque ligne, vérifié auprès du prestataire.</span>{% endif %}
+        </header>
+
+        {% if brouillon %}{{ form_start(formulaire) }}{% endif %}
+        <div class="bo-tableau-defilant">
+            <table class="bo-tableau">
+                <thead>
+                    <tr>
+                        <th scope="col">Prestation</th>
+                        <th scope="col">Dates</th>
+                        <th scope="col" class="bo-droite">Qté</th>
+                        <th scope="col" class="bo-droite">Estimé</th>
+                        <th scope="col"{% if not brouillon %} class="bo-droite"{% endif %}>Confirmé</th>
+                        <th scope="col" class="bo-droite">Écart</th>
+                        {% if brouillon %}<th scope="col">Ajuster</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                        <tr data-ligne="{{ ligne.id }}">
+                            <td>
+                                <span class="bo-type">{{ ligne.type.label }}</span>
+                                {% if ligne.prestation and fiches[ligne.type.value] is defined %}
+                                    <a class="bo-fort" href="{{ ea_url().setController(fiches[ligne.type.value]).setAction('detail').setEntityId(ligne.prestation.id) }}">{{ ligne.libelle }}</a>
+                                {% else %}
+                                    <span class="bo-fort">{{ ligne.libelle }}</span>
+                                {% endif %}
+                                {% if ligne.prestataire %}<br><span class="bo-discret">{{ ligne.prestataire.nom }}</span>{% endif %}
+                            </td>
+                            <td class="bo-nowrap">
+                                {%- if ligne.dateDebut -%}
+                                    {{ ligne.dateDebut|date('d/m') }}{% if ligne.dateFin and ligne.dateFin != ligne.dateDebut %} → {{ ligne.dateFin|date('d/m') }}{% endif %}
+                                {%- else -%}<span class="bo-discret">—</span>{%- endif -%}
+                            </td>
+                            <td class="bo-droite">{{ ligne.quantite }}</td>
+                            <td class="bo-droite bo-nowrap">{{ ligne.prixEstimeCentimes|euros }}</td>
+                            <td class="{{ brouillon ? 'bo-saisie' : 'bo-droite bo-nowrap' }}">
+                                {% if brouillon %}
+                                    {{ form_widget(formulaire['ligne_' ~ ligne.id]) }}
+                                    {{ form_errors(formulaire['ligne_' ~ ligne.id]) }}
+                                {% else %}
+                                    {{ m.montant(ligne.prixConfirmeCentimes) }}
+                                {% endif %}
+                            </td>
+                            <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.lignes[ligne.id]) }}</td>
+                            {% if brouillon %}
+                                <td>
+                                    {% if ligne.type.value == 'activite' %}
+                                        <button type="submit" form="retirer-{{ ligne.id }}" class="bo-bouton-secondaire">Retirer</button>
+                                    {% elseif ligne.type.value == 'logement' and remplacements[ligne.id] is defined %}
+                                        <details class="bo-remplacer">
+                                            <summary class="bo-bouton-secondaire">Remplacer</summary>
+                                            <div class="bo-remplacer-choix">
+                                                <select name="logement" form="remplacer-{{ ligne.id }}" class="form-select form-select-sm" aria-label="Logement qui remplace {{ ligne.libelle }}" required>
+                                                    <option value="">Choisir un logement…</option>
+                                                    {% for choix in remplacements[ligne.id] %}
+                                                        <option value="{{ choix.logement.id }}"{% if choix.centimes is null %} disabled{% endif %}>
+                                                            {{ choix.logement.nom }} — {{ choix.centimes is null ? 'pas de tarif à ces dates' : 'estimé ' ~ choix.centimes|euros }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" form="remplacer-{{ ligne.id }}" class="bo-bouton-secondaire">Valider</button>
+                                            </div>
+                                        </details>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th scope="row" colspan="3">Coût des prestations</th>
+                        <td class="bo-droite bo-nowrap">{{ comparaison.cout.estimeCentimes|euros }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.montant(comparaison.cout.confirmeCentimes) }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.cout) }}</td>
+                        {% if brouillon %}<td></td>{% endif %}
+                    </tr>
+                    <tr>
+                        <th scope="row" colspan="3">Marge ({{ marge }} %)</th>
+                        <td class="bo-droite bo-nowrap">{{ comparaison.marge.estimeCentimes|euros }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.montant(comparaison.marge.confirmeCentimes) }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.marge) }}</td>
+                        {% if brouillon %}<td></td>{% endif %}
+                    </tr>
+                    <tr>
+                        <th scope="row" colspan="3">Frais de dossier</th>
+                        <td class="bo-droite bo-nowrap">{{ comparaison.fraisDeDossier.estimeCentimes|euros }}</td>
+                        <td class="{{ brouillon ? 'bo-saisie' : 'bo-droite bo-nowrap' }}">
+                            {% if brouillon %}
+                                {{ form_widget(formulaire.fraisDeDossier) }}
+                                {{ form_errors(formulaire.fraisDeDossier) }}
+                            {% else %}
+                                {{ version.fraisDeDossierCentimes|euros }}
+                            {% endif %}
+                        </td>
+                        <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.fraisDeDossier) }}</td>
+                        {% if brouillon %}<td></td>{% endif %}
+                    </tr>
+                    <tr class="bo-total">
+                        <th scope="row" colspan="3">Total</th>
+                        <td class="bo-droite bo-nowrap">{{ comparaison.total.estimeCentimes|euros }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.montant(comparaison.total.confirmeCentimes) }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.total) }}</td>
+                        {% if brouillon %}<td></td>{% endif %}
+                    </tr>
+                    <tr>
+                        <th scope="row" colspan="3">Par personne</th>
+                        <td class="bo-droite bo-nowrap">{{ comparaison.parPersonne.estimeCentimes|euros }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.montant(comparaison.parPersonne.confirmeCentimes) }}</td>
+                        <td class="bo-droite bo-nowrap">{{ m.ecart(comparaison.parPersonne) }}</td>
+                        {% if brouillon %}<td></td>{% endif %}
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <footer class="bo-carte-pied">
+            <p class="bo-discret">
+                Estimé : prix de la proposition envoyée au client (version {{ estimation.version }}). Écart signalé au-delà de
+                {{ constant('App\\Confirmation\\Ecart::SEUIL_POURCENTAGE') }} %.
+                {%- if brouillon and not comparaison.complete %} Le total confirmé s'affiche quand tous les prix sont saisis.{% endif %}
+            </p>
+            {% if brouillon %}
+                <div class="bo-boutons">
+                    {{ form_widget(formulaire.enregistrer) }}
+                    {{ form_widget(formulaire.confirmer) }}
+                </div>
+            {% endif %}
+        </footer>
+        {% if brouillon %}{{ form_end(formulaire) }}{% endif %}
+
+        {# Hors du formulaire des prix (pas de formulaire imbriqué) : les boutons y renvoient par l'attribut « form ». #}
+        {% if brouillon %}
+            {% for ligne in lignes %}
+                {% if ligne.type.value == 'activite' %}
+                    <form id="retirer-{{ ligne.id }}" method="post" action="{{ path('admin_demande_confirmation_retirer', {id: demande.id}) }}" hidden>
+                        <input type="hidden" name="ligne" value="{{ ligne.id }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('confirmation_retirer_' ~ demande.id) }}">
+                    </form>
+                {% elseif ligne.type.value == 'logement' %}
+                    <form id="remplacer-{{ ligne.id }}" method="post" action="{{ path('admin_demande_confirmation_remplacer', {id: demande.id}) }}" hidden>
+                        <input type="hidden" name="ligne" value="{{ ligne.id }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('confirmation_remplacer_' ~ demande.id) }}">
+                    </form>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </section>
+
+    <div class="bo-colonnes">
+        <section class="bo-carte" aria-labelledby="titre-proposition">
+            <header class="bo-carte-entete">
+                <h2 id="titre-proposition">Proposition envoyée au client</h2>
+                <span class="bo-discret">Version {{ estimation.version }} · {{ estimation.statut.label }}</span>
+            </header>
+            <div class="bo-carte-corps">
+                {% if estimation.programme is not empty %}
+                    <h3 class="h6">Programme</h3>
+                    <ol class="bo-programme">
+                        {% for jour in estimation.programme %}
+                            <li><strong>Jour {{ jour.jour }} · {{ jour.titre }}</strong><br><span class="bo-discret">{{ jour.description }}</span></li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+
+                <h3 class="h6">Hypothèses de budget</h3>
+                {% if estimation.hypotheses is empty %}
+                    <p class="bo-discret">Aucune hypothèse enregistrée.</p>
+                {% else %}
+                    <ul class="bo-liste">
+                        {% for hypothese in estimation.hypotheses %}<li>{{ hypothese }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+
+                {% if estimation.budgetsParNiveau is not empty %}
+                    <h3 class="h6">Les trois niveaux proposés</h3>
+                    <ul class="bo-liste">
+                        {% for niveau, budget in estimation.budgetsParNiveau %}
+                            <li{% if niveau == estimation.niveauBudget.value %} class="bo-fort"{% endif %}>
+                                {{ niveaux[niveau] ?? niveau }} : {{ budget.totalCentimes|euros }} ({{ budget.parPersonneCentimes|euros }} par personne)
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="bo-carte" aria-labelledby="titre-conversation">
+            <header class="bo-carte-entete">
+                <h2 id="titre-conversation">Conversation</h2>
+                {% if demande.conversation %}<span class="bo-discret">Commencée le {{ demande.conversation.debutLe|date('d/m/Y à H:i') }}</span>{% endif %}
+            </header>
+            <div class="bo-carte-corps">
+                {% if demande.conversation is null or demande.conversation.messages is empty %}
+                    <p class="bo-discret">Aucun message.</p>
+                {% else %}
+                    <ol class="list-unstyled conversation bo-conversation">
+                        {% for message in demande.conversation.messages %}
+                            <li class="mb-2">
+                                <strong>{{ auteurs[message.role] ?? message.role|capitalize }}</strong>
+                                <span class="bo-discret small">{{ message.le|date('d/m/Y H:i') }}</span>
+                                <div>{{ message.contenu|nl2br }}</div>
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+{% endblock %}

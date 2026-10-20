@@ -156,6 +156,7 @@ Après une modification d'entité : `make migration`, relire le fichier créé d
 | Prestations | 30 logements et 20 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
 | Règles de prix | Marge 20 %, frais de dossier de 100 à 200 € |
 | Pages du site | Accueil, types de voyages, l'agence, contact et pages légales (modèles « à valider ») |
+| Demandes | 8 demandes réparties entre Léa, Hugo et une non attribuée ; celle de Marrakech (Léa) a une première proposition envoyée et sa conversation, pour essayer l'écran « Confirmer la proposition » |
 
 Chaque type de voyage a au moins une combinaison possible : séjour (Tenerife, Lisbonne…), circuit (Islande, Costa Rica), groupe (résidences de 30 à 60 places), noces (Santorin, Bali), entreprise (salles de séminaire à Lisbonne, Marrakech et Rome).
 

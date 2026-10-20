@@ -353,8 +353,8 @@ final class BudgetCalculator
         return $cout + self::marge($cout, $demande->margePourcentage) + $demande->fraisDeDossierCentimes;
     }
 
-    /** Marge arrondie au centime le plus proche. */
-    private static function marge(int $coutCentimes, int $pourcentage): int
+    /** Marge arrondie au centime le plus proche ; reprise pour les prix confirmés par le conseiller (#209). */
+    public static function marge(int $coutCentimes, int $pourcentage): int
     {
         return intdiv($coutCentimes * $pourcentage + 50, 100);
     }
