@@ -5,8 +5,10 @@ namespace App\Controller;
 use App\Confirmation\ConfirmationImpossible;
 use App\Confirmation\PropositionClient;
 use App\Entity\Proposition;
+use App\Proposition\PropositionPdf;
 use App\Repository\PropositionRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -43,6 +45,24 @@ final class PropositionController extends AbstractController
         return $this->json($this->client->presenter($version));
     }
 
+    /** La proposition en PDF (#213) : la version qui fait foi. */
+    #[Route('/pdf', name: 'api_proposition_pdf', methods: ['GET'])]
+    public function telecharger(string $jeton, PropositionPdf $pdf): Response
+    {
+        [, $proposition] = $this->trouver($jeton);
+
+        return $this->pdf($pdf, $proposition);
+    }
+
+    /** Une version précise en PDF, celle que le client consulte. */
+    #[Route('/versions/{numero}/pdf', name: 'api_proposition_version_pdf', methods: ['GET'], requirements: ['numero' => '\d+'])]
+    public function telechargerUneVersion(string $jeton, int $numero, PropositionPdf $pdf): Response
+    {
+        [, $proposition] = $this->trouver($jeton);
+
+        return $this->pdf($pdf, $this->client->version($proposition, $numero) ?? throw $this->createNotFoundException('Version introuvable.'));
+    }
+
     /** Le client souhaite faire confirmer la proposition estimée par son conseiller. */
     #[Route('/demande-de-confirmation', name: 'api_proposition_demande_de_confirmation', methods: ['POST'])]
     public function demanderConfirmation(string $jeton): JsonResponse
@@ -71,6 +91,17 @@ final class PropositionController extends AbstractController
         }
 
         return [$demandee, $proposition];
+    }
+
+    private function pdf(PropositionPdf $pdf, Proposition $proposition): Response
+    {
+        return new Response($pdf->generer($proposition), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $pdf->nomDeFichier($proposition)),
+            // Lien personnel : ni cache partagé, ni indexation.
+            'Cache-Control' => 'private, no-store',
+            'X-Robots-Tag' => 'noindex',
+        ]);
     }
 
     /** Applique l'action ; un refus (409) renvoie le message à afficher au client. */

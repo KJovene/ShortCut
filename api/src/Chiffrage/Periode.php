@@ -48,6 +48,23 @@ final class Periode
         return \sprintf('%s %s %s %s', $jours[(int) $date->format('N') - 1], 1 === $numero ? '1er' : $numero, self::mois($date), $date->format('Y'));
     }
 
+    /** « 12 juin 2027 », « 1er mai 2027 ». */
+    public static function date(\DateTimeImmutable $date): string
+    {
+        $numero = (int) $date->format('j');
+
+        return \sprintf('%s %s %s', 1 === $numero ? '1er' : $numero, self::mois($date), $date->format('Y'));
+    }
+
+    /** « sam. 12 juin », « ven. 22 oct. », pour les jours d'un programme. */
+    public static function jourCourt(\DateTimeImmutable $date): string
+    {
+        $jours = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+        $mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+
+        return \sprintf('%s %d %s', $jours[(int) $date->format('N') - 1], (int) $date->format('j'), $mois[(int) $date->format('n') - 1]);
+    }
+
     private static function mois(\DateTimeImmutable $date): string
     {
         return self::MOIS[(int) $date->format('n') - 1];
