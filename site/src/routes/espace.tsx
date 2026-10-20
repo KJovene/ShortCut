@@ -1,5 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconBulle, IconCoche } from '@/components/ui/icons'
 import { formatEuros, MOIS } from '@/data/catalogue'
@@ -170,6 +170,13 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                     ? 'prix confirmé par votre conseiller'
                     : 'prix estimé'}
                 </span>
+                <Link
+                  to="/proposition/$id"
+                  params={{ id: demande.proposition.jeton }}
+                  className="mt-1.5 flex min-h-10 items-center self-start rounded-full bg-encre px-4 text-[13px] font-extrabold text-creme hover:bg-brun"
+                >
+                  Voir ma proposition
+                </Link>
               </>
             ) : (
               <>
