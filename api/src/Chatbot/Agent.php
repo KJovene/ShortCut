@@ -21,6 +21,7 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * - « outil » {nom} : un outil s'exécute ;
  * - « demande » {fiche, recapitulatifConfirme} : la fiche demande vient d'être enregistrée ;
  * - « combinaison » {…} : l'agent Recherche a retenu une combinaison (sortie de retenir_combinaison) ;
+ * - « proposition » {jeton, version} : une nouvelle version vient d'être envoyée au client (modification, #211) ;
  * - « erreur » {erreur} : message à afficher au client.
  */
 abstract class Agent
@@ -192,6 +193,13 @@ abstract class Agent
      */
     protected function ajouterALaConversation(Conversation $conversation, string $reponse): void
     {
+        self::ajouterALaReponse($conversation, $reponse);
+        $this->em->flush();
+    }
+
+    /** Ajoute la réponse aux messages et à l'historique, sans enregistrer (NouvelleVersion s'en sert aussi). */
+    public static function ajouterALaReponse(Conversation $conversation, string $reponse): void
+    {
         if ('' === trim($reponse)) {
             return;
         }
@@ -204,7 +212,6 @@ abstract class Agent
             $dernier->content[] = (object) ['type' => 'text', 'text' => "\n\n".trim($reponse)];
             $conversation->setHistorique($historique);
         }
-        $this->em->flush();
     }
 
     /** Les messages du client, un par ligne : ce qu'il a nommé (« voir des dauphins ») n'a pas toujours de champ dans la fiche. */

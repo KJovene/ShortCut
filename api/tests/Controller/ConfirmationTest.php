@@ -197,6 +197,44 @@ final class ConfirmationTest extends WebTestCase
         self::assertSame(312000, $this->ligneEnBase($version, 'Riad Dar Yasmine, riad entier')->getPrixEstimeCentimes());
     }
 
+    /** #210 : la confirmation suit la demande du client ; Santorin a deux versions envoyées, rien de demandé. */
+    public function testSansDemandeDuClientLaPropositionNeSeConfirmePas(): void
+    {
+        $santorin = (int) $this->em->getRepository(Demande::class)->findOneBy(['lieuOuZone' => 'Santorin'])?->getId();
+
+        $crawler = $this->client->request('GET', '/admin/demande/'.$santorin);
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->selectLink('Confirmer la proposition'));
+
+        $this->client->request('GET', '/admin/demande/'.$santorin.'/confirmation');
+        self::assertResponseRedirects();
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'le client n\'a pas demandé la confirmation de sa proposition');
+        self::assertCount(2, $this->em->getRepository(Proposition::class)->findBy(['demande' => $santorin]), 'Aucun brouillon de confirmation.');
+    }
+
+    /** Le statut suit le workflow : absent du formulaire ; seule la perte se décide, par une action. */
+    public function testLeStatutNeSeChoisitPasMaisLaDemandePeutEtrePerdue(): void
+    {
+        $crawler = $this->client->request('GET', '/admin/demande/'.$this->demandeId.'/edit');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('[name="Demande[statut]"]'));
+
+        $crawler = $this->client->request('GET', '/admin/demande/'.$this->demandeId);
+        $action = $crawler->filter('form[action*="/perdre?_token="]')->attr('action');
+        $this->client->request('POST', (string) $action);
+        self::assertResponseRedirects();
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Demande marquée comme perdue.');
+        $this->em->clear();
+        self::assertSame(StatutDemande::Perdue, $this->em->find(Demande::class, $this->demandeId)?->getStatut());
+
+        // Perdue : plus de confirmation possible, plus d'action « perdre ».
+        $crawler = $this->client->request('GET', '/admin/demande/'.$this->demandeId);
+        self::assertCount(0, $crawler->filter('form[action*="/perdre?_token="]'));
+        self::assertCount(0, $crawler->selectLink('Confirmer la proposition'));
+    }
+
     public function testUnAutreConseillerNOuvrePasLEcran(): void
     {
         $this->client->loginUser($this->compte('hugo@shortcut.test'));

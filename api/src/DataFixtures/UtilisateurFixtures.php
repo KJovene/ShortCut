@@ -18,6 +18,8 @@ final class UtilisateurFixtures extends Fixture
     public const LEA = 'utilisateur-lea';
     public const HUGO = 'utilisateur-hugo';
     public const CLIENT = 'utilisateur-client';
+    public const CLIENT_JULIEN = 'utilisateur-client-julien';
+    public const CLIENT_SARAH = 'utilisateur-client-sarah';
 
     public function __construct(private readonly UserPasswordHasherInterface $hasher)
     {
@@ -30,6 +32,8 @@ final class UtilisateurFixtures extends Fixture
             self::LEA => ['lea@shortcut.test', 'Léa Dubois', Role::Conseiller],
             self::HUGO => ['hugo@shortcut.test', 'Hugo Bernard', Role::Conseiller],
             self::CLIENT => ['client@shortcut.test', 'Camille Durand', Role::Client],
+            self::CLIENT_JULIEN => ['julien@shortcut.test', 'Julien Morel', Role::Client],
+            self::CLIENT_SARAH => ['sarah@shortcut.test', 'Sarah Lemoine', Role::Client],
         ];
 
         foreach ($comptes as $reference => [$email, $nom, $role]) {

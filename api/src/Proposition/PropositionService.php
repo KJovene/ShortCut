@@ -126,6 +126,8 @@ final class PropositionService
             ->setTotalParPersonneCentimes(self::centimes($niveau['parPersonneEuros']))
             ->setFraisDeDossierCentimes(self::centimes($niveau['fraisDeDossierEuros']))
             ->setHypotheses($niveau['hypotheses'])
+            ->setChoix(\is_array($chiffrage['choix'] ?? null) ? $chiffrage['choix'] : [])
+            ->setExigences(\is_array($chiffrage['exigences'] ?? null) ? $chiffrage['exigences'] : [])
             ->setCreeLe($this->horloge->now());
 
         foreach ($this->lignes($niveau['postes'], $combinaison, $redigee->niveauDetaille) as $ligne) {
@@ -167,6 +169,7 @@ final class PropositionService
         }
         $this->workflowProposition->apply($proposition, 'envoyer');
         $this->workflowDemande->apply($demande, 'envoyer_proposition');
+        $proposition->setEnvoyeeLe($this->horloge->now());
         $demande->setModifieLe($this->horloge->now());
         $this->em->flush();
     }

@@ -14,30 +14,30 @@ use Doctrine\Persistence\ObjectManager;
 
 /**
  * Demandes de démo réparties entre Léa, Hugo et une demande non attribuée, dont certaines prioritaires,
- * pour vérifier la liste « Mes demandes » du backoffice.
+ * pour vérifier la liste « Mes demandes » du backoffice ; et entre trois clients, pour « Mon espace ».
  */
 final class DemandeFixtures extends Fixture implements DependentFixtureInterface
 {
     public function load(ObjectManager $manager): void
     {
-        $client = $this->getReference(UtilisateurFixtures::CLIENT, Utilisateur::class);
-
-        // [conseiller, lieu, type, statut, prioritaire, reçue il y a]
+        // Camille (client@shortcut.test) a 3 voyages en cours, le maximum : Santorin (deux versions après une
+        // modification, PropositionFixtures), Marrakech (à confirmer) et Costa Rica (en discussion, transmise).
+        // [client, conseiller, lieu, type, statut, prioritaire, reçue il y a]
         $demandes = [
-            [UtilisateurFixtures::LEA, 'Lisbonne', TypeDeVoyage::Sejour, StatutDemande::Nouvelle, false, '-1 hour'],
-            [UtilisateurFixtures::LEA, 'Santorin', TypeDeVoyage::Noces, StatutDemande::Nouvelle, true, '-3 days'],
-            [UtilisateurFixtures::LEA, 'Rome', TypeDeVoyage::Circuit, StatutDemande::PropositionEnvoyee, false, '-5 days'],
-            [UtilisateurFixtures::LEA, 'Marrakech', TypeDeVoyage::Groupe, StatutDemande::AConfirmer, true, '-1 day'],
-            [UtilisateurFixtures::HUGO, 'Islande', TypeDeVoyage::Circuit, StatutDemande::Nouvelle, true, '-2 hours'],
-            [UtilisateurFixtures::HUGO, 'Bali', TypeDeVoyage::Sejour, StatutDemande::Confirmee, false, '-10 days'],
-            [UtilisateurFixtures::HUGO, 'Tenerife', TypeDeVoyage::Entreprise, StatutDemande::Perdue, false, '-20 days'],
-            [null, 'Costa Rica', TypeDeVoyage::Sejour, StatutDemande::Nouvelle, true, '-30 minutes'],
+            [UtilisateurFixtures::CLIENT_JULIEN, UtilisateurFixtures::LEA, 'Lisbonne', TypeDeVoyage::Sejour, StatutDemande::Nouvelle, false, '-1 hour'],
+            [UtilisateurFixtures::CLIENT, UtilisateurFixtures::LEA, 'Santorin', TypeDeVoyage::Noces, StatutDemande::PropositionEnvoyee, false, '-3 days'],
+            [UtilisateurFixtures::CLIENT_JULIEN, UtilisateurFixtures::LEA, 'Rome', TypeDeVoyage::Circuit, StatutDemande::PropositionEnvoyee, false, '-5 days'],
+            [UtilisateurFixtures::CLIENT, UtilisateurFixtures::LEA, 'Marrakech', TypeDeVoyage::Groupe, StatutDemande::AConfirmer, true, '-1 day'],
+            [UtilisateurFixtures::CLIENT_SARAH, UtilisateurFixtures::HUGO, 'Islande', TypeDeVoyage::Circuit, StatutDemande::Nouvelle, true, '-2 hours'],
+            [UtilisateurFixtures::CLIENT_SARAH, UtilisateurFixtures::HUGO, 'Bali', TypeDeVoyage::Sejour, StatutDemande::Confirmee, false, '-10 days'],
+            [UtilisateurFixtures::CLIENT_SARAH, UtilisateurFixtures::HUGO, 'Tenerife', TypeDeVoyage::Entreprise, StatutDemande::Perdue, false, '-20 days'],
+            [UtilisateurFixtures::CLIENT, null, 'Costa Rica', TypeDeVoyage::Sejour, StatutDemande::Nouvelle, true, '-30 minutes'],
         ];
 
-        foreach ($demandes as [$conseiller, $lieu, $type, $statut, $prioritaire, $recue]) {
+        foreach ($demandes as [$client, $conseiller, $lieu, $type, $statut, $prioritaire, $recue]) {
             $date = new \DateTimeImmutable($recue);
             $manager->persist($demande = (new Demande())
-                ->setClient($client)
+                ->setClient($this->getReference($client, Utilisateur::class))
                 ->setConseiller(null === $conseiller ? null : $this->getReference($conseiller, Utilisateur::class))
                 ->setLieuOuZone($lieu)
                 ->setTypeDeVoyage($type)

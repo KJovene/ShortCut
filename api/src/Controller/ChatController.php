@@ -8,6 +8,7 @@ use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\Role;
 use App\Repository\ConversationRepository;
+use App\Repository\DemandeRepository;
 use App\Security\VisiteurChatbot;
 use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -29,6 +30,8 @@ final class ChatController extends AbstractController
 {
     /** Longueur maximale d'un message du client, en caractères. */
     public const MESSAGE_MAX = 2000;
+
+    public const MESSAGE_VOYAGES_MAX = 'Vous avez déjà 3 voyages en cours, le maximum. Poursuivez l\'un d\'eux depuis « Mon espace », ou demandez à votre conseiller d\'en clore un pour en commencer un nouveau.';
 
     /**
      * Envoie un message du client et diffuse la réponse de l'assistant en Server-Sent Events.
@@ -63,13 +66,17 @@ final class ChatController extends AbstractController
 
     /**
      * Ouvre une conversation et sa demande vide ; le jeton renvoyé authentifie les appels suivants.
-     * Un client connecté sur le site est rattaché d'office à la demande.
+     * Un client connecté sur le site est rattaché d'office à la demande, s'il n'a pas déjà
+     * Demande::VOYAGES_EN_COURS_MAX voyages en cours (409 sinon).
      */
     #[Route('/conversations', name: 'chat_demarrer', methods: ['POST'])]
-    public function demarrer(EntityManagerInterface $em, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
+    public function demarrer(EntityManagerInterface $em, DemandeRepository $demandes, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
     {
         $demande = new Demande();
         if (Role::Client === $utilisateur?->getRole()) {
+            if ($demandes->compterEnCoursDuClient($utilisateur) >= Demande::VOYAGES_EN_COURS_MAX) {
+                return $this->json(['erreur' => self::MESSAGE_VOYAGES_MAX], Response::HTTP_CONFLICT);
+            }
             $demande->setClient($utilisateur);
         }
         $conversation = new Conversation();
