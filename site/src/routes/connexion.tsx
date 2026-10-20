@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Bandeau, Champ, classeBouton } from '@/components/Champ'
+import { EcranAuthentification } from '@/components/EcranAuthentification'
 import {
   accedeAuBackoffice,
   ouvrirBackoffice,
@@ -56,12 +57,23 @@ function PageConnexion() {
   const enCours = connexion.isPending || connexion.isSuccess
 
   return (
-    <section className="mx-auto max-w-sm">
-      <h1 className="text-3xl font-bold">Connexion</h1>
-      <p className="mt-2 text-slate-600">Accédez à votre compte ShortCut.</p>
-
+    <EcranAuthentification
+      titre="Connexion"
+      sousTitre="Retrouvez vos voyages, vos propositions et vos conversations."
+      pied={
+        <>
+          Pas encore de compte ?{' '}
+          <Link
+            to="/inscription"
+            className="font-bold text-rouille underline-offset-2 hover:underline"
+          >
+            Créer un compte
+          </Link>
+        </>
+      }
+    >
       <form
-        className="mt-8 space-y-5"
+        className="flex flex-col gap-5"
         noValidate
         onSubmit={(event) => {
           event.preventDefault()
@@ -104,13 +116,6 @@ function PageConnexion() {
           {enCours ? 'Connexion…' : 'Se connecter'}
         </button>
       </form>
-
-      <p className="mt-6 text-sm text-slate-600">
-        Pas encore de compte ?{' '}
-        <Link to="/inscription" className="text-blue-700 underline">
-          Créer un compte
-        </Link>
-      </p>
-    </section>
+    </EcranAuthentification>
   )
 }

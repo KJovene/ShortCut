@@ -25,8 +25,8 @@ export function Champ({
   const descriptions = [aide && `${id}-aide`, erreur && `${id}-erreur`].filter(Boolean).join(' ')
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-bold">
         {label}
       </label>
       <input
@@ -39,15 +39,15 @@ export function Champ({
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={erreur ? true : undefined}
         aria-describedby={descriptions || undefined}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 focus:border-slate-900 focus:outline-none"
+        className="min-h-12 w-full rounded-xl border-[1.5px] border-lin bg-creme px-4 text-[15px] transition-colors hover:border-beige focus:border-terre focus:bg-white focus:outline-none aria-invalid:border-[#8F2A1C]"
       />
       {aide && (
-        <p id={`${id}-aide`} className="mt-1 text-sm text-slate-500">
+        <p id={`${id}-aide`} className="m-0 text-[13px] text-taupe">
           {aide}
         </p>
       )}
       {erreur && (
-        <p id={`${id}-erreur`} className="mt-1 text-sm text-red-700">
+        <p id={`${id}-erreur`} className="m-0 text-[13px] font-semibold text-[#8F2A1C]">
           {erreur}
         </p>
       )}
@@ -60,14 +60,14 @@ export function Bandeau({ ton, children }: { ton: 'erreur' | 'succes'; children:
   return ton === 'erreur' ? (
     <p
       role="alert"
-      className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+      className="m-0 rounded-2xl bg-[#F9DED6] px-4 py-3 text-sm font-semibold text-[#8F2A1C]"
     >
       {children}
     </p>
   ) : (
     <p
       role="status"
-      className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800"
+      className="m-0 rounded-2xl bg-[#DDF1E4] px-4 py-3 text-sm font-semibold text-[#1F6B3A]"
     >
       {children}
     </p>
@@ -75,4 +75,4 @@ export function Bandeau({ ton, children }: { ton: 'erreur' | 'succes'; children:
 }
 
 export const classeBouton =
-  'w-full rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700 disabled:opacity-60'
+  'flex min-h-12 w-full items-center justify-center rounded-full bg-terre px-6 text-[15px] font-extrabold text-white hover:bg-rouille disabled:opacity-60'
