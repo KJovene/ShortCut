@@ -2,13 +2,35 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\Link;
+use App\ApiPlatform\PublieeExtension;
 use App\Repository\PageDuSiteRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/** Contenu modifiable d'une page du site (textes, photos, référencement). */
+/**
+ * Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+ * Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+ * répond 404 comme une page inconnue.
+ */
+#[ApiResource(
+    operations: [
+        new Get(
+            uriTemplate: '/pages/{slug}',
+            uriVariables: ['slug' => new Link(fromClass: self::class, identifiers: ['slug'])],
+            requirements: ['slug' => '[a-z0-9-]+'],
+        ),
+    ],
+    normalizationContext: ['groups' => ['public:read']],
+    security: "is_granted('PUBLIC_ACCESS')",
+    extraProperties: [PublieeExtension::PUBLIEES => true],
+)]
 #[ORM\Entity(repositoryClass: PageDuSiteRepository::class)]
 #[ORM\Table(name: 'page_du_site')]
 #[UniqueEntity('slug')]
@@ -21,10 +43,12 @@ class PageDuSite
 
     #[ORM\Column(type: Types::STRING, length: 150)]
     #[Assert\NotBlank]
+    #[Groups(['public:read'])]
     private ?string $titre = null;
 
     #[ORM\Column(type: Types::STRING, length: 150, unique: true)]
     #[Assert\NotBlank]
+    #[Groups(['public:read'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -37,9 +61,11 @@ class PageDuSite
     private array $photos = [];
 
     #[ORM\Column(type: Types::STRING, length: 70, nullable: true)]
+    #[Groups(['public:read'])]
     private ?string $seoTitre = null;
 
     #[ORM\Column(type: Types::STRING, length: 160, nullable: true)]
+    #[Groups(['public:read'])]
     private ?string $seoDescription = null;
 
     #[ORM\Column(type: Types::BOOLEAN)]
@@ -90,6 +116,14 @@ class PageDuSite
         return $this;
     }
 
+    /** Contenu lu par le site : une page encore vide donne un texte vide. */
+    #[Groups(['public:read'])]
+    #[SerializedName('contenu')]
+    public function getContenuPublic(): string
+    {
+        return $this->contenu ?? '';
+    }
+
     /**
      * @return list<string>
      */
@@ -106,6 +140,18 @@ class PageDuSite
         $this->photos = $photos;
 
         return $this;
+    }
+
+    /**
+     * Adresses des photos, servies par l'API sous /uploads/pages.
+     *
+     * @return list<string>
+     */
+    #[Groups(['public:read'])]
+    #[SerializedName('photos')]
+    public function getUrlsDesPhotos(): array
+    {
+        return array_map(static fn (string $photo): string => '/uploads/pages/'.$photo, $this->photos);
     }
 
     public function getSeoTitre(): ?string

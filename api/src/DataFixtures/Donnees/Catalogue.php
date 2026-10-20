@@ -29,6 +29,9 @@ final class Catalogue
             'lisbonne' => [
                 'pays' => 'Portugal', 'region' => 'Lisbonne et vallée du Tage', 'ville' => 'Lisbonne',
                 'photo' => 'lisbonne',
+                'nom' => 'Lisbonne, Portugal', 'typesDeVoyage' => ['sejour', 'groupe', 'entreprise'], 'moisIdeal' => 6, 'latitude' => 38.7, 'longitude' => -9.1,
+                'photoAlt' => 'Le pont du 25-Avril au coucher du soleil sur le Tage',
+                'accroche' => 'Ruelles de l’Alfama, tramways jaunes et pastéis de nata, à 2 h 30 de Paris.',
                 'description' => 'Capitale lumineuse sur les collines du Tage : ruelles de l\'Alfama, tramways jaunes, miradouros au coucher du soleil et cuisine généreuse. Idéale pour un long week-end, un voyage de groupe ou un séminaire.',
                 'pointsForts' => ['Quartiers historiques à pied', 'Gastronomie et pastéis de nata', 'Plages à 30 minutes', 'Vols courts depuis la France'],
                 'tempsDeTrajet' => ['Paris' => 150, 'Lyon' => 140, 'Bordeaux' => 115],
@@ -40,6 +43,9 @@ final class Catalogue
             'marrakech' => [
                 'pays' => 'Maroc', 'region' => 'Marrakech-Safi', 'ville' => 'Marrakech',
                 'photo' => 'marrakech',
+                'nom' => 'Marrakech, Maroc', 'typesDeVoyage' => ['sejour', 'groupe', 'entreprise'], 'moisIdeal' => 4, 'latitude' => 31.6, 'longitude' => -8.0,
+                'photoAlt' => 'Le minaret de la Koutoubia sous un ciel bleu',
+                'accroche' => 'Riads à patio, souks et hammams, avec l’Atlas en toile de fond.',
                 'description' => 'La ville rouge : médina classée, souks, riads à patio et jardins, avec l\'Atlas en toile de fond. Une destination soleil toute l\'année, très demandée pour les groupes et les séminaires.',
                 'pointsForts' => ['Riads de charme', 'Souks et place Jemaa el-Fna', 'Excursions dans l\'Atlas', 'Hammams et spas'],
                 'tempsDeTrajet' => ['Paris' => 210, 'Lyon' => 195, 'Bordeaux' => 180],
@@ -51,6 +57,9 @@ final class Catalogue
             'santorin' => [
                 'pays' => 'Grèce', 'region' => 'Cyclades', 'ville' => 'Santorin',
                 'photo' => 'santorin',
+                'nom' => 'Santorin, Grèce', 'typesDeVoyage' => ['noces', 'sejour'], 'moisIdeal' => 6, 'latitude' => 36.4, 'longitude' => 25.4,
+                'photoAlt' => 'Maisons blanches et dômes bleus d’Oia face à la mer',
+                'accroche' => 'Villages blancs sur la caldeira et couchers de soleil à Oia, rien que pour deux.',
                 'description' => 'Villages blancs accrochés à la caldeira, couchers de soleil sur la mer Égée et vins volcaniques : la destination romantique par excellence pour un voyage de noces.',
                 'pointsForts' => ['Couchers de soleil à Oia', 'Suites avec piscine privée', 'Croisières dans la caldeira', 'Vignobles volcaniques'],
                 'tempsDeTrajet' => ['Paris' => 240, 'Lyon' => 300, 'Bordeaux' => 330],
@@ -62,6 +71,9 @@ final class Catalogue
             'tenerife' => [
                 'pays' => 'Espagne', 'region' => 'Îles Canaries', 'ville' => 'Tenerife',
                 'photo' => 'tenerife',
+                'nom' => 'Tenerife, Canaries', 'typesDeVoyage' => ['sejour', 'groupe'], 'moisIdeal' => 2, 'latitude' => 28.3, 'longitude' => -16.6,
+                'photoAlt' => 'Le volcan Teide au-dessus des nuages',
+                'accroche' => 'Plus de 20 °C en plein hiver, le Teide et les baleines, en famille.',
                 'description' => 'L\'île du printemps éternel : plages au sud, volcan Teide classé à l\'UNESCO, baleines et dauphins toute l\'année. Le soleil d\'hiver à quatre heures de Paris, parfait pour les familles.',
                 'pointsForts' => ['Plus de 20 °C en plein hiver', 'Parc national du Teide', 'Observation des cétacés', 'Hôtels familiaux et accessibles'],
                 'tempsDeTrajet' => ['Paris' => 280, 'Lyon' => 300, 'Bordeaux' => 270],
@@ -73,6 +85,9 @@ final class Catalogue
             'rome' => [
                 'pays' => 'Italie', 'region' => 'Latium', 'ville' => 'Rome',
                 'photo' => 'rome',
+                'nom' => 'Rome, Italie', 'typesDeVoyage' => ['groupe', 'entreprise', 'sejour'], 'moisIdeal' => 5, 'latitude' => 41.9, 'longitude' => 12.5,
+                'photoAlt' => 'Le Colisée de Rome sous un ciel clair',
+                'accroche' => 'Colisée, places baroques et trattorias, idéale pour les groupes.',
                 'description' => 'Trois mille ans d\'histoire à ciel ouvert : Colisée, forums, places baroques et trattorias du Trastevere. Une valeur sûre pour les voyages de groupe, scolaires ou d\'entreprise.',
                 'pointsForts' => ['Colisée et Forum romain', 'Cuisine italienne', 'Hébergements pour groupes', 'Centre de congrès'],
                 'tempsDeTrajet' => ['Paris' => 125, 'Lyon' => 85, 'Bordeaux' => 145],
@@ -84,6 +99,9 @@ final class Catalogue
             'islande' => [
                 'pays' => 'Islande', 'region' => 'Sud et Nord de l\'Islande', 'ville' => 'Reykjavik',
                 'photo' => 'islande',
+                'nom' => 'Islande', 'typesDeVoyage' => ['circuit'], 'moisIdeal' => 7, 'latitude' => 64.1, 'longitude' => -21.9,
+                'photoAlt' => 'Cascade écumante au milieu des falaises vertes',
+                'accroche' => 'Cascades, glaciers et sources chaudes, en circuit de mai à septembre.',
                 'description' => 'Cascades, glaciers, plages de sable noir et sources chaudes : l\'Islande se découvre en circuit, de Reykjavik à Vík puis jusqu\'à Akureyri. Saison des circuits de mai à septembre.',
                 'pointsForts' => ['Circuit de 7 à 10 jours', 'Cascades et glaciers', 'Baignade dans les sources chaudes', 'Observation des baleines'],
                 'tempsDeTrajet' => ['Paris' => 205, 'Lyon' => 240, 'Bordeaux' => 250],
@@ -96,6 +114,9 @@ final class Catalogue
             'bali' => [
                 'pays' => 'Indonésie', 'region' => 'Bali', 'ville' => 'Ubud',
                 'photo' => 'bali',
+                'nom' => 'Bali, Indonésie', 'typesDeVoyage' => ['noces', 'sejour'], 'moisIdeal' => 7, 'latitude' => -8.5, 'longitude' => 115.3,
+                'photoAlt' => 'Le temple d’Uluwatu au bord de la falaise',
+                'accroche' => 'Rizières, temples et villa avec piscine privée, un classique des noces.',
                 'description' => 'Rizières en terrasses, temples, plages de surf et villas avec piscine : Bali marie culture et détente. Un classique des voyages de noces, plus sec d\'avril à octobre.',
                 'pointsForts' => ['Villas avec piscine privée', 'Temples et rizières', 'Surf à Canggu', 'Massages balinais'],
                 'tempsDeTrajet' => ['Paris' => 1080, 'Lyon' => 1140, 'Bordeaux' => 1170],
@@ -107,6 +128,9 @@ final class Catalogue
             'costa-rica' => [
                 'pays' => 'Costa Rica', 'region' => 'Alajuela et Puntarenas', 'ville' => 'La Fortuna',
                 'photo' => 'costa-rica',
+                'nom' => 'Costa Rica', 'typesDeVoyage' => ['circuit'], 'moisIdeal' => 2, 'latitude' => 10.5, 'longitude' => -84.6,
+                'photoAlt' => 'La cascade de La Fortuna dans la forêt tropicale',
+                'accroche' => 'Volcans, forêts de nuages et faune exceptionnelle, en circuit nature.',
                 'description' => 'Volcan Arenal, forêts de nuages de Monteverde et côte sauvage de la péninsule d\'Osa : un circuit nature au milieu d\'une faune exceptionnelle. Saison sèche de décembre à avril.',
                 'pointsForts' => ['Circuit nature de 10 à 14 jours', 'Volcans et sources chaudes', 'Faune et forêts tropicales', 'Écolodges'],
                 'tempsDeTrajet' => ['Paris' => 660, 'Lyon' => 780, 'Bordeaux' => 780],

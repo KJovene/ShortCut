@@ -1,23 +1,23 @@
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { IconFlecheBas } from '@/components/ui/icons'
-import {
-  DESTINATIONS,
-  TYPES_DE_VOYAGE,
-  trouverDestination,
-  type TypeDeVoyage,
-} from '@/data/catalogue'
+import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
 import { SectionAssistant } from '@/features/accueil/SectionAssistant'
+import { destinationsQuery, estSurCarte } from '@/features/catalogue/catalogue'
 import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
 
 export const Route = createFileRoute('/')({
-  // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement.
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null),
+  // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement,
+  // ni de celui des destinations : sans elles, la carte reste vide mais l'assistant répond.
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(destinationsQuery())
+    return context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null)
+  },
   head: ({ loaderData }) => ({
     meta: metaPage(loaderData, {
       titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
@@ -36,7 +36,14 @@ const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
 function HomePage() {
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
   const [activeSlug, setActiveSlug] = useState('santorin')
-  const active = trouverDestination(activeSlug) ?? DESTINATIONS[0]
+  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const surCarte = destinations.filter(estSurCarte)
+  const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
+  const parSlug = (slug: string) => destinations.find((d) => d.slug === slug)
+  // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
+  const photos = ['santorin', 'bali', 'marrakech', 'islande'].map(
+    (slug, i) => parSlug(slug) ?? destinations[i],
+  )
 
   return (
     <>
@@ -49,7 +56,9 @@ function HomePage() {
         <div className="mx-auto flex w-full max-w-[1376px] flex-wrap items-end justify-between gap-2.5 px-4 pb-3 sm:gap-4 sm:px-8 sm:pt-1 sm:pb-0">
           <div className="flex flex-col gap-1.5">
             <span className="hidden text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase sm:block">
-              {DESTINATIONS.length} destinations sur mesure, partout dans le monde
+              {destinations.length > 0
+                ? `${destinations.length} destinations sur mesure, partout dans le monde`
+                : 'Des destinations sur mesure, partout dans le monde'}
             </span>
             <h1
               id="hero-titre"
@@ -86,12 +95,14 @@ function HomePage() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14 md:px-8 md:pt-3">
-          <CarteDuMonde
-            destinations={DESTINATIONS}
-            active={active}
-            type={type}
-            onActiver={setActiveSlug}
-          />
+          {active && (
+            <CarteDuMonde
+              destinations={surCarte}
+              active={active}
+              type={type}
+              onActiver={setActiveSlug}
+            />
+          )}
         </div>
 
         <a
@@ -103,19 +114,16 @@ function HomePage() {
         </a>
       </section>
 
-      <BandeauVoyages
-        destinations={DESTINATIONS}
-        active={active.slug}
-        type={type}
-        onActiver={setActiveSlug}
-      />
+      {destinations.length > 0 && (
+        <BandeauVoyages
+          destinations={destinations}
+          active={active?.slug ?? activeSlug}
+          type={type}
+          onActiver={setActiveSlug}
+        />
+      )}
 
-      <SectionAssistant
-        suggestion={active}
-        photos={['santorin', 'bali', 'marrakech', 'islande'].map((slug) =>
-          trouverDestination(slug)!,
-        )}
-      />
+      <SectionAssistant suggestion={active} photos={photos} />
     </>
   )
 }

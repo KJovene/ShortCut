@@ -8,6 +8,7 @@ erDiagram
         integer id PK
         string jeton UK
         json messages
+        text historique
         datetime_immutable debut_le
         datetime_immutable fin_le "nullable"
         boolean reprise_par_conseiller
@@ -18,6 +19,9 @@ erDiagram
         string type_de_voyage "enum TypeDeVoyage, nullable"
         string statut "enum StatutDemande"
         boolean prioritaire
+        string motif_transmission "enum MotifTransmission, nullable"
+        text resume_transmission "nullable"
+        datetime_immutable transmise_le "nullable"
         string lieu_ou_zone "nullable"
         string ville_depart "nullable"
         date_immutable date_debut "nullable"
@@ -49,6 +53,13 @@ erDiagram
         json points_forts
         text description "nullable"
         string photo "nullable"
+        string photo_alt "nullable"
+        string nom "nullable"
+        string accroche "nullable"
+        json types_de_voyage
+        smallint mois_ideal "nullable"
+        float latitude "nullable"
+        float longitude "nullable"
         boolean publiee
         boolean mise_en_avant
     }
@@ -71,6 +82,7 @@ erDiagram
         date_immutable date_fin "nullable"
         integer quantite
         integer prix_estime_centimes
+        string calcul "nullable"
         integer prix_confirme_centimes "nullable"
         integer proposition_id FK
         integer prestation_id FK "nullable"
@@ -130,6 +142,9 @@ erDiagram
         string type "enum TypeProposition"
         string statut "enum StatutProposition"
         string jeton_public UK
+        text pourquoi "nullable"
+        json argumentaire
+        json prestations
         json programme
         string niveau_budget "enum NiveauBudget"
         json budgets_par_niveau
@@ -140,6 +155,7 @@ erDiagram
         datetime_immutable confirmee_le "nullable"
         datetime_immutable cree_le
         integer demande_id FK
+        integer destination_id FK "nullable"
         integer confirmee_par_id FK "nullable"
     }
     REGLE_DE_PRIX {
@@ -183,6 +199,7 @@ erDiagram
     DESTINATION ||--o{ PRESTATION : destination
     PRESTATAIRE ||--o{ PRESTATION : prestataire
     DEMANDE ||--o{ PROPOSITION : demande
+    DESTINATION |o--o{ PROPOSITION : destination
     UTILISATEUR |o--o{ PROPOSITION : confirmeePar
     PRESTATION ||--o{ TARIF_PAR_PERIODE : prestation
     UTILISATEUR |o--o{ TARIF_PAR_PERIODE : saisiPar

@@ -33,10 +33,10 @@ final class PageDuSiteTest extends WebTestCase
     {
         $this->creerPage('page-test', publiee: true);
 
-        $this->client->request('GET', '/api/pages/page-test');
+        $this->client->request('GET', '/api/pages/page-test', server: ['HTTP_ACCEPT' => 'application/json']);
 
         self::assertResponseIsSuccessful();
-        self::assertSame([
+        self::assertEquals([
             'slug' => 'page-test',
             'titre' => 'Page de test',
             'contenu' => '<p>Bonjour</p>',
@@ -46,11 +46,23 @@ final class PageDuSiteTest extends WebTestCase
         ], json_decode((string) $this->client->getResponse()->getContent(), true));
     }
 
+    public function testUnePageSansContenuDonneUnTexteVide(): void
+    {
+        $this->creerPage('page-test', publiee: true);
+        $this->em->getRepository(PageDuSite::class)->findOneBy(['slug' => 'page-test'])?->setContenu(null);
+        $this->em->flush();
+
+        $this->client->request('GET', '/api/pages/page-test', server: ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('', json_decode((string) $this->client->getResponse()->getContent(), true)['contenu']);
+    }
+
     public function testUnePageMasqueeOuInconnueRepond404(): void
     {
         $this->creerPage('page-test', publiee: false);
 
-        $this->client->request('GET', '/api/pages/page-test');
+        $this->client->request('GET', '/api/pages/page-test', server: ['HTTP_ACCEPT' => 'application/json']);
         self::assertResponseStatusCodeSame(404);
 
         $this->client->request('GET', '/api/pages/page-inconnue');

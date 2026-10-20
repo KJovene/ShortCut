@@ -120,6 +120,15 @@ Pour l'exemple 2 (demande test 06), trois arbitrages, aucun ne suffisant : 3 nui
 
 Si une nuit d'un logement retenu, ou une activité demandée, n'a aucun tarif aux dates du voyage, le poste n'est pas chiffrable. Le chatbot cherche un autre logement compatible. S'il n'en trouve pas, il le dit au client, ne remet pas de proposition chiffrée et transmet la demande à un conseiller. C'est le cas des circuits en Islande d'octobre à avril dans le jeu de démo.
 
+## Prix « à partir de » du site public
+
+Le site affiche, sans demande, des prix indicatifs calculés par `App\Chiffrage\PrixAPartirDe` et servis par `GET /api/public/destinations`. Ce sont des prix de vente : la marge est comprise et les tarifs d'achat ne sortent jamais. Seules les périodes qui ne sont pas encore passées comptent.
+
+- **Par personne, pour une destination** : 7 nuits à deux dans le logement le moins cher qui accueille au moins deux personnes, plus le bas des fourchettes du vol aller-retour depuis Paris et des transferts, plus la marge. On ajoute la moitié des frais de dossier du type de voyage principal (le premier saisi sur la destination). Le résultat est arrondi à la dizaine d'euros supérieure. S'il manque un logement, un transport ou un type de voyage, aucun prix n'est affiché.
+- **Exemples** : les 3 logements et les 3 activités les moins chers de la destination. Le prix est le tarif le plus bas, marge comprise, arrondi à l'euro supérieur : par nuit pour le logement entier, par personne pour une activité.
+
+Exemple, Lisbonne dans le jeu de démo : 88 € la nuit en basse saison, soit 7 × 88 / 2 = 308 €. On ajoute 120 € de vol et 20 € de transferts, soit 448 €. Avec 20 % de marge, on arrive à 537,60 €, plus 50 € de frais de dossier (séjour) : 587,60 €, affiché « dès 590 € / pers. ».
+
 ## Exemples calculés
 
 Les montants viennent du jeu de démo (#174). Les trois exemples correspondent aux demandes test `02`, `06` et `07` de `api/tests/demandes`.

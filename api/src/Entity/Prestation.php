@@ -22,6 +22,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
@@ -32,6 +33,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
  * Logement ou activité proposé par un prestataire dans une destination.
  * Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
  * Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
+ * Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
  */
 #[ApiResource(
     shortName: 'Logement',
@@ -159,13 +161,13 @@ class Prestation
     /** Fixé par l'adresse utilisée (/api/logements ou /api/activites), jamais par le contenu envoyé. */
     #[ORM\Column(enumType: TypePrestation::class)]
     #[Assert\NotNull]
-    #[Groups(['prestation:public'])]
+    #[Groups(['prestation:public', 'public:read'])]
     private ?TypePrestation $type = null;
 
     #[ORM\Column(type: Types::STRING, length: 150)]
     #[Assert\NotBlank(message: 'Indiquez le nom.')]
     #[Assert\Length(max: 150)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?string $nom = null;
 
     #[ORM\ManyToOne(targetEntity: Destination::class, inversedBy: 'prestations')]
@@ -183,26 +185,26 @@ class Prestation
     /** Ex. « 3 étoiles », « villa », « excursion ». */
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     #[Assert\Length(max: 100)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?string $categorie = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 5000)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?string $description = null;
 
     /** Nombre maximum de personnes. */
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\Positive(message: 'La capacité doit être d\'au moins une personne.')]
     #[Assert\LessThanOrEqual(1000)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private int $capacite = 1;
 
     /** Nombre de chambres d'un logement (un riad entier : 6 ; une chambre double : 1). */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\Positive(message: 'Le nombre de chambres doit être d\'au moins 1.')]
     #[Assert\LessThanOrEqual(500)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?int $chambres = null;
 
     /**
@@ -210,23 +212,23 @@ class Prestation
      */
     #[ORM\Column(type: Types::JSON)]
     #[Assert\All([new Assert\NotBlank(), new Assert\Length(max: 100)])]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private array $equipements = [];
 
     /** Adapté aux personnes à mobilité réduite. */
     #[ORM\Column(type: Types::BOOLEAN)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private bool $accessible = false;
 
     /** Durée d'une activité. */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\Positive(message: 'La durée doit être d\'au moins une minute.')]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?int $dureeMinutes = null;
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\Range(min: 0, max: 99)]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private ?int $ageMinimum = null;
 
     /**
@@ -234,7 +236,7 @@ class Prestation
      */
     #[ORM\Column(type: Types::JSON)]
     #[Assert\All([new Assert\NotBlank(), new Assert\Length(max: 50)])]
-    #[Groups(['prestation:public', 'prestation:ecriture'])]
+    #[Groups(['prestation:public', 'public:read', 'prestation:ecriture'])]
     private array $envies = [];
 
     /**
@@ -485,6 +487,18 @@ class Prestation
         $this->photos = $photos;
 
         return $this;
+    }
+
+    /**
+     * Adresses des photos sur le site public.
+     *
+     * @return list<string>
+     */
+    #[Groups(['public:read'])]
+    #[SerializedName('photos')]
+    public function getUrlsDesPhotos(): array
+    {
+        return array_map(static fn (string $photo): string => '/uploads/prestations/'.$photo, $this->photos);
     }
 
     /**

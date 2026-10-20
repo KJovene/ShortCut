@@ -1,9 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { IconCoche } from '@/components/ui/icons'
-import { DESTINATIONS } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/agence')({
@@ -45,6 +45,7 @@ function AgencePage() {
   const { data: page } = useSuspenseQuery(pageQuery('agence'))
   const contenu = decouperContenu(page.contenu)
   const engagements = trouverSection(contenu, 'Nos engagements')
+  const { data: destinations = [] } = useQuery(destinationsQuery())
 
   return (
     <>
@@ -123,7 +124,7 @@ function AgencePage() {
                 <span className="text-sm font-bold text-rouille">{c.role}</span>
                 <span className="text-taupe">
                   {c.destinations
-                    .map((slug) => DESTINATIONS.find((d) => d.slug === slug)!.ville)
+                    .flatMap((slug) => destinations.find((d) => d.slug === slug)?.ville ?? [])
                     .join(', ')}
                 </span>
               </div>

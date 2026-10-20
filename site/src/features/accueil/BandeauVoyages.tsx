@@ -1,19 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { IconChevronDroite, IconChevronGauche } from '@/components/ui/icons'
-import {
-  formatEuros,
-  labelType,
-  MOIS,
-  prixAPartirDe,
-  type Destination,
-  type TypeDeVoyage,
-} from '@/data/catalogue'
+import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
+import { libelleTypePrincipal, type DestinationPublique } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { estVisible } from './carte'
 
 interface Props {
-  destinations: Destination[]
+  destinations: DestinationPublique[]
   active: string
   type: TypeDeVoyage | 'tous'
   onActiver: (slug: string) => void
@@ -81,13 +75,16 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
                   alt=""
                   className="absolute inset-0 size-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <span className="absolute top-3 left-3 rounded-full bg-white px-2.5 py-1 text-xs font-extrabold text-encre">
-                  {d.temperatures[d.moisIdeal]} °C en {MOIS[d.moisIdeal]}
-                </span>
+                {d.temperatures[d.moisIdeal] !== null && (
+                  <span className="absolute top-3 left-3 rounded-full bg-white px-2.5 py-1 text-xs font-extrabold text-encre">
+                    {d.temperatures[d.moisIdeal]} °C en {MOIS[d.moisIdeal]}
+                  </span>
+                )}
                 <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 bg-linear-to-t from-encre/90 to-encre/0 px-4 pt-10 pb-4">
                   <span className="font-display text-lg font-semibold sm:text-[22px]">{d.nom}</span>
                   <span className="text-xs text-sable sm:text-[13px]">
-                    {labelType(d.types[0])} · dès {formatEuros(prixAPartirDe(d))}
+                    {libelleTypePrincipal(d)}
+                    {d.prixAPartirDe !== null && ` · dès ${formatEuros(d.prixAPartirDe)}`}
                   </span>
                 </span>
               </Link>

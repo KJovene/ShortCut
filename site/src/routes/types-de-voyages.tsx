@@ -1,14 +1,18 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { IconFleche } from '@/components/ui/icons'
-import { DESTINATIONS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
 
 export const Route = createFileRoute('/types-de-voyages')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('types-de-voyages')),
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(destinationsQuery())
+    return context.queryClient.ensureQueryData(pageQuery('types-de-voyages'))
+  },
   head: ({ loaderData }) => ({
     meta: metaPage(loaderData, {
       titre: 'Séjours, circuits, groupes, voyages de noces et entreprise',
@@ -39,6 +43,8 @@ function TypesPage() {
   // contenus du site, modifiables dans le backoffice.
   const { data: page } = useSuspenseQuery(pageQuery('types-de-voyages'))
   const contenu = decouperContenu(page.contenu)
+  // Le nombre de destinations par type s'affiche une fois le catalogue chargé.
+  const { data: destinations } = useQuery(destinationsQuery())
 
   return (
     <>
@@ -60,7 +66,7 @@ function TypesPage() {
         {TYPES_DE_VOYAGE.map((t, i) => {
           const section = trouverSection(contenu, titreType(t), t.label, t.pluriel)
           const photo = page.photos.find((p) => p.endsWith(`/${t.valeur}.jpg`))
-          const nb = DESTINATIONS.filter((d) => d.types.includes(t.valeur)).length
+          const nb = destinations?.filter((d) => d.types.includes(t.valeur)).length
           return (
             <article
               key={t.valeur}
@@ -75,7 +81,8 @@ function TypesPage() {
               )}
               <div className="flex flex-1 flex-col justify-center gap-3 p-6 sm:p-10">
                 <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
-                  {String(i + 1).padStart(2, '0')} · {nb} destination{nb > 1 ? 's' : ''}
+                  {String(i + 1).padStart(2, '0')}
+                  {nb !== undefined && ` · ${nb} destination${nb > 1 ? 's' : ''}`}
                 </span>
                 <h2 className="m-0 font-display text-[32px] font-semibold sm:text-[40px]">
                   {titreType(t)}
