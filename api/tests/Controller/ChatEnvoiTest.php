@@ -127,7 +127,7 @@ final class ChatEnvoiTest extends WebTestCase
     {
         $jeton = $this->demarrer();
         $this->claude->prevoir(
-            FausseApiClaude::appelOutil('enregistrer_exigences', ['recapitulatifConfirme' => true]),
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['typeDeVoyage' => 'sejour', 'lieuOuZone' => 'Lisbonne', 'dateDebut' => '2027-05-14', 'recapitulatifConfirme' => true]),
             FausseApiClaude::texte('Merci, votre demande est complète.'),
         );
 
@@ -135,6 +135,26 @@ final class ChatEnvoiTest extends WebTestCase
 
         self::assertTrue($this->parType($evenements)['demande']['recapitulatifConfirme']);
         self::assertNotNull($this->conversation($jeton)->getFinLe());
+    }
+
+    public function testUnRecapitulatifSurUneFicheVideNEstPasConfirme(): void
+    {
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['lieuOuZone' => 'Lisbonne', 'recapitulatifConfirme' => true]),
+            FausseApiClaude::texte('Je reprends votre demande.'),
+        );
+
+        $this->envoyer($jeton, 'Oui, c’est bon');
+
+        $messages = $this->claude->requetes[1]['corps']['messages'];
+        $resultat = end($messages)['content'][0];
+        self::assertTrue($resultat['is_error']);
+        self::assertStringContainsString('le type de voyage, les dates', json_decode($resultat['content'], true)['erreur']);
+        $conversation = $this->conversation($jeton);
+        self::assertNull($conversation->getFinLe());
+        // Ce qui a été donné reste enregistré.
+        self::assertSame('Lisbonne', $conversation->getDemande()?->getLieuOuZone());
     }
 
     public function testUneErreurDeLApiEstAnnonceeSansDetailTechnique(): void

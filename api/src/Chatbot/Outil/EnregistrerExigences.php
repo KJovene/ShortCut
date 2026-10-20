@@ -44,15 +44,15 @@ final class EnregistrerExigences implements Outil
                     'dateFin' => ['type' => 'string', 'description' => 'AAAA-MM-JJ'],
                     'datesFlexibles' => ['type' => 'boolean'],
                     'nombreDeJours' => ['type' => 'integer', 'description' => 'Nombre de nuits sur place.'],
-                    'temperatureMin' => ['type' => 'integer', 'description' => 'Température moyenne minimale souhaitée, en °C.'],
+                    'temperatureMin' => ['type' => 'integer', 'description' => 'Température moyenne minimale souhaitée, en °C, seulement si le client donne un chiffre ou accepte celui que tu proposes. « De la chaleur » va dans envies, sans chiffre.'],
                     'temperatureMax' => ['type' => 'integer'],
                     'adultes' => ['type' => 'integer'],
                     'enfants' => ['type' => 'integer'],
                     'agesEnfants' => ['type' => 'array', 'items' => ['type' => 'integer']],
-                    'budgetEuros' => ['type' => 'integer'],
+                    'budgetEuros' => ['type' => 'integer', 'description' => 'Le montant tel que le client le donne, sans calcul : « 900 € par personne » donne 900 avec budgetParPersonne à true.'],
                     'budgetParPersonne' => ['type' => 'boolean', 'description' => 'true : le budget est par personne ; false : c\'est un total.'],
                     'transportInclus' => ['type' => 'boolean'],
-                    'envies' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Activités, ambiance, rythme (« plage », « gastronomie »). Pas la destination : elle va dans lieuOuZone.'],
+                    'envies' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Activités, ambiance, rythme (« plage », « gastronomie »), y compris l\'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Pas la destination : elle va dans lieuOuZone.'],
                     'contraintes' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Mobilité réduite (avec le type de besoin), régime, allergie (avec sa gravité), santé, animaux.'],
                     'client' => [
                         'type' => 'object',
@@ -94,6 +94,16 @@ final class EnregistrerExigences implements Outil
 
         $demande->setModifieLe(new \DateTimeImmutable());
         $confirme = true === ($entree['recapitulatifConfirme'] ?? false);
+        $indispensables = self::indispensablesManquants($demande);
+        if ($confirme && [] !== $indispensables) {
+            // Les exigences de ce message restent enregistrées ; seule la confirmation est refusée.
+            $this->em->flush();
+
+            throw new OutilException(\sprintf(
+                'Récapitulatif non confirmé : la fiche ne contient pas encore %s. Enregistre d\'abord toutes les exigences déjà données par le client, y compris dans ses messages précédents, puis rappelle cet outil avec recapitulatifConfirme à true.',
+                implode(', ', $indispensables),
+            ));
+        }
         if ($confirme) {
             // Le client a validé sa demande : la conversation de recueil est aboutie.
             $contexte->conversation->setFinLe(new \DateTimeImmutable());
@@ -233,7 +243,7 @@ final class EnregistrerExigences implements Outil
      *
      * @return list<string>
      */
-    private static function manquantes(Demande $demande): array
+    public static function manquantes(Demande $demande): array
     {
         $manquantes = [
             'type de voyage' => null === $demande->getTypeDeVoyage(),
@@ -247,6 +257,23 @@ final class EnregistrerExigences implements Outil
         ];
 
         return array_keys(array_filter($manquantes));
+    }
+
+    /**
+     * Sans elles, la demande est inutilisable par le conseiller : le récapitulatif ne peut pas être confirmé.
+     * Le budget n'en fait pas partie (sans budget, trois fourchettes sont proposées).
+     *
+     * @return list<string>
+     */
+    private static function indispensablesManquants(Demande $demande): array
+    {
+        $manquants = [
+            'le type de voyage' => null === $demande->getTypeDeVoyage(),
+            'le lieu ou la zone' => null === $demande->getLieuOuZone(),
+            'les dates' => null === $demande->getDateDebut() && null === $demande->getNombreDeJours(),
+        ];
+
+        return array_keys(array_filter($manquants));
     }
 
     private static function texte(mixed $valeur, int $longueurMax): ?string

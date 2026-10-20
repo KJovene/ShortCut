@@ -24,3 +24,7 @@
 /public/uploads/*/*
 !/public/uploads/*/.gitkeep
 ###< photos téléversées ###
+
+###> rapports d'évaluation du chatbot (#195) : make evaluer ###
+/evaluations/
+###< rapports d'évaluation du chatbot ###
