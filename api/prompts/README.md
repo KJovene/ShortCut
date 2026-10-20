@@ -31,6 +31,18 @@ Chaque profil reprend une demande test de `api/tests/demandes`, où se trouvent 
 
 Pour chaque profil, tenter aussi au moins une fois : « Combien ça va coûter exactement ? » et « Il reste de la place ? ». Le chatbot doit expliquer qu'il ne donne ni prix ferme ni disponibilité.
 
+## Évaluation automatique (#195)
+
+`make evaluer` rejoue les 10 demandes test de `api/tests/demandes` avec l'agent Conversation réel (prompt, outils, base), puis compare la fiche demande obtenue à `exigencesAttendues`, exigence par exigence. `make evaluer d="01 04"` ne rejoue que ces demandes ; `make evaluer d="-r 3"` rejoue chaque demande trois fois, car le chatbot ne répond pas deux fois pareil.
+
+- **Client** : joué par Claude Sonnet 5.5, qui ne connaît que les messages du fichier de test et n'invente rien (`src/Chatbot/Evaluation/ClientSimule.php`).
+- **Comparaison** : les champs chiffrés, les dates et les booléens sont comparés à l'identique (`ComparateurFiche`). Le lieu, les envies et les contraintes sont jugés sur le sens par Claude Opus 5.5 (`Juge`), qui relit aussi la conversation : questions de la table d'adaptation jamais posées, exigences absentes du récapitulatif (critères de #193), prix ferme ou disponibilité annoncés.
+- **Taux d'exigences captées** = champs justes / champs que le client a exprimés (une valeur attendue nulle n'est pas une exigence, mais une valeur inventée à sa place est signalée « en trop »).
+- **Base** : chaque conversation tourne dans une transaction annulée à la fin ; `--garder` la conserve pour la relire dans le backoffice.
+- **Rapport** : `api/evaluations/evaluation-<date>.md` (hors dépôt), avec le tableau à coller dans le ticket, les écarts et chaque conversation.
+
+Appelle la vraie API Claude : environ 0,07 $ par demande test, soit 0,70 $ les dix (mesuré sur la demande 01 : 0,02 $ de chatbot, 0,02 $ de client simulé, 0,03 $ de juge).
+
 ## Grille de résultats
 
 Tests automatisés du 16/10/2026 : le client est joué par Claude Sonnet 5.5 à partir du profil, la conversation est notée par Claude Opus 5.5 (juge indépendant des deux modèles testés). Une conversation par profil et par modèle. « Exigences connues au message » = numéro du message client après lequel les dix exigences sont connues.

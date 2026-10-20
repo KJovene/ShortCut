@@ -4,7 +4,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help install start start-d stop-d site-logs up down stop restart build rebuild ps logs sh psql \
         composer console cc \
-        migration migrate fixtures db-reset db-test db-ui schema openapi \
+        migration migrate fixtures db-reset db-test db-ui schema openapi evaluer \
         dev site-sh site-install site-build \
         test test-api coverage test-site lint lint-api lint-site stan fix check
 
@@ -115,6 +115,9 @@ openapi: ## Exporte la documentation OpenAPI de l'API (docs/openapi.yaml)
 	@mkdir -p docs
 	$(COMPOSE) exec -T php php bin/console api:openapi:export --yaml > docs/openapi.yaml
 	@echo "Documentation écrite dans docs/openapi.yaml"
+
+evaluer: ## Évalue le chatbot sur les demandes test (API Claude réelle, payant ; ex. make evaluer d="01 04")
+	$(CONSOLE) app:chatbot:evaluer $(d)
 
 ## —— Site ————————————————————————————————————————————————
 dev: ## Suit les logs du site (http://localhost:5173), démarré par make up

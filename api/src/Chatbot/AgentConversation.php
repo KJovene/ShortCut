@@ -8,6 +8,7 @@ use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\OutilException;
 use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Entity\Conversation;
+use App\Entity\Demande;
 use App\Entity\JournalIA;
 use App\Enum\AgentIA;
 use Doctrine\ORM\EntityManagerInterface;
@@ -70,7 +71,11 @@ final class AgentConversation
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Conversation);
 
         $historique = $conversation->getHistorique();
-        $historique[] = ['role' => 'user', 'content' => [['type' => 'text', 'text' => $message]]];
+        $historique[] = ['role' => 'user', 'content' => [
+            ['type' => 'text', 'text' => $message],
+            // Ce que la fiche contient vraiment : le modèle voit ce qu'il a oublié d'enregistrer (#193).
+            ['type' => 'text', 'text' => self::etatDeLaFiche($demande)],
+        ]];
         $conversation->ajouterMessage('client', $message);
         $this->enregistrer($conversation, $historique);
 
@@ -235,6 +240,27 @@ final class AgentConversation
             ->format(new \DateTimeImmutable());
 
         return str_replace('{{date_du_jour}}', (string) $date, trim($contenu));
+    }
+
+    /**
+     * Fiche enregistrée avant ce message et exigences encore inconnues. Les champs vides ou à leur valeur par
+     * défaut sont omis : « 1 adulte » ne doit pas passer pour une information donnée par le client.
+     */
+    private static function etatDeLaFiche(Demande $demande): string
+    {
+        $parDefaut = EnregistrerExigences::fiche(new Demande());
+        $remplis = array_filter(
+            EnregistrerExigences::fiche($demande),
+            static fn (mixed $valeur, string $champ) => null !== $valeur && [] !== $valeur && $valeur !== $parDefaut[$champ],
+            \ARRAY_FILTER_USE_BOTH,
+        );
+        $manquantes = EnregistrerExigences::manquantes($demande);
+
+        return \sprintf(
+            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s.</etat_de_la_fiche>',
+            json_encode((object) $remplis, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
+            [] === $manquantes ? 'rien' : implode(', ', $manquantes),
+        );
     }
 
     private static function evenement(string $type, mixed $donnees): ServerEvent
