@@ -29,6 +29,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Field\Field;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IdField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\IntegerField;
@@ -202,6 +203,12 @@ final class DemandeCrudController extends AbstractCrudController
         yield BooleanField::new('transportInclus', 'Transport inclus')->renderAsSwitch(false)->hideOnIndex();
         yield ArrayField::new('envies', 'Envies')->hideOnIndex();
         yield ArrayField::new('contraintes', 'Contraintes')->hideOnIndex();
+
+        // Brouillon préparé par le chatbot : le conseiller le relit puis l'envoie au client (#207).
+        yield FormField::addFieldset('Proposition')->onlyOnDetail();
+        yield Field::new('propositions', 'Dernière version')
+            ->setTemplatePath('admin/champ/proposition.html.twig')
+            ->onlyOnDetail();
     }
 
     private function estAdministrateur(): bool

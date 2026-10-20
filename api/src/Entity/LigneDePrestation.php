@@ -54,6 +54,10 @@ class LigneDePrestation
     #[Assert\PositiveOrZero]
     private int $prixEstimeCentimes = 0;
 
+    /** Détail du prix : « 7 nuits × 150 € », « 2 participants × 120 € ». */
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    private ?string $calcul = null;
+
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Assert\PositiveOrZero]
     private ?int $prixConfirmeCentimes = null;
@@ -167,6 +171,18 @@ class LigneDePrestation
     public function setPrixEstimeCentimes(int $prixEstimeCentimes): static
     {
         $this->prixEstimeCentimes = $prixEstimeCentimes;
+
+        return $this;
+    }
+
+    public function getCalcul(): ?string
+    {
+        return $this->calcul;
+    }
+
+    public function setCalcul(?string $calcul): static
+    {
+        $this->calcul = $calcul;
 
         return $this;
     }

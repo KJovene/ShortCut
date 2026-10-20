@@ -3,11 +3,15 @@
 namespace App\Tests\Chatbot;
 
 use App\Chatbot\AgentRecherche;
+use App\Chatbot\AgentRedaction;
 use App\Entity\Conversation;
 use App\Entity\JournalIA;
 use App\Entity\Prestation;
 use App\Enum\AgentIA;
+use App\Enum\StatutDemande;
+use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
+use App\Enum\TypeLigne;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -17,9 +21,10 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 /**
- * Agent Recherche (#203) dans le chat, sur le catalogue de démo : après la confirmation du récapitulatif, il
- * cherche, voit sa combinaison refusée puis acceptée, et le site reçoit la combinaison retenue. L'API Claude est
- * remplacée par FausseApiClaude. Nécessite `make db-test`.
+ * Agents Recherche (#203) et Rédaction (#207) dans le chat, sur le catalogue de démo : après la confirmation du
+ * récapitulatif, la recherche voit sa combinaison refusée puis acceptée, puis la rédaction voit sa proposition refusée
+ * puis enregistrée ; le site reçoit la combinaison et la proposition. L'API Claude est remplacée par FausseApiClaude.
+ * Nécessite `make db-test`.
  */
 final class AgentRechercheTest extends WebTestCase
 {
@@ -52,7 +57,7 @@ final class AgentRechercheTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testLaRechercheCorrigeUnChoixRefuseEtRetientLaCombinaison(): void
+    public function testLaRechercheRetientLaCombinaisonEtLaRedactionEnregistreLaProposition(): void
     {
         $jeton = $this->demanderLisbonneEnFauteuil();
         $hotel = $this->id('Hôtel Alfama Vista, chambre double');
@@ -69,12 +74,15 @@ final class AgentRechercheTest extends WebTestCase
             FausseApiClaude::appelOutil('retenir_combinaison', ['destination' => 'lisbonne', 'etapes' => $etapes([$hotel, $appartement]), 'activitesDemandees' => [], 'activitesSuggerees' => [], 'pourquoi' => 'Lisbonne à deux.']),
             FausseApiClaude::appelOutil('retenir_combinaison', ['destination' => 'lisbonne', 'etapes' => $etapes([$hotel, $palace]), 'activitesDemandees' => [], 'activitesSuggerees' => [], 'pourquoi' => 'Lisbonne à deux, de plain-pied.']),
             FausseApiClaude::texte('Je vous propose **Lisbonne** en mai.'),
+            // Agent Rédaction : un programme de 3 jours refusé (3 nuits, donc 4 jours), puis le bon ; pas de réponse finale.
+            $this->claude->appelOutilSelon('enregistrer_proposition', fn (array $requete): array => $this->proposition($requete, [$hotel, $palace], 3)),
+            $this->claude->appelOutilSelon('enregistrer_proposition', fn (array $requete): array => $this->proposition($requete, [$hotel, $palace], 4)),
         );
 
         $evenements = $this->envoyer($jeton, 'Oui, c’est tout bon');
 
         self::assertSame(
-            ['outil', 'demande', 'texte', 'texte', 'texte', 'outil', 'outil', 'outil', 'combinaison', 'texte', 'fin'],
+            ['outil', 'demande', 'texte', 'texte', 'texte', 'outil', 'outil', 'outil', 'combinaison', 'texte', 'outil', 'outil', 'texte', 'fin'],
             array_column($evenements, 0),
         );
         $combinaison = current(array_filter($evenements, static fn (array $e) => 'combinaison' === $e[0]))[1];
@@ -93,10 +101,73 @@ final class AgentRechercheTest extends WebTestCase
         $conversation = $this->conversation($jeton);
         // Le gras markdown est retiré : le widget affiche du texte brut.
         $messages = $conversation->getMessages();
-        self::assertSame('Je vous propose Lisbonne en mai.', end($messages)['contenu']);
+        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 2]['contenu']);
         $recherche = $this->em->getRepository(JournalIA::class)->findBy(['demande' => $conversation->getDemande(), 'agent' => AgentIA::Recherche]);
         self::assertCount(4, $recherche);
         self::assertSame(AgentRecherche::MODELE, $this->claude->requetes[2]['corps']['model']);
+
+        // La rédaction reçoit le calendrier du voyage : 3 nuits, 4 jours.
+        self::assertSame(AgentRedaction::MODELE, $this->claude->requetes[6]['corps']['model']);
+        self::assertSame(['enregistrer_proposition', 'transmettre_au_conseiller'], array_column($this->claude->requetes[6]['corps']['tools'], 'name'));
+        $calendrier = $this->claude->requetes[6]['corps']['messages'][0]['content'][0]['text'];
+        self::assertStringContainsString('Jour 1, vendredi 14 mai 2027 : arrivée', $calendrier);
+        self::assertStringContainsString('Jour 4, lundi 17 mai 2027 : départ', $calendrier);
+        $messages = $this->claude->requetes[7]['corps']['messages'];
+        $refus = end($messages)['content'][0];
+        self::assertTrue($refus['is_error']);
+        self::assertStringContainsString('Le programme compte 3 jours ; le voyage en compte 4', json_decode($refus['content'], true)['erreur']);
+        self::assertCount(8, $this->claude->requetes, 'Pas d\'appel après l\'enregistrement réussi.');
+
+        // La proposition est un brouillon que le conseiller relira : le client en est seulement prévenu.
+        self::assertSame("\n\n".AgentRedaction::MESSAGE_BROUILLON, $evenements[\count($evenements) - 2][1]['texte']);
+        $conversation = $this->conversation($jeton);
+        $messagesAuClient = $conversation->getMessages();
+        self::assertSame(AgentRedaction::MESSAGE_BROUILLON, end($messagesAuClient)['contenu']);
+
+        $demande = $conversation->getDemande() ?? throw new \LogicException();
+        self::assertSame(StatutDemande::Nouvelle, $demande->getStatut());
+        $proposition = $demande->getPropositions()->first() ?: throw new \LogicException('Aucune proposition.');
+        self::assertSame(1, $proposition->getVersion());
+        self::assertSame(StatutProposition::Brouillon, $proposition->getStatut());
+        self::assertCount(4, $proposition->getProgramme());
+        self::assertSame('lisbonne', $proposition->getDestination()?->getSlug());
+        self::assertSame(['2027-05-14', '2027-05-15', '2027-05-16', '2027-05-17'], array_column($proposition->getProgramme(), 'date'));
+        self::assertSame([$hotel, $palace], array_column($proposition->getPrestations(), 'id'));
+        self::assertContains('essentiel', $proposition->getPrestations()[0]['niveaux']);
+        self::assertSame(['Plain-pied', 'Chambre adaptée'], $proposition->getPrestations()[0]['pointsForts']);
+        // Montants du chiffrage, jamais du modèle : le total du niveau détaillé et ses lignes.
+        self::assertEquals($combinaison['niveaux'][$proposition->getNiveauBudget()->value]['totalEuros'] * 100, $proposition->getTotalCentimes());
+        $lignes = array_values($proposition->getLignes()->toArray());
+        self::assertSame([TypeLigne::Logement, TypeLigne::Transport, TypeLigne::Transport], array_map(static fn ($l) => $l->getType(), $lignes));
+        self::assertSame(3, $lignes[0]->getQuantite());
+        self::assertSame('2027-05-17', $lignes[0]->getDateFin()?->format('Y-m-d'));
+        self::assertNotNull($lignes[0]->getPrestation());
+        self::assertCount(2, $this->em->getRepository(JournalIA::class)->findBy(['demande' => $demande, 'agent' => AgentIA::Chiffrage]));
+    }
+
+    /** #207 : une rédaction qui échoue laisse la demande à un conseiller, et le client en est prévenu. */
+    public function testUneRedactionSansSuiteEstTransmiseAuConseiller(): void
+    {
+        $jeton = $this->demanderLisbonneEnFauteuil();
+        $hotel = $this->id('Hôtel Alfama Vista, chambre double');
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['recapitulatifConfirme' => true]),
+            FausseApiClaude::texte('Parfait, je cherche votre voyage.'),
+            FausseApiClaude::appelOutil('retenir_combinaison', ['destination' => 'lisbonne', 'etapes' => [['dateDebut' => '2027-05-14', 'nombreDeNuits' => 3, 'logementIds' => [$hotel]]], 'activitesDemandees' => [], 'activitesSuggerees' => [], 'pourquoi' => 'Lisbonne à deux.']),
+            FausseApiClaude::texte('Je vous propose Lisbonne en mai.'),
+            FausseApiClaude::erreur(529, 'Overloaded'),
+        );
+
+        $evenements = $this->envoyer($jeton, 'Oui, c’est tout bon');
+
+        self::assertNotContains('proposition', array_column($evenements, 0));
+        self::assertNotContains('erreur', array_column($evenements, 0));
+        $conversation = $this->conversation($jeton);
+        self::assertTrue($conversation->isRepriseParConseiller());
+        self::assertCount(0, $conversation->getDemande()?->getPropositions() ?? []);
+        $messages = $conversation->getMessages();
+        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 2]['contenu']);
+        self::assertStringStartsWith('Je n\'ai pas pu mettre en forme votre programme détaillé. Un conseiller', end($messages)['contenu']);
     }
 
     /** #204 : une recherche qui échoue sans rien dire au client transmet d'elle-même la demande au conseiller. */
@@ -156,6 +227,28 @@ final class AgentRechercheTest extends WebTestCase
         }
 
         return $evenements;
+    }
+
+    /**
+     * Ce que l'agent Rédaction enverrait, sur le chiffrage donné dans son premier message.
+     *
+     * @param array<string, mixed> $requete   corps de la requête reçue par l'API
+     * @param list<int>            $logements
+     *
+     * @return array<string, mixed>
+     */
+    private function proposition(array $requete, array $logements, int $jours): array
+    {
+        preg_match('/chiffrageId : (chf_[0-9a-f]+).*niveauDetaille\) : (\w+)/s', $requete['messages'][0]['content'][0]['text'], $m);
+
+        return [
+            'chiffrageId' => $m[1],
+            'niveauDetaille' => $m[2],
+            'pourquoi' => 'Lisbonne se visite très bien en fauteuil, et sa cuisine vous attend.',
+            'argumentaire' => [['exigence' => 'bien manger', 'reponse' => 'Les quartiers gourmands de l\'Alfama.']],
+            'prestations' => array_map(static fn (int $id): array => ['id' => $id, 'pointsForts' => ['Plain-pied', 'Chambre adaptée']], $logements),
+            'programme' => array_map(static fn (int $jour): array => ['jour' => $jour, 'titre' => 'Jour '.$jour, 'description' => 'Découverte de Lisbonne.', 'activiteIds' => []], range(1, $jours)),
+        ];
     }
 
     private function id(string $nom): int

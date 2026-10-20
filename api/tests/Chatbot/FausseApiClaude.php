@@ -61,15 +61,23 @@ final class FausseApiClaude
      */
     public static function appelOutil(string $nom, array $entree, string $id = 'toolu_01'): MockResponse
     {
-        $json = json_encode((object) $entree, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
-        $milieu = intdiv(\strlen($json), 2);
+        return self::flux(self::blocsAppelOutil($nom, $entree, $id), 'tool_use');
+    }
 
-        return self::flux([
-            ['type' => 'content_block_start', 'index' => 0, 'content_block' => ['type' => 'tool_use', 'id' => $id, 'name' => $nom, 'input' => new \stdClass()]],
-            ['type' => 'content_block_delta', 'index' => 0, 'delta' => ['type' => 'input_json_delta', 'partial_json' => substr($json, 0, $milieu)]],
-            ['type' => 'content_block_delta', 'index' => 0, 'delta' => ['type' => 'input_json_delta', 'partial_json' => substr($json, $milieu)]],
-            ['type' => 'content_block_stop', 'index' => 0],
-        ], 'tool_use');
+    /**
+     * Appel d'un outil dont l'entrée dépend de la requête reçue : un identifiant créé par le serveur pendant le test
+     * (chiffrageId). La réponse n'est construite qu'à sa lecture, une fois la requête enregistrée.
+     *
+     * @param \Closure(array<string, mixed>): array<string, mixed> $entree reçoit le corps de la requête
+     */
+    public function appelOutilSelon(string $nom, \Closure $entree, string $id = 'toolu_01'): MockResponse
+    {
+        $morceaux = function () use ($nom, $entree, $id): \Generator {
+            $requete = end($this->requetes) ?: throw new \LogicException('Aucune requête reçue.');
+            yield from self::morceaux(self::blocsAppelOutil($nom, $entree($requete['corps']), $id), 'tool_use');
+        };
+
+        return new MockResponse($morceaux(), ['http_code' => 200, 'response_headers' => ['content-type' => 'text/event-stream']]);
     }
 
     public static function erreur(int $statut, string $message): MockResponse
@@ -81,9 +89,37 @@ final class FausseApiClaude
     }
 
     /**
+     * @param array<string, mixed> $entree
+     *
+     * @return list<array<string, mixed>>
+     */
+    private static function blocsAppelOutil(string $nom, array $entree, string $id): array
+    {
+        $json = json_encode((object) $entree, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE);
+        $milieu = intdiv(mb_strlen($json), 2);
+
+        return [
+            ['type' => 'content_block_start', 'index' => 0, 'content_block' => ['type' => 'tool_use', 'id' => $id, 'name' => $nom, 'input' => new \stdClass()]],
+            ['type' => 'content_block_delta', 'index' => 0, 'delta' => ['type' => 'input_json_delta', 'partial_json' => mb_substr($json, 0, $milieu)]],
+            ['type' => 'content_block_delta', 'index' => 0, 'delta' => ['type' => 'input_json_delta', 'partial_json' => mb_substr($json, $milieu)]],
+            ['type' => 'content_block_stop', 'index' => 0],
+        ];
+    }
+
+    /**
      * @param list<array<string, mixed>> $blocs
      */
     private static function flux(array $blocs, string $stopReason): MockResponse
+    {
+        return new MockResponse(self::morceaux($blocs, $stopReason), ['http_code' => 200, 'response_headers' => ['content-type' => 'text/event-stream']]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $blocs
+     *
+     * @return list<string>
+     */
+    private static function morceaux(array $blocs, string $stopReason): array
     {
         $evenements = [
             ['type' => 'message_start', 'message' => ['id' => 'msg_test', 'type' => 'message', 'role' => 'assistant', 'model' => 'claude-haiku-5-5', 'content' => [], 'stop_reason' => null, 'usage' => ['input_tokens' => 1200, 'output_tokens' => 1]]],
@@ -102,6 +138,6 @@ final class FausseApiClaude
             $morceaux[] = substr($sse, $coupure);
         }
 
-        return new MockResponse($morceaux, ['http_code' => 200, 'response_headers' => ['content-type' => 'text/event-stream']]);
+        return $morceaux;
     }
 }
