@@ -54,13 +54,14 @@ describe('carte du monde de l’accueil', () => {
     afficherAccueil()
     const user = userEvent.setup()
 
+    // La carte s'ouvre sur la première destination mise en avant.
     const bandeau = await screen.findByRole('region', { name: 'Tous nos voyages' })
-    for (const epingle of epingles('Santorin, Grèce')) {
+    for (const epingle of epingles('Lisbonne, Portugal')) {
       expect(epingle).toHaveAttribute('aria-pressed', 'true')
     }
 
     await user.hover(within(bandeau).getByRole('link', { name: /Rome, Italie/ }))
-    for (const epingle of epingles('Santorin, Grèce')) {
+    for (const epingle of epingles('Lisbonne, Portugal')) {
       expect(epingle).toHaveAttribute('aria-pressed', 'true')
     }
 
@@ -68,6 +69,6 @@ describe('carte du monde de l’accueil', () => {
     for (const epingle of epingles('Bali, Indonésie')) {
       expect(epingle).toHaveAttribute('aria-pressed', 'true')
     }
-    expect(epingles('Santorin, Grèce')[0]).toHaveAttribute('aria-pressed', 'false')
+    expect(epingles('Lisbonne, Portugal')[0]).toHaveAttribute('aria-pressed', 'false')
   })
 })

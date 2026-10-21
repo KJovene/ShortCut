@@ -1,4 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { decouperContenu, estMentionAValider, pageQuery } from '@/features/pages/pageDuSite'
 
 /** Gabarit des pages légales, lues depuis les contenus du site (module Contenus du backoffice). */
@@ -11,7 +12,7 @@ export function PageLegale({ slug }: { slug: string }) {
   return (
     <article className="mx-auto max-w-[820px] px-4 py-10 sm:px-8 sm:py-16">
       <h1 className="m-0 mb-6 font-display text-[36px] leading-tight font-semibold sm:text-[48px]">
-        {page.titre}
+        <TitreMisEnValeur texte={page.titre} />
       </h1>
       {aValider && (
         <p

@@ -3,7 +3,7 @@ import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { decouperContenu } from './features/pages/pageDuSite'
+import { decouperContenu, photoNommee } from './features/pages/pageDuSite'
 import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
@@ -40,6 +40,22 @@ describe('découpage du contenu', () => {
     const contenu = decouperContenu('<p>Bonjour<img src="x" onerror="alert(1)"></p>')
     expect(contenu.intro).toEqual(['Bonjour'])
   })
+
+  it('lit le texte de l’éditeur du backoffice : titres, retours à la ligne et blocs', () => {
+    expect(
+      decouperContenu('<div>Un<br>Deux<br><br></div><h1>Engagements</h1><p>Trois</p>'),
+    ).toEqual({
+      intro: ['Un', 'Deux'],
+      sections: [{ titre: 'Engagements', paragraphes: ['Trois'], elements: [] }],
+    })
+  })
+
+  it('retrouve une photo par son nom, avec ou sans empreinte du backoffice', () => {
+    const photos = ['/uploads/pages/circuit.jpg', '/uploads/pages/sejour-1a2b3c.png']
+    expect(photoNommee(photos, 'sejour')).toBe('/uploads/pages/sejour-1a2b3c.png')
+    expect(photoNommee(photos, 'circuit')).toBe('/uploads/pages/circuit.jpg')
+    expect(photoNommee(photos, 'noces')).toBeUndefined()
+  })
 })
 
 describe('pages vitrines (contenus de l’API)', () => {
@@ -50,6 +66,12 @@ describe('pages vitrines (contenus de l’API)', () => {
     expect(
       await screen.findByText(/Depuis plus de quinze ans, nos conseillers/),
     ).toBeInTheDocument()
+    // Titre du backoffice : les mots entre astérisques sont mis en valeur.
+    const titre = screen.getByRole('heading', {
+      level: 1,
+      name: 'Des conseillers qui connaissent le terrain',
+    })
+    expect(titre.querySelector('em')).toHaveTextContent('connaissent le terrain')
     const engagements = screen.getByRole('region', { name: 'Nos engagements' })
     expect(within(engagements).getAllByRole('listitem')).toHaveLength(2)
     await waitFor(() => expect(document.title).toBe('Notre agence et nos conseillers'))

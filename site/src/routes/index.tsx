@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { IconFlecheBas } from '@/components/ui/icons'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
@@ -33,13 +34,23 @@ const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
   ...TYPES_DE_VOYAGE.map((t) => ({ valeur: t.valeur, label: t.pluriel })),
 ]
 
+const TITRE_PAR_DEFAUT = 'Où irez-vous *chercher le soleil* ?'
+
 function HomePage() {
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
-  /** Voyage survolé, sur la carte ou dans le bandeau. */
-  const [activeSlug, setActiveSlug] = useState('santorin')
+  /** Voyage survolé, sur la carte ou dans le bandeau ; à défaut, l'épingle active. */
+  const [activeSlug, setActiveSlug] = useState<string>()
   /** Épingle active : la carte la garde quand le bandeau survole un voyage qui n'est pas sur la carte. */
-  const [slugCarte, setSlugCarte] = useState('santorin')
-  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const [slugCarte, setSlugCarte] = useState<string>()
+  const { data: catalogue = [] } = useQuery(destinationsQuery())
+  // Titre des contenus du site ; sans l'API, celui des maquettes.
+  const { data: page } = useQuery(pageQuery('accueil'))
+  // Destinations « mises en avant » dans le backoffice d'abord : la carte s'ouvre sur la première,
+  // le bandeau et les polaroïds de l'assistant commencent par elles.
+  const destinations = [
+    ...catalogue.filter((d) => d.miseEnAvant),
+    ...catalogue.filter((d) => !d.miseEnAvant),
+  ]
   const surCarte = destinations.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === slugCarte) ?? surCarte[0]
   const activer = (slug: string) => {
@@ -47,13 +58,7 @@ function HomePage() {
     if (surCarte.some((d) => d.slug === slug)) setSlugCarte(slug)
   }
   const survolee = destinations.find((d) => d.slug === activeSlug) ?? active
-  // Polaroïds de la section de l'assistant : les destinations mises en avant dans le backoffice d'abord.
-  const photos = [
-    ...destinations.filter((d) => d.miseEnAvant),
-    ...destinations.filter((d) => !d.miseEnAvant),
-  ]
-    .filter((d) => d.photo)
-    .slice(0, 4)
+  const photos = destinations.filter((d) => d.photo).slice(0, 4)
 
   return (
     <>
@@ -74,7 +79,7 @@ function HomePage() {
               id="hero-titre"
               className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
             >
-              Où irez-vous <em className="font-normal text-terre">chercher le soleil</em> ?
+              <TitreMisEnValeur texte={page?.titre ?? TITRE_PAR_DEFAUT} />
             </h1>
           </div>
           <div
@@ -122,7 +127,7 @@ function HomePage() {
       {destinations.length > 0 && (
         <BandeauVoyages
           destinations={destinations}
-          active={activeSlug}
+          active={survolee?.slug ?? ''}
           type={type}
           onActiver={activer}
         />

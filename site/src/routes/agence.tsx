@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconCoche } from '@/components/ui/icons'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
@@ -51,11 +52,7 @@ function AgencePage() {
     <>
       <EnTetePage
         surtitre="L'agence"
-        titre={
-          <>
-            Des conseillers qui <em className="font-normal text-terre">connaissent le terrain</em>
-          </>
-        }
+        titre={<TitreMisEnValeur texte={page.titre} />}
         photo={page.photos[0] ? { src: page.photos[0], alt: "L'équipe de l'agence" } : undefined}
       >
         {contenu.intro.map((paragraphe) => (
