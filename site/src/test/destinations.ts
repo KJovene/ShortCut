@@ -1,5 +1,5 @@
-import { ACTIVITES, DESTINATIONS, LOGEMENTS, prixAPartirDe } from '@/data/catalogue'
 import type { DestinationApi } from '@/features/catalogue/catalogue'
+import { ACTIVITES, DESTINATIONS, LOGEMENTS, prixAPartirDe } from './catalogue'
 
 const ANNEE = 2027
 const deux = (n: number) => String(n).padStart(2, '0')
@@ -7,7 +7,7 @@ const finDuMois = (mois: number) => new Date(Date.UTC(ANNEE, mois + 1, 0)).getUT
 
 /**
  * Destinations publiées servies par l'API simulée (GET /api/public/destinations), au format de l'API, construites
- * à partir du catalogue de démo du site (même source que les fixtures de l'API).
+ * à partir du catalogue de démo des tests (src/test/catalogue.ts).
  */
 export const DESTINATIONS_DE_DEMO: DestinationApi[] = DESTINATIONS.map((d) => ({
   slug: d.slug,

@@ -110,6 +110,10 @@ final class DestinationCrudController extends AbstractCrudController
             ))
             ->allowMultipleChoices()
             ->setHelp('Le premier est le type principal : il fixe les frais de dossier du prix « à partir de » affiché sur le site.');
+        yield ArrayField::new('zones', 'Zones')
+            ->setRequired(false)
+            ->setHelp('Zones larges où le chatbot trouve cette destination quand le client ne la nomme pas : continent, mer, sous-région (ex. « Europe », « Méditerranée », « Îles »). Le pays et la région sont déjà cherchés.')
+            ->hideOnIndex();
         yield TextField::new('accroche', 'Accroche')
             ->setHelp('Une phrase, affichée sur la carte du monde de l\'accueil.')
             ->hideOnIndex();

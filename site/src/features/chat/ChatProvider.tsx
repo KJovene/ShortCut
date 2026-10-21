@@ -1,9 +1,10 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { DESTINATIONS } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
 import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
-import { MESSAGE_ACCUEIL, nouvelId, type Message } from './assistant'
 import { ChatContext, type EtatChat, type Reprise } from './chatContext'
+import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
 import { type Demande, demandeVide } from './demande'
 
 const CLE = 'chat'
@@ -16,7 +17,7 @@ const CONFIRMATION =
 const etatInitial = (): EtatChat => ({
   statut: 'accueil',
   messages: [MESSAGE_ACCUEIL],
-  conversation: { demande: demandeVide(), demandes: [] },
+  conversation: { demande: demandeVide() },
   reflexion: false,
   ouvert: false,
   brouillon: '',
@@ -39,6 +40,7 @@ function restaurer(): EtatChat {
  */
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatChat>(restaurer)
+  const queryClient = useQueryClient()
   const etatCourant = useRef(etat)
   /** Une réponse est en cours : un nouveau message attend qu'elle soit finie. */
   const enCours = useRef(false)
@@ -59,6 +61,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [etat])
 
   useEffect(() => () => annulation.current?.abort(), [])
+
+  /** Destinations publiées, pour reconnaître le lieu cité par le client ; vide si le catalogue est indisponible. */
+  const catalogue = useCallback(
+    () => queryClient.fetchQuery(destinationsQuery()).catch(() => []),
+    [queryClient],
+  )
 
   const ajouter = useCallback((messages: Message[], maj: Partial<EtatChat> = {}) => {
     setEtat((e) => ({ ...e, ...maj, messages: [...e.messages, ...messages] }))
@@ -102,7 +110,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               break
             case 'demande': {
               if (ev.fiche) {
-                const nouvelle = (demande = ficheVersDemande(ev.fiche, demande))
+                const destinations = await catalogue()
+                if (!actif()) return
+                const nouvelle = (demande = ficheVersDemande(ev.fiche, demande, destinations))
                 setEtat((e) => ({ ...e, conversation: { ...e.conversation, demande: nouvelle } }))
               }
               confirme ||= ev.recapitulatifConfirme
@@ -158,7 +168,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         )
       }
     },
-    [ajouter],
+    [ajouter, catalogue],
   )
 
   const envoyer = useCallback(
@@ -179,14 +189,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [discuter],
   )
 
-  const choisirAmbiance = useCallback(
-    (slug: string) => {
-      const dest = DESTINATIONS.find((d) => d.slug === slug)
-      if (dest) envoyer(`${dest.pointsForts[0]}, à ${dest.ville} !`)
-    },
-    [envoyer],
-  )
-
   // Actions stables d'un rendu à l'autre : la fenêtre du chatbot rejoue son effet de focus quand `fermer`
   // change, ce qui ferait perdre le focus au champ de saisie à chaque lettre tapée.
   const actions = useMemo(
@@ -204,6 +206,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       reprendre: ({ jeton, messages, fiche }: Reprise) => {
         annulation.current?.abort()
         enCours.current = false
+        const enCache = queryClient.getQueryData(destinationsQuery().queryKey)
+        const demande = ficheVersDemande(fiche, demandeVide(), enCache ?? [])
+        // Catalogue pas encore chargé : la destination citée est reconnue dès qu'il arrive.
+        if (!enCache) {
+          void catalogue().then((destinations) =>
+            setEtat((e) =>
+              e.jeton === jeton && e.conversation.demande === demande
+                ? {
+                    ...e,
+                    conversation: { demande: ficheVersDemande(fiche, demandeVide(), destinations) },
+                  }
+                : e,
+            ),
+          )
+        }
         // La conversation de l'API remplace celle du navigateur : mêmes messages, même fiche, même jeton.
         setEtat({
           ...etatInitial(),
@@ -214,18 +231,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               ? { id: nouvelId(), auteur: 'client', texte: m.contenu }
               : { id: nouvelId(), auteur: 'assistant', texte: m.contenu },
           ),
-          conversation: { demande: ficheVersDemande(fiche, demandeVide()), demandes: [] },
+          conversation: { demande },
           ouvert: true,
         })
       },
     }),
-    [],
+    [queryClient, catalogue],
   )
 
-  const valeur = useMemo(
-    () => ({ ...etat, ...actions, envoyer, choisirAmbiance }),
-    [etat, actions, envoyer, choisirAmbiance],
-  )
+  const valeur = useMemo(() => ({ ...etat, ...actions, envoyer }), [etat, actions, envoyer])
 
   return <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
 }

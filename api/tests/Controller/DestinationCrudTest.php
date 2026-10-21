@@ -54,11 +54,14 @@ final class DestinationCrudTest extends WebTestCase
         $this->client->loginUser($this->compte('lea@shortcut.test'));
         $this->client->request('GET', '/admin/destination', ['filters' => ['climat' => ['mois' => 5, 'temperatureMin' => 25]]]);
         self::assertResponseIsSuccessful();
-        self::assertSame($attendues, $this->villesAffichees());
+        // La liste est paginée : le nombre de résultats, et une première page faite de destinations attendues.
+        self::assertSelectorTextContains('body', \count($attendues).' résultats');
+        self::assertNotSame([], $this->villesAffichees());
+        self::assertSame([], array_diff($this->villesAffichees(), $attendues));
 
-        // Sans filtre, les huit destinations du jeu de démo.
+        // Sans filtre, toutes les destinations du jeu de démo.
         $this->client->request('GET', '/admin/destination');
-        self::assertCount(8, $this->villesAffichees());
+        self::assertSelectorTextContains('body', \count(Catalogue::destinations()).' résultats');
     }
 
     public function testLeMoisValePourToutesLesAnnees(): void

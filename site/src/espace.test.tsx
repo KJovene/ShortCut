@@ -134,6 +134,13 @@ describe('mon espace', () => {
     expect(within(voyage).getByText('3 762 €')).toBeInTheDocument()
     expect(within(voyage).getByText(/prix estimé/)).toBeInTheDocument()
     expect(within(voyage).getByText('Claire Martin')).toBeInTheDocument()
+    // Photo et climat de mai lus dans le catalogue de l'API.
+    expect(await within(voyage).findByText('21 °C en mai')).toBeInTheDocument()
+    expect(
+      within(voyage).getByRole('img', {
+        name: 'Maisons blanches et dômes bleus d’Oia face à la mer',
+      }),
+    ).toHaveAttribute('src', '/uploads/destinations/santorin.jpg')
 
     const enCours = within(voyage)
       .getAllByRole('listitem')

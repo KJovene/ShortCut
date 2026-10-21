@@ -55,7 +55,7 @@ final class ChercherDestinations implements Outil
             'input_schema' => [
                 'type' => 'object',
                 'properties' => [
-                    'zone' => ['type' => 'string', 'description' => 'Pays, région, ville ou zone large (« Méditerranée ») ; omettre pour tout le catalogue.'],
+                    'zone' => ['type' => 'string', 'description' => 'Pays, région, ville ou zone large (« Méditerranée », « Asie du Sud-Est », « Afrique », « Caraïbes », « Europe du Nord ») ; omettre pour tout le catalogue.'],
                     'dateDebut' => ['type' => 'string', 'description' => 'Jour du départ, AAAA-MM-JJ.'],
                     'dateFin' => ['type' => 'string', 'description' => 'Jour du retour, AAAA-MM-JJ.'],
                     'temperatureMin' => ['type' => 'integer', 'description' => 'Température moyenne minimale, en °C ; demande les dates.'],
@@ -96,6 +96,7 @@ final class ChercherDestinations implements Outil
         $temperatureMin = Entree::entier($entree, 'temperatureMin');
         $temperatureMax = Entree::entier($entree, 'temperatureMax');
         $envies = Entree::chaines($entree, 'envies');
+        $type = Entree::chaine($entree, 'typeDeVoyage');
         $groupe = ['voyageurs' => Entree::entier($entree, 'voyageurs', 1, 1000), 'accessible' => Entree::booleen($entree, 'accessibleObligatoire') ?? false];
 
         if (null !== $debut && null !== $fin && $fin < $debut) {
@@ -111,10 +112,7 @@ final class ChercherDestinations implements Outil
         }
 
         $publiees = $this->destinations->publiees();
-        $candidates = null === $zone ? $publiees : array_values(array_filter(
-            $publiees,
-            static fn (Destination $d) => self::correspond($d, $zone),
-        ));
+        $candidates = null === $zone ? $publiees : self::dansLaZone($publiees, $zone);
 
         $resultat = ['destinations' => [], 'ecartees' => []];
         if (null !== $zone && [] === $candidates) {
@@ -128,6 +126,9 @@ final class ChercherDestinations implements Outil
             $prestations[$prestation->getDestination()?->getId()][] = $prestation;
         }
 
+        // Les ajustements (climat, autres dates, durée possible) servent quand le client vise une zone. Sur tout le
+        // catalogue, des dizaines de destinations sont écartées : leur raison suffit, l'agent choisit parmi les retenues.
+        $ajuster = null !== $zone && !isset($resultat['remarque']);
         $retenues = [];
         $sansDonnees = [];
         $uneCouverte = false;
@@ -145,7 +146,7 @@ final class ChercherDestinations implements Outil
             $raison = null === $debut ? self::raisonDAccueil($logements, $groupe) : self::raison($destination, $logements, $groupe, $debut, $nuits, $temperatureMin, $temperatureMax);
             if (null !== $raison) {
                 // Pas de logement pour le groupe : aucune autre date n'y changerait rien.
-                $resultat['ecartees'][] = ['slug' => $destination->getSlug(), 'raison' => $raison] + (null === $debut || null !== self::raisonDAccueil($logements, $groupe) ? [] : [
+                $resultat['ecartees'][] = ['slug' => $destination->getSlug(), 'raison' => $raison] + (!$ajuster || null === $debut || null !== self::raisonDAccueil($logements, $groupe) ? [] : [
                     'climatAuxDates' => $climat,
                     ...$this->ajustements($destination, $logements, $groupe, $debut, $nuits, $temperatureMin, $temperatureMax),
                 ]);
@@ -155,7 +156,12 @@ final class ChercherDestinations implements Outil
 
             $enviesDeLaDestination = array_merge(...array_map(static fn (Prestation $p): array => $p->motsCles(), $prestationsDeLaDestination));
             $correspondantes = Correspondance::communs($envies, array_values(array_unique($enviesDeLaDestination)));
-            $retenues[] = [[-\count($correspondantes), $destination->getVille()], [
+            $retenues[] = [[
+                -\count($correspondantes),
+                null === $type || \in_array($type, $destination->getTypesDeVoyage(), true) ? 0 : 1,
+                null === $debut ? 0 : self::ecartAuMoisIdeal($destination, $debut),
+                $destination->getVille(),
+            ], [
                 'slug' => $destination->getSlug(),
                 'ville' => $destination->getVille(),
                 'pays' => $destination->getPays(),
@@ -169,7 +175,8 @@ final class ChercherDestinations implements Outil
             ]];
         }
 
-        // Les envies d'abord : l'agent présente en premier ce qui répond le mieux au client.
+        // Les envies d'abord, puis le type de voyage proposé et la saison : l'agent présente en premier ce qui
+        // répond le mieux au client, dans un catalogue plus grand que la limite.
         usort($retenues, static fn (array $a, array $b): int => $a[0] <=> $b[0]);
         $resultat['destinations'] = array_column(\array_slice($retenues, 0, $limite), 1);
 
@@ -334,17 +341,34 @@ final class ChercherDestinations implements Outil
         return $ajustements;
     }
 
-    private static function correspond(Destination $destination, string $zone): bool
+    /**
+     * Les destinations de la zone, rapprochée de la ville, du pays, de la région, du slug et des zones larges saisies
+     * (« Europe », « Asie du Sud-Est »). Celles qui portent exactement ce nom passent seules si elles existent :
+     * « Afrique du Sud » donne Le Cap, pas toute l'Afrique. Sinon, un nom contenu dans la zone ou qui la contient
+     * suffit (« la Méditerranée », « Santorin, Grèce »).
+     *
+     * @param list<Destination> $publiees
+     *
+     * @return list<Destination>
+     */
+    private static function dansLaZone(array $publiees, string $zone): array
     {
         $cherche = self::normaliser($zone);
-        foreach ([$destination->getVille(), $destination->getPays(), $destination->getRegion(), $destination->getSlug()] as $champ) {
-            $valeur = self::normaliser((string) $champ);
-            if ('' !== $valeur && (str_contains($cherche, $valeur) || str_contains($valeur, $cherche))) {
-                return true;
+        $exactes = [];
+        $proches = [];
+        foreach ($publiees as $destination) {
+            $noms = array_filter(array_map(
+                static fn (?string $nom): string => self::normaliser((string) $nom),
+                [$destination->getVille(), $destination->getPays(), $destination->getRegion(), $destination->getSlug(), ...$destination->getZones()],
+            ), static fn (string $nom): bool => '' !== $nom);
+            if (\in_array($cherche, $noms, true)) {
+                $exactes[] = $destination;
+            } elseif ([] !== array_filter($noms, static fn (string $nom): bool => str_contains($cherche, $nom) || str_contains($nom, $cherche))) {
+                $proches[] = $destination;
             }
         }
 
-        return false;
+        return [] !== $exactes ? $exactes : $proches;
     }
 
     /**
@@ -409,6 +433,17 @@ final class ChercherDestinations implements Outil
         }
 
         return [] === $prix ? null : min($prix);
+    }
+
+    /** Mois d'écart entre le départ et le meilleur mois de la destination, de 0 à 6 ; 6 sans meilleur mois saisi. */
+    private static function ecartAuMoisIdeal(Destination $destination, \DateTimeImmutable $debut): int
+    {
+        if (null === $destination->getMoisIdeal()) {
+            return 6;
+        }
+        $ecart = abs((int) $debut->format('n') - $destination->getMoisIdeal());
+
+        return min($ecart, 12 - $ecart);
     }
 
     private static function tempsDeTrajet(Destination $destination, string $villeDepart): ?int

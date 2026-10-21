@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router'
-import { trouverDestination } from '@/data/catalogue'
+import { useQuery } from '@tanstack/react-query'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { CRITERES, LIBELLES, nombreRenseignes, valeurCritere } from '../demande'
@@ -12,11 +12,14 @@ export function Recapitulatif({
   onModifier: (texte: string) => void
   titreId?: string
 }) {
-  const { conversation, propositionId, reflexion, terminee } = useChat()
+  const { conversation, reflexion, terminee } = useChat()
   const d = conversation.demande
-  const destination = d.destination ? trouverDestination(d.destination) : undefined
+  // Photo et climat de la destination reconnue, lus dans le catalogue de l'API.
+  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const destination = destinations.find((x) => x.slug === d.destination?.slug)
   const renseignes = nombreRenseignes(d)
   const mois = d.mois ?? destination?.moisIdeal
+  const temperature = mois === undefined ? null : (destination?.temperatures[mois] ?? null)
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(43,29,20,0.12)]">
@@ -30,7 +33,7 @@ export function Recapitulatif({
             />
             <span className="absolute bottom-3.5 left-4 rounded-full bg-white px-3 py-1.5 text-[13px] font-extrabold">
               Piste : {destination.ville}
-              {mois !== undefined && ` · ${destination.temperatures[mois]} °C`}
+              {temperature !== null && ` · ${temperature} °C`}
             </span>
           </>
         ) : (
@@ -102,21 +105,7 @@ export function Recapitulatif({
             )
           })}
         </dl>
-        {propositionId ? (
-          <>
-            <p className="m-0 text-xs leading-normal text-taupe-clair">
-              Prix estimés, confirmés par votre conseiller sous 2 jours ouvrés. Rien n'est réservé
-              avant.
-            </p>
-            <Link
-              to="/proposition/$id"
-              params={{ id: propositionId }}
-              className="flex min-h-[50px] items-center justify-center rounded-full bg-terre font-extrabold text-white hover:bg-rouille"
-            >
-              Voir ma proposition
-            </Link>
-          </>
-        ) : terminee ? (
+        {terminee ? (
           <>
             <p className="m-0 text-xs leading-normal text-taupe-clair">
               Votre conseiller vous recontacte dans les plus brefs délais avec votre proposition.

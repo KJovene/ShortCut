@@ -35,15 +35,25 @@ const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
 
 function HomePage() {
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
+  /** Voyage survolé, sur la carte ou dans le bandeau. */
   const [activeSlug, setActiveSlug] = useState('santorin')
+  /** Épingle active : la carte la garde quand le bandeau survole un voyage qui n'est pas sur la carte. */
+  const [slugCarte, setSlugCarte] = useState('santorin')
   const { data: destinations = [] } = useQuery(destinationsQuery())
   const surCarte = destinations.filter(estSurCarte)
-  const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const parSlug = (slug: string) => destinations.find((d) => d.slug === slug)
-  // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
-  const photos = ['santorin', 'bali', 'marrakech', 'islande'].map(
-    (slug, i) => parSlug(slug) ?? destinations[i],
-  )
+  const active = surCarte.find((d) => d.slug === slugCarte) ?? surCarte[0]
+  const activer = (slug: string) => {
+    setActiveSlug(slug)
+    if (surCarte.some((d) => d.slug === slug)) setSlugCarte(slug)
+  }
+  const survolee = destinations.find((d) => d.slug === activeSlug) ?? active
+  // Polaroïds de la section de l'assistant : les destinations mises en avant dans le backoffice d'abord.
+  const photos = [
+    ...destinations.filter((d) => d.miseEnAvant),
+    ...destinations.filter((d) => !d.miseEnAvant),
+  ]
+    .filter((d) => d.photo)
+    .slice(0, 4)
 
   return (
     <>
@@ -96,12 +106,7 @@ function HomePage() {
 
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14 md:px-8 md:pt-3">
           {active && (
-            <CarteDuMonde
-              destinations={surCarte}
-              active={active}
-              type={type}
-              onActiver={setActiveSlug}
-            />
+            <CarteDuMonde destinations={surCarte} active={active} type={type} onActiver={activer} />
           )}
         </div>
 
@@ -117,13 +122,13 @@ function HomePage() {
       {destinations.length > 0 && (
         <BandeauVoyages
           destinations={destinations}
-          active={active?.slug ?? activeSlug}
+          active={activeSlug}
           type={type}
-          onActiver={setActiveSlug}
+          onActiver={activer}
         />
       )}
 
-      <SectionAssistant suggestion={active} photos={photos} />
+      <SectionAssistant suggestion={survolee} photos={photos} />
     </>
   )
 }

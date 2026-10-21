@@ -1,6 +1,5 @@
 import { formatEuros, labelType } from '@/data/catalogue'
-import { type PropositionEnLigne as Proposition, voyageurs } from './enLigne'
-import { NIVEAUX, type Niveau } from './proposition'
+import { NIVEAUX, type Niveau, type PropositionEnLigne as Proposition, voyageurs } from './enLigne'
 
 /**
  * Ce qui a changé entre deux versions d'une proposition (ticket #212) : les jours du programme, les prestations,

@@ -77,6 +77,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(
             uriTemplate: '/public/destinations',
             itemUriTemplate: '/public/destinations/{slug}',
+            // Le site affiche tout le catalogue publié d'un coup (carte du monde, bandeau, liste) : pas de pages.
+            paginationEnabled: false,
             normalizationContext: ['groups' => ['public:read']],
             security: "is_granted('PUBLIC_ACCESS')",
             extraProperties: [PublieeExtension::PUBLIEES => true],
@@ -215,6 +217,18 @@ class Destination
     #[Assert\Choice(callback: [TypeDeVoyage::class, 'valeurs'], multiple: true, multipleMessage: 'Type de voyage inconnu.')]
     #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private array $typesDeVoyage = [];
+
+    /**
+     * Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+     * « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+     *
+     * @var list<string>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Assert\Count(max: 10)]
+    #[Assert\All([new Assert\NotBlank(), new Assert\Length(max: 60)])]
+    #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
+    private array $zones = [];
 
     /** Meilleur mois pour partir, de 1 (janvier) à 12 (décembre). */
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
@@ -502,6 +516,25 @@ class Destination
     public function setTypesDeVoyage(array $typesDeVoyage): static
     {
         $this->typesDeVoyage = $typesDeVoyage;
+
+        return $this;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getZones(): array
+    {
+        return $this->zones;
+    }
+
+    /**
+     * @param array<int, string> $zones
+     */
+    public function setZones(array $zones): static
+    {
+        // Une ligne supprimée dans le formulaire laisse un trou dans les clés : on garde une liste.
+        $this->zones = array_values($zones);
 
         return $this;
     }

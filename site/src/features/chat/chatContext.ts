@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { Fiche } from './api'
-import type { Conversation, Message } from './assistant'
+import type { Conversation, Message } from './conversation'
 
 export interface EtatChat {
   /** « accueil » tant que le client n'a rien envoyé, puis « conversation ». */
@@ -9,7 +9,6 @@ export interface EtatChat {
   conversation: Conversation
   /** L'assistant est en train d'écrire. */
   reflexion: boolean
-  propositionId?: string
   /** Jeton de la conversation côté API, obtenu au premier message. */
   jeton?: string
   /** Le client a confirmé son récapitulatif : la demande est transmise, la saisie est fermée. */
@@ -28,7 +27,6 @@ export interface Reprise {
 
 export interface ActionsChat {
   envoyer: (texte: string) => void
-  choisirAmbiance: (slug: string) => void
   ouvrir: (brouillon?: string) => void
   fermer: () => void
   setBrouillon: (texte: string) => void
