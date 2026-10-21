@@ -125,20 +125,26 @@ final class OutilsDeRechercheTest extends KernelTestCase
         ]);
 
         self::assertStringContainsString('voici tout le catalogue publié', $resultat['remarque']);
-        // Plage et famille partout : à égalité d'envies, l'ordre est celui des villes (La Fortuna, Tenerife, Ubud).
-        self::assertSame(['costa-rica', 'tenerife', 'bali'], array_column($resultat['destinations'], 'slug'));
-        $tenerife = $resultat['destinations'][1];
+        // Plage et famille partout : à égalité d'envies, celles dont février est le meilleur mois d'abord, par ville
+        // (Colombo, La Fortuna, La Havane, Tenerife), puis Dubaï (meilleur mois : janvier).
+        self::assertSame(['sri-lanka', 'costa-rica', 'cuba', 'tenerife', 'dubai'], array_column($resultat['destinations'], 'slug'));
+        $tenerife = $resultat['destinations'][3];
         self::assertSame(['plage', 'famille'], $tenerife['enviesCorrespondantes']);
         self::assertSame(270, $tenerife['tempsDeTrajetMinutes']);
         self::assertSame(114, $tenerife['aPartirDeParNuitEuros'], 'Hôtel Teide Nature, 95 € en haute saison d\'hiver (× 1,2).');
-        // Lisbonne est écartée avec son climat, et les premières dates où elle conviendrait : 19 °C en mai.
+        // Lisbonne est écartée, sans ajustements : sur tout le catalogue, l'agent choisit parmi les destinations retenues.
         $lisbonne = current(array_filter($resultat['ecartees'], static fn (array $e): bool => 'lisbonne' === $e['slug']));
+        self::assertSame(['slug' => 'lisbonne', 'raison' => '13 °C en moyenne aux dates, moins que les 18 °C souhaités.'], $lisbonne);
+        // Visée par son nom, elle donne son climat et les premières dates où elle conviendrait : 19 °C en mai.
+        $resultat = $this->destinations->executer($this->contexte, [
+            'zone' => 'Lisbonne', 'dateDebut' => '2027-02-13', 'dateFin' => '2027-02-20', 'temperatureMin' => 18,
+        ]);
         self::assertSame([
             'slug' => 'lisbonne',
             'raison' => '13 °C en moyenne aux dates, moins que les 18 °C souhaités.',
             'climatAuxDates' => [['debut' => '2027-02-01', 'fin' => '2027-02-28', 'temperatureMoyenne' => 13.0, 'pluieMm' => 90]],
             'datesPossibles' => [['dateDebut' => '2027-05-01', 'dateFin' => '2027-05-08']],
-        ], $lisbonne);
+        ], $resultat['ecartees'][0]);
     }
 
     /**
@@ -175,7 +181,8 @@ final class OutilsDeRechercheTest extends KernelTestCase
 
         self::assertSame([], $resultat['destinations']);
         self::assertSame([['slug' => 'santorin', 'raison' => 'Aucun logement pour 60 voyageurs : proposer d\'autres destinations ou passer la main au conseiller.']], $resultat['ecartees']);
-        self::assertSame(['rome'], array_column($resultat['autresDestinations'], 'slug'), 'Seul le Roma Congressi Hotel accueille 60 personnes.');
+        // Les destinations qui ont un logement de 60 places, aux mêmes dates : par meilleur mois (juin), puis par ville.
+        self::assertSame(['djerba', 'budapest', 'irlande'], array_column($resultat['autresDestinations'], 'slug'));
     }
 
     public function testUneDureePlusCourtePeutSuffire(): void
@@ -184,6 +191,57 @@ final class OutilsDeRechercheTest extends KernelTestCase
         $islande = $this->destinations->executer($this->contexte, ['zone' => 'Islande', 'dateDebut' => '2027-09-26', 'dateFin' => '2027-10-03']);
         self::assertSame(5, $islande['ecartees'][0]['nuitsPossibles']);
         self::assertSame([['dateDebut' => '2027-09-24', 'dateFin' => '2027-10-01']], array_slice($islande['ecartees'][0]['datesPossibles'], 0, 1));
+    }
+
+    /**
+     * Une zone large (continent, mer, sous-région) trouve les destinations par leurs zones saisies dans le backoffice ;
+     * un nom exact (pays, ville) l'emporte sur une zone qui le contient.
+     */
+    public function testUneZoneLargeTrouveLesDestinationsDeLaZone(): void
+    {
+        $slugs = fn (string $zone): array => array_column($this->destinations->rechercher(['zone' => $zone], null)['destinations'], 'slug');
+
+        self::assertEqualsCanonicalizing(['angkor', 'bali', 'krabi', 'palawan', 'vietnam'], $slugs('Asie du Sud-Est'));
+        self::assertEqualsCanonicalizing(['cuba', 'punta-cana', 'tulum'], $slugs('les Caraïbes'));
+        self::assertSame(['le-cap'], $slugs('Afrique du Sud'), 'Le pays exact, pas toute l\'Afrique.');
+        self::assertSame(['fjords-norvegiens', 'laponie'], $slugs('Scandinavie'));
+
+        $europe = $slugs('Europe');
+        self::assertContains('santorin', $europe);
+        self::assertContains('laponie', $europe);
+        self::assertNotContains('marrakech', $europe);
+        self::assertNotContains('bali', $europe);
+
+        $mediterranee = $slugs('la Méditerranée');
+        foreach (['corse', 'dubrovnik', 'malte', 'chypre', 'santorin', 'rome', 'djerba', 'istanbul'] as $slug) {
+            self::assertContains($slug, $mediterranee);
+        }
+        self::assertNotContains('lisbonne', $mediterranee, 'Lisbonne est sur l\'Atlantique.');
+
+        $afrique = $slugs('Afrique');
+        self::assertContains('kenya', $afrique);
+        self::assertContains('marrakech', $afrique);
+        self::assertNotContains('dubai', $afrique);
+    }
+
+    /** À envies égales, le type de voyage demandé puis la saison (meilleur mois proche du départ) départagent. */
+    public function testLeTypeDeVoyageEtLaSaisonDepartagentLesDestinations(): void
+    {
+        $slugs = fn (array $entree): array => array_column($this->destinations->rechercher($entree, null)['destinations'], 'slug');
+        $fevrier = ['zone' => 'Caraïbes', 'dateDebut' => '2027-02-06', 'dateFin' => '2027-02-13'];
+
+        // Cuba (meilleur mois : février), puis Punta Cana (janvier) et Tulum (mars) à un mois d'écart, par ville.
+        self::assertSame(['cuba', 'punta-cana', 'tulum'], $slugs($fevrier));
+        // En circuit, Punta Cana, qui n'en propose pas, passe après Tulum.
+        self::assertSame(['cuba', 'tulum', 'punta-cana'], $slugs($fevrier + ['typeDeVoyage' => 'circuit']));
+        // Les envies passent avant tout : seul Tulum a des cénotes.
+        self::assertSame('tulum', $slugs($fevrier + ['envies' => ['cénotes']])[0]);
+
+        // Noces dans l'océan Indien en octobre : Maurice (octobre), Zanzibar (septembre), puis les plus éloignés.
+        self::assertSame(
+            ['maurice', 'zanzibar', 'sri-lanka', 'seychelles', 'maldives'],
+            $slugs(['zone' => 'océan Indien', 'dateDebut' => '2027-10-09', 'dateFin' => '2027-10-16', 'typeDeVoyage' => 'noces']),
+        );
     }
 
     public function testUneTemperatureDemandeLesDates(): void

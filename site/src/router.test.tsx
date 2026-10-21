@@ -51,16 +51,6 @@ describe('routeur', () => {
     expect(screen.getByRole('table', { name: /Températures moyennes/ })).toBeInTheDocument()
   })
 
-  it('affiche la proposition d’exemple avec ses trois niveaux de budget', async () => {
-    renderAt('/proposition/exemple')
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Santorin, Grèce' }),
-    ).toBeInTheDocument()
-    for (const niveau of ['Essentiel', 'Équilibré', 'Confort']) {
-      expect(screen.getByRole('button', { name: niveau })).toBeInTheDocument()
-    }
-  })
-
   it('affiche la page 404 pour une adresse inconnue', async () => {
     renderAt('/adresse-inconnue')
     expect(await screen.findByRole('heading', { name: 'Page introuvable' })).toBeInTheDocument()

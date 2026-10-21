@@ -13,7 +13,7 @@ interface Props {
   onActiver: (slug: string) => void
 }
 
-/** Bandeau des envies : tous les voyages de la carte, à faire défiler. */
+/** Bandeau des envies : tous les voyages du catalogue, à faire défiler, y compris ceux qui n'ont pas d'épingle. */
 export function BandeauVoyages({ destinations, active, type, onActiver }: Props) {
   const liste = useRef<HTMLUListElement>(null)
   const defiler = (sens: 1 | -1) =>
@@ -31,7 +31,7 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
               id="bandeau-titre"
               className="m-0 font-display text-[28px] font-semibold tracking-[-1px] sm:text-[40px]"
             >
-              Tous les voyages de la carte
+              Tous nos voyages
             </h2>
           </div>
           <div className="hidden gap-2 sm:flex">

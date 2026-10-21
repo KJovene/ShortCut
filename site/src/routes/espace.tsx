@@ -1,8 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconBulle, IconCoche, IconPersonne } from '@/components/ui/icons'
 import { formatEuros, MOIS } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 import {
   assistantDisponible,
   auteurMessage,
@@ -33,7 +34,11 @@ export const Route = createFileRoute('/espace')({
       throw redirect({ to: '/connexion' })
     }
   },
-  loader: ({ context }) => context.queryClient.ensureQueryData(mesDemandesQuery),
+  loader: ({ context }) => {
+    // Le catalogue (photos, climat) se charge en parallèle, sans retenir la page.
+    void context.queryClient.prefetchQuery(destinationsQuery())
+    return context.queryClient.ensureQueryData(mesDemandesQuery)
+  },
   head: () => ({
     meta: [
       { title: 'Mon espace' },
@@ -153,8 +158,11 @@ function AucunVoyage() {
 }
 
 function VoyageSuivi({ demande }: { demande: DemandeClient }) {
-  const destination = destinationDe(demande)
+  // Photo et climat lus dans le catalogue de l'API ; sans lui, le voyage s'affiche sans photo.
+  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const destination = destinationDe(demande, destinations)
   const mois = moisDeDepart(demande)
+  const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
   const statut = statutClient(demande)
   const conseiller = prenomConseiller(demande)
 
@@ -164,16 +172,16 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
       className="flex flex-wrap overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(43,29,20,0.10)]"
     >
       <div className="relative min-h-[240px] flex-[1_1_380px] bg-sable">
-        {destination && (
+        {destination?.photo && (
           <img
             src={destination.photo}
             alt={destination.alt}
             className="absolute inset-0 size-full object-cover"
           />
         )}
-        {destination && mois !== null && (
+        {mois !== null && temperature !== null && (
           <span className="absolute top-[18px] left-[18px] rounded-full bg-white px-3 py-1.5 text-[13px] font-extrabold">
-            {destination.temperatures[mois]} °C en {MOIS[mois]}
+            {temperature} °C en {MOIS[mois]}
           </span>
         )}
       </div>
@@ -484,7 +492,8 @@ function CarteConversation({
   active: boolean
   onChoisir: () => void
 }) {
-  const destination = destinationDe(demande)
+  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const destination = destinationDe(demande, destinations)
   const statut = statutClient(demande)
 
   return (
@@ -497,7 +506,7 @@ function CarteConversation({
         active ? 'border-terre bg-white' : 'border-lin bg-creme hover:border-beige',
       )}
     >
-      {destination ? (
+      {destination?.photo ? (
         <img
           src={destination.photo}
           alt=""

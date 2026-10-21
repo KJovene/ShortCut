@@ -167,7 +167,7 @@ final class CatalogueApiTest extends WebTestCase
             self::assertContains('détente', $activite['envies']);
         }
         self::assertSame(array_column($this->liste('/api/logements?envie=plage'), 'id'), array_column($this->liste('/api/logements?envie=Plages'), 'id'));
-        self::assertSame([], $this->liste('/api/logements?envie=ski'));
+        self::assertSame([], $this->liste('/api/logements?envie=karaoké'));
     }
 
     public function testLesEnviesEnregistreesSontHarmonisees(): void
@@ -179,9 +179,9 @@ final class CatalogueApiTest extends WebTestCase
     {
         $this->connecterConseiller();
         $this->client->request('GET', '/api/logements', server: ['HTTP_ACCEPT' => 'application/ld+json']);
-        self::assertSame(30, $this->json()['totalItems']);
+        self::assertSame(\count(Catalogue::logements()), $this->json()['totalItems']);
         $this->client->request('GET', '/api/activites', server: ['HTTP_ACCEPT' => 'application/ld+json']);
-        self::assertSame(20, $this->json()['totalItems']);
+        self::assertSame(\count(Catalogue::activites()), $this->json()['totalItems']);
 
         $activite = $this->em->getRepository(Prestation::class)->findOneBy(['type' => TypePrestation::Activite]);
         self::assertNotNull($activite);

@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { DESTINATIONS, labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ficheSchema } from '@/features/chat/api'
 import { ApiError } from '@/lib/api'
 
@@ -181,11 +182,11 @@ export function initiales(prenom: string | null, nom: string) {
     .join('')
 }
 
-/** Destination du catalogue citée par la demande, pour sa photo et son climat. */
-export function destinationDe(demande: DemandeClient) {
+/** Destination du catalogue de l'API citée par la demande, pour sa photo et son climat. */
+export function destinationDe(demande: DemandeClient, destinations: DestinationPublique[]) {
   const lieu = demande.lieuOuZone?.toLowerCase().trim()
   if (!lieu) return undefined
-  return DESTINATIONS.find(
+  return destinations.find(
     (d) =>
       d.ville.toLowerCase() === lieu || d.slug === lieu || d.nom.toLowerCase().startsWith(lieu),
   )

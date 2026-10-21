@@ -38,7 +38,10 @@ const TITRE_PAR_DEFAUT = 'Où irez-vous *chercher le soleil* ?'
 
 function HomePage() {
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
+  /** Voyage survolé, sur la carte ou dans le bandeau ; à défaut, l'épingle active. */
   const [activeSlug, setActiveSlug] = useState<string>()
+  /** Épingle active : la carte la garde quand le bandeau survole un voyage qui n'est pas sur la carte. */
+  const [slugCarte, setSlugCarte] = useState<string>()
   const { data: catalogue = [] } = useQuery(destinationsQuery())
   // Titre des contenus du site ; sans l'API, celui des maquettes.
   const { data: page } = useQuery(pageQuery('accueil'))
@@ -49,8 +52,13 @@ function HomePage() {
     ...catalogue.filter((d) => !d.miseEnAvant),
   ]
   const surCarte = destinations.filter(estSurCarte)
-  const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const photos = destinations.slice(0, 4)
+  const active = surCarte.find((d) => d.slug === slugCarte) ?? surCarte[0]
+  const activer = (slug: string) => {
+    setActiveSlug(slug)
+    if (surCarte.some((d) => d.slug === slug)) setSlugCarte(slug)
+  }
+  const survolee = destinations.find((d) => d.slug === activeSlug) ?? active
+  const photos = destinations.filter((d) => d.photo).slice(0, 4)
 
   return (
     <>
@@ -103,12 +111,7 @@ function HomePage() {
 
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center pb-14 md:px-8 md:pt-3">
           {active && (
-            <CarteDuMonde
-              destinations={surCarte}
-              active={active}
-              type={type}
-              onActiver={setActiveSlug}
-            />
+            <CarteDuMonde destinations={surCarte} active={active} type={type} onActiver={activer} />
           )}
         </div>
 
@@ -124,13 +127,13 @@ function HomePage() {
       {destinations.length > 0 && (
         <BandeauVoyages
           destinations={destinations}
-          active={active?.slug ?? activeSlug ?? ''}
+          active={survolee?.slug ?? ''}
           type={type}
-          onActiver={setActiveSlug}
+          onActiver={activer}
         />
       )}
 
-      <SectionAssistant suggestion={active} photos={photos} />
+      <SectionAssistant suggestion={survolee} photos={photos} />
     </>
   )
 }

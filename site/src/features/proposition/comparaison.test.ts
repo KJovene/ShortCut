@@ -16,7 +16,13 @@ const base: PropositionEnLigne = {
   totalCentimes: 100000,
   totalParPersonneCentimes: 50000,
   fraisDeDossierCentimes: 10000,
-  destination: { slug: 'lisbonne', ville: 'Lisbonne' },
+  destination: {
+    slug: 'lisbonne',
+    ville: 'Lisbonne',
+    photo: null,
+    photoAlt: null,
+    temperatures: [],
+  },
   pourquoi: null,
   argumentaire: [],
   hypotheses: ['Transport inclus', 'Frais de dossier séjour : 100 €'],
@@ -25,8 +31,22 @@ const base: PropositionEnLigne = {
     { jour: 2, date: '2027-05-15', titre: 'Alfama', description: 'Balade.' },
   ],
   prestations: [
-    { id: 1, type: 'logement', nom: 'Hôtel', pointsForts: ['Plain-pied'], niveaux: ['equilibre'] },
-    { id: 2, type: 'activite', nom: 'Atelier', pointsForts: ['Pastéis'], niveaux: ['equilibre'] },
+    {
+      id: 1,
+      type: 'logement',
+      nom: 'Hôtel',
+      pointsForts: ['Plain-pied'],
+      niveaux: ['equilibre'],
+      photo: null,
+    },
+    {
+      id: 2,
+      type: 'activite',
+      nom: 'Atelier',
+      pointsForts: ['Pastéis'],
+      niveaux: ['equilibre'],
+      photo: null,
+    },
   ],
   lignes: [
     {

@@ -151,16 +151,16 @@ Après une modification d'entité : `make migration`, relire le fichier créé d
 | Données | Contenu |
 | --- | --- |
 | Comptes | `admin@shortcut.test` (administrateur), `lea@shortcut.test` et `hugo@shortcut.test` (conseillers), `client@shortcut.test` (Camille), `julien@shortcut.test` et `sarah@shortcut.test` (clients). Mot de passe : `shortcut` |
-| Destinations | Lisbonne, Marrakech, Santorin, Tenerife, Rome, Islande, Bali, Costa Rica : climat sur les 12 mois de 2027, description, points forts, photo |
-| Prestataires | 15 : 7 hébergeurs, 3 transporteurs (fourchettes de vols depuis Paris, Lyon et Bordeaux, transferts), 2 guides, 3 prestataires d'activités |
-| Prestations | 30 logements et 20 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
+| Destinations | 58 destinations dans 58 pays (Europe, Moyen-Orient, Afrique et océan Indien, Asie, Amériques, Océanie), une classe par grande région : climat sur les 12 mois de 2027, description, points forts, types de voyage, zones larges (« Europe », « Méditerranée », « Asie du Sud-Est »…) cherchées par le chatbot, photo. Une quinzaine sont mises en avant sur la carte de l'accueil |
+| Prestataires | 44 : hébergeurs, transporteurs (fourchettes de vols depuis Paris, Lyon et Bordeaux vers chaque destination, transferts ou véhicule de circuit), guides et prestataires d'activités |
+| Prestations | Environ 200 logements et 130 activités, avec capacité, accessibilité, envies, photos et tarifs par saison |
 | Règles de prix | Marge 20 %, frais de dossier de 100 à 200 € |
 | Pages du site | Accueil, types de voyages, l'agence, contact et pages légales (modèles « à valider ») |
 | Demandes | 8 demandes réparties entre Léa, Hugo et une non attribuée, et entre trois clients. Camille a 3 voyages en cours, le maximum : Santorin (deux versions envoyées après une modification, à comparer sur « Ma proposition »), Marrakech (le client a demandé la confirmation : écran « Confirmer la proposition ») et Costa Rica (en discussion, transmise à un conseiller) |
 
-Chaque type de voyage a au moins une combinaison possible : séjour (Tenerife, Lisbonne…), circuit (Islande, Costa Rica), groupe (résidences de 30 à 60 places), noces (Santorin, Bali), entreprise (salles de séminaire à Lisbonne, Marrakech et Rome).
+Chaque destination a des vols depuis les trois villes de départ, au moins un logement pour une famille de quatre, un bloc de 20 places ou plus si elle propose les groupes, une salle de réunion si elle propose l'entreprise, et un logement romantique pour deux si elle propose les noces.
 
-Périodes **volontairement non couvertes**, pour tester le passage au conseiller : aucun tarif en Islande d'octobre à avril, et les Cabinas Drake Bay (Costa Rica) sont fermées en septembre et octobre.
+Périodes **volontairement non couvertes**, pour tester le passage au conseiller : aucun tarif en Islande d'octobre à avril, les Cabinas Drake Bay (Costa Rica) fermées en septembre et octobre, et des activités de saison (chiens de traîneau en Laponie de décembre à mars, ski au Tyrol de décembre à avril, trek au Népal hors mousson, croisière dans les fjords de mai à septembre…).
 
 Les photos sont libres de droits (CC0 ou domaine public, crédits dans `api/fixtures/images/CREDITS.md`). Elles sont copiées dans `api/public/uploads/` (non versionné), servies par l'API sous `/uploads/…` et accessibles depuis le site grâce au proxy Vite.
 

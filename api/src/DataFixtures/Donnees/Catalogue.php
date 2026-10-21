@@ -3,7 +3,9 @@
 namespace App\DataFixtures\Donnees;
 
 /**
- * Catalogue fictif de la démo (ticket #174) : 8 destinations, 15 prestataires, 30 logements, 20 activités.
+ * Catalogue fictif de la démo (ticket #174) : 8 destinations, 15 prestataires, 30 logements, 20 activités, complétés
+ * par 50 destinations dans le monde entier, une classe par grande région (REGIONS) : chaque méthode publique renvoie
+ * le catalogue complet.
  *
  * Prix en euros dans ce fichier (plus lisible), convertis en centimes au chargement.
  * Volontairement non couverts, pour tester le passage au conseiller :
@@ -15,8 +17,17 @@ final class Catalogue
     public const ANNEE = 2027;
     public const VILLES_DE_DEPART = ['Paris', 'Lyon', 'Bordeaux'];
 
+    /** @var list<class-string<Europe|MoyenOrient|Afrique|Asie|Ameriques|Oceanie>> */
+    private const REGIONS = [Europe::class, MoyenOrient::class, Afrique::class, Asie::class, Ameriques::class, Oceanie::class];
+
     /** Saisons tarifaires réutilisées : [mois de début, mois de fin, coefficient appliqué au prix de base]. */
-    private const SAISONS_MEDITERRANEE = [[1, 3, 0.8], [4, 6, 1.0], [7, 8, 1.35], [9, 10, 1.0], [11, 12, 0.8]];
+    public const SAISONS_MEDITERRANEE = [[1, 3, 0.8], [4, 6, 1.0], [7, 8, 1.35], [9, 10, 1.0], [11, 12, 0.8]];
+    /** Capitales et villes : creux en janvier-février, pointe en décembre (marchés de Noël, fêtes). */
+    public const SAISONS_VILLE = [[1, 2, 0.8], [3, 3, 0.9], [4, 6, 1.0], [7, 8, 1.1], [9, 10, 1.0], [11, 11, 0.85], [12, 12, 1.1]];
+    /** Tropiques de l'hémisphère nord : saison sèche de décembre à avril, pluies de mai à novembre. */
+    public const SAISONS_TROPIQUES = [[1, 4, 1.2], [5, 6, 0.9], [7, 8, 1.0], [9, 11, 0.85], [12, 12, 1.3]];
+    /** Hémisphère sud : l'été austral, de novembre à mars, est la haute saison. */
+    public const SAISONS_HEMISPHERE_SUD = [[1, 3, 1.2], [4, 5, 1.0], [6, 8, 0.85], [9, 10, 1.0], [11, 12, 1.2]];
 
     /**
      * Destinations : climat mois par mois (température moyenne en °C, pluie en mm), temps de trajet en minutes.
@@ -25,10 +36,21 @@ final class Catalogue
      */
     public static function destinations(): array
     {
+        return array_merge(self::demoDestinations(), ...array_map(static fn (string $r): array => $r::destinations(), self::REGIONS));
+    }
+
+    /**
+     * Les 8 destinations du jeu de démo d'origine.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private static function demoDestinations(): array
+    {
         return [
             'lisbonne' => [
                 'pays' => 'Portugal', 'region' => 'Lisbonne et vallée du Tage', 'ville' => 'Lisbonne',
                 'photo' => 'lisbonne',
+                'zones' => ['Europe', 'Europe du Sud', 'Atlantique', 'Péninsule ibérique'],
                 'nom' => 'Lisbonne, Portugal', 'typesDeVoyage' => ['sejour', 'groupe', 'entreprise'], 'moisIdeal' => 6, 'latitude' => 38.7, 'longitude' => -9.1,
                 'photoAlt' => 'Le pont du 25-Avril au coucher du soleil sur le Tage',
                 'accroche' => 'Ruelles de l’Alfama, tramways jaunes et pastéis de nata, à 2 h 30 de Paris.',
@@ -43,6 +65,7 @@ final class Catalogue
             'marrakech' => [
                 'pays' => 'Maroc', 'region' => 'Marrakech-Safi', 'ville' => 'Marrakech',
                 'photo' => 'marrakech',
+                'zones' => ['Afrique', 'Afrique du Nord', 'Maghreb'],
                 'nom' => 'Marrakech, Maroc', 'typesDeVoyage' => ['sejour', 'groupe', 'entreprise'], 'moisIdeal' => 4, 'latitude' => 31.6, 'longitude' => -8.0,
                 'photoAlt' => 'Le minaret de la Koutoubia sous un ciel bleu',
                 'accroche' => 'Riads à patio, souks et hammams, avec l’Atlas en toile de fond.',
@@ -57,6 +80,7 @@ final class Catalogue
             'santorin' => [
                 'pays' => 'Grèce', 'region' => 'Cyclades', 'ville' => 'Santorin',
                 'photo' => 'santorin',
+                'zones' => ['Europe', 'Europe du Sud', 'Méditerranée', 'Îles', 'Cyclades'],
                 'nom' => 'Santorin, Grèce', 'typesDeVoyage' => ['noces', 'sejour'], 'moisIdeal' => 6, 'latitude' => 36.4, 'longitude' => 25.4,
                 'photoAlt' => 'Maisons blanches et dômes bleus d’Oia face à la mer',
                 'accroche' => 'Villages blancs sur la caldeira et couchers de soleil à Oia, rien que pour deux.',
@@ -71,6 +95,7 @@ final class Catalogue
             'tenerife' => [
                 'pays' => 'Espagne', 'region' => 'Îles Canaries', 'ville' => 'Tenerife',
                 'photo' => 'tenerife',
+                'zones' => ['Europe', 'Atlantique', 'Îles'],
                 'nom' => 'Tenerife, Canaries', 'typesDeVoyage' => ['sejour', 'groupe'], 'moisIdeal' => 2, 'latitude' => 28.3, 'longitude' => -16.6,
                 'photoAlt' => 'Le volcan Teide au-dessus des nuages',
                 'accroche' => 'Plus de 20 °C en plein hiver, le Teide et les baleines, en famille.',
@@ -85,6 +110,7 @@ final class Catalogue
             'rome' => [
                 'pays' => 'Italie', 'region' => 'Latium', 'ville' => 'Rome',
                 'photo' => 'rome',
+                'zones' => ['Europe', 'Europe du Sud', 'Méditerranée'],
                 'nom' => 'Rome, Italie', 'typesDeVoyage' => ['groupe', 'entreprise', 'sejour'], 'moisIdeal' => 5, 'latitude' => 41.9, 'longitude' => 12.5,
                 'photoAlt' => 'Le Colisée de Rome sous un ciel clair',
                 'accroche' => 'Colisée, places baroques et trattorias, idéale pour les groupes.',
@@ -99,6 +125,7 @@ final class Catalogue
             'islande' => [
                 'pays' => 'Islande', 'region' => 'Sud et Nord de l\'Islande', 'ville' => 'Reykjavik',
                 'photo' => 'islande',
+                'zones' => ['Europe', 'Europe du Nord', 'Pays nordiques', 'Îles'],
                 'nom' => 'Islande', 'typesDeVoyage' => ['circuit'], 'moisIdeal' => 7, 'latitude' => 64.1, 'longitude' => -21.9,
                 'photoAlt' => 'Cascade écumante au milieu des falaises vertes',
                 'accroche' => 'Cascades, glaciers et sources chaudes, en circuit de mai à septembre.',
@@ -114,6 +141,7 @@ final class Catalogue
             'bali' => [
                 'pays' => 'Indonésie', 'region' => 'Bali', 'ville' => 'Ubud',
                 'photo' => 'bali',
+                'zones' => ['Asie', 'Asie du Sud-Est', 'Îles'],
                 'nom' => 'Bali, Indonésie', 'typesDeVoyage' => ['noces', 'sejour'], 'moisIdeal' => 7, 'latitude' => -8.5, 'longitude' => 115.3,
                 'photoAlt' => 'Le temple d’Uluwatu au bord de la falaise',
                 'accroche' => 'Rizières, temples et villa avec piscine privée, un classique des noces.',
@@ -128,6 +156,7 @@ final class Catalogue
             'costa-rica' => [
                 'pays' => 'Costa Rica', 'region' => 'Alajuela et Puntarenas', 'ville' => 'La Fortuna',
                 'photo' => 'costa-rica',
+                'zones' => ['Amérique centrale', 'Amérique latine', 'Amériques'],
                 'nom' => 'Costa Rica', 'typesDeVoyage' => ['circuit'], 'moisIdeal' => 2, 'latitude' => 10.5, 'longitude' => -84.6,
                 'photoAlt' => 'La cascade de La Fortuna dans la forêt tropicale',
                 'accroche' => 'Volcans, forêts de nuages et faune exceptionnelle, en circuit nature.',
@@ -148,6 +177,12 @@ final class Catalogue
      * @return array<string, array<string, mixed>>
      */
     public static function prestataires(): array
+    {
+        return array_merge(self::demoPrestataires(), ...array_map(static fn (string $r): array => $r::prestataires(), self::REGIONS));
+    }
+
+    /** @return array<string, array<string, mixed>> */
+    private static function demoPrestataires(): array
     {
         return [
             // Hébergeurs
@@ -202,6 +237,12 @@ final class Catalogue
      */
     public static function logements(): array
     {
+        return array_merge(self::demoLogements(), ...array_map(static fn (string $r): array => $r::logements(), self::REGIONS));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function demoLogements(): array
+    {
         return [
             // Lisbonne
             ['nom' => 'Hôtel Alfama Vista, chambre double', 'destination' => 'lisbonne', 'prestataire' => 'azur', 'categorie' => 'Hôtel 3 étoiles', 'capacite' => 2, 'chambres' => 1, 'prix' => 110, 'accessible' => true, 'equipements' => ['wifi', 'climatisation', 'petit-déjeuner', 'ascenseur'], 'envies' => ['culture', 'gastronomie'], 'photos' => ['hotel-chambre']],
@@ -251,6 +292,12 @@ final class Catalogue
      * @return list<array<string, mixed>>
      */
     public static function activites(): array
+    {
+        return array_merge(self::demoActivites(), ...array_map(static fn (string $r): array => $r::activites(), self::REGIONS));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private static function demoActivites(): array
     {
         return [
             // Lisbonne
