@@ -24,7 +24,18 @@ afterEach(() => {
 describe('fenêtre du chatbot, hors de l’accueil', () => {
   it('garde le focus dans le champ pendant la saisie, au premier message comme ensuite', async () => {
     sessionStorage.clear()
-    simulerApi({})
+    simulerApi({
+      'GET /api/moi': {
+        status: 200,
+        body: {
+          email: 'client@example.com',
+          prenom: 'Camille',
+          nom: 'Client',
+          telephone: null,
+          role: 'ROLE_CLIENT',
+        },
+      },
+    })
     afficher('/types-de-voyages')
     const user = userEvent.setup()
 

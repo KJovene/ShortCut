@@ -1,6 +1,7 @@
 import { IconFleche } from '@/components/ui/icons'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
+import { QuestionnaireInvite } from '../QuestionnaireInvite'
 
 const SUGGESTIONS = ['Voyage de noces', 'En famille', 'Entre amis']
 
@@ -14,7 +15,9 @@ export function ChatAccueil({
   suggestion?: string
   compact?: boolean
 }) {
-  const { brouillon, setBrouillon, envoyer } = useChat()
+  const { brouillon, setBrouillon, envoyer, estConnecte } = useChat()
+
+  if (!estConnecte) return <QuestionnaireInvite />
 
   const ajouterSuggestion = (texte: string) =>
     setBrouillon(brouillon.trim() ? `${brouillon.trim()}, ${texte.toLowerCase()}` : texte)

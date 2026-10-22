@@ -20,6 +20,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
+use App\Enum\TypeDeVoyage;
 
 /**
  * Routes publiques du chatbot. Toute la logique IA passe par ici : le site ne parle jamais à l'API Claude.
@@ -72,7 +73,7 @@ final class ChatController extends AbstractController
      * Demande::VOYAGES_EN_COURS_MAX voyages en cours (409 sinon).
      */
     #[Route('/conversations', name: 'chat_demarrer', methods: ['POST'])]
-    public function demarrer(EntityManagerInterface $em, DemandeRepository $demandes, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
+    public function demarrer(Request $request, EntityManagerInterface $em, DemandeRepository $demandes, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
     {
         $demande = new Demande();
         if (Role::Client === $utilisateur?->getRole()) {
@@ -81,6 +82,7 @@ final class ChatController extends AbstractController
             }
             $demande->setClient($utilisateur);
         }
+        $this->appliquerPreferences($demande, $request);
         $conversation = new Conversation();
         $demande->setConversation($conversation);
 
@@ -89,6 +91,41 @@ final class ChatController extends AbstractController
         $em->flush();
 
         return $this->json(['jeton' => $conversation->getJeton(), 'demande' => $demande->getId()], Response::HTTP_CREATED);
+    }
+
+    private function appliquerPreferences(Demande $demande, Request $request): void
+    {
+        try {
+            $preferences = $request->toArray()['preferences'] ?? [];
+        } catch (JsonException) {
+            return;
+        }
+        if (!\is_array($preferences) || 3 !== \count($preferences) || !\is_string($preferences[0] ?? null)) {
+            return;
+        }
+
+        $demande->setTypeDeVoyage(match ($preferences[0]) {
+            'Séjours', 'Séjour détente' => TypeDeVoyage::Sejour,
+            'Circuits', 'Circuit découverte' => TypeDeVoyage::Circuit,
+            'Groupes' => TypeDeVoyage::Groupe,
+            'Noces', 'Voyage de noces' => TypeDeVoyage::Noces,
+            'Entreprise' => TypeDeVoyage::Entreprise,
+            default => null,
+        });
+        if ('À deux' === ($preferences[1] ?? null)) {
+            $demande->setAdultes(2);
+        } elseif ('Seul(e)' === ($preferences[1] ?? null)) {
+            $demande->setAdultes(1);
+        }
+        $budget = match ($preferences[2] ?? null) {
+            'Moins de 1 500 €' => 150000,
+            'De 1 500 à 3 000 €' => 300000,
+            'Plus de 3 000 €' => 300000,
+            default => null,
+        };
+        if (null !== $budget) {
+            $demande->setBudgetCentimes($budget)->setBudgetParPersonne(false);
+        }
     }
 
     /** Récapitulatif de la demande en cours, affiché par le widget. */

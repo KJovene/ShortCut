@@ -10,7 +10,7 @@ import { ChatWorkspace } from './ChatWorkspace'
 
 /** Fenêtre plein écran du chatbot, ouverte depuis toutes les pages sauf l'accueil. */
 export function ChatFenetre() {
-  const { ouvert, fermer, statut, envoyer, langue } = useChat()
+  const { ouvert, fermer, statut, envoyer, langue, estConnecte } = useChat()
   const t = TEXTES[langue]
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
   const fermerBouton = useRef<HTMLButtonElement>(null)
@@ -57,14 +57,16 @@ export function ChatFenetre() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => envoyer(t.messageConseiller)}
-              className="hidden min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold hover:bg-sable md:flex"
-            >
-              <IconPersonne size={18} />
-              {t.parlerConseiller}
-            </button>
+            {estConnecte && (
+              <button
+                type="button"
+                onClick={() => envoyer(t.messageConseiller)}
+                className="hidden min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold hover:bg-sable md:flex"
+              >
+                <IconPersonne size={18} />
+                {t.parlerConseiller}
+              </button>
+            )}
             <button
               ref={fermerBouton}
               type="button"

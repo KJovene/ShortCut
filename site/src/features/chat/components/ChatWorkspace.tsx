@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { nombreRenseignes } from '../demande'
 import { TEXTES } from '../textes'
+import { QuestionnaireInvite } from '../QuestionnaireInvite'
 import { AssistantEcrit, Bulle } from './Messages'
 import { Recapitulatif } from './Recapitulatif'
 
@@ -22,6 +23,7 @@ export function ChatWorkspace({ className }: { className?: string }) {
     conversation,
     terminee,
     langue,
+    estConnecte,
   } = useChat()
   const t = TEXTES[langue]
   const fil = useRef<HTMLDivElement>(null)
@@ -33,6 +35,8 @@ export function ChatWorkspace({ className }: { className?: string }) {
     const el = fil.current
     if (el) el.scrollTop = el.scrollHeight
   }, [messages.length, reflexion])
+
+  if (!estConnecte) return <QuestionnaireInvite />
 
   const modifier = (texte: string) => {
     setBrouillon(texte)

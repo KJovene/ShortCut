@@ -63,10 +63,14 @@ async function erreurApi(reponse: Response): Promise<ApiError> {
 }
 
 /** Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. */
-export async function ouvrirConversation(signal?: AbortSignal): Promise<string> {
+export async function ouvrirConversation(
+  preferences?: string[],
+  signal?: AbortSignal,
+): Promise<string> {
   const reponse = await fetch('/api/chat/conversations', {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: preferences ? JSON.stringify({ preferences }) : undefined,
     signal,
   })
   if (!reponse.ok) throw await erreurApi(reponse)

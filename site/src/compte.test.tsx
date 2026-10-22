@@ -54,7 +54,10 @@ describe('connexion', () => {
   }
 
   it('ouvre le backoffice pour un conseiller', async () => {
-    const api = simulerApi({ 'POST /api/connexion': { status: 200, body: LEA } })
+    const api = simulerApi({
+      'POST /api/connexion': { status: 200, body: LEA },
+      'GET /api/moi': { status: 200, body: LEA },
+    })
     afficher('/connexion')
 
     await seConnecter('lea@shortcut.test', 'shortcut')
