@@ -6,6 +6,7 @@ use App\Chatbot\AgentConversation;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
+use App\Enum\Langue;
 use App\Enum\Role;
 use App\Enum\TypeDeVoyage;
 use App\Repository\ConversationRepository;
@@ -33,6 +34,7 @@ final class ChatController extends AbstractController
     public const MESSAGE_MAX = 2000;
 
     public const MESSAGE_VOYAGES_MAX = 'Vous avez déjà 3 voyages en cours, le maximum. Poursuivez l\'un d\'eux depuis « Mon espace », ou demandez à votre conseiller d\'en clore un pour en commencer un nouveau.';
+    public const MESSAGE_VOYAGES_MAX_EN = 'You already have 3 trips in progress, the maximum. Continue one of them from “My account”, or ask your advisor to close one to start a new one.';
 
     /**
      * Envoie un message du client et diffuse la réponse de l'assistant en Server-Sent Events.
@@ -76,9 +78,16 @@ final class ChatController extends AbstractController
     public function demarrer(Request $request, EntityManagerInterface $em, DemandeRepository $demandes, #[CurrentUser] ?Utilisateur $utilisateur): JsonResponse
     {
         $demande = new Demande();
+        // Langue choisie sur le site (bouton FR | EN) : l'assistant commence dans cette langue, puis suit celle du client.
+        try {
+            $langue = $request->toArray()['langue'] ?? null;
+        } catch (JsonException) {
+            $langue = null;
+        }
+        $demande->setLangue(Langue::tryFrom(\is_string($langue) ? $langue : '') ?? Langue::Francais);
         if (Role::Client === $utilisateur?->getRole()) {
             if ($demandes->compterEnCoursDuClient($utilisateur) >= Demande::VOYAGES_EN_COURS_MAX) {
-                return $this->json(['erreur' => self::MESSAGE_VOYAGES_MAX], Response::HTTP_CONFLICT);
+                return $this->json(['erreur' => $demande->getLangue()->choisir(self::MESSAGE_VOYAGES_MAX, self::MESSAGE_VOYAGES_MAX_EN)], Response::HTTP_CONFLICT);
             }
             $demande->setClient($utilisateur);
         }
