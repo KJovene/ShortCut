@@ -1,12 +1,14 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { z } from 'zod'
 import { CarteDestination } from '@/components/ui/CarteDestination'
 import { EnTetePage } from '@/components/ui/EnTetePage'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
+import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
 import { langueDuSite, nomDuMois, typesDeVoyage, useLangue } from '@/lib/langue'
@@ -21,13 +23,16 @@ const filtresSchema = z.object({
 
 export const Route = createFileRoute('/destinations/')({
   validateSearch: filtresSchema,
-  loader: ({ context }) => context.queryClient.ensureQueryData(destinationsQuery()),
-  head: () => {
-    const t = TEXTES[langueDuSite()].destinations.meta
-    return {
-      meta: [{ title: t.titre }, { name: 'description', content: t.description }],
-    }
+  loader: async ({ context }) => {
+    const [, page] = await Promise.all([
+      context.queryClient.ensureQueryData(destinationsQuery()),
+      context.queryClient.ensureQueryData(pageQuery('destinations')).catch(() => null),
+    ])
+    return page
   },
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, TEXTES[langueDuSite()].destinations.meta),
+  }),
   pendingComponent: PageEnChargement,
   errorComponent: PageIndisponible,
   component: DestinationsPage,
@@ -47,6 +52,10 @@ function DestinationsPage() {
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
   const { data: destinations } = useSuspenseQuery(destinationsQuery(langue))
+  // Titre, introduction et photo : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
+  // Contenu masqué ou API indisponible : les textes par défaut prennent le relais, le catalogue reste affiché.
+  const { data: page } = useQuery(pageQuery('destinations', langue))
+  const intro = page ? decouperContenu(page.contenu).intro : [t.intro]
 
   const resultats = destinations.filter(
     (d) =>
@@ -68,14 +77,17 @@ function DestinationsPage() {
       <EnTetePage
         surtitre={t.surtitre}
         titre={
-          <>
-            {t.titreDebut}
-            <em className="font-normal text-terre">{t.titreAccent}</em>
-            {t.titreFin}
-          </>
+          <TitreMisEnValeur
+            texte={page?.titre ?? `${t.titreDebut}*${t.titreAccent}*${t.titreFin}`}
+          />
         }
+        photo={page?.photos[0] ? { src: page.photos[0], alt: t.surtitre } : undefined}
       >
-        <p className="m-0 max-w-[640px]">{t.intro}</p>
+        {intro.map((paragraphe) => (
+          <p key={paragraphe} className="m-0 max-w-[640px]">
+            {paragraphe}
+          </p>
+        ))}
       </EnTetePage>
 
       <section aria-label={t.filtres} className="mx-auto max-w-[1376px] px-4 sm:px-8">

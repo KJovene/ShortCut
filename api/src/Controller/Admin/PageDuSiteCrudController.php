@@ -122,7 +122,7 @@ final class PageDuSiteCrudController extends AbstractCrudController
         yield TextEditorField::new('contenu', 'Texte')
             ->setTrixEditorConfig(self::EDITEUR)
             ->setNumOfRows(15)
-            ->setHelp('Le bouton « Titre » crée un intertitre. Page Agence : seul l\'intertitre « Nos engagements » est repris, avec sa liste. Page Types de voyages : un intertitre par type (Séjours, Circuits, Groupes, Voyages de noces, Entreprise). Le gras, l\'italique et les liens ne s\'affichent pas sur le site.')
+            ->setHelp('Le bouton « Titre » crée un intertitre. Page Destinations : seuls les paragraphes avant le premier intertitre sont repris, au-dessus des filtres. Page Agence : seul l\'intertitre « Nos engagements » est repris, avec sa liste. Page Types de voyages : un intertitre par type (Séjours, Circuits, Groupes, Voyages de noces, Entreprise). Le gras, l\'italique et les liens ne s\'affichent pas sur le site.')
             ->hideOnIndex();
         yield ImageField::new('photos', 'Photos')
             ->setBasePath('/uploads/pages')
