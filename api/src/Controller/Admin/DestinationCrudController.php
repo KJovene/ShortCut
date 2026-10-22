@@ -4,13 +4,23 @@ namespace App\Controller\Admin;
 
 use App\Admin\FiltreClimat;
 use App\Entity\Destination;
+use App\Entity\PeriodeClimatique;
 use App\Enum\TypeDeVoyage;
+use App\Entity\Utilisateur;
+use App\Form\ClimatMensuelType;
 use App\Form\TrajetType;
+use Doctrine\ORM\EntityManagerInterface;
+use EasyCorp\Bundle\EasyAdminBundle\Config\KeyValueStore;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
+use EasyCorp\Bundle\EasyAdminBundle\Dto\EntityDto;
+use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ArrayField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
@@ -28,7 +38,7 @@ use Symfony\Component\Validator\Constraints\Image;
 
 /**
  * Destinations du catalogue (#186) : la fiche que le site affiche et que le chatbot propose.
- * Le climat et les tarifs se saisissent par période (PeriodeClimatiqueController), depuis la fiche.
+ * Le climat mensuel et les tarifs se saisissent depuis la fiche.
  * Un conseiller crée et modifie ; seul l'administrateur supprime (la suppression emporte logements et activités).
  *
  * @extends AbstractCrudController<Destination>
@@ -36,6 +46,9 @@ use Symfony\Component\Validator\Constraints\Image;
 #[IsGranted('ROLE_CONSEILLER')]
 final class DestinationCrudController extends AbstractCrudController
 {
+    /** @var array<string, float|null>|null */
+    private ?array $temperaturesSoumises = null;
+
     public static function getEntityFqcn(): string
     {
         return Destination::class;
@@ -56,12 +69,8 @@ final class DestinationCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
-        $saisirPeriode = Action::new('saisirPeriode', 'Saisir une période', 'fa fa-temperature-half')
-            ->linkToUrl(fn (Destination $d): string => $this->generateUrl('admin_destination_periode', ['id' => $d->getId()]));
-
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->add(Crud::PAGE_DETAIL, $saisirPeriode)
             ->setPermission(Action::DELETE, 'ROLE_ADMIN')
             ->setPermission(Action::BATCH_DELETE, 'ROLE_ADMIN');
     }
@@ -147,9 +156,113 @@ final class DestinationCrudController extends AbstractCrudController
             ->setHelp('Ex. -9,1 pour Lisbonne (ouest négatif).')
             ->hideOnIndex();
 
+        yield Field::new('temperatures', 'Températures mensuelles')
+            ->setFormType(ClimatMensuelType::class)
+            ->setFormTypeOptions(['mapped' => false])
+            ->setHelp('Température moyenne en °C. Les mois laissés vides ne sont pas modifiés.')
+            ->onlyOnForms();
         yield FormField::addFieldset('Climat')->onlyOnDetail();
         yield Field::new('periodesClimatiques', 'Climat par période')
             ->setTemplatePath('admin/champ/climat.html.twig')
             ->onlyOnDetail();
+    }
+
+    /** @return FormBuilderInterface<mixed> */
+    public function createNewFormBuilder(EntityDto $entityDto, KeyValueStore $formOptions, AdminContext $context): FormBuilderInterface
+    {
+        return $this->ajouterClimat(parent::createNewFormBuilder($entityDto, $formOptions, $context));
+    }
+
+    /** @return FormBuilderInterface<mixed> */
+    public function createEditFormBuilder(EntityDto $entityDto, KeyValueStore $formOptions, AdminContext $context): FormBuilderInterface
+    {
+        return $this->ajouterClimat(parent::createEditFormBuilder($entityDto, $formOptions, $context));
+    }
+
+    public function persistEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        $this->synchroniserClimat($entityInstance, $entityManager);
+        parent::persistEntity($entityManager, $entityInstance);
+    }
+
+    public function updateEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        $this->synchroniserClimat($entityInstance, $entityManager);
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
+    /**
+     * @param FormBuilderInterface<mixed> $builder
+     *
+     * @return FormBuilderInterface<mixed>
+     */
+    private function ajouterClimat(FormBuilderInterface $builder): FormBuilderInterface
+    {
+        $builder
+            ->addEventListener(FormEvents::PRE_SET_DATA, function (FormEvent $event): void {
+                $destination = $event->getData();
+                if (!$destination instanceof Destination || !$event->getForm()->has('temperatures')) {
+                    return;
+                }
+
+                $event->getForm()->get('temperatures')->setData($this->temperaturesDe($destination));
+            })
+            ->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event): void {
+                if (!$event->getForm()->isValid() || !$event->getForm()->has('temperatures')) {
+                    return;
+                }
+
+                /** @var array<string, float|null> $temperatures */
+                $temperatures = $event->getForm()->get('temperatures')->getData();
+                $this->temperaturesSoumises = $temperatures;
+            });
+
+        return $builder;
+    }
+
+    /** @return array<string, float|null> */
+    private function temperaturesDe(Destination $destination): array
+    {
+        $temperatures = [];
+        foreach ($destination->getPeriodesClimatiques() as $periode) {
+            if (null !== $periode->getDebut() && null !== $periode->getTemperatureMoyenne()) {
+                $temperatures['mois'.$periode->getDebut()->format('n')] = $periode->getTemperatureMoyenne();
+            }
+        }
+
+        return $temperatures;
+    }
+
+    private function synchroniserClimat(Destination $destination, EntityManagerInterface $entityManager): void
+    {
+        if (null === $this->temperaturesSoumises) {
+            return;
+        }
+
+        $periodes = [];
+        foreach ($destination->getPeriodesClimatiques() as $periode) {
+            if (null !== $periode->getDebut()) {
+                $periodes[(int) $periode->getDebut()->format('n')] ??= $periode;
+            }
+        }
+
+        $utilisateur = $this->getUser();
+        foreach ($this->temperaturesSoumises as $cle => $temperature) {
+            if (null === $temperature || !str_starts_with($cle, 'mois')) {
+                continue;
+            }
+            $mois = (int) substr($cle, 4);
+            $periode = $periodes[$mois] ?? new PeriodeClimatique();
+            if (null === $periode->getDebut()) {
+                $debut = new \DateTimeImmutable(\sprintf('%d-%02d-01', (int) date('Y'), $mois));
+                $periode->setDebut($debut)->setFin($debut->modify('last day of this month'));
+            }
+            $periode
+                ->setDestination($destination)
+                ->setTemperatureMoyenne((float) $temperature)
+                ->setSaisiPar($utilisateur instanceof Utilisateur ? $utilisateur : null)
+                ->setModifieLe(new \DateTimeImmutable());
+            $entityManager->persist($periode);
+        }
     }
 }

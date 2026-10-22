@@ -2,15 +2,10 @@
 
 namespace App\Controller\Admin;
 
-use App\Entity\Destination;
-use App\Entity\PeriodeClimatique;
 use App\Entity\Utilisateur;
 use App\Enum\StatutDemande;
-use App\Form\ClimatMensuelType;
-use App\Repository\DestinationRepository;
 use App\Repository\DemandeRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
-use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminRoute;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Assets;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
@@ -18,9 +13,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\UserMenu;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Core\User\UserInterface;
-use Doctrine\ORM\EntityManagerInterface;
 
 /** Backoffice des conseillers et de l'administrateur (accès protégé par access_control sur /admin). */
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
@@ -29,7 +22,6 @@ final class DashboardController extends AbstractDashboardController
     public function __construct(
         #[Autowire('%env(SITE_URL)%')] private readonly string $siteUrl,
         private readonly DemandeRepository $demandes,
-        private readonly DestinationRepository $destinations,
     ) {
     }
 
@@ -44,74 +36,6 @@ final class DashboardController extends AbstractDashboardController
             'a_aiguiller' => $this->demandes->compterAAiguiller(),
             'a_traiter' => $this->demandes->aTraiter($conseiller),
             'statuts' => StatutDemande::cases(),
-        ]);
-    }
-
-    #[AdminRoute('/climat', name: 'climat', options: ['methods' => ['GET']])]
-    public function climat(): Response
-    {
-        return $this->render('admin/climat/index.html.twig', [
-            'destinations' => $this->destinations->findBy([], ['ville' => 'ASC']),
-        ]);
-    }
-
-    #[AdminRoute('/climat/{id}', name: 'climat_edit', options: ['methods' => ['GET', 'POST']])]
-    public function modifierClimat(
-        Destination $destination,
-        Request $request,
-        EntityManagerInterface $entityManager,
-    ): Response {
-        $periodes = [];
-        foreach ($destination->getPeriodesClimatiques() as $periode) {
-            if (null !== $periode->getDebut() && null !== $periode->getTemperatureMoyenne()) {
-                $periodes[(int) $periode->getDebut()->format('n')] ??= $periode;
-            }
-        }
-
-        $temperatures = [];
-        for ($mois = 1; $mois <= 12; ++$mois) {
-            $temperatures['mois'.$mois] = isset($periodes[$mois]) ? $periodes[$mois]->getTemperatureMoyenne() : null;
-        }
-
-        $form = $this->createForm(ClimatMensuelType::class, $temperatures);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $utilisateur = $this->getUser();
-            $data = $form->getData();
-            for ($mois = 1; $mois <= 12; ++$mois) {
-                $temperature = $data['mois'.$mois] ?? null;
-                if (null === $temperature) {
-                    continue;
-                }
-
-                $periode = $periodes[$mois] ?? new PeriodeClimatique();
-                if (null === $periode->getDestination()) {
-                    $periode->setDestination($destination);
-                }
-                if (null === $periode->getDebut() || null === $periode->getFin()) {
-                    $annee = (int) (new \DateTimeImmutable())->format('Y');
-                    $debut = new \DateTimeImmutable(\sprintf('%d-%02d-01', $annee, $mois));
-                    $periode
-                        ->setDebut($debut)
-                        ->setFin($debut->modify('last day of this month'));
-                }
-                $periode
-                    ->setTemperatureMoyenne((float) $temperature)
-                    ->setSaisiPar($utilisateur instanceof Utilisateur ? $utilisateur : null)
-                    ->setModifieLe(new \DateTimeImmutable());
-                $entityManager->persist($periode);
-            }
-
-            $entityManager->flush();
-            $this->addFlash('success', 'Les températures mensuelles ont été enregistrées.');
-
-            return $this->redirectToRoute('admin_climat_edit', ['id' => $destination->getId()]);
-        }
-
-        return $this->render('admin/climat/edit.html.twig', [
-            'destination' => $destination,
-            'form' => $form,
         ]);
     }
 
@@ -140,7 +64,6 @@ final class DashboardController extends AbstractDashboardController
 
         yield MenuItem::section('Catalogue');
         yield MenuItem::linkTo(DestinationCrudController::class, 'Destinations', 'fa fa-earth-europe');
-        yield MenuItem::linkToUrl('Températures', 'fa fa-temperature-half', $this->generateUrl('admin_climat'));
         yield MenuItem::linkTo(LogementCrudController::class, 'Logements', 'fa fa-bed');
         yield MenuItem::linkTo(ActiviteCrudController::class, 'Activités', 'fa fa-person-hiking');
         yield MenuItem::linkTo(PrestataireCrudController::class, 'Prestataires', 'fa fa-handshake');
