@@ -25,7 +25,7 @@ export function Logo({
       className={cn('flex shrink-0 items-center', className)}
     >
       <img
-        src={clair ? '/new-logos/detour-logo-negatif.svg' : '/new-logos/detour-logo.svg'}
+        src={clair ? '/new-logos/detour-logo-mono-blanc.svg' : '/new-logos/detour-logo-anime.svg'}
         alt=""
         className={cn('block w-auto', petit ? 'h-8' : 'h-[34px] sm:h-10')}
       />

@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLocation } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { profilQuery } from '@/lib/auth'
@@ -60,6 +61,7 @@ function restaurer(): EtatChat {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatChat>(restaurer)
   const queryClient = useQueryClient()
+  const chemin = useLocation({ select: (location) => location.pathname })
   const { data: profil } = useQuery(profilQuery)
   const estConnecte = profil !== null && profil !== undefined
   const etatCourant = useRef(etat)
@@ -67,6 +69,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const enCours = useRef(false)
   /** Annule la réponse en cours quand le client recommence. */
   const annulation = useRef<AbortController | null>(null)
+  const cheminPrecedent = useRef(chemin)
+
+  useEffect(() => {
+    if (cheminPrecedent.current !== chemin) {
+      cheminPrecedent.current = chemin
+      annulation.current?.abort()
+      enCours.current = false
+      setEtat((e) => ({ ...e, ouvert: false, reflexion: false }))
+    }
+  }, [chemin])
 
   useEffect(() => {
     etatCourant.current = etat
@@ -80,6 +92,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       questionnaire,
       contexteInvite,
       recapitulatif,
+      destinationInvite,
     } = etat
     try {
       sessionStorage.setItem(
@@ -94,6 +107,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           questionnaire,
           contexteInvite,
           recapitulatif,
+          destinationInvite,
         }),
       )
     } catch {
@@ -204,6 +218,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (!jeton || reprendQuestionnaire) {
           jeton = await ouvrirConversation(
             reprendQuestionnaire ? questionnaire.reponses : undefined,
+            etatCourant.current.destinationInvite,
             controleur.signal,
           )
           const nouveau = jeton
@@ -214,7 +229,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
           if (!(err instanceof ApiError && err.status === 401)) throw err
-          const nouveau = await ouvrirConversation(undefined, controleur.signal)
+          const nouveau = await ouvrirConversation(undefined, undefined, controleur.signal)
           setEtat((e) => ({ ...e, jeton: nouveau }))
           await lire(nouveau)
         }
@@ -281,9 +296,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         messages: [...x.messages, client],
       }))
       void discuter(
-        etatCourant.current.contexteInvite
-          ? `${etatCourant.current.contexteInvite}\n\n${propre}`
-          : propre,
+        [etatCourant.current.contexteInvite, etatCourant.current.destinationInvite]
+          .filter(Boolean)
+          .concat(propre)
+          .join('\n\n'),
       )
     },
     [discuter],
@@ -297,6 +313,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
       fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
       setBrouillon: (brouillon: string) => setEtat((e) => ({ ...e, brouillon })),
+      setDestinationInvite: (destination: string) =>
+        setEtat((e) => ({
+          ...e,
+          destinationInvite: destination,
+          conversation: { demande: { ...e.conversation.demande, zone: destination } },
+        })),
       recommencer: () => {
         annulation.current?.abort()
         enCours.current = false

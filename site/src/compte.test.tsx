@@ -222,6 +222,8 @@ describe('déconnexion', () => {
     await user.click(screen.getByRole('button', { name: 'Se déconnecter' }))
 
     expect(await screen.findByRole('link', { name: 'Inscription' })).toBeInTheDocument()
+    expect(sessionStorage.getItem('chat')).toContain('"statut":"accueil"')
+    expect(sessionStorage.getItem('chat')).toContain('"reponses":[]')
     expect(api.fetch).toHaveBeenCalledWith(
       '/api/deconnexion',
       expect.objectContaining({ method: 'POST' }),

@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1004" height="344" viewBox="-132 -1184 4018 1378"><style>
-#o{transform-box:fill-box;transform-origin:50% 100%;animation:saut 3.6s cubic-bezier(.3,.7,.4,1) infinite}
+/* 2,75 sauts (9,9 s après le chargement), puis le O reste levé : 75 % du cycle, dans le palier de la charte. */
+#o{transform-box:fill-box;transform-origin:50% 100%;animation:saut 3.6s cubic-bezier(.3,.7,.4,1) 2.75 forwards}
 @keyframes saut{
 0%,8%{transform:translate(0,330px) scale(1,1)}
 14%{transform:translate(0,330px) scale(1.08,.88)}

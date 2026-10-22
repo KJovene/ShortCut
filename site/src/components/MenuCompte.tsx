@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { IconFlecheBas } from '@/components/ui/icons'
+import { useChat } from '@/features/chat/chatContext'
 import { accedeAuBackoffice, profilQuery, seDeconnecter, URL_BACKOFFICE } from '@/lib/auth'
 
 const classeLien =
@@ -36,6 +37,7 @@ export function MenuCompte() {
 function MenuConnecte() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { recommencer } = useChat()
   const { data: profil } = useQuery(profilQuery)
   const [ouvert, setOuvert] = useState(false)
   const conteneur = useRef<HTMLDivElement>(null)
@@ -60,6 +62,9 @@ function MenuConnecte() {
   const deconnexion = useMutation({
     mutationFn: seDeconnecter,
     onSuccess: () => {
+      // Les demandes restent côté serveur, mais le brouillon local ne doit pas être visible
+      // par le prochain visiteur de ce navigateur.
+      recommencer()
       queryClient.setQueryData(profilQuery.queryKey, null)
       queryClient.removeQueries({ queryKey: ['moi'] })
       void navigate({ to: '/' })

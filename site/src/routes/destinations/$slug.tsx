@@ -116,7 +116,7 @@ function DestinationPage() {
           <button
             type="button"
             onClick={construire}
-            className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-terre font-extrabold text-white hover:bg-rouille"
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-white font-extrabold text-encre hover:bg-sable"
           >
             Construire mon voyage
             <IconFleche size={18} strokeWidth={2.4} />
