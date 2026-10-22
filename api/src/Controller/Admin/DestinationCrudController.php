@@ -8,6 +8,7 @@ use App\Entity\PeriodeClimatique;
 use App\Entity\Utilisateur;
 use App\Enum\TypeDeVoyage;
 use App\Form\ClimatMensuelType;
+use App\Form\LieuType;
 use App\Form\TrajetType;
 use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
@@ -64,7 +65,8 @@ final class DestinationCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Destination $d) => \sprintf('%s, %s', $d->getVille(), $d->getPays()))
             ->setDefaultSort(['ville' => 'ASC'])
             ->setSearchFields(['ville', 'pays', 'region'])
-            ->addFormTheme('admin/form/texte_suggere.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig')
+            ->addFormTheme('admin/form/tableau_saisie.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -96,9 +98,25 @@ final class DestinationCrudController extends AbstractCrudController
         yield TextField::new('photoAlt', 'Description de la photo')
             ->setHelp('Lue par les lecteurs d\'écran à la place de la photo (ex. « Le Colisée de Rome sous un ciel clair »).')
             ->hideOnIndex();
-        yield TextField::new('ville', 'Ville');
-        yield TextField::new('pays', 'Pays');
-        yield TextField::new('region', 'Région');
+        // Choisies dans une recherche de villes du monde (LieuType) : la ville remplit aussi la région, le pays et la
+        // position sur la carte (public/admin/lieux.js).
+        yield TextField::new('ville', 'Ville')
+            ->setFormType(LieuType::class)
+            ->setFormTypeOption('lieux', 'ville')
+            ->setFormTypeOption('attr', ['data-lieu-remplit' => json_encode([
+                'region' => 'Destination_region',
+                'pays' => 'Destination_pays',
+                'latitude' => 'Destination_latitude',
+                'longitude' => 'Destination_longitude',
+            ], \JSON_THROW_ON_ERROR)])
+            ->setHelp('Tapez les premières lettres, puis choisissez la ville : la région, le pays et la position sur la carte suivent.');
+        yield TextField::new('pays', 'Pays')
+            ->setFormType(LieuType::class)
+            ->setFormTypeOption('lieux', 'pays');
+        yield TextField::new('region', 'Région')
+            ->setFormTypeOption('attr', ['readonly' => true])
+            ->setRequired(false)
+            ->setHelp('Remplie par le choix de la ville.');
         yield SlugField::new('slug', 'Adresse sur le site')
             ->setTargetFieldName('ville')
             ->setHelp('Rempli à partir de la ville. La fiche sera sur /destinations/… : minuscules, chiffres et tirets.')
@@ -131,9 +149,13 @@ final class DestinationCrudController extends AbstractCrudController
             ->setRequired(false)
             ->setHelp('Quatre points forts au plus, courts : ils s\'affichent en liste sur la fiche.')
             ->hideOnIndex();
+        // Saisie en tableau, une ligne par ville de départ (admin/form/tableau_saisie.html.twig).
         yield CollectionField::new('trajets', 'Temps de trajet')
             ->setEntryType(TrajetType::class)
-            ->setEntryIsComplex(false)
+            ->setFormTypeOption('entry_options', ['block_prefix' => 'ligne_saisie'])
+            ->setFormTypeOption('block_prefix', 'tableau_saisie')
+            ->setFormTypeOption('attr', ['data-vide' => 'Aucune ville de départ pour l’instant.', 'data-ajouter' => 'Ajouter une ville de départ'])
+            ->addCssClass('field-array')
             ->setHelp('Durée du vol depuis chaque ville de départ proposée (ex. Paris, 150 minutes).')
             ->onlyOnForms();
         yield Field::new('tempsDeTrajet', 'Temps de trajet')

@@ -714,3 +714,9 @@ trix-toolbar [data-trix-action="increaseNestingLevel"] {
     color: var(--bo-texte-doux);
     font-size: 13px;
 }
+
+/* Menus de lieux (LieuType) dans une saisie en tableau : le menu prend la largeur de sa colonne. */
+.bo-grille-saisie-cellule .ts-wrapper {
+    width: 100%;
+    min-width: 0;
+}

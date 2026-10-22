@@ -12,6 +12,7 @@ use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * CRUD des prestataires du backoffice (#187) : type obligatoire, fourchettes en euros, filtres. Nécessite `make db-test`.
@@ -144,15 +145,19 @@ final class PrestataireCrudTest extends WebTestCase
         self::assertNotContains('Roma Bus', $this->nomsAffiches());
     }
 
-    public function testLesVillesSontSuggereesALaSaisie(): void
+    public function testLesVillesSeChoisissentDansDesMenus(): void
     {
         $crawler = $this->client->request('GET', '/admin/prestataire/new');
 
-        // Les lignes de fourchette sont créées depuis le prototype de la collection.
-        $prototype = (string) $crawler->filter('[data-prototype]')->attr('data-prototype');
-        self::assertStringContainsString('<datalist', $prototype);
-        self::assertStringContainsString('value="Lisbonne"', $prototype);
-        self::assertStringContainsString('value="Bordeaux"', $prototype);
+        // Les lignes de fourchette sont créées depuis le prototype de la collection : le départ se cherche
+        // (/admin/lieux), l'arrivée se choisit parmi les villes des destinations.
+        $prototype = new Crawler((string) $crawler->filter('[data-prototype]')->attr('data-prototype'));
+        $depart = $prototype->filter('select[name$="[depart]"]');
+        self::assertSame('ea-autocomplete', $depart->attr('data-ea-widget'));
+        self::assertSame('/admin/lieux?lieux=transport', $depart->attr('data-ea-autocomplete-endpoint-url'));
+        $arrivee = $prototype->filter('select[name$="[arrivee]"]');
+        self::assertSame('ea-autocomplete', $arrivee->attr('data-ea-widget'));
+        self::assertCount(1, $arrivee->filter('option[value="Lisbonne"]'));
     }
 
     public function testSeulLAdministrateurSupprime(): void

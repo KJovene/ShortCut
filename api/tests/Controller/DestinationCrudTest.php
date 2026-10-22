@@ -90,7 +90,7 @@ final class DestinationCrudTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/destination/new');
         self::assertResponseIsSuccessful();
 
-        $formulaire = $crawler->filter('form[name="Destination"]')->form([
+        $formulaire = $crawler->filter('form[name="Destination"]')->form()->disableValidation()->setValues([
             'Destination[ville]' => 'Naples',
             'Destination[pays]' => 'Italie',
             'Destination[region]' => 'Campanie',
@@ -117,7 +117,7 @@ final class DestinationCrudTest extends WebTestCase
     {
         $this->client->loginUser($this->compte('lea@shortcut.test'));
         $crawler = $this->client->request('GET', '/admin/destination/new');
-        $valeurs = $crawler->filter('form[name="Destination"]')->form([
+        $valeurs = $crawler->filter('form[name="Destination"]')->form()->disableValidation()->setValues([
             'Destination[ville]' => 'Lisbonne bis',
             'Destination[pays]' => 'Portugal',
             'Destination[slug]' => 'lisbonne',
