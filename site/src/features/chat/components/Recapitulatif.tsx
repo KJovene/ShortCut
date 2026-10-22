@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
-import { CRITERES, LIBELLES, nombreRenseignes, valeurCritere } from '../demande'
+import { CRITERES, nombreRenseignes, valeurCritere } from '../demande'
+import { TEXTES } from '../textes'
 
 /** Récapitulatif des neuf critères, à côté de la conversation. */
 export function Recapitulatif({
@@ -12,7 +13,8 @@ export function Recapitulatif({
   onModifier: (texte: string) => void
   titreId?: string
 }) {
-  const { conversation, reflexion, terminee } = useChat()
+  const { conversation, reflexion, terminee, langue } = useChat()
+  const t = TEXTES[langue]
   const d = conversation.demande
   // Photo et climat de la destination reconnue, lus dans le catalogue de l'API.
   const { data: destinations = [] } = useQuery(destinationsQuery())
@@ -32,7 +34,9 @@ export function Recapitulatif({
               className="block size-full object-cover"
             />
             <span className="absolute bottom-3.5 left-4 rounded-full bg-white px-3 py-1.5 text-[13px] font-extrabold">
-              Piste : {destination.ville}
+              {t.piste}
+              {langue === 'en' ? ': ' : ' : '}
+              {destination.ville}
               {temperature !== null && ` · ${temperature} °C`}
             </span>
           </>
@@ -47,7 +51,7 @@ export function Recapitulatif({
       <div className="flex flex-col gap-3.5 px-[22px] pt-[18px] pb-[22px]">
         <div className="flex items-baseline justify-between gap-2.5">
           <h2 id={titreId} className="m-0 font-display text-[26px] font-semibold">
-            Votre voyage
+            {t.votreVoyage}
           </h2>
           <span
             className={cn(
@@ -55,12 +59,12 @@ export function Recapitulatif({
               renseignes === 9 ? 'text-vert-fonce' : 'text-rouille',
             )}
           >
-            {renseignes} / 9 critères
+            {t.criteres(renseignes)}
           </span>
         </div>
         <div
           role="progressbar"
-          aria-label="Critères renseignés"
+          aria-label={t.criteresRenseignes}
           aria-valuemin={0}
           aria-valuemax={9}
           aria-valuenow={renseignes}
@@ -73,12 +77,13 @@ export function Recapitulatif({
         </div>
         <dl className="m-0 flex flex-col">
           {CRITERES.map((critere) => {
-            const valeur = valeurCritere(d, critere)
+            const valeur = valeurCritere(d, critere, langue)
+            const libelle = t.libelles[critere]
             const signale = critere === 'contraintes' && d.contraintesSignalees.length > 0
             return (
               <div key={critere} className="flex items-start gap-3 border-b border-sable py-2.5">
                 <dt className="w-[104px] shrink-0 pt-px text-[13px] font-bold text-taupe-clair">
-                  {LIBELLES[critere]}
+                  {libelle}
                 </dt>
                 <dd
                   className={cn(
@@ -86,20 +91,20 @@ export function Recapitulatif({
                     !valeur && 'font-normal text-taupe-clair italic',
                   )}
                 >
-                  {valeur ?? 'À préciser'}
+                  {valeur ?? t.aPreciser}
                   {signale && (
                     <span className="block text-xs font-bold text-rouille not-italic">
-                      Signalé à votre conseiller
+                      {t.signale}
                     </span>
                   )}
                 </dd>
                 <button
                   type="button"
-                  aria-label={`Modifier : ${LIBELLES[critere]}`}
-                  onClick={() => onModifier(`${LIBELLES[critere]} : `)}
+                  aria-label={`${t.modifier}${langue === 'en' ? ': ' : ' : '}${libelle}`}
+                  onClick={() => onModifier(`${libelle}${langue === 'en' ? ': ' : ' : '}`)}
                   className="text-[13px] font-bold text-rouille hover:text-encre hover:underline"
                 >
-                  Modifier
+                  {t.modifier}
                 </button>
               </div>
             )
@@ -107,31 +112,23 @@ export function Recapitulatif({
         </dl>
         {terminee ? (
           <>
-            <p className="m-0 text-xs leading-normal text-taupe-clair">
-              Votre conseiller vous recontacte dans les plus brefs délais avec votre proposition.
-              Prix estimés, rien n'est réservé avant sa confirmation.
-            </p>
+            <p className="m-0 text-xs leading-normal text-taupe-clair">{t.rappelTerminee}</p>
             <p
               role="status"
               className="m-0 flex min-h-[50px] items-center justify-center rounded-full bg-vert text-[15px] font-extrabold text-white"
             >
-              Demande transmise à votre conseiller
+              {t.transmiseConseiller}
             </p>
           </>
         ) : (
           <>
-            <p className="m-0 text-xs leading-normal text-taupe-clair">
-              Prochaine étape : votre proposition complète arrive ici dans moins de 2 minutes. Prix
-              estimés, confirmés par votre conseiller sous 2 jours ouvrés.
-            </p>
+            <p className="m-0 text-xs leading-normal text-taupe-clair">{t.prochaineEtape}</p>
             <button
               type="button"
               disabled
               className="min-h-[50px] rounded-full bg-lin text-[15px] font-extrabold text-taupe"
             >
-              {reflexion && renseignes >= 7
-                ? 'Proposition en préparation…'
-                : 'Proposition après vos réponses'}
+              {reflexion && renseignes >= 7 ? t.enPreparation : t.apresVosReponses}
             </button>
           </>
         )}

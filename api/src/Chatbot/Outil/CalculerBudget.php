@@ -34,6 +34,7 @@ use Psr\Clock\ClockInterface;
 final class CalculerBudget implements Outil
 {
     public const AVERTISSEMENT = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
+    public const AVERTISSEMENT_EN = 'First proposal, estimated prices, to be confirmed by your advisor.';
 
     public function __construct(
         private readonly BudgetCalculator $calculateur,

@@ -1,5 +1,7 @@
-import { formatEuros, labelType } from '@/data/catalogue'
+import { formatEuros } from '@/data/catalogue'
+import { type Langue, LOCALE, typeDeVoyage } from '@/lib/langue'
 import { NIVEAUX, type Niveau, type PropositionEnLigne as Proposition, voyageurs } from './enLigne'
+import { TEXTES } from './textes'
 
 /**
  * Ce qui a changé entre deux versions d'une proposition (ticket #212) : les jours du programme, les prestations,
@@ -101,9 +103,12 @@ export function formatEcart(centimes: number) {
 }
 
 /** « +1,8 % », « −12 % ». */
-export function formatPourcentage(pourcentage: number) {
+export function formatPourcentage(pourcentage: number, langue: Langue = 'fr') {
   const signe = pourcentage > 0 ? '+' : pourcentage < 0 ? '−' : ''
-  return `${signe}${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(Math.abs(pourcentage))} %`
+  const nombre = new Intl.NumberFormat(LOCALE[langue], { maximumFractionDigits: 1 }).format(
+    Math.abs(pourcentage),
+  )
+  return `${signe}${nombre}${langue === 'en' ? '%' : ' %'}`
 }
 
 export function cleLigne(l: Ligne) {
@@ -140,34 +145,37 @@ const memePrestation = (a: Prestation, b: Prestation) =>
 const memeLigne = (a: Ligne, b: Ligne) =>
   a.quantite === b.quantite && a.dateDebut === b.dateDebut && a.dateFin === b.dateFin
 
-const dateCourte = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(
-    new Date(iso),
-  )
+const dateCourte = (iso: string, langue: Langue) =>
+  new Intl.DateTimeFormat(LOCALE[langue], {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(iso))
 
-function dates({ dateDebut, dateFin }: Proposition['demande']) {
-  if (!dateDebut) return 'à préciser'
-  return dateFin ? `du ${dateCourte(dateDebut)} au ${dateCourte(dateFin)}` : dateCourte(dateDebut)
+function dates({ dateDebut, dateFin }: Proposition['demande'], langue: Langue) {
+  const t = TEXTES[langue]
+  if (!dateDebut) return t.aPreciser
+  return dateFin
+    ? t.duAu(dateCourte(dateDebut, langue), dateCourte(dateFin, langue))
+    : dateCourte(dateDebut, langue)
 }
-
-const libelleNiveau = (niveau: Niveau) => NIVEAUX.find((n) => n.valeur === niveau)!.label
 
 /** Les changements de la demande que le client reconnaît : dates, voyageurs, destination, type, niveau. */
 function changementsDeLaDemande(avant: Proposition, apres: Proposition) {
+  const langue = apres.langue
+  const t = TEXTES[langue]
+  const type = (p: Proposition) =>
+    p.demande.typeDeVoyage ? typeDeVoyage(p.demande.typeDeVoyage, langue) : '—'
   const champs: [string, string, string][] = [
-    ['Dates', dates(avant.demande), dates(apres.demande)],
-    ['Voyageurs', voyageurs(avant.demande), voyageurs(apres.demande)],
+    [t.dates, dates(avant.demande, langue), dates(apres.demande, langue)],
+    [t.voyageurs, voyageurs(avant.demande, langue), voyageurs(apres.demande, langue)],
     [
-      'Destination',
+      t.destination,
       avant.destination?.ville ?? avant.demande.lieuOuZone ?? '—',
       apres.destination?.ville ?? apres.demande.lieuOuZone ?? '—',
     ],
-    [
-      'Type de voyage',
-      avant.demande.typeDeVoyage ? labelType(avant.demande.typeDeVoyage) : '—',
-      apres.demande.typeDeVoyage ? labelType(apres.demande.typeDeVoyage) : '—',
-    ],
-    ['Niveau détaillé', libelleNiveau(avant.niveauBudget), libelleNiveau(apres.niveauBudget)],
+    [t.type, type(avant), type(apres)],
+    [t.niveau, t.niveaux[avant.niveauBudget], t.niveaux[apres.niveauBudget]],
   ]
   return champs
     .filter(([, a, b]) => a !== b)

@@ -13,6 +13,7 @@ const JETON = 'b'.repeat(64)
 /** Proposition v1 envoyée par le conseiller, prix estimés (forme de PropositionClient::presenter). */
 const PROPOSITION: PropositionEnLigne = {
   jeton: JETON,
+  langue: 'fr',
   versionDemandee: null,
   version: 1,
   etat: 'estimee',
@@ -189,6 +190,33 @@ describe('« Ma proposition » par son lien unique (#208)', () => {
       'href',
       `/api/propositions/${JETON}/versions/1/pdf`,
     )
+  })
+
+  it('s’affiche en anglais pour un client qui a dialogué en anglais (US15)', async () => {
+    simulerApi({
+      [`GET /api/propositions/${JETON}`]: {
+        status: 200,
+        body: {
+          ...PROPOSITION,
+          langue: 'en',
+          mention: 'First proposal, estimated prices, to be confirmed by your advisor.',
+        },
+      },
+    })
+    afficher(`/proposition/${JETON}`)
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Santorin, 2 days' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/First proposal, estimated prices/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Day-by-day itinerary' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Your estimated budget' })).toBeInTheDocument()
+    expect(screen.getByText('Budget assumptions')).toBeInTheDocument()
+    expect(screen.getByText('2 adults')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Download the PDF' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Request confirmation' })).toBeInTheDocument()
+    expect(document.title).toBe('My proposal · Santorin, 2 days')
+    expect(screen.queryByText('Programme jour par jour')).not.toBeInTheDocument()
   })
 
   it('transmet la demande de confirmation au conseiller', async () => {

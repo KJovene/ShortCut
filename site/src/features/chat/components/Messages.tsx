@@ -1,6 +1,8 @@
 import { IconCoche } from '@/components/ui/icons'
 import { cn } from '@/lib/cn'
+import { useChat } from '../chatContext'
 import type { Message } from '../conversation'
+import { TEXTES } from '../textes'
 
 const BULLE_ASSISTANT =
   'rounded-[6px_20px_20px_20px] bg-white shadow-[0_2px_10px_rgba(43,29,20,0.06)]'
@@ -25,6 +27,7 @@ export function Bulle({ message }: { message: Message }) {
 
 /** Fin de la conversation : la demande est enregistrée et transmise à un conseiller. */
 function Confirmation({ texte }: { texte: string }) {
+  const { langue } = useChat()
   return (
     <div
       role="status"
@@ -37,7 +40,9 @@ function Confirmation({ texte }: { texte: string }) {
         <IconCoche size={16} />
       </span>
       <span className="flex flex-col gap-0.5">
-        <strong className="text-[15px] font-extrabold text-vert-fonce">Demande transmise</strong>
+        <strong className="text-[15px] font-extrabold text-vert-fonce">
+          {TEXTES[langue].demandeTransmise}
+        </strong>
         <span>{texte}</span>
       </span>
     </div>
@@ -45,12 +50,13 @@ function Confirmation({ texte }: { texte: string }) {
 }
 
 export function AssistantEcrit() {
+  const { langue } = useChat()
   return (
     <div
       className={cn('flex items-center gap-1 self-start px-4 py-3', BULLE_ASSISTANT)}
       role="status"
     >
-      <span className="sr-only">L'assistant écrit…</span>
+      <span className="sr-only">{TEXTES[langue].assistantEcrit}</span>
       {[0, 1, 2].map((i) => (
         <span
           key={i}

@@ -1,4 +1,6 @@
-import { formatEuros, labelType, MOIS, type TypeDeVoyage } from '@/data/catalogue'
+import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
+import { type Langue, nomDuMois, typeDeVoyage } from '@/lib/langue'
+import { TEXTES } from './textes'
 
 /** Les neuf critères du récapitulatif, dans l'ordre d'affichage. */
 export const CRITERES = [
@@ -14,18 +16,6 @@ export const CRITERES = [
 ] as const
 
 export type Critere = (typeof CRITERES)[number]
-
-export const LIBELLES: Record<Critere, string> = {
-  type: 'Type',
-  destination: 'Destination',
-  periode: 'Période',
-  duree: 'Durée',
-  temperature: 'Température',
-  voyageurs: 'Voyageurs',
-  budget: 'Budget',
-  envies: 'Envies',
-  contraintes: 'Contraintes',
-}
 
 /** Fiche demande construite au fil de la conversation (équivalent de l'entité Demande côté API). */
 export interface Demande {
@@ -86,35 +76,39 @@ export function nombreRenseignes(d: Demande) {
 const majuscule = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** Valeur lisible d'un critère pour le récapitulatif, ou undefined s'il manque. */
-export function valeurCritere(d: Demande, critere: Critere): string | undefined {
+export function valeurCritere(
+  d: Demande,
+  critere: Critere,
+  langue: Langue = 'fr',
+): string | undefined {
+  const t = TEXTES[langue]
   switch (critere) {
     case 'type': {
       if (!d.type) return undefined
       const voyageurs = (d.adultes ?? 0) + (d.enfants ?? 0)
       return d.type === 'sejour' && voyageurs === 2 && !d.enfants
-        ? 'Séjour à deux'
-        : labelType(d.type)
+        ? t.sejourADeux
+        : typeDeVoyage(d.type, langue)
     }
     case 'destination':
       return d.destination?.nom ?? d.zone
     case 'periode':
       if (d.mois === undefined) return undefined
-      return `${majuscule(MOIS[d.mois])} 2027${d.datesFlexibles ? ', dates flexibles' : ''}`
+      return `${majuscule(langue === 'en' ? nomDuMois(d.mois, langue) : MOIS[d.mois])} 2027${d.datesFlexibles ? t.datesFlexibles : ''}`
     case 'duree':
-      return d.jours ? `${d.jours} jours` : undefined
+      return d.jours ? t.jours(d.jours) : undefined
     case 'temperature':
-      return d.temperatureMin !== undefined ? `Au moins ${d.temperatureMin} °C` : undefined
+      return d.temperatureMin !== undefined ? t.auMoins(d.temperatureMin) : undefined
     case 'voyageurs': {
       if (d.adultes === undefined) return undefined
-      const adultes = `${d.adultes} adulte${d.adultes > 1 ? 's' : ''}`
-      const enfants = d.enfants ? ` · ${d.enfants} enfant${d.enfants > 1 ? 's' : ''}` : ''
-      const chambre = d.adultes === 2 && !d.enfants ? ' · 1 chambre double' : ''
-      return adultes + enfants + chambre
+      const enfants = d.enfants ? ` · ${t.enfants(d.enfants)}` : ''
+      const chambre = d.adultes === 2 && !d.enfants ? t.chambreDouble : ''
+      return t.adultes(d.adultes) + enfants + chambre
     }
     case 'budget': {
       if (d.budget === undefined) return undefined
-      const base = `${formatEuros(d.budget)} ${d.budgetParPersonne ? 'par personne' : 'au total'}`
-      return d.depart ? `${base} · départ ${d.depart}` : base
+      const base = `${formatEuros(d.budget)} ${d.budgetParPersonne ? t.parPersonne : t.auTotal}`
+      return d.depart ? `${base} · ${t.departDe(d.depart)}` : base
     }
     case 'envies':
       return d.envies.length ? majuscule(d.envies.join(', ')) : undefined

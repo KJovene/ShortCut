@@ -29,4 +29,16 @@ enum TypeDeVoyage: string
             self::Entreprise => 'Entreprise',
         };
     }
+
+    /** Pour un client qui écrit en anglais (US15). */
+    public function labelEnAnglais(): string
+    {
+        return match ($this) {
+            self::Sejour => 'Stay',
+            self::Circuit => 'Tour',
+            self::Groupe => 'Group',
+            self::Noces => 'Honeymoon',
+            self::Entreprise => 'Corporate',
+        };
+    }
 }

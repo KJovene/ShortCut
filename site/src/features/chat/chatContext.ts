@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import type { Langue } from '@/lib/langue'
 import type { Fiche } from './api'
 import type { Conversation, Message } from './conversation'
 
@@ -16,6 +17,8 @@ export interface EtatChat {
   /** Fenêtre du chatbot ouverte (pages autres que l'accueil). */
   ouvert: boolean
   brouillon: string
+  /** Langue du client, reconnue par l'assistant (US15) : celle des textes du chatbot. */
+  langue: Langue
 }
 
 /** Conversation déjà commencée, reprise depuis l'espace client (« Modifier le voyage »). */

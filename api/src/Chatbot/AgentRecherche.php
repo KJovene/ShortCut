@@ -10,7 +10,9 @@ use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\RetenirCombinaison;
 use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Entity\Conversation;
+use App\Entity\Demande;
 use App\Enum\AgentIA;
+use App\Enum\Langue;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -74,7 +76,8 @@ final class AgentRecherche extends Agent
                     'motif' => 'autre',
                     'resume' => 'La recherche automatique n\'a pas abouti (erreur ou réponse incomplète de l\'agent Recherche) : la proposition est à construire à partir de la fiche demande.',
                 ]);
-                $tour->reponse = 'Je n\'ai pas pu terminer votre proposition. '.$transmission['messagePourLeClient'];
+                $tour->reponse = $demande->getLangue()->choisir('Je n\'ai pas pu terminer votre proposition. ', 'I could not finish your proposal. ')
+                    .$transmission['messagePourLeClient'];
                 yield self::evenement('texte', ['texte' => $tour->reponse]);
             }
         } finally {
@@ -99,7 +102,16 @@ final class AgentRecherche extends Agent
         return (null === $modification ? 'Le client vient de confirmer sa demande.' : $modification->pourLaRecherche())
             ."\n\nFiche demande :\n"
             .json_encode(EnregistrerExigences::fiche($demande), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
-            ."\n\nMessages du client, dans l'ordre :\n".self::messagesDuClient($conversation);
+            ."\n\nMessages du client, dans l'ordre :\n".self::messagesDuClient($conversation)
+            .self::langue($demande);
+    }
+
+    /** Le client écrit en anglais (US15) : le message qu'il lit aussi, les critères des outils restent en français. */
+    public static function langue(Demande $demande): string
+    {
+        return Langue::Anglais === $demande->getLangue()
+            ? "\n\nLangue du client : anglais. Tout ce que le client lit s'écrit en anglais ; les critères passés aux outils restent en français, comme dans la fiche."
+            : '';
     }
 
     protected function diffuserAuFilDeLEau(): bool

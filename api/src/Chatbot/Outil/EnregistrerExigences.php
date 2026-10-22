@@ -5,6 +5,7 @@ namespace App\Chatbot\Outil;
 use App\Chatbot\ContexteAgent;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
+use App\Enum\Langue;
 use App\Enum\TypeDeVoyage;
 use App\Repository\DemandeRepository;
 use App\Repository\UtilisateurRepository;
@@ -34,7 +35,7 @@ final class EnregistrerExigences implements Outil
     {
         return [
             'name' => $this->nom(),
-            'description' => 'Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N\'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif.',
+            'description' => 'Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N\'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif. Les textes de la fiche (lieu, ville de départ, envies, contraintes) s\'écrivent toujours en français, même si le client écrit en anglais : « Lisbonne », « plage ».',
             'strict' => true,
             'input_schema' => [
                 'type' => 'object',
@@ -63,6 +64,7 @@ final class EnregistrerExigences implements Outil
                         'additionalProperties' => false,
                     ],
                     'recapitulatifConfirme' => ['type' => 'boolean'],
+                    'langue' => ['type' => 'string', 'enum' => array_column(Langue::cases(), 'value'), 'description' => 'Langue dans laquelle le client écrit : « en » s\'il écrit en anglais, « fr » sinon. À envoyer dès son premier message, puis s\'il change de langue.'],
                 ],
                 'required' => ['recapitulatifConfirme'],
                 'additionalProperties' => false,
@@ -113,6 +115,7 @@ final class EnregistrerExigences implements Outil
             'fiche' => self::fiche($demande),
             'exigencesManquantes' => self::manquantes($demande),
             'recapitulatifConfirme' => $confirme,
+            'langue' => $demande->getLangue()->value,
         ];
     }
 
@@ -121,6 +124,11 @@ final class EnregistrerExigences implements Outil
      */
     private function appliquer(Demande $demande, array $entree): void
     {
+        if (\array_key_exists('langue', $entree)) {
+            $langue = Langue::tryFrom((string) $entree['langue'])
+                ?? throw new OutilException(\sprintf('Langue « %s » inconnue : « fr » ou « en ».', (string) $entree['langue']));
+            $demande->setLangue($langue);
+        }
         if (\array_key_exists('typeDeVoyage', $entree)) {
             $type = TypeDeVoyage::tryFrom((string) $entree['typeDeVoyage'])
                 ?? throw new OutilException(\sprintf('Type de voyage « %s » inconnu.', (string) $entree['typeDeVoyage']));

@@ -2,6 +2,8 @@
 
 namespace App\Chatbot;
 
+use App\Enum\Langue;
+
 /** Échec d'un appel à l'API Claude : le détail est journalisé, le client ne voit que messagePourLeClient(). */
 final class ErreurClaude extends \RuntimeException
 {
@@ -15,11 +17,17 @@ final class ErreurClaude extends \RuntimeException
         return $this->statut;
     }
 
-    public function messagePourLeClient(): string
+    public function messagePourLeClient(Langue $langue = Langue::Francais): string
     {
         // 429 : limite de l'organisation ; 529 : API surchargée.
         return \in_array($this->statut, [429, 529], true)
-            ? 'L\'assistant est très sollicité en ce moment. Réessayez dans quelques instants.'
-            : 'L\'assistant est momentanément indisponible. Réessayez dans quelques instants ou demandez à parler à un conseiller.';
+            ? $langue->choisir(
+                'L\'assistant est très sollicité en ce moment. Réessayez dans quelques instants.',
+                'The assistant is very busy right now. Please try again in a few moments.',
+            )
+            : $langue->choisir(
+                'L\'assistant est momentanément indisponible. Réessayez dans quelques instants ou demandez à parler à un conseiller.',
+                'The assistant is temporarily unavailable. Please try again in a few moments or ask to speak to an advisor.',
+            );
     }
 }

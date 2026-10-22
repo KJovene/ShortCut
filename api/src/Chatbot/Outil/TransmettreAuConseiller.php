@@ -55,7 +55,10 @@ final class TransmettreAuConseiller implements Outil
         return [
             'transmise' => true,
             'delaiAnnonce' => '2 jours ouvrés',
-            'messagePourLeClient' => 'Un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.',
+            'messagePourLeClient' => $contexte->demande->getLangue()->choisir(
+                'Un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.',
+                'An advisor from the agency is taking over your request and will contact you within 2 business days.',
+            ),
         ];
     }
 }

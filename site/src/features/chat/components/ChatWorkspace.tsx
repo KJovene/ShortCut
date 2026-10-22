@@ -3,6 +3,7 @@ import { IconFlecheHaut, IconRecommencer } from '@/components/ui/icons'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { nombreRenseignes } from '../demande'
+import { TEXTES } from '../textes'
 import { AssistantEcrit, Bulle } from './Messages'
 import { Recapitulatif } from './Recapitulatif'
 
@@ -20,7 +21,9 @@ export function ChatWorkspace({ className }: { className?: string }) {
     recommencer,
     conversation,
     terminee,
+    langue,
   } = useChat()
+  const t = TEXTES[langue]
   const fil = useRef<HTMLDivElement>(null)
   const champ = useRef<HTMLInputElement>(null)
 
@@ -37,16 +40,19 @@ export function ChatWorkspace({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn('flex min-h-0 flex-col gap-6 lg:flex-row lg:gap-8', className)}>
+    <div
+      lang={langue}
+      className={cn('flex min-h-0 flex-col gap-6 lg:flex-row lg:gap-8', className)}
+    >
       <section
-        aria-label="Conversation avec l'assistant"
+        aria-label={t.conversation}
         className="flex min-h-0 min-w-0 flex-[999_1_560px] flex-col"
       >
         <details className="mb-3 rounded-2xl bg-white shadow-sm lg:hidden">
           <summary className="flex min-h-12 cursor-pointer items-center justify-between px-4 font-bold">
-            Votre voyage
+            {t.votreVoyage}
             <span className="text-sm text-rouille">
-              {nombreRenseignes(conversation.demande)} / 9 critères
+              {t.criteres(nombreRenseignes(conversation.demande))}
             </span>
           </summary>
           <div className="p-2">
@@ -61,7 +67,7 @@ export function ChatWorkspace({ className }: { className?: string }) {
           aria-relevant="additions"
         >
           <span className="self-center rounded-full bg-sable px-3 py-1 text-xs font-bold text-taupe-clair">
-            Aujourd'hui · Je suis une IA, un conseiller confirme chaque proposition
+            {t.aujourdhui}
           </span>
           {messages.map((m) => (
             <Bulle key={m.id} message={m} />
@@ -78,25 +84,24 @@ export function ChatWorkspace({ className }: { className?: string }) {
         >
           {terminee ? (
             <p className="m-0 rounded-full bg-white px-5 py-3.5 text-center text-sm text-taupe shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
-              Votre demande est transmise. Pour préparer un autre voyage, cliquez sur « Recommencer
-              ».
+              {t.transmise}
             </p>
           ) : (
             <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pr-1.5 pl-2 shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
               <label className="flex flex-1">
-                <span className="sr-only">Votre message</span>
+                <span className="sr-only">{t.votreMessage}</span>
                 <input
                   ref={champ}
                   type="text"
                   value={brouillon}
                   onChange={(e) => setBrouillon(e.target.value)}
-                  placeholder="Ajouter une précision ou modifier votre demande…"
+                  placeholder={t.placeholder}
                   className="min-h-11 flex-1 bg-transparent px-3 text-[15px] outline-none"
                 />
               </label>
               <button
                 type="submit"
-                aria-label="Envoyer"
+                aria-label={t.envoyer}
                 disabled={!brouillon.trim()}
                 className="flex size-12 shrink-0 items-center justify-center rounded-full bg-terre text-white hover:bg-rouille disabled:opacity-50"
               >
@@ -105,17 +110,14 @@ export function ChatWorkspace({ className }: { className?: string }) {
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-2 px-2 text-xs text-taupe-clair">
-            <span>
-              Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre
-              conseiller.
-            </span>
+            <span>{t.estimations}</span>
             <button
               type="button"
               onClick={recommencer}
               className="flex min-h-9 items-center gap-1.5 font-bold text-taupe hover:text-encre"
             >
               <IconRecommencer size={14} />
-              Recommencer
+              {t.recommencer}
             </button>
           </div>
         </form>

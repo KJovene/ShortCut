@@ -2,11 +2,13 @@
 {#
  # La proposition en PDF (#213), rendue par Dompdf : CSS 2.1, tableaux plutôt que flexbox, polices DejaVu (accents
  # et « € »). Couleurs du site : terre #C2471E, encre #2B1D14, crème #FBF6EE, sable #F3E7D6, taupe #6E5A4B.
+ # En anglais pour un client qui a dialogué en anglais avec le chatbot (US15, p.langue).
  #}
-<html lang="fr">
+{% set en = p.langue == 'en' %}
+<html lang="{{ p.langue }}">
 <head>
 <meta charset="UTF-8">
-<title>Proposition {{ p.destination.ville ?? p.demande.lieuOuZone ?? 'de voyage' }} · version {{ p.version }}</title>
+<title>{{ en ? 'Proposal' : 'Proposition' }} {{ p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'for your trip' : 'de voyage') }} · version {{ p.version }}</title>
 <style>
     @page { margin: 22mm 16mm 20mm 16mm; }
     body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.45; color: #2B1D14; }
@@ -66,26 +68,35 @@
 <body>
     <div id="entete">
         <img src="{{ logo }}" alt=""><span class="marque">Détour</span>
-        <span class="droite">Proposition · version {{ p.version }}{{ confirmee ? ' · confirmée' : ' · prix estimés' }}</span>
+        <span class="droite">{{ en ? 'Proposal' : 'Proposition' }} · version {{ p.version }}{{ confirmee ? (en ? ' · confirmed' : ' · confirmée') : (en ? ' · estimated prices' : ' · prix estimés') }}</span>
     </div>
     <div id="pied">
-        Détour, agence de voyages sur mesure · 12 rue des Voyageurs, 75000 Paris · conseillers du lundi au vendredi de 9 h à 18 h 30.<br>
-        {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : p.mention }} Rien n’est réservé ni payé avant votre accord.
+        {% if en %}
+            Détour, tailor-made travel agency · 12 rue des Voyageurs, 75000 Paris, France · advisors available Monday to Friday, 9 am to 6:30 pm (Paris time).<br>
+            {{ confirmee ? 'Prices checked by your advisor with the providers.' : p.mention }} Nothing is booked or paid before you agree.
+        {% else %}
+            Détour, agence de voyages sur mesure · 12 rue des Voyageurs, 75000 Paris · conseillers du lundi au vendredi de 9 h à 18 h 30.<br>
+            {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : p.mention }} Rien n’est réservé ni payé avant votre accord.
+        {% endif %}
     </div>
 
     {# Couverture #}
     <p class="surtitre">
-        {{ type ?? 'Votre voyage' }} · version {{ p.version }} du {{ (confirmee and p.confirmeeLe ? p.confirmeeLe : p.creeLe)|date_longue }}
+        {{ type ?? (en ? 'Your trip' : 'Votre voyage') }} · version {{ p.version }} {{ en ? 'of' : 'du' }} {{ (confirmee and p.confirmeeLe ? p.confirmeeLe : p.creeLe)|date_longue(p.langue) }}
     </p>
-    <h1>{{ p.destination.ville ?? p.demande.lieuOuZone ?? 'Votre voyage' }}{% if p.programme is not empty %}, {{ p.programme|length }} jours{% endif %}</h1>
-    {% if client %}<p class="discret">Préparée pour {{ client }}</p>{% endif %}
+    <h1>{{ p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'Your trip' : 'Votre voyage') }}{% if p.programme is not empty %}, {{ p.programme|length }} {{ en ? 'days' : 'jours' }}{% endif %}</h1>
+    {% if client %}<p class="discret">{{ en ? 'Prepared for' : 'Préparée pour' }} {{ client }}</p>{% endif %}
 
     <div class="statut statut--{{ p.etat }}">
-        <span class="etiquette">{{ confirmee ? 'Proposition confirmée' : 'Proposition estimée' }}</span>
+        <span class="etiquette">{{ confirmee ? (en ? 'Confirmed proposal' : 'Proposition confirmée') : (en ? 'Estimated proposal' : 'Proposition estimée') }}</span>
         {% if confirmee %}
-            Confirmée par votre conseiller le {{ p.confirmeeLe|date_longue }} : prix vérifiés auprès des prestataires.
+            {% if en %}
+                Confirmed by your advisor on {{ p.confirmeeLe|date_longue(p.langue) }}: prices checked with the providers.
+            {% else %}
+                Confirmée par votre conseiller le {{ p.confirmeeLe|date_longue }} : prix vérifiés auprès des prestataires.
+            {% endif %}
         {% else %}
-            {{ p.mention }} Confirmation annoncée sous 2 jours ouvrés.
+            {{ p.mention }} {{ en ? 'Confirmation expected within 2 business days.' : 'Confirmation annoncée sous 2 jours ouvrés.' }}
         {% endif %}
     </div>
 
@@ -95,28 +106,38 @@
 
     <table class="chiffres">
         <tr>
-            <td><span class="petit discret">Départ</span><br><span class="valeur">{{ p.demande.dateDebut ? p.demande.dateDebut|date_longue : 'À préciser' }}</span></td>
-            <td><span class="petit discret">Retour</span><br><span class="valeur">{{ p.demande.dateFin ? p.demande.dateFin|date_longue : 'À préciser' }}</span></td>
-            <td><span class="petit discret">Voyageurs</span><br><span class="valeur">{{ p.demande.adultes }} adulte{{ p.demande.adultes > 1 ? 's' }}{% if p.demande.enfants %}, {{ p.demande.enfants }} enfant{{ p.demande.enfants > 1 ? 's' }}{% endif %}</span></td>
-            <td><span class="petit discret">Niveau</span><br><span class="valeur">{{ niveaux[p.niveauBudget] }}</span></td>
+            <td><span class="petit discret">{{ en ? 'Departure' : 'Départ' }}</span><br><span class="valeur">{{ p.demande.dateDebut ? p.demande.dateDebut|date_longue(p.langue) : (en ? 'To be specified' : 'À préciser') }}</span></td>
+            <td><span class="petit discret">{{ en ? 'Return' : 'Retour' }}</span><br><span class="valeur">{{ p.demande.dateFin ? p.demande.dateFin|date_longue(p.langue) : (en ? 'To be specified' : 'À préciser') }}</span></td>
+            {% if en %}
+                <td><span class="petit discret">Travellers</span><br><span class="valeur">{{ p.demande.adultes }} adult{{ p.demande.adultes > 1 ? 's' }}{% if p.demande.enfants %}, {{ p.demande.enfants }} {{ p.demande.enfants > 1 ? 'children' : 'child' }}{% endif %}</span></td>
+            {% else %}
+                <td><span class="petit discret">Voyageurs</span><br><span class="valeur">{{ p.demande.adultes }} adulte{{ p.demande.adultes > 1 ? 's' }}{% if p.demande.enfants %}, {{ p.demande.enfants }} enfant{{ p.demande.enfants > 1 ? 's' }}{% endif %}</span></td>
+            {% endif %}
+            <td><span class="petit discret">{{ en ? 'Level' : 'Niveau' }}</span><br><span class="valeur">{{ niveaux[p.niveauBudget] }}</span></td>
         </tr>
     </table>
 
     {% if p.pourquoi %}<p style="margin-top: 5mm; font-size: 11pt;">{{ p.pourquoi }}</p>{% endif %}
 
     <div class="total insecable">
-        <span class="petit discret">{{ confirmee ? 'Votre budget confirmé' : 'Votre budget estimé' }}, niveau {{ niveaux[p.niveauBudget]|lower }}</span><br>
-        <span class="montant">{{ p.totalCentimes|euros }}</span><br>
-        <span class="discret">soit {{ p.totalParPersonneCentimes|euros }} par personne, frais de dossier de {{ p.fraisDeDossierCentimes|euros }} inclus</span>
+        {% if en %}
+            <span class="petit discret">{{ confirmee ? 'Your confirmed budget' : 'Your estimated budget' }}, {{ niveaux[p.niveauBudget]|lower }} level</span><br>
+            <span class="montant">{{ p.totalCentimes|euros }}</span><br>
+            <span class="discret">that is {{ p.totalParPersonneCentimes|euros }} per person, including a booking fee of {{ p.fraisDeDossierCentimes|euros }}</span>
+        {% else %}
+            <span class="petit discret">{{ confirmee ? 'Votre budget confirmé' : 'Votre budget estimé' }}, niveau {{ niveaux[p.niveauBudget]|lower }}</span><br>
+            <span class="montant">{{ p.totalCentimes|euros }}</span><br>
+            <span class="discret">soit {{ p.totalParPersonneCentimes|euros }} par personne, frais de dossier de {{ p.fraisDeDossierCentimes|euros }} inclus</span>
+        {% endif %}
     </div>
 
     {# Programme #}
     {% if p.programme is not empty %}
-        <h2 class="saut">Programme jour par jour</h2>
+        <h2 class="saut">{{ en ? 'Day-by-day itinerary' : 'Programme jour par jour' }}</h2>
         <table class="programme">
             {% for j in p.programme %}
                 <tr class="insecable">
-                    <td class="jour">J{{ j.jour }}<span>{{ j.date|date_jour }}</span></td>
+                    <td class="jour">{{ en ? 'D' : 'J' }}{{ j.jour }}<span>{{ j.date|date_jour(p.langue) }}</span></td>
                     <td><h3>{{ j.titre }}</h3><span class="discret">{{ j.description }}</span></td>
                 </tr>
             {% endfor %}
@@ -124,7 +145,8 @@
     {% endif %}
 
     {# Hébergements et activités #}
-    {% for type, titre in {logement: 'Hébergement', activite: 'Activités incluses'} %}
+    {% set sections = en ? {logement: 'Accommodation', activite: 'Included activities'} : {logement: 'Hébergement', activite: 'Activités incluses'} %}
+    {% for type, titre in sections %}
         {% set liste = p.prestations|filter(x => x.type == type) %}
         {% if liste is not empty %}
             {% for x in liste %}
@@ -139,7 +161,7 @@
                                 <ul>{% for point in x.pointsForts %}<li>{{ point }}</li>{% endfor %}</ul>
                             {% endif %}
                             <p class="petit discret" style="margin-top: 1.5mm;">
-                                Niveau{{ x.niveaux|length > 1 ? 'x' }} : {{ x.niveaux|map(n => niveaux[n] ?? n)|join(', ') }}
+                                {% if en %}Level{{ x.niveaux|length > 1 ? 's' }}:{% else %}Niveau{{ x.niveaux|length > 1 ? 'x' }} :{% endif %} {{ x.niveaux|map(n => niveaux[n] ?? n)|join(', ') }}
                             </p>
                         </td>
                     </tr>
@@ -151,42 +173,47 @@
 
     {% if p.argumentaire is not empty %}
         <div class="insecable">
-        <h2>Pourquoi ce voyage vous correspond</h2>
+        <h2>{{ en ? 'Why this trip suits you' : 'Pourquoi ce voyage vous correspond' }}</h2>
         <ul>
-            {% for a in p.argumentaire %}<li><strong>{{ a.exigence }}</strong> : {{ a.reponse }}</li>{% endfor %}
+            {% for a in p.argumentaire %}<li><strong>{{ a.exigence }}</strong>{{ en ? ':' : ' :' }} {{ a.reponse }}</li>{% endfor %}
         </ul>
         </div>
     {% endif %}
 
     {# Budget #}
-    <h2 class="saut">Votre budget</h2>
+    <h2 class="saut">{{ en ? 'Your budget' : 'Votre budget' }}</h2>
     <div class="statut statut--{{ p.etat }}">
-        <span class="etiquette">{{ confirmee ? 'Prix confirmés' : 'Prix estimés' }}</span>
-        {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : 'Estimés à partir des tarifs de l’agence, à confirmer par votre conseiller.' }}
+        {% if en %}
+            <span class="etiquette">{{ confirmee ? 'Confirmed prices' : 'Estimated prices' }}</span>
+            {{ confirmee ? 'Prices checked by your advisor with the providers.' : 'Estimated from the agency’s rates, to be confirmed by your advisor.' }}
+        {% else %}
+            <span class="etiquette">{{ confirmee ? 'Prix confirmés' : 'Prix estimés' }}</span>
+            {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : 'Estimés à partir des tarifs de l’agence, à confirmer par votre conseiller.' }}
+        {% endif %}
     </div>
     <table class="niveaux">
-        <tr><th>Niveau</th><th class="droite">Total</th><th class="droite">Par personne</th></tr>
+        <tr><th>{{ en ? 'Level' : 'Niveau' }}</th><th class="droite">Total</th><th class="droite">{{ en ? 'Per person' : 'Par personne' }}</th></tr>
         {% for niveau, libelle in niveaux %}
             {% if budgets[niveau] is defined %}
                 <tr{% if niveau == p.niveauBudget %} class="retenu"{% endif %}>
-                    <td>{{ libelle }}{% if niveau == p.niveauBudget %} (détaillé dans cette proposition){% endif %}</td>
+                    <td>{{ libelle }}{% if niveau == p.niveauBudget %} {{ en ? '(detailed in this proposal)' : '(détaillé dans cette proposition)' }}{% endif %}</td>
                     <td class="droite">{{ budgets[niveau].totalCentimes|euros }}</td>
                     <td class="droite">{{ budgets[niveau].parPersonneCentimes|euros }}</td>
                 </tr>
             {% endif %}
         {% endfor %}
     </table>
-    <p class="petit discret">Totaux marge et frais de dossier compris ({{ p.fraisDeDossierCentimes|euros }}).</p>
+    <p class="petit discret">{{ en ? 'Totals including margin and booking fee' : 'Totaux marge et frais de dossier compris' }} ({{ p.fraisDeDossierCentimes|euros }}).</p>
 
     {% if p.lignes is not empty %}
-        <h3 style="margin-top: 5mm;">Inclus dans le niveau {{ niveaux[p.niveauBudget]|lower }}</h3>
+        <h3 style="margin-top: 5mm;">{{ en ? 'Included in the ' ~ niveaux[p.niveauBudget]|lower ~ ' level' : 'Inclus dans le niveau ' ~ niveaux[p.niveauBudget]|lower }}</h3>
         <ul>
             {% for l in p.lignes %}<li>{{ l.libelle }}{% if l.quantite > 1 %} × {{ l.quantite }}{% endif %}</li>{% endfor %}
         </ul>
     {% endif %}
 
     {% if p.hypotheses is not empty %}
-        <h3 style="margin-top: 5mm;">Hypothèses de budget</h3>
+        <h3 style="margin-top: 5mm;">{{ en ? 'Budget assumptions' : 'Hypothèses de budget' }}</h3>
         <ul class="discret">
             {% for h in p.hypotheses %}<li>{{ h }}</li>{% endfor %}
         </ul>
@@ -194,11 +221,11 @@
 
     <p style="margin-top: 8mm;">
         {% if p.statut == 'acceptee' %}
-            Vous avez accepté cette proposition : votre conseiller réserve votre voyage.
+            {{ en ? 'You have accepted this proposal: your advisor is booking your trip.' : 'Vous avez accepté cette proposition : votre conseiller réserve votre voyage.' }}
         {% elseif confirmee %}
-            Pour l’accepter, rendez-vous sur votre page « Ma proposition ». Rien n’est réservé avant votre accord.
+            {{ en ? 'To accept it, go to your “My proposal” page. Nothing is booked before you agree.' : 'Pour l’accepter, rendez-vous sur votre page « Ma proposition ». Rien n’est réservé avant votre accord.' }}
         {% else %}
-            Pour la faire confirmer, rendez-vous sur votre page « Ma proposition » : votre conseiller vérifie prix et disponibilités sous 2 jours ouvrés.
+            {{ en ? 'To have it confirmed, go to your “My proposal” page: your advisor checks prices and availability within 2 business days.' : 'Pour la faire confirmer, rendez-vous sur votre page « Ma proposition » : votre conseiller vérifie prix et disponibilités sous 2 jours ouvrés.' }}
         {% endif %}
     </p>
 </body>

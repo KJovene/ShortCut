@@ -3,6 +3,7 @@
 namespace App\Chatbot;
 
 use App\Chiffrage\Montant;
+use App\Enum\Langue;
 use App\Enum\TypeDeVoyage;
 
 /**
@@ -29,6 +30,19 @@ final readonly class Changement
         'températures' => ['temperatureMin', 'temperatureMax'],
         'envies' => ['envies'],
         'contraintes' => ['contraintes'],
+    ];
+
+    /** Les mêmes groupes, pour un client qui écrit en anglais. */
+    private const GROUPES_EN = [
+        'type de voyage' => 'trip type',
+        'destination' => 'destination',
+        'dates' => 'dates',
+        'voyageurs' => 'travellers',
+        'ville de départ' => 'departure city',
+        'budget' => 'budget',
+        'températures' => 'temperatures',
+        'envies' => 'wishes',
+        'contraintes' => 'constraints',
     ];
 
     /**
@@ -73,16 +87,55 @@ final readonly class Changement
      *
      * @return list<string>
      */
-    public function resume(): array
+    public function resume(Langue $langue = Langue::Francais): array
     {
         $lignes = [];
         foreach (self::GROUPES as $groupe => $champs) {
             if ([] !== array_intersect($champs, array_keys($this->champs))) {
-                $lignes[] = $groupe.' : '.$this->valeur($groupe);
+                $lignes[] = Langue::Anglais === $langue
+                    ? self::GROUPES_EN[$groupe].': '.$this->valeurEnAnglais($groupe)
+                    : $groupe.' : '.$this->valeur($groupe);
             }
         }
 
         return $lignes;
+    }
+
+    /** Pour un client qui écrit en anglais (US15) ; le lieu, les envies et les contraintes restent ceux de la fiche. */
+    private function valeurEnAnglais(string $groupe): string
+    {
+        $f = $this->apres;
+        $nombre = static fn (int $n, string $mot): string => \sprintf('%d %s%s', $n, $mot, 1 === $n ? '' : 's');
+
+        return match ($groupe) {
+            'type de voyage' => TypeDeVoyage::tryFrom((string) $f['typeDeVoyage'])?->labelEnAnglais() ?? 'to be specified',
+            'dates' => null === $f['dateDebut'] ? 'to be specified' : \sprintf(
+                '%s%s%s',
+                null === $f['dateFin'] ? 'from '.self::date($f['dateDebut']) : \sprintf('from %s to %s', self::date($f['dateDebut']), self::date($f['dateFin'])),
+                null === $f['nombreDeJours'] ? '' : ', '.$nombre((int) $f['nombreDeJours'], 'night'),
+                $f['datesFlexibles'] ? ', flexible dates' : '',
+            ),
+            'voyageurs' => $nombre((int) $f['adultes'], 'adult').match ((int) $f['enfants']) {
+                0 => '',
+                1 => ', 1 child',
+                default => \sprintf(', %d children', $f['enfants']),
+            },
+            'ville de départ' => (string) ($f['villeDepart'] ?? 'to be specified'),
+            'budget' => null === $f['budgetEuros'] ? 'no set budget' : \sprintf(
+                '%s%s, transport %s',
+                Montant::euros((int) $f['budgetEuros'] * 100),
+                $f['budgetParPersonne'] ? ' per person' : ' in total',
+                $f['transportInclus'] ? 'included' : 'not included',
+            ),
+            'températures' => match (true) {
+                null !== $f['temperatureMin'] && null !== $f['temperatureMax'] => \sprintf('%d to %d °C', $f['temperatureMin'], $f['temperatureMax']),
+                null !== $f['temperatureMin'] => \sprintf('at least %d °C', $f['temperatureMin']),
+                null !== $f['temperatureMax'] => \sprintf('at most %d °C', $f['temperatureMax']),
+                default => 'no preference',
+            },
+            'envies', 'contraintes' => [] === $f[$groupe] ? 'none' : implode(', ', (array) $f[$groupe]),
+            default => $this->valeur($groupe),
+        };
     }
 
     private function valeur(string $groupe): string
