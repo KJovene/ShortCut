@@ -6,14 +6,16 @@ export const ID_SECTION_ASSISTANT = 'assistant'
 
 /**
  * Ouvre l'assistant : sur l'accueil, fait défiler jusqu'à sa section ; ailleurs, ouvre sa fenêtre.
- * Le brouillon éventuel pré-remplit le champ de saisie.
+ * Le brouillon éventuel pré-remplit le champ de saisie. Avec `nouveauVoyage`, une conversation déjà engagée
+ * (voyage en cours ou modifié) laisse place à une discussion vierge : le client construit un autre voyage.
  */
 export function useOuvrirAssistant() {
-  const { ouvrir, setBrouillon, setDestinationInvite } = useChat()
+  const { statut, ouvrir, recommencer, setBrouillon, setDestinationInvite } = useChat()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
 
   return useCallback(
-    (brouillon?: string) => {
+    (brouillon?: string, { nouveauVoyage = false }: { nouveauVoyage?: boolean } = {}) => {
+      if (nouveauVoyage && statut === 'conversation') recommencer()
       if (!estAccueil) {
         ouvrir(brouillon)
         return
@@ -27,6 +29,6 @@ export function useOuvrirAssistant() {
       section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       window.setTimeout(() => section?.querySelector<HTMLElement>('textarea, input')?.focus(), 400)
     },
-    [estAccueil, ouvrir, setBrouillon, setDestinationInvite],
+    [estAccueil, statut, ouvrir, recommencer, setBrouillon, setDestinationInvite],
   )
 }

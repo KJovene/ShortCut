@@ -32,7 +32,7 @@ const TEMP_MAX = 32
 function DestinationPage() {
   const d = Route.useLoaderData()
   const ouvrirAssistant = useOuvrirAssistant()
-  const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)
+  const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `, { nouveauVoyage: true })
 
   return (
     <>

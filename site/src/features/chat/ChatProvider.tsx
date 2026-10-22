@@ -88,6 +88,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       conversation,
       jeton,
       terminee,
+      reprise,
       langue,
       questionnaire,
       contexteInvite,
@@ -103,6 +104,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           conversation,
           jeton,
           terminee,
+          reprise,
           langue,
           questionnaire,
           contexteInvite,
@@ -311,7 +313,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     () => ({
       ouvrir: (brouillon?: string) =>
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
-      fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
+      // Fin d'une modification de voyage : ses changements sont enregistrés côté API, le chat repart à zéro.
+      fermer: () => {
+        if (etatCourant.current.reprise) {
+          annulation.current?.abort()
+          enCours.current = false
+        }
+        setEtat((e) => (e.reprise ? etatInitial() : { ...e, ouvert: false }))
+      },
       setBrouillon: (brouillon: string) => setEtat((e) => ({ ...e, brouillon })),
       setDestinationInvite: (destination: string) =>
         setEtat((e) => ({
@@ -354,6 +363,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           jeton,
           messages: repris,
           conversation: { demande },
+          reprise: true,
           ouvert: true,
           recapitulatif:
             dernierRecapitulatif && 'recapitulatif' in dernierRecapitulatif

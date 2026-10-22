@@ -269,6 +269,25 @@ describe('mon espace', () => {
       )
     })
 
+    it('démarre un nouveau voyage vierge après avoir modifié un voyage existant', async () => {
+      sessionStorage.clear()
+      afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: /Continuer avec l’assistant/ }))
+      const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(fenetre).getByText('Une villa à Bali en mai.')).toBeInTheDocument()
+
+      // Fin de la modification : la fenêtre se ferme, le chat repart à zéro.
+      await user.click(within(fenetre).getByRole('button', { name: "Fermer l'assistant" }))
+      await user.click(screen.getByRole('button', { name: /Nouveau voyage/ }))
+
+      const nouvelle = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(nouvelle).queryByText('Une villa à Bali en mai.')).toBeNull()
+      expect(within(nouvelle).queryByText('Pour combien de personnes ?')).toBeNull()
+    })
+
     it('garde l’assistant pour les détails quand le dossier est simplement pris en charge', async () => {
       afficherEspace([
         {
