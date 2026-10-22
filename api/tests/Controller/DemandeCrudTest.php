@@ -102,7 +102,7 @@ final class DemandeCrudTest extends WebTestCase
         $crawler = $this->client->request('GET', '/admin/demande/new');
         self::assertResponseIsSuccessful();
 
-        $this->client->submit($crawler->filter('form[name="Demande"]')->form([
+        $this->client->submit($crawler->filter('form[name="Demande"]')->form()->disableValidation()->setValues([
             'Demande[lieuOuZone]' => 'Tenerife',
             'Demande[adultes]' => 2,
             'Demande[enfants]' => 0,
@@ -128,7 +128,7 @@ final class DemandeCrudTest extends WebTestCase
         self::assertResponseIsSuccessful();
         // Le conseiller ne réattribue pas la demande depuis ce formulaire.
         self::assertCount(0, $crawler->filter('[name="Demande[conseiller]"]'));
-        $this->client->submit($crawler->filter('form[name="Demande"]')->form([
+        $this->client->submit($crawler->filter('form[name="Demande"]')->form()->disableValidation()->setValues([
             'Demande[lieuOuZone]' => 'Porto',
             'Demande[prioritaire]' => true,
         ]));

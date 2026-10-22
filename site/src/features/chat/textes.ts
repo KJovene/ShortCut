@@ -6,7 +6,8 @@ import type { Langue } from '@/lib/langue'
  */
 export const TEXTES = {
   fr: {
-    injoignable: 'Nous n’arrivons pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
+    injoignable:
+      'Nous n’arrivons pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
     confirmation:
       'Votre demande est bien arrivée chez nous. Un conseiller la reprend et vous envoie votre proposition, vérifiée, sous 2 jours ouvrés.',
     demandeTransmise: 'Demande transmise',
@@ -24,7 +25,8 @@ export const TEXTES = {
     votreVoyage: 'Votre voyage',
     criteres: (n: number) => `${n} / 9 critères`,
     criteresRenseignes: 'Critères renseignés',
-    aujourdhui: "Aujourd'hui · L'assistant est une IA, un conseiller vérifie et signe chaque proposition",
+    aujourdhui:
+      "Aujourd'hui · L'assistant est une IA, un conseiller vérifie et signe chaque proposition",
     transmise:
       'Votre demande est transmise. Pour préparer un autre voyage, cliquez sur « Recommencer ».',
     votreMessage: 'Votre message',

@@ -63,18 +63,15 @@ async function erreurApi(reponse: Response): Promise<ApiError> {
   return new ApiError(reponse.status, message)
 }
 
-/**
- * Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. La langue du site est celle
- * dans laquelle l'assistant commence ; il suit ensuite celle du client.
- */
+/** Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. */
 export async function ouvrirConversation(
+  preferences?: string[],
   signal?: AbortSignal,
-  langue: Langue = 'fr',
 ): Promise<string> {
   const reponse = await fetch('/api/chat/conversations', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ langue }),
+    body: preferences ? JSON.stringify({ preferences }) : undefined,
     signal,
   })
   if (!reponse.ok) throw await erreurApi(reponse)
@@ -197,3 +194,4 @@ export function ficheVersDemande(
     contraintesSignalees: contraintes.filter((c) => A_SIGNALER.test(sansAccents(c))),
   }
 }
+ 

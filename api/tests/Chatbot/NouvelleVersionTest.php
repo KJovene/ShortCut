@@ -8,10 +8,12 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Prestation;
 use App\Entity\Proposition;
+use App\Entity\Utilisateur;
 use App\Enum\NiveauBudget;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
+use App\Proposition\PropositionService;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -62,7 +64,7 @@ final class NouvelleVersionTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testDeNouvellesDatesRecalculentLaMemeCombinaisonEtEnvoientLaVersion2(): void
+    public function testDeNouvellesDatesRecalculentLaMemeCombinaisonEtPreparentLaVersion2PourLeConseiller(): void
     {
         $this->claude->prevoir(
             FausseApiClaude::appelOutil('enregistrer_exigences', ['dateDebut' => '2027-05-21', 'dateFin' => '2027-05-24', 'recapitulatifConfirme' => true]),
@@ -74,7 +76,7 @@ final class NouvelleVersionTest extends WebTestCase
         $evenements = $this->envoyer('Finalement, décalez d’une semaine : du 21 au 24 mai.');
 
         self::assertSame(
-            ['outil', 'demande', 'texte', 'texte', 'outil', 'combinaison', 'texte', 'outil', 'proposition', 'texte', 'fin'],
+            ['outil', 'demande', 'texte', 'texte', 'outil', 'combinaison', 'texte', 'outil', 'texte', 'fin'],
             array_column($evenements, 0),
         );
         self::assertCount(3, $this->claude->requetes, 'Conversation (2 appels) puis rédaction, sans recherche.');
@@ -92,17 +94,25 @@ final class NouvelleVersionTest extends WebTestCase
         self::assertMatchesRegularExpression('/\nPrix estimés le .+ à \d+ h( \d{2})? d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer\.$/', $presentation);
         self::assertSame(\sprintf(AgentRedaction::MESSAGE_NOUVELLE_VERSION, 2, 1), end($messages));
 
-        // La version 2 est envoyée, la version 1 remplacée mais consultable.
+        // La version 2 attend le conseiller, en brouillon : le client garde la version 1.
         $demande = $conversation->getDemande() ?? throw new \LogicException();
         [$v1, $v2] = $this->versions($demande);
-        self::assertSame(StatutProposition::Remplacee, $v1->getStatut());
-        self::assertSame(StatutProposition::Envoyee, $v2->getStatut());
-        self::assertNotNull($v2->getEnvoyeeLe());
+        self::assertSame(StatutProposition::Envoyee, $v1->getStatut());
+        self::assertSame(StatutProposition::Brouillon, $v2->getStatut());
+        self::assertNull($v2->getEnvoyeeLe());
         self::assertSame('2027-05-21', $v2->getChoix()['etapes'][0]['dateDebut'] ?? null);
         self::assertSame('2027-05-21', $v2->getExigences()['dateDebut']);
         self::assertSame(StatutDemande::PropositionEnvoyee, $demande->getStatut());
-        $evenement = current(array_filter($evenements, static fn (array $e) => 'proposition' === $e[0]))[1];
-        self::assertSame(['jeton' => $v2->getJetonPublic(), 'version' => 2], $evenement);
+        $this->client->request('GET', '/api/propositions/'.$v1->getJetonPublic());
+        self::assertSame(1, json_decode((string) $this->client->getResponse()->getContent(), true)['version']);
+
+        // Le conseiller l'envoie : la version 1 est remplacée mais reste consultable.
+        $em = static::getContainer()->get(EntityManagerInterface::class);
+        static::getContainer()->get(PropositionService::class)->envoyer($em->find(Proposition::class, $v2->getId()) ?? throw new \LogicException());
+        $em->flush();
+        $em->clear();
+        self::assertSame(StatutProposition::Remplacee, $em->find(Proposition::class, $v1->getId())?->getStatut());
+        self::assertSame(StatutProposition::Envoyee, $em->find(Proposition::class, $v2->getId())?->getStatut());
 
         $this->client->request('GET', '/api/propositions/'.$v1->getJetonPublic());
         $page = json_decode((string) $this->client->getResponse()->getContent(), true);
@@ -133,7 +143,7 @@ final class NouvelleVersionTest extends WebTestCase
         self::assertStringContainsString('{"id":'.$this->logements[0].',"nom":"Hôtel Alfama Vista, chambre double"}', $recherche);
         self::assertStringNotContainsString('a été refusée', $recherche);
         [, $v2] = $this->versions($this->conversation()->getDemande() ?? throw new \LogicException());
-        self::assertSame(StatutProposition::Envoyee, $v2->getStatut());
+        self::assertSame(StatutProposition::Brouillon, $v2->getStatut());
     }
 
     public function testUneCombinaisonQuiNeConvientPlusPasseParLaRecherche(): void
@@ -177,7 +187,9 @@ final class NouvelleVersionTest extends WebTestCase
         $demande->setTypeDeVoyage(TypeDeVoyage::Sejour)->setLieuOuZone('Lisbonne')->setVilleDepart('Lyon')
             ->setDateDebut(new \DateTimeImmutable('2027-05-14'))->setDateFin(new \DateTimeImmutable('2027-05-17'))->setNombreDeJours(3)
             ->setAdultes(2)->setBudgetCentimes(130000)->setEnvies(['gastronomie'])->setContraintes(['fauteuil roulant'])
-            ->setStatut(StatutDemande::PropositionEnvoyee);
+            ->setStatut(StatutDemande::PropositionEnvoyee)
+            // Une proposition n'est envoyée que par le conseiller à qui la demande est attribuée.
+            ->setConseiller($this->em->getRepository(Utilisateur::class)->findOneBy(['email' => 'lea@shortcut.test']));
         $this->version1 = (new Proposition())
             ->setVersion(1)
             ->setStatut(StatutProposition::Envoyee)

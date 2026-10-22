@@ -1,12 +1,15 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
+import { profilQuery } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import { langueDuSite, surChangementDeLangue } from '@/lib/langue'
 import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { ChatContext, type EtatChat, type Reprise } from './chatContext'
 import { messageAccueil, nouvelId, type Message } from './conversation'
 import { type Demande, demandeVide } from './demande'
+import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
+import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
 const CLE = 'chat'
@@ -20,6 +23,8 @@ const etatInitial = (langue = langueDuSite()): EtatChat => ({
   ouvert: false,
   brouillon: '',
   langue,
+  langue: 'fr',
+  questionnaire: { reponses: [], termine: false, transmis: false },
 })
 
 function restaurer(): EtatChat {
@@ -40,6 +45,8 @@ function restaurer(): EtatChat {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatChat>(restaurer)
   const queryClient = useQueryClient()
+  const { data: profil } = useQuery(profilQuery)
+  const estConnecte = profil !== null && profil !== undefined
   const etatCourant = useRef(etat)
   /** Une réponse est en cours : un nouveau message attend qu'elle soit finie. */
   const enCours = useRef(false)
@@ -48,11 +55,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     etatCourant.current = etat
-    const { statut, messages, conversation, jeton, terminee, langue } = etat
+    const {
+      statut,
+      messages,
+      conversation,
+      jeton,
+      terminee,
+      langue,
+      questionnaire,
+      contexteInvite,
+    } = etat
     try {
       sessionStorage.setItem(
         CLE,
-        JSON.stringify({ statut, messages, conversation, jeton, terminee, langue }),
+        JSON.stringify({
+          statut,
+          messages,
+          conversation,
+          jeton,
+          terminee,
+          langue,
+          questionnaire,
+          contexteInvite,
+        }),
       )
     } catch {
       // Sans stockage, la conversation dure le temps de la page.
@@ -93,6 +118,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       annulation.current = controleur
       const actif = () => !controleur.signal.aborted
       let jeton = etatCourant.current.jeton
+      const questionnaire = etatCourant.current.questionnaire
+      const reprendQuestionnaire = Boolean(etatCourant.current.contexteInvite && !questionnaire.transmis)
       let demande: Demande = etatCourant.current.conversation.demande
       let confirme = false
       /** Bulle de l'assistant en cours d'écriture. */
@@ -143,8 +170,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        if (!jeton) {
-          jeton = await ouvrirConversation(controleur.signal, etatCourant.current.langue)
+        if (!jeton || reprendQuestionnaire) {
+          jeton = await ouvrirConversation(
+            reprendQuestionnaire ? questionnaire.reponses : undefined,
+            controleur.signal,
+          )
           const nouveau = jeton
           setEtat((e) => ({ ...e, jeton: nouveau }))
         }
@@ -153,7 +183,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
           if (!(err instanceof ApiError && err.status === 401)) throw err
-          const nouveau = await ouvrirConversation(controleur.signal, etatCourant.current.langue)
+          const nouveau = await ouvrirConversation(undefined, controleur.signal)
           setEtat((e) => ({ ...e, jeton: nouveau }))
           await lire(nouveau)
         }
@@ -193,8 +223,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           },
         )
       }
+      if (reprendQuestionnaire) {
+        await queryClient.invalidateQueries({ queryKey: ['moi', 'demandes'] })
+      }
     },
-    [ajouter, catalogue],
+    [ajouter, catalogue, queryClient],
   )
 
   const envoyer = useCallback(
@@ -207,10 +240,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         ...x,
         statut: 'conversation',
         brouillon: '',
+        contexteInvite: undefined,
+        questionnaire:
+          x.questionnaire.termine && x.contexteInvite
+            ? { ...x.questionnaire, transmis: true }
+            : x.questionnaire,
         reflexion: true,
         messages: [...x.messages, client],
       }))
-      void discuter(propre)
+      void discuter(
+        etatCourant.current.contexteInvite
+          ? `${etatCourant.current.contexteInvite}\n\n${propre}`
+          : propre,
+      )
     },
     [discuter],
   )
@@ -261,11 +303,71 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           ouvert: true,
         })
       },
+      repondreQuestion: (reponse: string) => {
+        setEtat((e) => {
+          if (e.questionnaire.termine || e.questionnaire.reponses.length >= 3) return e
+          const reponses = [...e.questionnaire.reponses, reponse]
+          return {
+            ...e,
+            questionnaire: { reponses, termine: reponses.length === 3, transmis: false },
+            conversation: {
+              demande: demandeDepuisQuestionnaire(reponses, e.conversation.demande),
+            },
+            contexteInvite:
+              reponses.length === 3
+                ? `Préférences recueillies avant la connexion. Type de voyage : ${reponses[0]}. Nombre de voyageurs : ${reponses[1] === 'À deux' ? '2 adultes' : reponses[1]}. Budget indicatif : ${reponses[2]}. Utilise ces informations pour compléter la fiche de demande.`
+                : e.contexteInvite,
+          }
+        })
+      },
     }),
     [queryClient, catalogue],
   )
 
-  const valeur = useMemo(() => ({ ...etat, ...actions, envoyer }), [etat, actions, envoyer])
+  useEffect(() => {
+    if (
+      !estConnecte ||
+      !etat.questionnaire.termine ||
+      etat.questionnaire.transmis ||
+      !etat.contexteInvite
+    ) {
+      return
+    }
+
+    // Le contexte est envoyé dès que la session devient disponible : l'agent peut ainsi remplir
+    // la demande côté serveur avant même que le client ne saisisse une précision supplémentaire.
+    envoyer('Je souhaite commencer mon voyage avec ces premières préférences.')
+  }, [
+    estConnecte,
+    etat.questionnaire.termine,
+    etat.questionnaire.transmis,
+    etat.contexteInvite,
+    envoyer,
+  ])
+
+  const valeur = useMemo(
+    () => {
+      const pretChat = estConnecte && etat.questionnaire.termine && etat.statut === 'accueil'
+      const etatVisible = pretChat
+        ? {
+            ...etat,
+            statut: 'conversation' as const,
+            messages: [
+              ...etat.messages,
+              {
+                id: 'questionnaire-termine',
+                auteur: 'assistant' as const,
+                texte:
+                  'Merci pour ces premières indications. Vous pouvez maintenant préciser votre voyage.',
+              },
+            ],
+          }
+        : etat
+
+      return { ...etatVisible, ...actions, envoyer, estConnecte }
+    },
+    [etat, actions, envoyer, estConnecte],
+  )
 
   return <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
 }

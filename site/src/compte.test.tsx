@@ -54,7 +54,10 @@ describe('connexion', () => {
   }
 
   it('ouvre le backoffice pour un conseiller', async () => {
-    const api = simulerApi({ 'POST /api/connexion': { status: 200, body: LEA } })
+    const api = simulerApi({
+      'POST /api/connexion': { status: 200, body: LEA },
+      'GET /api/moi': { status: 200, body: LEA },
+    })
     afficher('/connexion')
 
     await seConnecter('lea@shortcut.test', 'shortcut')
@@ -219,6 +222,8 @@ describe('déconnexion', () => {
     await user.click(screen.getByRole('button', { name: 'Se déconnecter' }))
 
     expect(await screen.findByRole('link', { name: 'Inscription' })).toBeInTheDocument()
+    expect(sessionStorage.getItem('chat')).toContain('"statut":"accueil"')
+    expect(sessionStorage.getItem('chat')).toContain('"reponses":[]')
     expect(api.fetch).toHaveBeenCalledWith(
       '/api/deconnexion',
       expect.objectContaining({ method: 'POST' }),

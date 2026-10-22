@@ -1,0 +1,41 @@
+{# Collections saisies en tableau (tarifs d'une fiche, fourchettes d'un transporteur) : une ligne par élément, les
+   intitulés une seule fois en tête, au lieu des panneaux repliés d'EasyAdmin. Le champ porte la classe
+   « field-array » : le script d'EasyAdmin ajoute alors les lignes sans chercher de panneau à déplier. #}
+{% block tableau_saisie_widget %}
+    {% set colonnes = prototype is defined ? prototype.children : (form.children|first ? (form.children|first).children : []) %}
+    <div class="bo-grille-saisie" style="--bo-colonnes: {{ colonnes|length }}">
+        <div class="bo-grille-saisie-entete" aria-hidden="true">
+            {% for colonne in colonnes %}<span>{{ colonne.vars.label }}</span>{% endfor %}
+        </div>
+        <div class="ea-form-collection-items">
+            {% for entree in form %}{{ form_row(entree) }}{% endfor %}
+        </div>
+        <p class="bo-grille-saisie-vide bo-vide">{{ attr['data-vide']|default('Aucune ligne pour l’instant.') }}</p>
+    </div>
+    {% if allow_add|default(false) and not disabled %}
+        <button type="button" class="btn btn-link field-collection-add-button">
+            <twig:ea:Icon name="internal:plus" class="pr-1" />
+            {{ attr['data-ajouter']|default('Ajouter une ligne') }}
+        </button>
+    {% endif %}
+{% endblock %}
+
+{% block ligne_saisie_row %}
+    <div class="field-collection-item bo-grille-saisie-ligne {{ not form.vars.valid ? 'is-invalid' }}">
+        {% for enfant in form %}
+            <div class="bo-grille-saisie-cellule">
+                {{ form_label(enfant, null, {label_attr: {class: 'visually-hidden'}}) }}
+                {{ form_widget(enfant) }}
+                {{ form_errors(enfant) }}
+            </div>
+        {% endfor %}
+        {% if form_parent(form).vars.allow_delete|default(false) and not disabled %}
+            <button type="button" class="btn btn-link btn-link-danger field-collection-delete-button" title="Supprimer la ligne">
+                <twig:ea:Icon name="internal:delete" />
+            </button>
+        {% endif %}
+        {% if form.vars.errors|length > 0 %}
+            <div class="bo-grille-saisie-erreurs">{{ form_errors(form) }}</div>
+        {% endif %}
+    </div>
+{% endblock %}

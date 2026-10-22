@@ -3,6 +3,7 @@ import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { TEXTES } from '../textes'
+import { QuestionnaireInvite } from '../QuestionnaireInvite'
 
 /**
  * Invitation à décrire son voyage (maquette E · section assistant). Le premier envoi lance la conversation.
@@ -14,8 +15,10 @@ export function ChatAccueil({
   suggestion?: string
   compact?: boolean
 }) {
-  const { brouillon, setBrouillon, envoyer, langue } = useChat()
+  const { brouillon, setBrouillon, envoyer, langue, estConnecte } = useChat()
   const t = TEXTES[langue].accueil
+
+  if (!estConnecte) return <QuestionnaireInvite />
 
   const ajouterSuggestion = (texte: string) =>
     setBrouillon(brouillon.trim() ? `${brouillon.trim()}, ${texte.toLowerCase()}` : texte)
