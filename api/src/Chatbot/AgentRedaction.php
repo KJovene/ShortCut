@@ -13,7 +13,6 @@ use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Enum\AgentIA;
 use App\Enum\NiveauBudget;
-use App\Proposition\PropositionService;
 use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,7 +31,7 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * conseiller et prévient le client.
  *
  * Après une modification du client (ticket #211), il écrit la version suivante en reprenant le programme précédent ;
- * elle part directement au client et la précédente reste consultable.
+ * elle aussi reste en brouillon jusqu'à ce que le conseiller l'envoie, et le client garde la précédente d'ici là.
  */
 final class AgentRedaction extends Agent
 {
@@ -40,9 +39,9 @@ final class AgentRedaction extends Agent
     public const MODELE = 'claude-sonnet-5-5';
 
     public const MESSAGE_BROUILLON = 'Votre conseiller relit maintenant votre proposition détaillée, avec le programme jour par jour : il vérifie chaque prix et chaque place, puis vous l\'envoie.';
-    public const MESSAGE_NOUVELLE_VERSION = 'Votre proposition détaillée est à jour : la version %d est sur votre page « Ma proposition », la version %d reste consultable.';
+    public const MESSAGE_NOUVELLE_VERSION = 'Votre conseiller relit maintenant la version %d de votre proposition, avec votre changement : il vérifie chaque prix et chaque place, puis vous l\'envoie. D\'ici là, la version %d reste sur votre page « Ma proposition ».';
     public const MESSAGE_BROUILLON_EN = 'Your advisor is now reviewing your detailed proposal, with the day-by-day itinerary: they check every price and every place, then send it to you.';
-    public const MESSAGE_NOUVELLE_VERSION_EN = 'Your detailed proposal is up to date: version %d is on your “My proposal” page, and version %d is still available.';
+    public const MESSAGE_NOUVELLE_VERSION_EN = 'Your advisor is now reviewing version %d of your proposal, with your change: they check every price and every place, then send it to you. Until then, version %d stays on your “My proposal” page.';
 
     /**
      * @param iterable<Outil> $outils
@@ -58,7 +57,6 @@ final class AgentRedaction extends Agent
         private readonly ChiffrageCache $cache,
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
-        private readonly PropositionService $propositions,
     ) {
         parent::__construct($claude, $em, $logger, $outils, $fichierPrompt);
     }
@@ -83,16 +81,11 @@ final class AgentRedaction extends Agent
             }
             $enregistree = $tour->sortie('enregistrer_proposition');
             if (null !== $enregistree) {
-                $envoyee = null === $modification ? null : $this->envoyer($demande, (int) $enregistree['version']);
                 $langue = $demande->getLangue();
-                $message = null === $envoyee
+                $message = null === $modification
                     ? $langue->choisir(self::MESSAGE_BROUILLON, self::MESSAGE_BROUILLON_EN)
-                    : \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), $envoyee->getVersion(), $modification->reference->getVersion());
+                    : \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), (int) $enregistree['version'], $modification->reference->getVersion());
                 $this->ajouterALaConversation($conversation, $message);
-                if (null !== $envoyee) {
-                    // Le site peut ouvrir la nouvelle version ; le lien des précédentes y mène aussi (#210).
-                    yield self::evenement('proposition', ['jeton' => $envoyee->getJetonPublic(), 'version' => $envoyee->getVersion()]);
-                }
                 yield self::evenement('texte', ['texte' => "\n\n".$message]);
 
                 return;
@@ -155,28 +148,6 @@ final class AgentRedaction extends Agent
         }
 
         return implode("\n\n", $sections).AgentRecherche::langue($demande);
-    }
-
-    /**
-     * Envoie au client la version qui vient d'être enregistrée (modification, #211) ; null si la demande ne le permet
-     * plus (acceptée, perdue) : elle reste alors en brouillon pour le conseiller.
-     */
-    private function envoyer(Demande $demande, int $version): ?Proposition
-    {
-        foreach ($demande->getPropositions() as $proposition) {
-            if ($version !== $proposition->getVersion()) {
-                continue;
-            }
-            try {
-                $this->propositions->envoyer($proposition);
-
-                return $proposition;
-            } catch (\DomainException) {
-                return null;
-            }
-        }
-
-        return null;
     }
 
     /**

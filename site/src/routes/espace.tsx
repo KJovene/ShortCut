@@ -71,9 +71,7 @@ function PageEspace() {
     <div className="mx-auto flex max-w-[1376px] flex-col gap-8 px-4 pt-9 pb-16 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-extrabold text-rouille">
-            Mon espace
-          </span>
+          <span className="text-[13px] font-extrabold text-rouille">Mon espace</span>
           <h1 className="m-0 font-display text-[34px] leading-[1.05] font-semibold tracking-[-1px] sm:text-[46px]">
             Bonjour {prenom},{' '}
             {suivi && estEnCours(suivi) ? (
@@ -243,9 +241,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
               </>
             ) : (
               <>
-                <span className="text-xs font-extrabold text-rouille">
-                  Proposition
-                </span>
+                <span className="text-xs font-extrabold text-rouille">Proposition</span>
                 <span className="text-[15px] font-bold">En préparation</span>
                 <span className="text-[13px] text-taupe">
                   Elle apparaîtra ici dès qu’elle sera prête.
@@ -255,9 +251,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
           </div>
 
           <div className="flex flex-col gap-2 rounded-[18px] bg-creme px-[18px] py-4">
-            <span className="text-xs font-extrabold text-rouille">
-              Votre conseiller
-            </span>
+            <span className="text-xs font-extrabold text-rouille">Votre conseiller</span>
             {demande.conseiller ? (
               <>
                 <div className="flex items-center gap-3">

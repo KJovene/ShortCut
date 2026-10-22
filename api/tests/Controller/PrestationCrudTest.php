@@ -123,7 +123,12 @@ final class PrestationCrudTest extends WebTestCase
         // La fiche montre les trois photos (servies sous /uploads/prestations) et les tarifs.
         $crawler = $this->client->request('GET', '/admin/logement/'.$logement->getId());
         self::assertCount(3, $crawler->filter('.ea-lightbox-thumbnail img[src*="/uploads/prestations/"]'));
-        self::assertSelectorTextContains('body', '120,50 € par nuit');
+        self::assertSelectorTextContains('.bo-tarifs', '120,50 € par nuit');
+
+        // La liste résume les tarifs : fourchette des prix, et le premier jour sans tarif dans les douze mois.
+        $this->client->request('GET', '/admin/logement', ['query' => 'Casa Alfama']);
+        self::assertSelectorTextContains('tbody', '120,50 € – 160 € par nuit');
+        self::assertSelectorTextContains('tbody', 'Sans tarif dès le 01/09/2027');
     }
 
     public function testUnePhotoAjouteeEnModificationSAjouteAuxAutres(): void

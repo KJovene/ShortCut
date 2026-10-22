@@ -2,8 +2,6 @@
 
 namespace App\Form;
 
-use App\Repository\DestinationRepository;
-use App\Repository\PrestataireRepository;
 use App\Repository\PrestationRepository;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -14,36 +12,27 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 /**
  * Champ texte avec suggestions (liste <datalist> du navigateur), pour écrire comme ailleurs dans le catalogue
  * sans l'imposer : une valeur nouvelle reste possible, et les variantes sont rapprochées à la lecture (Correspondance).
- * Option `suggestions` :
- * - `destinations` : villes des destinations ;
- * - `departs` : villes de départ déjà saisies (temps de trajet, fourchettes de transport) ;
- * - `envies`, `categories`, `equipements` : valeurs déjà utilisées par les logements et activités.
+ * Option `suggestions` : `envies`, `categories`, `equipements`, valeurs déjà utilisées par les logements et
+ * activités. Les lieux, eux, se choisissent dans un menu (LieuType).
  * Rendu par le bloc `texte_suggere_widget` de templates/admin/form/texte_suggere.html.twig.
  *
  * @extends AbstractType<string>
  */
 final class TexteSuggereType extends AbstractType
 {
-    public function __construct(
-        private readonly DestinationRepository $destinations,
-        private readonly PrestataireRepository $prestataires,
-        private readonly PrestationRepository $prestations,
-    ) {
+    public function __construct(private readonly PrestationRepository $prestations)
+    {
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setRequired('suggestions')
-            ->setAllowedValues('suggestions', ['destinations', 'departs', 'envies', 'categories', 'equipements']);
+            ->setAllowedValues('suggestions', ['envies', 'categories', 'equipements']);
     }
 
     public function buildView(FormView $view, FormInterface $form, array $options): void
     {
-        $view->vars['suggestions'] = $this->trier(match ($options['suggestions']) {
-            'destinations' => $this->villesDesDestinations(),
-            'departs' => $this->villesDeDepart(),
-            default => $this->valeursDesPrestations($options['suggestions']),
-        });
+        $view->vars['suggestions'] = $this->trier($this->valeursDesPrestations($options['suggestions']));
         $view->vars['attr']['list'] = $view->vars['id'].'_suggestions';
         $view->vars['attr']['autocomplete'] = 'off';
     }
@@ -56,31 +45,6 @@ final class TexteSuggereType extends AbstractType
     public function getBlockPrefix(): string
     {
         return 'texte_suggere';
-    }
-
-    /** @return list<string> */
-    private function villesDesDestinations(): array
-    {
-        $villes = [];
-        foreach ($this->destinations->findAll() as $destination) {
-            $villes[] = (string) $destination->getVille();
-        }
-
-        return $villes;
-    }
-
-    /** @return list<string> */
-    private function villesDeDepart(): array
-    {
-        $villes = [];
-        foreach ($this->destinations->findAll() as $destination) {
-            array_push($villes, ...array_map('strval', array_keys($destination->getTempsDeTrajet())));
-        }
-        foreach ($this->prestataires->findAll() as $prestataire) {
-            array_push($villes, ...array_column($prestataire->getFourchettesTransport(), 'depart'));
-        }
-
-        return $villes;
     }
 
     /** @return list<string> */

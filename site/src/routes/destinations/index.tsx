@@ -10,8 +10,6 @@ import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
-import { SautDuO } from '@/components/ui/TitreMisEnValeur'
-
 
 const TYPES = TYPES_DE_VOYAGE.map((t) => t.valeur) as [TypeDeVoyage, ...TypeDeVoyage[]]
 
@@ -48,7 +46,6 @@ export const Route = createFileRoute('/destinations/')({
   component: DestinationsPage,
 })
 
-
 function DestinationsPage() {
   const { mois, temperature, type } = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -83,27 +80,27 @@ function DestinationsPage() {
       </EnTetePage>
 
       <section aria-label="Filtres" className="mx-auto max-w-[1376px] px-4 sm:px-8">
-          <div role="group" aria-label="Type de voyage" className="flex flex-wrap gap-1.5">
-            {[{ valeur: undefined, pluriel: 'Tous' }, ...TYPES_DE_VOYAGE].map((t) => {
-              const actif = t.valeur === type
-              return (
-                <button
-                  key={t.pluriel}
-                  type="button"
-                  aria-pressed={actif}
-                  onClick={() => changer({ type: t.valeur })}
-                  className={cn(
-                    'min-h-11 rounded-full border-[1.5px] px-4 text-sm font-bold',
-                    actif
-                      ? 'border-encre bg-encre text-creme'
-                      : 'border-beige bg-white hover:border-encre',
-                  )}
-                >
-                  {t.pluriel}
-                </button>
-              )
-            })}
-          </div>
+        <div role="group" aria-label="Type de voyage" className="flex flex-wrap gap-1.5">
+          {[{ valeur: undefined, pluriel: 'Tous' }, ...TYPES_DE_VOYAGE].map((t) => {
+            const actif = t.valeur === type
+            return (
+              <button
+                key={t.pluriel}
+                type="button"
+                aria-pressed={actif}
+                onClick={() => changer({ type: t.valeur })}
+                className={cn(
+                  'min-h-11 rounded-full border-[1.5px] px-4 text-sm font-bold',
+                  actif
+                    ? 'border-encre bg-encre text-creme'
+                    : 'border-beige bg-white hover:border-encre',
+                )}
+              >
+                {t.pluriel}
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       <section aria-live="polite" className="mx-auto max-w-[1376px] px-4 py-10 sm:px-8 sm:pb-20">

@@ -24,20 +24,18 @@ final class FourchetteTransportType extends AbstractType
         ];
 
         $builder
-            ->add('depart', TexteSuggereType::class, [
+            // Ville de départ d'un vol, ou aéroport d'une destination pour un transfert sur place.
+            ->add('depart', LieuType::class, [
                 'label' => 'Départ',
-                'suggestions' => 'departs',
-                'attr' => ['placeholder' => 'Paris'],
+                'lieux' => 'transport',
                 'constraints' => [new Assert\NotBlank(message: 'Indiquez la ville de départ.'), new Assert\Length(max: 100)],
             ])
-            ->add('arrivee', TexteSuggereType::class, [
+            ->add('arrivee', LieuType::class, [
                 'label' => 'Arrivée',
-                'suggestions' => 'destinations',
-                'help' => 'La ville de la destination, à choisir dans la liste. Une variante (majuscules, accents, petite faute) est aussi reconnue.',
-                'attr' => ['placeholder' => 'Lisbonne'],
+                'lieux' => 'arrivee',
                 'constraints' => [new Assert\NotBlank(message: 'Indiquez la ville d\'arrivée.'), new Assert\Length(max: 150)],
             ])
-            ->add('minCentimes', MoneyType::class, ['label' => 'Prix minimum par personne'] + $prix)
-            ->add('maxCentimes', MoneyType::class, ['label' => 'Prix maximum par personne'] + $prix);
+            ->add('minCentimes', MoneyType::class, ['label' => 'Prix minimum (€)'] + $prix)
+            ->add('maxCentimes', MoneyType::class, ['label' => 'Prix maximum (€)'] + $prix);
     }
 }

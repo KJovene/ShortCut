@@ -1,0 +1,16 @@
+{# Tarif d'une fiche dans la liste : fourchette des prix en cours et à venir, et jusqu'à quand ils courent. #}
+{% set resume = resume_tarifs(entity.instance.tarifs) %}
+{% if resume is null %}
+    <span class="bo-pastille bo-pastille--alerte">Aucun tarif à venir</span>
+{% else %}
+    <span class="bo-nowrap">
+        <span class="bo-fort">{{ resume.min|euros }}{% if resume.max != resume.min %} – {{ resume.max|euros }}{% endif %}</span>
+        <span class="bo-discret">{{ resume.unite.label|lower }}</span>
+    </span>
+    <br>
+    {% if resume.premierTrou %}
+        <small class="bo-note--alerte bo-nowrap">Sans tarif dès le {{ resume.premierTrou|date('d/m/Y') }}</small>
+    {% else %}
+        <small class="bo-discret bo-nowrap">{% if resume.depuis %}Du {{ resume.depuis|date('d/m/Y') }} au{% else %}Jusqu'au{% endif %} {{ resume.jusquau|date('d/m/Y') }}</small>
+    {% endif %}
+{% endif %}

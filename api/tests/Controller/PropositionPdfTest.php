@@ -134,7 +134,9 @@ final class PropositionPdfTest extends WebTestCase
         self::assertStringContainsString('<html lang="en">', $html);
         self::assertStringContainsString('Estimated proposal', $html);
         self::assertStringContainsString(Proposition::MENTION_EN, $html);
-        self::assertStringContainsString('Santorin, 9 days', $html);
+        // Le titre fait sauter son premier « o » (charte DÉTOUR), comme en français.
+        self::assertStringContainsString('Santorin, 9 days', strip_tags($html));
+        self::assertStringContainsString('Sant<span class="saut-o">o</span>rin, 9 days', $html);
         self::assertStringContainsString('12 June 2027', $html);
         self::assertStringContainsString('Sat 12 Jun', $html);
         self::assertStringContainsString('Day-by-day itinerary', $html);

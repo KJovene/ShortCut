@@ -15,7 +15,7 @@ use App\Enum\Role;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeDeVoyage;
-use App\Form\TexteSuggereType;
+use App\Form\LieuType;
 use App\Repository\DemandeRepository;
 use App\Security\Voter\DemandeVoter;
 use Doctrine\ORM\EntityManagerInterface;
@@ -270,11 +270,16 @@ final class DemandeCrudController extends AbstractCrudController
         yield ChoiceField::new('typeDeVoyage', 'Type de voyage')
             ->setChoices(self::choix(TypeDeVoyage::cases()))
             ->setFormTypeOption('choice_value', static fn (?TypeDeVoyage $t) => $t?->value);
-        yield TextField::new('lieuOuZone', 'Lieu ou zone');
-        // Suggestions : les villes de départ du catalogue, pour que le chiffrage retrouve les vols.
+        // Lieux du catalogue (villes, régions, pays, zones des destinations), que le chatbot sait chercher.
+        yield TextField::new('lieuOuZone', 'Lieu ou zone')
+            ->setFormType(LieuType::class)
+            ->setFormTypeOption('lieux', 'zone')
+            ->setRequired(false);
+        // Villes de départ du catalogue d'abord, pour que le chiffrage retrouve les vols.
         yield TextField::new('villeDepart', 'Ville de départ')
-            ->setFormType(TexteSuggereType::class)
-            ->setFormTypeOption('suggestions', 'departs')
+            ->setFormType(LieuType::class)
+            ->setFormTypeOption('lieux', 'depart')
+            ->setRequired(false)
             ->hideOnIndex();
         yield DateField::new('dateDebut', 'Départ');
         yield DateField::new('dateFin', 'Retour')->hideOnIndex();

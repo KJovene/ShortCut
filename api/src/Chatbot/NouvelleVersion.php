@@ -27,8 +27,8 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  *   recalculée par retenir_combinaison, sans appel à Claude, et présentée au client ;
  * - autre type de voyage, autre zone, autres envies, ou combinaison refusée aux nouvelles exigences : l'agent
  *   Recherche repart de la combinaison précédente et ne cherche que ce que le changement touche.
- * L'agent Rédaction écrit ensuite la version suivante, envoyée directement au client ; la précédente reste
- * consultable (« remplacée »).
+ * L'agent Rédaction écrit ensuite la version suivante, en brouillon : le conseiller la relit et l'envoie, comme la
+ * première (« une personne compose, signe et confirme ») ; d'ici là, le client garde la précédente.
  */
 final class NouvelleVersion
 {

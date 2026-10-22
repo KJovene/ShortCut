@@ -28,8 +28,7 @@ final class TarifPrestationType extends AbstractType
             ->add('debut', DateType::class, ['widget' => 'single_text', 'label' => 'Du'])
             ->add('fin', DateType::class, ['widget' => 'single_text', 'label' => 'Au'])
             ->add('prixCentimes', MoneyType::class, [
-                'label' => $parNuit ? 'Prix par nuit' : 'Prix par personne',
-                'help' => $parNuit ? 'Pour le logement entier, prix d\'achat avant marge.' : 'Prix d\'achat avant marge.',
+                'label' => $parNuit ? 'Prix par nuit (€)' : 'Prix par personne (€)',
                 'currency' => 'EUR',
                 'divisor' => 100,
                 'input' => 'integer',
@@ -37,7 +36,7 @@ final class TarifPrestationType extends AbstractType
 
         if ($parNuit) {
             $builder->add('sejourMinimumNuits', IntegerType::class, [
-                'label' => 'Séjour minimum (nuits)',
+                'label' => 'Nuits minimum',
                 'required' => false,
                 'attr' => ['min' => 1],
             ]);

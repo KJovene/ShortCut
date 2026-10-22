@@ -88,12 +88,16 @@ final class AgentConversation extends Agent
         }
 
         // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a déjà
-        // une proposition, c'est une modification : la version suivante se recalcule à partir d'elle (#211).
+        // une proposition, c'est une modification : la version suivante se recalcule à partir d'elle, en brouillon pour
+        // son conseiller (#211). Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare
+        // la première.
         if (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
             $reference = $this->nouvelleVersion->reference($demande);
-            yield from null === $reference
-                ? $this->recherche->proposer($conversation)
-                : $this->nouvelleVersion->recalculer($conversation, $reference);
+            if (null !== $reference) {
+                yield from $this->nouvelleVersion->recalculer($conversation, $reference);
+            } elseif (null === $demande->getConseiller()) {
+                yield from $this->recherche->proposer($conversation);
+            }
         }
 
         yield self::evenement('fin', new \stdClass());

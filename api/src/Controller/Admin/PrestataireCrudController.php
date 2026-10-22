@@ -47,7 +47,8 @@ final class PrestataireCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Prestataire $p) => (string) $p->getNom())
             ->setDefaultSort(['nom' => 'ASC'])
             ->setSearchFields(['nom', 'contactNom', 'email'])
-            ->addFormTheme('admin/form/texte_suggere.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig')
+            ->addFormTheme('admin/form/tableau_saisie.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -92,10 +93,15 @@ final class PrestataireCrudController extends AbstractCrudController
         yield TextareaField::new('conditionsAnnulation', 'Conditions d\'annulation')->hideOnIndex();
 
         yield FormField::addFieldset('Prix des transports')->hideOnIndex();
+        // Saisie en tableau, une ligne par trajet (admin/form/tableau_saisie.html.twig).
         yield CollectionField::new('fourchettesTransport', 'Fourchettes de prix')
             ->setEntryType(FourchetteTransportType::class)
+            ->setFormTypeOption('entry_options', ['block_prefix' => 'ligne_saisie'])
+            ->setFormTypeOption('block_prefix', 'tableau_saisie')
+            ->setFormTypeOption('attr', ['data-vide' => 'Aucun trajet pour l’instant.', 'data-ajouter' => 'Ajouter un trajet'])
+            ->addCssClass('field-array')
             ->setRequired(false)
-            ->setHelp('Transporteurs seulement : prix d\'un aller-retour ou d\'un transfert, par personne, du moins cher au plus cher. Le chatbot s\'en sert pour estimer le transport.')
+            ->setHelp('Transporteurs seulement : prix par personne d\'un vol aller-retour ou d\'un transfert, du moins cher au plus cher. L\'arrivée est la ville de la destination, à choisir dans la liste. Le chatbot s\'en sert pour estimer le transport.')
             ->onlyOnForms();
         yield Field::new('fourchettesTransport', 'Fourchettes de prix')
             ->setTemplatePath('admin/champ/fourchettes_transport.html.twig')
