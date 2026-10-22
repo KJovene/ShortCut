@@ -16,11 +16,22 @@ export const TEXTES = {
         description:
           "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
       },
-      titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
-      nbDestinations: (n: number) => `${n} destinations sur mesure, partout dans le monde`,
-      desDestinations: 'Des destinations sur mesure, partout dans le monde',
-      filtrer: 'Filtrer par type de voyage',
       tous: 'Tous',
+      themeDesVoyages: 'Thème des voyages',
+      themes: {
+        chaud: {
+          label: 'Voyages chauds',
+          titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
+          aucunVoyage:
+            'Aucun voyage au soleil à la une pour le moment. Décrivez vos envies à notre assistant : il vous en propose un sur mesure.',
+        },
+        froid: {
+          label: 'Voyages froids',
+          titreParDefaut: 'Où irez-vous *chercher la fraîcheur* ?',
+          aucunVoyage:
+            'Aucun voyage au frais à la une pour le moment. Décrivez vos envies à notre assistant : il vous en propose un sur mesure.',
+        },
+      },
       tousLesVoyages: 'Tous les voyages',
       // Carte du monde
       carte: 'Carte des voyages, glissez pour explorer',
@@ -34,7 +45,7 @@ export const TEXTES = {
       brouillon: (ville: string, mois: string) => `Un voyage à ${ville} en ${mois}, `,
       // Bandeau
       bandeauSurtitre: 'Le bandeau des envies',
-      bandeauTitre: 'Tous nos voyages',
+      bandeauTitre: 'Destinations à la une',
       precedents: 'Voyages précédents',
       suivants: 'Voyages suivants',
       // Assistant
@@ -238,11 +249,22 @@ export const TEXTES = {
         description:
           'Describe what you are looking for to our assistant: it suggests a complete, priced trip, which an advisor then confirms.',
       },
-      titreParDefaut: 'Where will you go *to find the sun*?',
-      nbDestinations: (n: number) => `${n} tailor-made destinations, all over the world`,
-      desDestinations: 'Tailor-made destinations, all over the world',
-      filtrer: 'Filter by type of trip',
       tous: 'All',
+      themeDesVoyages: 'Type of trip',
+      themes: {
+        chaud: {
+          label: 'Warm trips',
+          titreParDefaut: 'Where will you go *to find the sun*?',
+          aucunVoyage:
+            'No sunny trips featured right now. Tell our assistant what you are looking for: it will suggest a tailor-made one.',
+        },
+        froid: {
+          label: 'Cool trips',
+          titreParDefaut: 'Where will you go *to find cooler air*?',
+          aucunVoyage:
+            'No cool-weather trips featured right now. Tell our assistant what you are looking for: it will suggest a tailor-made one.',
+        },
+      },
       tousLesVoyages: 'All trips',
       carte: 'Map of trips, swipe to explore',
       glissez: 'Swipe to explore',
@@ -254,7 +276,7 @@ export const TEXTES = {
       construireCeVoyage: 'Plan this trip',
       brouillon: (ville: string, mois: string) => `A trip to ${ville} in ${mois}, `,
       bandeauSurtitre: 'Inspiration',
-      bandeauTitre: 'All our trips',
+      bandeauTitre: 'Featured destinations',
       precedents: 'Previous trips',
       suivants: 'Next trips',
       suggestion: (ville: string) => `Like ${ville}, on my dates`,

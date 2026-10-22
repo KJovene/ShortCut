@@ -14,7 +14,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Traduit en anglais les textes du site public saisis en français dans le backoffice (pages, destinations), pour un
  * visiteur qui a choisi « EN ». Un texte n'est traduit qu'une fois : la traduction est gardée en base (Traduction),
- * où l'agence peut la corriger. Les textes encore inconnus partent ensemble, en un seul appel à Claude.
+ * où l'agence peut la corriger. Les textes encore inconnus partent ensemble, en un seul appel à Claude,
+ * par lots de TEXTES_PAR_APPEL.
  *
  * Si Claude ne répond pas, le texte reste en français : le site s'affiche quand même.
  */
@@ -22,8 +23,13 @@ final class Traducteur
 {
     public const MODELE = 'claude-haiku-5-5';
 
-    /** Au-delà, les textes restants sont traduits à la prochaine visite : la page ne fait pas attendre. */
-    private const CARACTERES_PAR_APPEL = 60_000;
+    /**
+     * Textes envoyés à Claude par requête du site ; les suivants sont traduits aux prochaines visites, et la page ne
+     * fait pas attendre. Un gros lot (tout le catalogue, un millier de textes) prenait une minute et revenait avec
+     * un texte de moins : tout était perdu, à chaque visite.
+     */
+    private const TEXTES_PAR_APPEL = 40;
+    private const CARACTERES_PAR_APPEL = 8_000;
 
     private const CONSIGNE = <<<'TXT'
         You translate the French content of a travel agency website into natural British English for its visitors.
@@ -65,7 +71,8 @@ final class Traducteur
         foreach ($parEmpreinte as $empreinte => $texte) {
             if (isset($connues[$empreinte])) {
                 $resultat[$texte] = $connues[$empreinte];
-            } elseif ($taille + mb_strlen($texte) <= self::CARACTERES_PAR_APPEL || [] === $aTraduire) {
+            } elseif ([] === $aTraduire
+                || (\count($aTraduire) < self::TEXTES_PAR_APPEL && $taille + mb_strlen($texte) <= self::CARACTERES_PAR_APPEL)) {
                 $aTraduire[] = $texte;
                 $taille += mb_strlen($texte);
             }
@@ -73,10 +80,9 @@ final class Traducteur
 
         if ([] !== $aTraduire) {
             foreach ($this->demanderAClaude($aTraduire) as $francais => $anglais) {
-                $this->em->persist(new Traduction($francais, $anglais));
+                $this->traductions->enregistrer($francais, $anglais);
                 $resultat[$francais] = $anglais;
             }
-            $this->em->flush();
         }
 
         return $resultat;

@@ -1,13 +1,10 @@
 import { Link } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { IconChevronDroite, IconChevronGauche } from '@/components/ui/icons'
-import type { TypeDeVoyage } from '@/data/catalogue'
-import { formatEuros, MOIS } from '@/data/catalogue'
 import { libelleTypePrincipal, type DestinationPublique } from '@/features/catalogue/catalogue'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
 import { euros, nomDuMois, useLangue } from '@/lib/langue'
-import { estVisible } from './carte'
 
 interface Props {
   destinations: DestinationPublique[]
@@ -15,8 +12,8 @@ interface Props {
   onActiver: (slug: string) => void
 }
 
-/** Bandeau des envies : tous les voyages du catalogue, à faire défiler, y compris ceux qui n'ont pas d'épingle. */
-export function BandeauVoyages({ destinations, active, type, onActiver }: Props) {
+/** Bandeau des envies : les voyages de la carte (mis en avant, du thème choisi), à faire défiler. */
+export function BandeauVoyages({ destinations, active, onActiver }: Props) {
   const langue = useLangue()
   const t = TEXTES[langue].accueil
   const liste = useRef<HTMLUListElement>(null)

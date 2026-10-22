@@ -16,7 +16,7 @@ import {
 import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
-import { langueDuSite, typesDeVoyage, useLangue } from '@/lib/langue'
+import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/')({
   // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement,
@@ -31,67 +31,28 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
-function HomePage() {
-  const langue = useLangue()
-  const t = TEXTES[langue].accueil
-  const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
-  /** Voyage survolé, sur la carte ou dans le bandeau ; à défaut, l'épingle active. */
-  const [activeSlug, setActiveSlug] = useState<string>()
-  /** Épingle active : la carte la garde quand le bandeau survole un voyage qui n'est pas sur la carte. */
-  const [slugCarte, setSlugCarte] = useState<string>()
-  const { data: catalogue = [] } = useQuery(destinationsQuery(langue))
-  // Titre des contenus du site ; sans l'API, celui des maquettes.
-  const { data: page } = useQuery(pageQuery('accueil', langue))
-  const filtres: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
-    { valeur: 'tous', label: t.tous },
-    ...TYPES_DE_VOYAGE.map((type) => ({ valeur: type.valeur, label: typesDeVoyage(type, langue) })),
-  ]
-  // Destinations « mises en avant » dans le backoffice d'abord : la carte s'ouvre sur la première,
-  // le bandeau et les polaroïds de l'assistant commencent par elles.
-  const destinations = [
-    ...catalogue.filter((d) => d.miseEnAvant),
-    ...catalogue.filter((d) => !d.miseEnAvant),
-  ]
-  const surCarte = destinations.filter(estSurCarte)
-  const active = surCarte.find((d) => d.slug === slugCarte) ?? surCarte[0]
-  const activer = (slug: string) => {
-    setActiveSlug(slug)
-    if (surCarte.some((d) => d.slug === slug)) setSlugCarte(slug)
-  }
-  const survolee = destinations.find((d) => d.slug === activeSlug) ?? active
-  const photos = destinations.filter((d) => d.photo).slice(0, 4)
 /**
  * Les deux thèmes de la carte. Leur titre vient des contenus du site (page « accueil » : « Titre » pour les voyages
  * chauds, « Titre des voyages froids ») ; sans l'API ou sans titre saisi, celui des maquettes.
  */
-const THEMES: { valeur: Theme; label: string; titreParDefaut: string }[] = [
-  {
-    valeur: 'chaud',
-    label: 'Voyages chauds',
-    titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
-  },
-  {
-    valeur: 'froid',
-    label: 'Voyages froids',
-    titreParDefaut: 'Où irez-vous *chercher la fraîcheur* ?',
-  },
-]
+const THEMES: Theme[] = ['chaud', 'froid']
 
 function HomePage() {
+  const langue = useLangue()
+  const t = TEXTES[langue].accueil
   const [theme, setTheme] = useState<Theme>('chaud')
   const [activeSlug, setActiveSlug] = useState('santorin')
   // Carte et bandeau : seulement les voyages mis en avant dans le backoffice, du thème choisi, 10 au plus.
-  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery())
+  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery(langue))
   const voyages = voyagesDuTheme(misesEnAvant, theme)
   const surCarte = voyages.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const { data: page } = useQuery(pageQuery('accueil'))
+  const { data: page } = useQuery(pageQuery('accueil', langue))
   const titre =
-    (theme === 'chaud' ? page?.titre : page?.titreFroid) ||
-    THEMES.find((t) => t.valeur === theme)!.titreParDefaut
+    (theme === 'chaud' ? page?.titre : page?.titreFroid) || t.themes[theme].titreParDefaut
 
   // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
-  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
   const parSlug = (slug: string) => destinations.find((d) => d.slug === slug)
   const photos = ['santorin', 'bali', 'marrakech', 'islande'].map(
     (slug, i) => parSlug(slug) ?? destinations[i],
@@ -107,36 +68,33 @@ function HomePage() {
 
         <div className="mx-auto flex w-full max-w-[1376px] flex-wrap items-end justify-between gap-2.5 px-4 pb-3 sm:gap-4 sm:px-8 sm:pt-1 sm:pb-0">
           <div className="flex flex-col gap-1.5">
-            <span className="hidden text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase sm:block">
-              {destinations.length > 0 ? t.nbDestinations(destinations.length) : t.desDestinations}
-            </span>
             <h1
               id="hero-titre"
               aria-live="polite"
               className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
             >
-              <TitreMisEnValeur texte={page?.titre ?? t.titreParDefaut} />
+              <TitreMisEnValeur texte={titre} />
             </h1>
           </div>
           <div
             role="group"
-            aria-label={t.filtrer}
-            className="scrollbar-none -mr-4 flex gap-1.5 overflow-x-auto pr-4 sm:mr-0 sm:flex-wrap sm:pr-0"
+            aria-label={t.themeDesVoyages}
+            className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(43,29,20,0.08)]"
           >
-            {filtres.map((f) => {
-              const actif = f.valeur === type
+            {THEMES.map((valeur) => {
+              const actif = valeur === theme
               return (
                 <button
-                  key={t.valeur}
+                  key={valeur}
                   type="button"
                   aria-pressed={actif}
-                  onClick={() => setTheme(t.valeur)}
+                  onClick={() => setTheme(valeur)}
                   className={cn(
                     'min-h-[38px] cursor-pointer rounded-full px-4 text-[13px] font-bold sm:min-h-[42px] sm:px-5 sm:text-sm',
                     actif ? 'bg-encre text-creme' : 'text-encre hover:bg-sable',
                   )}
                 >
-                  {t.label}
+                  {t.themes[valeur].label}
                 </button>
               )
             })}
@@ -150,8 +108,7 @@ function HomePage() {
             // Rien à montrer (ou API injoignable) : l'assistant reste la porte d'entrée.
             !isPending && (
               <p className="m-0 max-w-md px-4 text-center text-lg text-taupe">
-                Aucun voyage {theme === 'froid' ? 'au frais' : 'au soleil'} à la une pour le moment.
-                Décrivez vos envies à notre assistant : il vous en propose un sur mesure.
+                {t.themes[theme].aucunVoyage}
               </p>
             )
           )}

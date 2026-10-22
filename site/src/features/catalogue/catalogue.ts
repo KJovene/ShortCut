@@ -1,4 +1,4 @@
-import { queryOptions } from '@tanstack/react-query'
+import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { ApiError } from '@/lib/api'
@@ -168,8 +168,9 @@ export function versDestination(d: DestinationApi): DestinationPublique {
 }
 
 /** En anglais, l'API traduit les textes saisis en français dans le backoffice (nom, description, points forts…). */
-async function lire(chemin: string, langue: Langue) {
-  const response = await fetch(`/api/public/${chemin}${langue === 'en' ? '?langue=en' : ''}`, {
+async function lire(chemin: string, parametres: Record<string, string>, langue: Langue) {
+  const query = new URLSearchParams(langue === 'en' ? { ...parametres, langue } : parametres)
+  const response = await fetch(`/api/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, {
     headers: { Accept: 'application/json' },
   })
   if (!response.ok) {
@@ -178,36 +179,61 @@ async function lire(chemin: string, langue: Langue) {
   return (await response.json()) as unknown
 }
 
-export async function chargerDestinations(langue: Langue = 'fr'): Promise<DestinationPublique[]> {
+/**
+ * Valide chaque destination séparément : une destination mal saisie est écartée (et signalée dans la console)
+ * au lieu de vider toute la liste.
+ */
+function destinationsValides(reponse: unknown): DestinationPublique[] {
   return z
-    .array(DestinationApi)
-    .parse(await lire('destinations', langue))
-    .map(versDestination)
+    .array(z.unknown())
+    .parse(reponse)
+    .flatMap((brute) => {
+      const destination = DestinationApi.safeParse(brute)
+      if (destination.success) return [versDestination(destination.data)]
+      console.warn('Destination ignorée, données incomplètes :', brute, destination.error.issues)
+      return []
+    })
+}
+
+export async function chargerDestinations(langue: Langue = 'fr'): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations', {}, langue))
+}
+
+/** Destinations « mises en avant » dans le backoffice, pour la carte et le bandeau de l'accueil. */
+export async function chargerDestinationsMisesEnAvant(
+  langue: Langue = 'fr',
+): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations', { miseEnAvant: 'true' }, langue))
 }
 
 export async function chargerDestination(
   slug: string,
   langue: Langue = 'fr',
 ): Promise<DestinationPublique> {
-  return versDestination(DestinationApi.parse(await lire(`destinations/${slug}`, langue)))
+  return versDestination(DestinationApi.parse(await lire(`destinations/${slug}`, {}, langue)))
 }
 
+/**
+ * Au changement de langue, les destinations déjà affichées (et leurs photos) restent à l'écran pendant que celles
+ * de l'autre langue se chargent : la traduction peut prendre quelques secondes.
+ */
 export const destinationsQuery = (langue: Langue = langueDuSite()) =>
   queryOptions({
     queryKey: ['catalogue', 'destinations', langue],
     queryFn: () => chargerDestinations(langue),
     staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+  })
+
+export const destinationsMisesEnAvantQuery = (langue: Langue = langueDuSite()) =>
+  queryOptions({
+    queryKey: ['catalogue', 'destinations', 'misesEnAvant', langue],
+    queryFn: () => chargerDestinationsMisesEnAvant(langue),
+    staleTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
   })
 
 export const destinationQuery = (slug: string, langue: Langue = langueDuSite()) =>
-export const destinationsMisesEnAvantQuery = () =>
-  queryOptions({
-    queryKey: ['catalogue', 'destinations', 'misesEnAvant'],
-    queryFn: chargerDestinationsMisesEnAvant,
-    staleTime: 5 * 60_000,
-  })
-
-export const destinationQuery = (slug: string) =>
   queryOptions({
     queryKey: ['catalogue', 'destination', slug, langue],
     queryFn: () => chargerDestination(slug, langue),

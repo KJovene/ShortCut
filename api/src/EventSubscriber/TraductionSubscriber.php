@@ -19,7 +19,7 @@ final class TraductionSubscriber implements EventSubscriberInterface
 
     /** Champs traduits, à toute profondeur de la réponse (une destination et ses exemples, une page). */
     private const CHAMPS = [
-        'titre', 'contenu', 'seoTitre', 'seoDescription',
+        'titre', 'titreFroid', 'contenu', 'seoTitre', 'seoDescription',
         'nom', 'ville', 'pays', 'region', 'description', 'accroche', 'pointsForts', 'photoAlt', 'categorie',
     ];
 
@@ -47,11 +47,12 @@ final class TraductionSubscriber implements EventSubscriberInterface
         }
 
         try {
-            $donnees = json_decode((string) $response->getContent(), true, flags: \JSON_THROW_ON_ERROR);
+            // Objets et non tableaux : un objet vide (tempsDeTrajet sans ville) reste « {} » et non « [] ».
+            $donnees = json_decode((string) $response->getContent(), false, flags: \JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return;
         }
-        if (!\is_array($donnees)) {
+        if (!\is_array($donnees) && !$donnees instanceof \stdClass) {
             return;
         }
 
@@ -69,10 +70,12 @@ final class TraductionSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param array<mixed> $donnees
-     * @param list<string> $textes
+     * Les tableaux JSON sont des listes PHP, les objets JSON des \stdClass.
+     *
+     * @param array<mixed>|\stdClass $donnees
+     * @param list<string>           $textes
      */
-    private static function collecter(array $donnees, array &$textes, bool $aTraduire = false): void
+    private static function collecter(array|\stdClass $donnees, array &$textes, bool $aTraduire = false): void
     {
         foreach ($donnees as $cle => $valeur) {
             $champ = $aTraduire || (\is_string($cle) && \in_array($cle, self::CHAMPS, true));
@@ -80,25 +83,37 @@ final class TraductionSubscriber implements EventSubscriberInterface
                 $textes[] = $valeur;
             } elseif (\is_array($valeur)) {
                 // Liste de textes (pointsForts) : chaque élément est traduit ; ailleurs on descend à la recherche des champs.
-                self::collecter($valeur, $textes, $champ && array_is_list($valeur));
+                self::collecter($valeur, $textes, $champ);
+            } elseif ($valeur instanceof \stdClass) {
+                self::collecter($valeur, $textes);
             }
         }
     }
 
     /**
-     * @param array<mixed>          $donnees
-     * @param array<string, string> $traductions
+     * @param array<mixed>|\stdClass $donnees
+     * @param array<string, string>  $traductions
      *
-     * @return array<mixed>
+     * @return array<mixed>|\stdClass
      */
-    private static function remplacer(array $donnees, array $traductions, bool $aTraduire = false): array
+    private static function remplacer(array|\stdClass $donnees, array $traductions, bool $aTraduire = false): array|\stdClass
     {
         foreach ($donnees as $cle => $valeur) {
             $champ = $aTraduire || (\is_string($cle) && \in_array($cle, self::CHAMPS, true));
             if (\is_string($valeur) && $champ) {
-                $donnees[$cle] = $traductions[$valeur] ?? $valeur;
+                $valeur = $traductions[$valeur] ?? $valeur;
             } elseif (\is_array($valeur)) {
-                $donnees[$cle] = self::remplacer($valeur, $traductions, $champ && array_is_list($valeur));
+                $valeur = self::remplacer($valeur, $traductions, $champ);
+            } elseif ($valeur instanceof \stdClass) {
+                $valeur = self::remplacer($valeur, $traductions);
+            } else {
+                continue;
+            }
+
+            if ($donnees instanceof \stdClass) {
+                $donnees->{$cle} = $valeur;
+            } else {
+                $donnees[$cle] = $valeur;
             }
         }
 

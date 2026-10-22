@@ -39,4 +39,22 @@ class TraductionRepository extends ServiceEntityRepository
 
         return array_column($lignes, 'anglais', 'empreinte');
     }
+
+    /**
+     * Garde une traduction. Deux requêtes du site (toutes les destinations, celles mises en avant) peuvent traduire
+     * le même texte en même temps : la seconde ne fait rien, au lieu d'échouer sur l'empreinte unique.
+     */
+    public function enregistrer(string $francais, string $anglais): void
+    {
+        $this->getEntityManager()->getConnection()->executeStatement(
+            'INSERT INTO traduction (empreinte, francais, anglais, cree_le) VALUES (:empreinte, :francais, :anglais, :creeLe)
+             ON CONFLICT (empreinte) DO NOTHING',
+            [
+                'empreinte' => Traduction::empreinte($francais),
+                'francais' => $francais,
+                'anglais' => $anglais,
+                'creeLe' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+            ],
+        );
+    }
 }

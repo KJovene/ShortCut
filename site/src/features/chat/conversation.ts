@@ -22,9 +22,9 @@ export const messageAccueil = (langue: Langue): Message => ({
   auteur: 'assistant',
   texte:
     langue === 'en'
-      ? 'Hello! I am the agency’s assistant, an AI. Tell me about the trip you are dreaming of. (Vous pouvez aussi m’écrire en français.)'
+      ? 'Hello, I am Détour’s assistant, an artificial intelligence. Tell me about the trip you are dreaming of: beaches, mountains or that little detour you have not thought of yet. (Vous pouvez aussi m’écrire en français.)'
       : // Un client étranger sait dès l'accueil qu'il peut écrire en anglais (US15).
-        'Bonjour ! Je suis l’assistant de l’agence, une IA. Racontez-moi le voyage dont vous rêvez. (Hello! You can also write to me in English.)',
+        'Bonjour, je suis l’assistant de Détour, une intelligence artificielle. Racontez-moi le voyage dont vous rêvez : la plage, les montagnes ou ce petit pas de côté auquel vous n’avez pas encore pensé. (Hello! You can also write to me in English.)',
 })
 
 export const MESSAGE_ACCUEIL: Message = messageAccueil('fr')

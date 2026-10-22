@@ -1,8 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useRef, type CSSProperties } from 'react'
-import type { TypeDeVoyage } from '@/data/catalogue'
 import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
-import { formatEuros, MOIS } from '@/data/catalogue'
 import {
   libelleTypePrincipal,
   type DestinationPublique,
@@ -12,7 +9,6 @@ import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
 import { euros, nomDuMois, useLangue } from '@/lib/langue'
-import { estVisible, position } from './carte'
 import { position } from './carte'
 
 interface Props {
@@ -160,6 +156,35 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
   const { x } = position(active)
   const defilement = useRef<HTMLDivElement>(null)
   const t = TEXTES[useLangue()].accueil
+  const [ouverte, setOuverte] = useState<string | null>(null)
+  const minuteur = useRef<number | undefined>(undefined)
+  const fiche = destinations.find((d) => d.slug === ouverte)
+
+  const garder = () => window.clearTimeout(minuteur.current)
+  const fermer = () => {
+    garder()
+    minuteur.current = window.setTimeout(() => setOuverte(null), DELAI_FERMETURE)
+  }
+  const ouvrir = (slug: string) => {
+    garder()
+    setOuverte(slug)
+    onActiver(slug)
+  }
+  // Le focus qui passe du point à la fiche (ou dans la fiche) la garde ouverte.
+  const quitter = (e: FocusEvent<HTMLElement>) => {
+    if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) fermer()
+  }
+  useEffect(() => () => window.clearTimeout(minuteur.current), [])
+
+  // Échap ferme la fiche.
+  useEffect(() => {
+    if (!ouverte) return
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOuverte(null)
+    }
+    document.addEventListener('keydown', touche)
+    return () => document.removeEventListener('keydown', touche)
+  }, [ouverte])
 
   // Sur mobile, la carte glisse horizontalement : on centre l'épingle active.
   useEffect(() => {
