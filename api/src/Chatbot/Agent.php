@@ -21,8 +21,10 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * - « texte » {texte} : morceau de la réponse, à afficher à la suite ;
  * - « outil » {nom} : un outil s'exécute ;
  * - « demande » {fiche, recapitulatifConfirme} : la fiche demande vient d'être enregistrée ;
- * - « combinaison » {…} : l'agent Recherche a retenu une combinaison (sortie de retenir_combinaison) ;
- * - « erreur » {erreur} : message à afficher au client.
+ * - « piste » {…} : la combinaison retenue, à afficher en carte après le message de l'agent Recherche (Piste) ;
+ * - « recapitulatif » {jeton, …} : le récapitulatif détaillé est enregistré, consultable par son lien ;
+ * - « erreur » {erreur} : message à afficher au client ;
+ * - « fin » {terminee} : la réponse est complète ; terminee si la conversation n'attend plus rien du client.
  */
 abstract class Agent
 {
@@ -152,7 +154,7 @@ abstract class Agent
 
                     $sortie = json_decode((string) $resultatOutil['content'], true, flags: \JSON_THROW_ON_ERROR);
                     $tour->sorties[] = ['nom' => (string) $appelOutil->name, 'sortie' => $sortie];
-                    // La fiche ou la combinaison vient d'être enregistrée : le site met à jour son affichage.
+                    // La fiche vient d'être enregistrée : le site met à jour son récapitulatif.
                     if ('enregistrer_exigences' === $appelOutil->name) {
                         yield self::evenement('demande', [
                             'fiche' => $sortie['fiche'] ?? null,
@@ -160,8 +162,6 @@ abstract class Agent
                             // Le site affiche ses propres textes dans la langue du client (US15).
                             'langue' => $sortie['langue'] ?? Langue::Francais->value,
                         ]);
-                    } elseif ('retenir_combinaison' === $appelOutil->name) {
-                        yield self::evenement('combinaison', $sortie);
                     }
                 }
                 // Tous les résultats dans un seul message, juste après l'appel.
@@ -198,21 +198,28 @@ abstract class Agent
     /**
      * La réponse rejoint les messages affichés et, dans l'historique de l'agent Conversation, la fin de sa dernière
      * réponse : au message suivant du client, il sait ce qui a été proposé.
+     *
+     * @param array<string, mixed>|null $carte
      */
-    protected function ajouterALaConversation(Conversation $conversation, string $reponse): void
+    protected function ajouterALaConversation(Conversation $conversation, string $reponse, ?array $carte = null): void
     {
-        self::ajouterALaReponse($conversation, $reponse);
+        self::ajouterALaReponse($conversation, $reponse, $carte);
         $this->em->flush();
     }
 
-    /** Ajoute la réponse aux messages et à l'historique, sans enregistrer (NouvelleVersion s'en sert aussi). */
-    public static function ajouterALaReponse(Conversation $conversation, string $reponse): void
+    /**
+     * Ajoute la réponse aux messages et à l'historique, sans enregistrer (NouvelleVersion s'en sert aussi). Avec une
+     * carte, le message la porte et son texte rejoint l'historique : l'agent Conversation sait ce que le client voit.
+     *
+     * @param array<string, mixed>|null $carte
+     */
+    public static function ajouterALaReponse(Conversation $conversation, string $reponse, ?array $carte = null): void
     {
         if ('' === trim($reponse)) {
             return;
         }
 
-        $conversation->ajouterMessage('assistant', trim($reponse));
+        $conversation->ajouterMessage('assistant', trim($reponse), $carte);
         // L'historique est fait d'objets (Conversation::getHistorique()) : le dernier message est modifié en place.
         $historique = $conversation->getHistorique();
         $dernier = end($historique);

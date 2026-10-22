@@ -5,7 +5,8 @@ import { MENU_DE_DEMO, PAGES_DE_DEMO } from './pages'
 type Reponse = { status: number; body?: unknown }
 
 /**
- * Remplace fetch par une API simulée : « POST /api/connexion » → réponse.
+ * Remplace fetch par une API simulée : « POST /api/connexion » → réponse. Un corps texte est servi tel quel (flux du
+ * chat), un autre corps en JSON.
  * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages(/{slug}) et
  * GET /api/public/destinations(/{slug}) servent les données de démo et le reste répond 404.
  */
@@ -18,9 +19,14 @@ export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
     // La dernière réponse prévue resservira pour les appels suivants.
     const reponse = (file && file.length > 1 ? file.shift() : file?.[0]) ?? reponseParDefaut(cle)
 
-    return new Response(reponse.body === undefined ? null : JSON.stringify(reponse.body), {
-      status: reponse.status,
-    })
+    // Un corps texte est servi tel quel : le flux Server-Sent Events du chat.
+    const corps =
+      reponse.body === undefined
+        ? null
+        : typeof reponse.body === 'string'
+          ? reponse.body
+          : JSON.stringify(reponse.body)
+    return new Response(corps, { status: reponse.status })
   })
   vi.stubGlobal('fetch', fetch)
 

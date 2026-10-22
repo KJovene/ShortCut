@@ -362,6 +362,8 @@ Sortie (extrait) :
     "equilibre": { "…": "même structure" },
     "confort": { "…": "même structure" }
   },
+  "niveauConseille": "equilibre",
+  "options": [{ "id": 44, "nom": "Randonnée guidée au Teide", "prixEuros": 132, "parPersonneEuros": 33, "participants": 4, "totalAvecEuros": 3214.4 }],
   "budgetClient": { "montantEuros": 3500, "parPersonne": false },
   "budgetInsuffisant": false,
   "arbitrages": [],
@@ -372,7 +374,9 @@ Sortie (extrait) :
 - Chaque prestation renvoie vers sa **fiche** : l'adresse de sa ressource dans l'API du catalogue (`/api/logements/{id}`, `/api/activites/{id}`, `/api/destinations/{id}`), consultable par les conseillers.
 - La **justification** ne reprend que des données : climat aux dates, temps de trajet, envies satisfaites ou non. Seul `pourquoi` est écrit par le modèle.
 - La combinaison est gardée 24 heures avec le chiffrage, sous le même `chiffrageId` (clé `combinaison`) : l'agent de rédaction la retrouve pour écrire la proposition.
-- Le site reçoit la sortie dans l'événement `combinaison` du chat.
+- **`niveauConseille`** : l'équilibré, sauf s'il dépasse le budget du client (l'essentiel) ; c'est le niveau que la rédaction détaille.
+- **`options`** : jusqu'à trois activités compatibles que le niveau conseillé ne contient pas (les suggestions de l'agent d'abord, puis celles qui répondent aux envies), à leur prix de vente pour le groupe, marge comprise, et le total du niveau si le client l'ajoute. Aucune si `budgetInsuffisant`.
+- Le site reçoit une carte de la piste (`Chatbot/Piste`) dans l'événement `piste` du chat, après le message de l'agent.
 
 ### `calculer_budget`
 
@@ -539,6 +543,41 @@ Code : `TransmettreAuConseiller` passe `Conversation::repriseParConseiller` à `
 
 `chercher_destinations` transmet aussi la demande, sans intervention du modèle, quand des dates sont données et qu'aucune destination cherchée n'a de climat saisi sur tout le séjour : motif `donnees_manquantes`, résumé généré, et la sortie contient `donneesManquantes` (`destinations`, `consigne`). La conversation n'est pas reprise : le client peut continuer avec d'autres dates.
 
+### `choisir_options`
+
+Outil de l'agent Conversation : la réponse du client aux options de sa proposition. Le message du client est suivi d'une balise `<proposition_preparee>` (version, niveau détaillé et son total, totaux des trois niveaux, options avec leur identifiant et leur prix pour le groupe, ou « le client a déjà répondu »).
+
+Entrée :
+
+```json
+{
+  "name": "choisir_options",
+  "strict": true,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "activitesAjoutees": {"type": "array", "items": {"type": "integer"}, "description": "Identifiants des options que le client ajoute ; vide s'il n'en veut aucune."},
+      "niveau": {"type": "string", "enum": ["essentiel", "equilibre", "confort", "inchange"]}
+    },
+    "required": ["activitesAjoutees", "niveau"],
+    "additionalProperties": false
+  }
+}
+```
+
+Sortie :
+
+```json
+{
+  "activitesAjoutees": [1662],
+  "niveau": null,
+  "ajouts": ["Cérémonie du thé en kimono (+85 €)"],
+  "consigne": "Dis en une phrase courte que tu mets sa proposition à jour avec son choix ; les nouveaux montants s'affichent après ton message : n'en écris aucun."
+}
+```
+
+Un identifiant qui n'est pas une option de la proposition est refusé, avec la liste des options possibles. L'outil n'écrit rien : après la réponse du modèle, `NouvelleVersion::appliquerLesOptions` garde le voyage tel quel (et note que le client a répondu), ou recalcule la combinaison avec les options en activités demandées et fait rédiger la version suivante.
+
 ## Quel agent voit quels outils
 
 | Outil | Conversation (Haiku 5.5) | Recherche (Sonnet 5.5) | Chiffrage et rédaction (Sonnet 5.5) | Modification (Sonnet 5.5) |
@@ -551,5 +590,6 @@ Code : `TransmettreAuConseiller` passe `Conversation::repriseParConseiller` à `
 | `calculer_budget` | | | | ✓ |
 | `enregistrer_proposition` | | | ✓ | ✓ |
 | `transmettre_au_conseiller` | ✓ | ✓ | ✓ | ✓ |
+| `choisir_options` | ✓ | | | |
 
 Chaque agent ne reçoit que ses outils dans sa requête : l'agent Conversation ne peut ni chiffrer ni enregistrer de proposition. L'agent Chiffrage et rédaction n'appelle pas `calculer_budget` : il reçoit le chiffrage déjà fait par `retenir_combinaison`.

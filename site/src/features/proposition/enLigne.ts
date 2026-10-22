@@ -6,8 +6,9 @@ import type { Langue } from '@/lib/langue'
 import { TEXTES } from './textes'
 
 /**
- * Proposition envoyée par le conseiller, lue par son lien unique : GET /api/propositions/{jeton}
- * (api/src/Confirmation/PropositionClient.php). Les prix d'achat ne sont jamais transmis, seulement les totaux.
+ * Proposition envoyée par le conseiller, ou récapitulatif préparé avec l'assistant avant son envoi, lue par son lien
+ * unique : GET /api/propositions/{jeton} (api/src/Confirmation/PropositionClient.php). Les prix d'achat ne sont
+ * jamais transmis, seulement les totaux.
  */
 
 /** Jeton public d'une proposition : 64 caractères hexadécimaux, non devinable. */
@@ -23,7 +24,8 @@ export const NIVEAUX = [
 export type Niveau = (typeof NIVEAUX)[number]['valeur']
 
 const NIVEAU = z.enum(NIVEAUX.map((n) => n.valeur))
-const ETAT = z.enum(['estimee', 'confirmee'])
+/** « preparee » : récapitulatif préparé avec l'assistant, que le conseiller n'a pas encore relu et envoyé. */
+const ETAT = z.enum(['preparee', 'estimee', 'confirmee'])
 const Budget = z.object({ totalCentimes: z.number(), parPersonneCentimes: z.number() })
 
 export const PropositionEnLigne = z.object({
@@ -71,6 +73,10 @@ export const PropositionEnLigne = z.object({
       photo: z.string().nullable().default(null),
     }),
   ),
+  /** Activités que le client peut encore ajouter, à leur prix pour le groupe. */
+  options: z
+    .array(z.object({ nom: z.string(), prixCentimes: z.number(), parPersonneCentimes: z.number() }))
+    .default([]),
   lignes: z.array(
     z.object({
       type: z.string().nullable(),

@@ -49,6 +49,7 @@ const base: PropositionEnLigne = {
       photo: null,
     },
   ],
+  options: [],
   lignes: [
     {
       type: 'logement',

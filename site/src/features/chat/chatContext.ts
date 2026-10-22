@@ -10,6 +10,10 @@ export interface EtatChat {
   conversation: Conversation
   /** L'assistant est en train d'écrire. */
   reflexion: boolean
+  /** Ce qu'il prépare pendant l'attente : la recherche de la piste, puis la rédaction du récapitulatif. */
+  etape?: EtapeReflexion
+  /** Jeton du dernier récapitulatif détaillé reçu : sa page « Ma proposition ». */
+  recapitulatif?: string
   /** Jeton de la conversation côté API, obtenu au premier message. */
   jeton?: string
   /** Le client a confirmé son récapitulatif : la demande est transmise, la saisie est fermée. */
@@ -30,6 +34,8 @@ export interface EtatChat {
   destinationInvite?: string
 }
 
+export type EtapeReflexion = 'recherche' | 'redaction'
+
 export interface QuestionnaireEtat {
   reponses: string[]
   termine: boolean
@@ -39,7 +45,7 @@ export interface QuestionnaireEtat {
 /** Conversation déjà commencée, reprise depuis l'espace client (« Modifier le voyage »). */
 export interface Reprise {
   jeton: string
-  messages: { role: string; contenu: string }[]
+  messages: { role: string; contenu: string; carte?: unknown }[]
   fiche: Fiche
 }
 

@@ -15,7 +15,13 @@ const STATUTS = [
 ] as const
 export type StatutDemande = (typeof STATUTS)[number]
 
-const Message = z.object({ role: z.string(), contenu: z.string(), le: z.string() })
+/** Un message de la conversation ; la carte (piste, récapitulatif) est relue par le chat à la reprise. */
+const Message = z.object({
+  role: z.string(),
+  contenu: z.string(),
+  le: z.string(),
+  carte: z.unknown().optional(),
+})
 
 export const DemandeClient = z.object({
   id: z.number(),
@@ -34,8 +40,11 @@ export const DemandeClient = z.object({
     .object({
       jeton: z.string(),
       version: z.number(),
-      /** Prix estimés par l'assistant, ou confirmés par le conseiller. */
-      etat: z.enum(['estimee', 'confirmee']),
+      /**
+       * « preparee » : récapitulatif préparé avec l'assistant, pas encore envoyé par le conseiller ; « estimee » :
+       * envoyé, prix estimés ; « confirmee » : prix confirmés.
+       */
+      etat: z.enum(['preparee', 'estimee', 'confirmee']),
       statut: z.string(),
       niveauBudget: z.string(),
       totalCentimes: z.number(),
@@ -105,9 +114,11 @@ export function statutClient(demande: DemandeClient): { label: string; classe: s
     default:
       if (conseiller)
         return { label: `Pris en charge par ${conseiller}`, classe: CLASSE_STATUT.attente }
-      return demande.statut === 'nouvelle'
-        ? { label: 'Demande envoyée', classe: CLASSE_STATUT.info }
-        : { label: 'Proposition reçue', classe: CLASSE_STATUT.attente }
+      if (demande.statut !== 'nouvelle')
+        return { label: 'Proposition reçue', classe: CLASSE_STATUT.attente }
+      return demande.proposition?.etat === 'preparee'
+        ? { label: 'Récapitulatif prêt', classe: CLASSE_STATUT.info }
+        : { label: 'Demande envoyée', classe: CLASSE_STATUT.info }
   }
 }
 

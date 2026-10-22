@@ -79,6 +79,35 @@ final class BudgetCalculator
     }
 
     /**
+     * Prix de vente des activités proposées en option, pour le groupe : participants (selon l'âge minimum) × tarif du
+     * premier jour, marge comprise, sans frais de dossier (déjà comptés dans le voyage). Une activité sans tarif ou
+     * sans participant n'est pas proposée.
+     *
+     * @param list<Prestation> $activites
+     *
+     * @return list<array{activite: Prestation, participants: int, centimes: int, parPersonneCentimes: int}>
+     */
+    public function options(DemandeDeChiffrage $demande, array $activites): array
+    {
+        $exclusions = [];
+        $options = [];
+        foreach ($this->chiffrerLesActivites($demande, $activites, false, $exclusions) as $chiffree) {
+            if (0 === $chiffree->participants) {
+                continue;
+            }
+            $centimes = $chiffree->centimes() + self::marge($chiffree->centimes(), $demande->margePourcentage);
+            $options[] = [
+                'activite' => $chiffree->activite,
+                'participants' => $chiffree->participants,
+                'centimes' => $centimes,
+                'parPersonneCentimes' => (int) round($centimes / $chiffree->participants),
+            ];
+        }
+
+        return $options;
+    }
+
+    /**
      * Niveau équilibré :
      * - sans budget : le logement de prix médian (le moins cher des deux du milieu si leur nombre est pair) et les
      *   seules activités demandées, transport au milieu ;

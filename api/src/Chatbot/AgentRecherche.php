@@ -33,6 +33,9 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  *
  * Après une modification du client (ticket #211, NouvelleVersion), il part de la combinaison de la version précédente
  * et ne cherche que ce que le changement touche ; la rédaction écrit alors la version suivante.
+ *
+ * Le message de l'agent est suivi de la carte de la piste (Piste) : destination, niveaux, totaux, options. Le texte
+ * explique et conseille ; la carte donne les chiffres.
  */
 final class AgentRecherche extends Agent
 {
@@ -56,13 +59,17 @@ final class AgentRecherche extends Agent
     }
 
     /**
-     * @return \Generator<int, ServerEvent>
+     * @param bool $optionsChoisies le client a déjà répondu aux options d'une version précédente
+     *
+     * @return \Generator<int, ServerEvent, mixed, bool> vrai si la conversation attend une réponse du client (options,
+     *                                                   ou ajustements quand rien ne convenait)
      */
-    public function proposer(Conversation $conversation, ?Modification $modification = null): \Generator
+    public function proposer(Conversation $conversation, ?Modification $modification = null, bool $optionsChoisies = false): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Recherche);
         $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => self::premierMessage($conversation, $modification)]]]]);
+        $transmise = false;
 
         // Un paragraphe à part, à la suite de la réponse de l'agent Conversation.
         yield self::evenement('texte', ['texte' => "\n\n"]);
@@ -76,6 +83,7 @@ final class AgentRecherche extends Agent
                     'motif' => 'autre',
                     'resume' => 'La recherche automatique n\'a pas abouti (erreur ou réponse incomplète de l\'agent Recherche) : la proposition est à construire à partir de la fiche demande.',
                 ]);
+                $transmise = true;
                 $tour->reponse = $demande->getLangue()->choisir('Je n\'ai pas pu terminer votre proposition. ', 'I could not finish your proposal. ')
                     .$transmission['messagePourLeClient'];
                 yield self::evenement('texte', ['texte' => $tour->reponse]);
@@ -84,11 +92,19 @@ final class AgentRecherche extends Agent
             $this->ajouterALaConversation($conversation, $tour->reponse);
         }
 
-        // Combinaison présentée au client : l'agent Rédaction en fait la proposition complète (#207).
+        // Combinaison présentée au client : sa carte suit le message, puis l'agent Rédaction en fait le récapitulatif
+        // complet (#207).
         $combinaison = $tour->sortie('retenir_combinaison');
         if (null !== $combinaison && null === $tour->sortie('transmettre_au_conseiller')) {
-            yield from $this->redaction->rediger($conversation, (string) $combinaison['chiffrageId'], $modification);
+            $carte = ['type' => 'piste'] + Piste::depuis($combinaison, $demande);
+            $this->ajouterALaConversation($conversation, Piste::texte($carte, $demande->getLangue()), $carte);
+            yield self::evenement('piste', $carte);
+
+            return yield from $this->redaction->rediger($conversation, (string) $combinaison['chiffrageId'], $modification, [], $optionsChoisies);
         }
+
+        // Rien ne convenait : le client répond aux ajustements proposés, sauf si la demande est passée à un conseiller.
+        return !$transmise && null === $tour->sortie('transmettre_au_conseiller');
     }
 
     /**

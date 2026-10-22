@@ -4,13 +4,33 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { profilQuery } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
-import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
-import { ChatContext, type EtatChat, type Reprise } from './chatContext'
+import { carteSchema, envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
+import { ChatContext, type EtapeReflexion, type EtatChat, type Reprise } from './chatContext'
 import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
 import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
 const CLE = 'chat'
+
+/** Ce que l'assistant est en train de faire, d'après l'outil qui s'exécute : affiché pendant l'attente. */
+function etapeDe(outil: string): EtapeReflexion | undefined {
+  if (outil === 'enregistrer_proposition') return 'redaction'
+  if (outil.startsWith('chercher_') || outil === 'retenir_combinaison') return 'recherche'
+  return undefined
+}
+
+/** Un message gardé par l'API, avec sa carte s'il en a une (piste, récapitulatif). */
+function messageDeLApi(m: Reprise['messages'][number]): Message {
+  if (m.role === 'client') return { id: nouvelId(), auteur: 'client', texte: m.contenu }
+  const carte = carteSchema.safeParse(m.carte)
+  if (!carte.success) return { id: nouvelId(), auteur: 'assistant', texte: m.contenu }
+  if (carte.data.type === 'piste') {
+    const { type, ...piste } = carte.data
+    return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, piste }
+  }
+  const { type, ...recapitulatif } = carte.data
+  return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, recapitulatif }
+}
 
 const etatInitial = (): EtatChat => ({
   statut: 'accueil',
@@ -72,6 +92,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       langue,
       questionnaire,
       contexteInvite,
+      recapitulatif,
       destinationInvite,
     } = etat
     try {
@@ -87,6 +108,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           langue,
           questionnaire,
           contexteInvite,
+          recapitulatif,
           destinationInvite,
         }),
       )
@@ -120,6 +142,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       )
       let demande: Demande = etatCourant.current.conversation.demande
       let confirme = false
+      /** La réponse a apporté un récapitulatif : il tient lieu de confirmation de fin. */
+      let avecRecapitulatif = false
+      let terminee = false
       /** Bulle de l'assistant en cours d'écriture. */
       let bulle: string | undefined
 
@@ -142,10 +167,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               }
               break
             }
-            case 'outil':
+            case 'outil': {
               // Le texte qui suivra l'outil va dans une nouvelle bulle.
               bulle = undefined
-              setEtat((e) => ({ ...e, reflexion: true }))
+              const etape = etapeDe(ev.nom)
+              setEtat((e) => ({ ...e, reflexion: true, etape: etape ?? e.etape }))
+              break
+            }
+            case 'piste': {
+              bulle = undefined
+              const { type, ...piste } = ev
+              ajouter([{ id: nouvelId(), auteur: 'assistant', type, texte: '', piste }], {
+                reflexion: true,
+                etape: 'redaction',
+              })
+              break
+            }
+            case 'recapitulatif': {
+              bulle = undefined
+              avecRecapitulatif = true
+              const { type, ...recapitulatif } = ev
+              ajouter(
+                [{ id: nouvelId(), auteur: 'assistant', type, texte: ev.texte, recapitulatif }],
+                { reflexion: false, etape: undefined, recapitulatif: recapitulatif.jeton },
+              )
+              break
+            }
+            case 'fin':
+              terminee = ev.terminee
               break
             case 'demande': {
               if (ev.fiche) {
@@ -205,24 +254,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       if (!actif()) return
       enCours.current = false
-      setEtat((e) => ({ ...e, reflexion: false }))
-      // Récapitulatif confirmé : la demande est enregistrée, la conversation est aboutie.
-      if (confirme) {
+      setEtat((e) => ({ ...e, reflexion: false, etape: undefined }))
+      // La conversation n'attend plus rien du client : le récapitulatif en tient lieu, sinon une confirmation.
+      if (terminee) {
         ajouter(
-          [
-            {
-              id: nouvelId(),
-              auteur: 'assistant',
-              type: 'confirmation',
-              texte: TEXTES[etatCourant.current.langue].confirmation,
-            },
-          ],
-          {
-            terminee: true,
-          },
+          avecRecapitulatif
+            ? []
+            : [
+                {
+                  id: nouvelId(),
+                  auteur: 'assistant',
+                  type: 'confirmation',
+                  texte: TEXTES[etatCourant.current.langue].confirmation,
+                },
+              ],
+          { terminee: true },
         )
       }
-      if (reprendQuestionnaire) {
+      // « Mon espace » montre la demande, son récapitulatif et la conversation à jour.
+      if (reprendQuestionnaire || confirme || avecRecapitulatif) {
         await queryClient.invalidateQueries({ queryKey: ['moi', 'demandes'] })
       }
     },
@@ -303,18 +353,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           )
         }
         // La conversation de l'API remplace celle du navigateur : mêmes messages, même fiche, même jeton.
+        const repris = messages.map(messageDeLApi)
+        const dernierRecapitulatif = repris.findLast(
+          (m) => 'type' in m && m.type === 'recapitulatif',
+        )
         setEtat({
           ...etatInitial(),
           statut: 'conversation',
           jeton,
-          messages: messages.map((m): Message =>
-            m.role === 'client'
-              ? { id: nouvelId(), auteur: 'client', texte: m.contenu }
-              : { id: nouvelId(), auteur: 'assistant', texte: m.contenu },
-          ),
+          messages: repris,
           conversation: { demande },
           reprise: true,
           ouvert: true,
+          recapitulatif:
+            dernierRecapitulatif && 'recapitulatif' in dernierRecapitulatif
+              ? dernierRecapitulatif.recapitulatif.jeton
+              : undefined,
         })
       },
       repondreQuestion: (reponse: string) => {

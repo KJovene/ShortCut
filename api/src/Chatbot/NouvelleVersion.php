@@ -6,16 +6,15 @@ use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\OutilException;
 use App\Chatbot\Outil\RetenirCombinaison;
 use App\Chiffrage\Montant;
+use App\Confirmation\PropositionClient;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Enum\AgentIA;
-use App\Enum\Langue;
 use App\Enum\NiveauBudget;
 use App\Enum\StatutProposition;
 use App\Enum\TypeProposition;
 use App\Repository\PrestationRepository;
-use App\Texte\Anglais;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ServerEvent;
@@ -28,7 +27,11 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * - autre type de voyage, autre zone, autres envies, ou combinaison refusée aux nouvelles exigences : l'agent
  *   Recherche repart de la combinaison précédente et ne cherche que ce que le changement touche.
  * L'agent Rédaction écrit ensuite la version suivante, en brouillon : le conseiller la relit et l'envoie, comme la
- * première (« une personne compose, signe et confirme ») ; d'ici là, le client garde la précédente.
+ * première (« une personne compose, signe et confirme ») ; d'ici là, le client garde la précédente, ou consulte son
+ * récapitulatif mis à jour si aucune version ne lui a encore été envoyée.
+ *
+ * Les options (appliquerLesOptions) suivent le même chemin : les activités que le client ajoute deviennent des
+ * activités demandées, la combinaison est recalculée au niveau qu'il a choisi, et la rédaction la met à jour.
  */
 final class NouvelleVersion
 {
@@ -46,7 +49,7 @@ final class NouvelleVersion
      * La version dont part une modification : la plus récente qui garde sa combinaison, hors confirmation en cours
      * dans le backoffice. Null pour une demande qui n'a pas encore de proposition.
      */
-    public function reference(Demande $demande): ?Proposition
+    public static function reference(Demande $demande): ?Proposition
     {
         $reference = null;
         foreach ($demande->getPropositions() as $proposition) {
@@ -63,7 +66,7 @@ final class NouvelleVersion
     }
 
     /**
-     * @return \Generator<int, ServerEvent>
+     * @return \Generator<int, ServerEvent, mixed, bool> vrai si la conversation attend une réponse du client
      */
     public function recalculer(Conversation $conversation, Proposition $reference): \Generator
     {
@@ -77,9 +80,10 @@ final class NouvelleVersion
             $this->ajouter($conversation, $message);
             yield self::evenement('texte', ['texte' => "\n\n".$message]);
 
-            return;
+            return false;
         }
 
+        $optionsChoisies = null !== $reference->getOptionsChoisiesLe();
         $modification = new Modification($reference, $changement, $this->combinaison($reference));
         if (!$changement->rechercheNecessaire()) {
             yield self::evenement('outil', ['nom' => 'retenir_combinaison']);
@@ -91,21 +95,98 @@ final class NouvelleVersion
             } catch (OutilException $e) {
                 // Une prestation ne convient plus (tarif, capacité, climat…) : la recherche en trouve une autre.
                 $this->logger->info('Nouvelle version : la combinaison de la version {version} est refusée ({raison}).', ['version' => $reference->getVersion(), 'raison' => $e->getMessage()]);
-                yield from $this->recherche->proposer($conversation, $modification->avecRefus($e->getMessage()));
 
-                return;
+                return yield from $this->recherche->proposer($conversation, $modification->avecRefus($e->getMessage()), $optionsChoisies);
             }
 
-            yield self::evenement('combinaison', $sortie);
-            $message = self::presentation($changement, $sortie, $demande->getLangue());
+            $message = \sprintf(
+                $demande->getLangue()->choisir('Voici votre proposition mise à jour (%s).', 'Here is your updated proposal (%s).'),
+                implode(' ; ', $changement->resume($demande->getLangue())),
+            );
             $this->ajouter($conversation, $message);
             yield self::evenement('texte', ['texte' => "\n\n".$message]);
-            yield from $this->redaction->rediger($conversation, (string) $sortie['chiffrageId'], $modification);
+            yield from $this->presenter($conversation, $sortie);
 
-            return;
+            return yield from $this->redaction->rediger($conversation, (string) $sortie['chiffrageId'], $modification, [], $optionsChoisies);
         }
 
-        yield from $this->recherche->proposer($conversation, $modification);
+        return yield from $this->recherche->proposer($conversation, $modification, $optionsChoisies);
+    }
+
+    /**
+     * La réponse du client aux options (choisir_options) : rien à recalculer s'il garde le voyage tel quel ; sinon la
+     * même combinaison, avec ses options en activités demandées et au niveau qu'il a choisi, puis la rédaction.
+     *
+     * @param list<int> $ajouts
+     *
+     * @return \Generator<int, ServerEvent, mixed, bool> vrai si la conversation attend encore une réponse du client
+     */
+    public function appliquerLesOptions(Conversation $conversation, Proposition $reference, array $ajouts, ?NiveauBudget $niveau): \Generator
+    {
+        $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
+        $langue = $demande->getLangue();
+
+        if ([] === $ajouts && null === $niveau) {
+            $reference->setOptionsChoisiesLe(new \DateTimeImmutable());
+            if ($reference !== PropositionClient::apercu($demande)) {
+                $this->em->flush();
+
+                return false;
+            }
+            $message = $langue->choisir(AgentRedaction::MESSAGE_PRET, AgentRedaction::MESSAGE_PRET_EN).' '.$langue->choisir(AgentRedaction::MESSAGE_SUITE, AgentRedaction::MESSAGE_SUITE_EN);
+            $carte = AgentRedaction::carte($reference, $message, false);
+            Agent::ajouterALaReponse($conversation, $message, $carte);
+            $this->em->flush();
+            yield self::evenement('recapitulatif', $carte);
+
+            return false;
+        }
+
+        $choix = $reference->getChoix();
+        $noms = array_column(array_filter($reference->getOptions(), static fn (array $o): bool => \in_array($o['id'], $ajouts, true)), 'nom');
+        yield self::evenement('outil', ['nom' => 'retenir_combinaison']);
+        try {
+            $sortie = $this->retenirCombinaison->executer(new ContexteAgent($demande, $conversation, AgentIA::Modification), [
+                'destination' => $choix['destination'] ?? '',
+                'etapes' => $choix['etapes'] ?? [],
+                'activitesDemandees' => array_values(array_unique([...$choix['activitesDemandees'] ?? [], ...$ajouts])),
+                'activitesSuggerees' => array_values(array_diff($choix['activitesSuggerees'] ?? [], $ajouts)),
+                'pourquoi' => $choix['pourquoi'] ?? 'Même combinaison, avec les options choisies par le client.',
+                'niveauDetaille' => ($niveau ?? $reference->getNiveauBudget())->value,
+            ]);
+        } catch (OutilException $e) {
+            // Le choix précédent ne passe plus (tarif, dates) : le conseiller lit la demande dans la conversation.
+            $this->logger->warning('Options : la combinaison de la version {version} est refusée ({raison}).', ['version' => $reference->getVersion(), 'raison' => $e->getMessage()]);
+            $reference->setOptionsChoisiesLe(new \DateTimeImmutable());
+            $message = \sprintf($langue->choisir(
+                'Je n\'ai pas pu ajouter %s à votre récapitulatif : je le note pour votre conseiller, qui l\'ajoutera en vérifiant les prix.',
+                'I could not add %s to your summary: I am noting it for your advisor, who will add it while checking the prices.',
+            ), [] === $noms ? $langue->choisir('ce changement', 'this change') : implode($langue->choisir(' et ', ' and '), $noms));
+            $this->ajouter($conversation, $message);
+            yield self::evenement('texte', ['texte' => "\n\n".$message]);
+
+            return false;
+        }
+
+        yield from $this->presenter($conversation, $sortie);
+
+        return yield from $this->redaction->rediger($conversation, (string) $sortie['chiffrageId'], null, $noms, true);
+    }
+
+    /**
+     * La carte de la combinaison recalculée, comme celle de la recherche.
+     *
+     * @param array<string, mixed> $sortie sortie de retenir_combinaison
+     *
+     * @return \Generator<int, ServerEvent>
+     */
+    private function presenter(Conversation $conversation, array $sortie): \Generator
+    {
+        $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
+        $carte = ['type' => 'piste'] + Piste::depuis($sortie, $demande);
+        Agent::ajouterALaReponse($conversation, Piste::texte($carte, $demande->getLangue()), $carte);
+        $this->em->flush();
+        yield self::evenement('piste', $carte);
     }
 
     /**
@@ -151,41 +232,6 @@ final class NouvelleVersion
             'activitesSuggerees' => $choix['activitesSuggerees'] ?? [],
             'pourquoi' => $choix['pourquoi'] ?? 'Mêmes prestations, adaptées à la demande modifiée.',
         ];
-    }
-
-    /**
-     * Le message du client : ce qui change, puis les trois niveaux et leur total, comme la première présentation.
-     *
-     * @param array<string, mixed> $sortie sortie de retenir_combinaison
-     */
-    private static function presentation(Changement $changement, array $sortie, Langue $langue = Langue::Francais): string
-    {
-        $anglais = Langue::Anglais === $langue;
-        $lignes = [\sprintf(
-            $langue->choisir('Voici votre proposition mise à jour (%s) :', 'Here is your updated proposal (%s):'),
-            implode(' ; ', $changement->resume($langue)),
-        )];
-        foreach (NiveauBudget::cases() as $niveau) {
-            $n = $sortie['niveaux'][$niveau->value];
-            $lignes[] = \sprintf(
-                $langue->choisir('- %s : %s, %s', '- %s: %s, %s'),
-                $anglais ? $niveau->labelEnAnglais() : $niveau->label(),
-                implode(', ', array_column([...$n['logements'], ...$n['activites']], 'nom')),
-                Montant::euros((int) round($n['totalEuros'] * 100)),
-            );
-        }
-        if ($sortie['budgetInsuffisant']) {
-            $arbitrages = array_map(
-                static fn (array $a): string => \sprintf('%s (%s)', lcfirst($anglais ? Anglais::traduire($a['libelle']) : $a['libelle']), Montant::euros((int) round($a['totalEuros'] * 100))),
-                $sortie['arbitrages'],
-            );
-            $lignes[] = $anglais
-                ? 'Even the essential level exceeds your budget'.([] === $arbitrages ? '.' : '; to get closer to it: '.implode(', ', $arbitrages).'.')
-                : 'Même le niveau essentiel dépasse votre budget'.([] === $arbitrages ? '.' : ' ; pour vous en rapprocher : '.implode(', ', $arbitrages).'.');
-        }
-        $lignes[] = $sortie['avertissement'];
-
-        return implode("\n", $lignes);
     }
 
     /**
