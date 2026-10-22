@@ -8,6 +8,8 @@ import { MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
+import { SautDuO } from '@/components/ui/TitreMisEnValeur'
+
 
 const TYPES = TYPES_DE_VOYAGE.map((t) => t.valeur) as [TypeDeVoyage, ...TypeDeVoyage[]]
 
@@ -22,11 +24,11 @@ export const Route = createFileRoute('/destinations/')({
   loader: ({ context }) => context.queryClient.ensureQueryData(destinationsQuery()),
   head: () => ({
     meta: [
-      { title: 'Destinations · Où partir, et quand ?' },
+      { title: 'Destinations · Où partir, et comment ?' },
       {
         name: 'description',
         content:
-          'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
+          'Toutes nos destinations, filtrables par type de voyage.',
       },
     ],
   }),
@@ -35,10 +37,6 @@ export const Route = createFileRoute('/destinations/')({
   component: DestinationsPage,
 })
 
-const TEMPERATURES = [15, 20, 25]
-
-const selectClasse =
-  'min-h-11 rounded-xl border-[1.5px] border-beige bg-white px-3 text-[15px] font-semibold text-encre hover:border-encre'
 
 function DestinationsPage() {
   const { mois, temperature, type } = Route.useSearch()
@@ -62,52 +60,16 @@ function DestinationsPage() {
         surtitre="Destinations"
         titre={
           <>
-            Où partir, <em className="font-normal text-terre">et quand</em> ?
+            Où partir, et <SautDuO texte="comment" /> ?
           </>
         }
       >
         <p className="m-0 max-w-[640px]">
-          Choisissez un mois et une température : nous vous montrons les destinations dont le climat
-          convient, d'après les relevés saisis par nos conseillers.
+          Choisissez un type de voyage : nous vous montrons les destinations qui vous conviennent, d'après les relevés saisis par nos conseillers.
         </p>
       </EnTetePage>
 
       <section aria-label="Filtres" className="mx-auto max-w-[1376px] px-4 sm:px-8">
-        <div className="flex flex-wrap items-end gap-3 rounded-[22px] bg-white p-3 shadow-[0_8px_24px_rgba(43,29,20,0.08)] sm:gap-4 sm:p-4">
-          <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-            Mois
-            <select
-              className={selectClasse}
-              value={mois ?? ''}
-              onChange={(e) =>
-                changer({ mois: e.target.value === '' ? undefined : Number(e.target.value) })
-              }
-            >
-              <option value="">Le meilleur mois</option>
-              {MOIS.map((m, i) => (
-                <option key={m} value={i}>
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-            Température moyenne
-            <select
-              className={selectClasse}
-              value={temperature ?? ''}
-              onChange={(e) =>
-                changer({ temperature: e.target.value === '' ? undefined : Number(e.target.value) })
-              }
-            >
-              <option value="">Peu importe</option>
-              {TEMPERATURES.map((t) => (
-                <option key={t} value={t}>
-                  Au moins {t} °C
-                </option>
-              ))}
-            </select>
-          </label>
           <div role="group" aria-label="Type de voyage" className="flex flex-wrap gap-1.5">
             {[{ valeur: undefined, pluriel: 'Tous' }, ...TYPES_DE_VOYAGE].map((t) => {
               const actif = t.valeur === type
@@ -129,7 +91,6 @@ function DestinationsPage() {
               )
             })}
           </div>
-        </div>
       </section>
 
       <section aria-live="polite" className="mx-auto max-w-[1376px] px-4 py-10 sm:px-8 sm:pb-20">

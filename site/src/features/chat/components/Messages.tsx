@@ -5,7 +5,7 @@ import type { Message } from '../conversation'
 import { TEXTES } from '../textes'
 
 const BULLE_ASSISTANT =
-  'rounded-[6px_20px_20px_20px] bg-white shadow-[0_2px_10px_rgba(43,29,20,0.06)]'
+  'rounded-[6px_20px_20px_20px] bg-white shadow-[0_2px_10px_rgba(22,35,63,0.06)]'
 
 export function Bulle({ message }: { message: Message }) {
   if (message.auteur === 'client') {
@@ -31,7 +31,7 @@ function Confirmation({ texte }: { texte: string }) {
   return (
     <div
       role="status"
-      className="flex max-w-full items-start gap-3 self-stretch rounded-[20px] border-2 border-vert bg-white px-4 py-3.5 shadow-[0_2px_10px_rgba(43,29,20,0.06)]"
+      className="flex max-w-full items-start gap-3 self-stretch rounded-[20px] border-2 border-vert bg-white px-4 py-3.5 shadow-[0_2px_10px_rgba(22,35,63,0.06)]"
     >
       <span
         aria-hidden="true"

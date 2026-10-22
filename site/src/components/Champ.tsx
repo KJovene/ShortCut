@@ -39,7 +39,7 @@ export function Champ({
         onChange={(event) => onChange(event.target.value)}
         aria-invalid={erreur ? true : undefined}
         aria-describedby={descriptions || undefined}
-        className="min-h-12 w-full rounded-xl border-[1.5px] border-lin bg-creme px-4 text-[15px] transition-colors hover:border-beige focus:border-terre focus:bg-white focus:outline-none aria-invalid:border-[#8F2A1C]"
+        className="min-h-12 w-full rounded-xl border-[1.5px] border-lin bg-creme px-4 text-[15px] transition-colors hover:border-beige focus:border-terre focus:bg-white focus:outline-none aria-invalid:border-[#A8432C]"
       />
       {aide && (
         <p id={`${id}-aide`} className="m-0 text-[13px] text-taupe">
@@ -47,7 +47,7 @@ export function Champ({
         </p>
       )}
       {erreur && (
-        <p id={`${id}-erreur`} className="m-0 text-[13px] font-semibold text-[#8F2A1C]">
+        <p id={`${id}-erreur`} className="m-0 text-[13px] font-semibold text-[#A8432C]">
           {erreur}
         </p>
       )}
@@ -60,14 +60,14 @@ export function Bandeau({ ton, children }: { ton: 'erreur' | 'succes'; children:
   return ton === 'erreur' ? (
     <p
       role="alert"
-      className="m-0 rounded-2xl bg-[#F9DED6] px-4 py-3 text-sm font-semibold text-[#8F2A1C]"
+      className="m-0 rounded-2xl bg-[#F7E3DD] px-4 py-3 text-sm font-semibold text-[#A8432C]"
     >
       {children}
     </p>
   ) : (
     <p
       role="status"
-      className="m-0 rounded-2xl bg-[#DDF1E4] px-4 py-3 text-sm font-semibold text-[#1F6B3A]"
+      className="m-0 rounded-2xl bg-[#BCD3EA] px-4 py-3 text-sm font-semibold text-[#16233F]"
     >
       {children}
     </p>
