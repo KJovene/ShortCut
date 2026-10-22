@@ -1,0 +1,35 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title 'Températures mensuelles' %}
+{% block content_title %}Températures mensuelles{% endblock %}
+
+{% block main %}
+    <p class="bo-intro">Modifiez la température moyenne de chaque destination, mois par mois.</p>
+
+    <div class="bo-tableau-defilant">
+        <table class="bo-tableau">
+            <thead>
+                <tr>
+                    <th scope="col">Destination</th>
+                    <th scope="col">Pays</th>
+                    <th scope="col">Climat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for destination in destinations %}
+                    <tr>
+                        <td><strong>{{ destination.ville }}</strong></td>
+                        <td>{{ destination.pays }}</td>
+                        <td>
+                            <a class="bo-bouton-secondaire" href="{{ path('admin_climat_edit', {id: destination.id}) }}">
+                                Modifier les températures
+                            </a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="3">Aucune destination.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
