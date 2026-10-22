@@ -78,6 +78,30 @@ final class PageDuSiteCrudTest extends WebTestCase
         $this->fichiersEnvoyes[] = basename($page['photos'][0]);
     }
 
+    public function testLAccueilALeTitreDesVoyagesFroidsModifiable(): void
+    {
+        $accueil = $this->em->getRepository(PageDuSite::class)->findOneBy(['slug' => 'accueil'])
+            ?? (new PageDuSite())->setSlug('accueil')->setTitre('Où irez-vous *chercher le soleil* ?')->setPubliee(true);
+        $this->em->persist($accueil);
+        $this->em->flush();
+
+        $this->client->loginUser($this->compte(Role::Administrateur));
+        $crawler = $this->client->request('GET', '/admin/page-du-site/'.$accueil->getId().'/edit');
+        self::assertResponseIsSuccessful();
+
+        $this->client->submit($crawler->filter('form[name="PageDuSite"]')->form([
+            'PageDuSite[titreFroid]' => 'Cap sur *les aurores* !',
+        ]));
+        self::assertResponseRedirects();
+
+        $this->client->request('GET', '/api/pages/accueil', server: ['HTTP_ACCEPT' => 'application/json']);
+        self::assertSame('Cap sur *les aurores* !', json_decode((string) $this->client->getResponse()->getContent(), true)['titreFroid']);
+
+        // Les autres pages n'ont qu'un titre.
+        $this->client->request('GET', '/admin/page-du-site/'.$this->page->getId().'/edit');
+        self::assertSelectorNotExists('#PageDuSite_titreFroid');
+    }
+
     public function testOnRemplaceUnePhotoEnUnSeulEnregistrement(): void
     {
         // Deux photos à part, pour ne pas toucher aux photos du jeu de démo.

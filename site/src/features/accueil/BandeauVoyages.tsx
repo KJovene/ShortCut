@@ -1,20 +1,18 @@
 import { Link } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { IconChevronDroite, IconChevronGauche } from '@/components/ui/icons'
-import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
+import { formatEuros, MOIS } from '@/data/catalogue'
 import { libelleTypePrincipal, type DestinationPublique } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
-import { estVisible } from './carte'
 
 interface Props {
   destinations: DestinationPublique[]
   active: string
-  type: TypeDeVoyage | 'tous'
   onActiver: (slug: string) => void
 }
 
-/** Bandeau des envies : tous les voyages du catalogue, à faire défiler, y compris ceux qui n'ont pas d'épingle. */
-export function BandeauVoyages({ destinations, active, type, onActiver }: Props) {
+/** Bandeau des envies : les voyages de la carte (mis en avant, du thème choisi), à faire défiler. */
+export function BandeauVoyages({ destinations, active, onActiver }: Props) {
   const liste = useRef<HTMLUListElement>(null)
   const defiler = (sens: 1 | -1) =>
     liste.current?.scrollBy({ left: sens * 504, behavior: 'smooth' })
@@ -31,7 +29,7 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
               id="bandeau-titre"
               className="m-0 font-display text-[28px] font-semibold tracking-[-1px] sm:text-[40px]"
             >
-              Tous nos voyages
+              Destinations à la une
             </h2>
           </div>
           <div className="hidden gap-2 sm:flex">
@@ -65,9 +63,8 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
                 onMouseEnter={() => onActiver(d.slug)}
                 onFocus={() => onActiver(d.slug)}
                 className={cn(
-                  'group relative block h-60 w-[180px] overflow-hidden rounded-[18px] text-white outline-3 outline-offset-3 transition-opacity sm:h-80 sm:w-[236px] sm:rounded-[22px]',
+                  'group relative block h-60 w-[180px] overflow-hidden rounded-[18px] text-white outline-3 outline-offset-3 sm:h-80 sm:w-[236px] sm:rounded-[22px]',
                   d.slug === active ? 'outline-ocre' : 'outline-transparent',
-                  !estVisible(d, type) && 'opacity-40',
                 )}
               >
                 <img

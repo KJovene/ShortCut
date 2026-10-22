@@ -237,12 +237,16 @@ class Destination
     private ?int $moisIdeal = null;
 
     /** Position sur la carte du monde de l'accueil. */
+    // Obligatoires à la saisie : sans elles, la destination n'a pas d'épingle sur la carte. La colonne reste
+    // facultative pour les destinations créées avant cette règle.
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\NotNull(message: 'Indiquez la latitude, pour placer la destination sur la carte.')]
     #[Assert\Range(min: -90, max: 90)]
     #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?float $latitude = null;
 
     #[ORM\Column(type: Types::FLOAT, nullable: true)]
+    #[Assert\NotNull(message: 'Indiquez la longitude, pour placer la destination sur la carte.')]
     #[Assert\Range(min: -180, max: 180)]
     #[Groups(['destination:public', 'public:read', 'destination:ecriture'])]
     private ?float $longitude = null;

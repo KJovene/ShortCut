@@ -45,6 +45,9 @@ function reponseParDefaut(cle: string): Reponse {
   if (cle === 'GET /api/public/destinations') {
     return { status: 200, body: DESTINATIONS_DE_DEMO }
   }
+  if (cle === 'GET /api/public/destinations?miseEnAvant=true') {
+    return { status: 200, body: DESTINATIONS_DE_DEMO.filter((d) => d.miseEnAvant) }
+  }
   const slug = /^GET \/api\/public\/destinations\/(.+)$/.exec(cle)?.[1]
   const destination = DESTINATIONS_DE_DEMO.find((d) => d.slug === slug)
   if (destination) {
