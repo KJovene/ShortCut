@@ -6,14 +6,14 @@ import type { Langue } from '@/lib/langue'
  */
 export const TEXTES = {
   fr: {
-    injoignable: 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
+    injoignable: 'Nous n’arrivons pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
     confirmation:
       'Votre demande est bien prise en compte. Un conseiller de l’agence revient vers vous dans les plus brefs délais avec votre proposition.',
     demandeTransmise: 'Demande transmise',
     assistantEcrit: "L'assistant écrit…",
     fenetre: 'Assistant voyage',
     titre: 'Votre assistant voyage',
-    sousTitre: 'Je suis une IA · un conseiller confirme chaque proposition',
+    sousTitre: 'Une IA · un conseiller vérifie et signe chaque proposition',
     parlerConseiller: 'Parler à un conseiller',
     messageConseiller: 'Je voudrais parler à un conseiller',
     fermer: "Fermer l'assistant",
@@ -24,14 +24,14 @@ export const TEXTES = {
     votreVoyage: 'Votre voyage',
     criteres: (n: number) => `${n} / 9 critères`,
     criteresRenseignes: 'Critères renseignés',
-    aujourdhui: "Aujourd'hui · Je suis une IA, un conseiller confirme chaque proposition",
+    aujourdhui: "Aujourd'hui · L'assistant est une IA, un conseiller vérifie et signe chaque proposition",
     transmise:
       'Votre demande est transmise. Pour préparer un autre voyage, cliquez sur « Recommencer ».',
     votreMessage: 'Votre message',
     placeholder: 'Ajouter une précision ou modifier votre demande…',
     envoyer: 'Envoyer',
     estimations:
-      "Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre conseiller.",
+      "Nos prix sont des estimations datées : rien n'est réservé avant la signature de votre conseiller.",
     recommencer: 'Recommencer',
     piste: 'Piste',
     aPreciser: 'À préciser',
