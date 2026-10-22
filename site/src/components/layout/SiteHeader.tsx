@@ -1,33 +1,41 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
+import { ChoixLangue } from '@/components/ChoixLangue'
 import { MenuCompte } from '@/components/MenuCompte'
+import { TEXTES } from '@/components/textes'
 import { IconFermer, IconMenu } from '@/components/ui/icons'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { menuQuery, ordonnerMenu } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
+import { useLangue } from '@/lib/langue'
 import { Logo } from './Logo'
 
 /** Pages du backoffice, dans leur ordre par défaut : « Ordre dans le menu » les range ou les retire. */
 const PAGES = [
-  { slug: 'destinations', to: '/destinations', label: 'Destinations' },
-  { slug: 'types-de-voyages', to: '/types-de-voyages', label: 'Nos voyages' },
-  { slug: 'agence', to: '/agence', label: "L'agence" },
-  { slug: 'contact', to: '/contact', label: 'Contact' },
+  { slug: 'destinations', to: '/destinations', cle: 'destinations' },
+  { slug: 'types-de-voyages', to: '/types-de-voyages', cle: 'voyages' },
+  { slug: 'agence', to: '/agence', cle: 'agence' },
+  { slug: 'contact', to: '/contact', cle: 'contact' },
 ] as const
 
 export function SiteHeader({ className }: { className?: string }) {
+  const t = TEXTES[useLangue()]
   const pathname = useLocation({ select: (l) => l.pathname })
   const { data: menu } = useQuery(menuQuery)
   const liens = ordonnerMenu(PAGES, menu)
-  // Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu.
-  const liensMobile = [{ to: '/', label: 'Accueil' }, ...liens]
   // Le menu mobile reste ouvert sur la page où il a été ouvert : changer de page le referme.
   const [ouvertSur, setOuvertSur] = useState<string | null>(null)
   const menuOuvert = ouvertSur === pathname
   const setMenuOuvert = (ouvert: boolean) => setOuvertSur(ouvert ? pathname : null)
   const bouton = useRef<HTMLButtonElement>(null)
   const ouvrirAssistant = useOuvrirAssistant()
+
+  /** Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu. */
+  const liensMobile = [
+    { to: '/', label: t.accueil },
+    ...liens.map((lien) => ({ to: lien.to, label: t.liens[lien.cle] })),
+  ]
 
   // Échap referme le menu et rend le focus au bouton.
   useEffect(() => {
@@ -47,7 +55,7 @@ export function SiteHeader({ className }: { className?: string }) {
         <Logo />
 
         <nav
-          aria-label="Navigation principale"
+          aria-label={t.navigationPrincipale}
           className="hidden gap-[26px] text-[15px] font-bold md:flex"
         >
           {liens.map((lien) => (
@@ -57,19 +65,20 @@ export function SiteHeader({ className }: { className?: string }) {
               className="hover:text-terre"
               activeProps={{ className: 'text-terre', 'aria-current': 'page' }}
             >
-              {lien.label}
+              {t.liens[lien.cle]}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
+          <ChoixLangue />
           {/* Connexion et inscription, ou « Mon espace » une fois connecté. */}
           <div className="hidden sm:flex">
             <MenuCompte />
           </div>
           <button
             type="button"
-            aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-label={menuOuvert ? t.fermerMenu : t.ouvrirMenu}
             aria-expanded={menuOuvert}
             aria-controls="menu-mobile"
             ref={bouton}
@@ -84,7 +93,7 @@ export function SiteHeader({ className }: { className?: string }) {
       {menuOuvert && (
         <nav
           id="menu-mobile"
-          aria-label="Navigation principale"
+          aria-label={t.navigationPrincipale}
           className="absolute inset-x-0 top-full border-y border-lin bg-creme px-4 pb-5 shadow-lg md:hidden"
         >
           <ul className="flex flex-col">
@@ -110,7 +119,7 @@ export function SiteHeader({ className }: { className?: string }) {
             }}
             className="mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-terre font-extrabold text-white"
           >
-            Construire mon voyage
+            {t.construireMonVoyage}
           </button>
           <div className="mt-3 flex justify-center sm:hidden">
             <MenuCompte />
