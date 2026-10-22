@@ -130,7 +130,7 @@ final class DestinationCrudTest extends WebTestCase
         self::assertSelectorExists('#Destination_trajets_0_minutes.is-invalid');
     }
 
-    public function testLaFicheMontreLeClimatEtLeLienDeSaisie(): void
+    public function testLaFicheMontreLeClimatQueLeFormulaireSaisitMoisParMois(): void
     {
         $lisbonne = $this->em->getRepository(Destination::class)->findOneBy(['slug' => 'lisbonne']);
         self::assertNotNull($lisbonne);
@@ -140,7 +140,12 @@ final class DestinationCrudTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertCount(12, $crawler->filter('table.bo-tableau tbody tr'));
         self::assertSelectorTextContains('body', 'Paris : 2 h 30');
-        self::assertSelectorExists('a[href$="/admin/destinations/'.$lisbonne->getId().'/periode"]');
+
+        // Le climat se saisit dans le formulaire de la fiche (#269) : une température par mois, déjà remplie.
+        $crawler = $this->client->request('GET', '/admin/destination/'.$lisbonne->getId().'/edit');
+        $mois = $crawler->filter('input[name^="Destination[temperatures][mois"]');
+        self::assertCount(12, $mois);
+        self::assertNotSame('', $mois->first()->attr('value'));
     }
 
     public function testSeulLAdministrateurSupprime(): void

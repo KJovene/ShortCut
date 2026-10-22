@@ -89,9 +89,7 @@ function DestinationPage() {
         <aside className="flex min-w-0 flex-[1_1_340px] flex-col gap-4 self-start rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
           {d.prixAPartirDe !== null && (
             <>
-              <span className="text-[13px] font-extrabold text-ocre">
-                À partir de
-              </span>
+              <span className="text-[13px] font-extrabold text-ocre">À partir de</span>
               <div>
                 <span className="font-display text-5xl font-semibold tracking-[-1px]">
                   {formatEuros(d.prixAPartirDe)}

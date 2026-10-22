@@ -22,7 +22,6 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * - « outil » {nom} : un outil s'exécute ;
  * - « demande » {fiche, recapitulatifConfirme} : la fiche demande vient d'être enregistrée ;
  * - « combinaison » {…} : l'agent Recherche a retenu une combinaison (sortie de retenir_combinaison) ;
- * - « proposition » {jeton, version} : une nouvelle version vient d'être envoyée au client (modification, #211) ;
  * - « erreur » {erreur} : message à afficher au client.
  */
 abstract class Agent
