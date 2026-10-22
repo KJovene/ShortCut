@@ -65,7 +65,7 @@ export function EcranAuthentification({
       <section className="flex flex-[1_1_420px] items-center justify-center md:py-6">
         <div className="flex w-full max-w-[440px] flex-col gap-6 rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(22,35,63,0.10)] sm:p-9">
           <div className="flex flex-col gap-2">
-            <img src="/new-logos/detour-monogramme.svg" alt="" className="mb-2 size-12" />
+            <img src="/new-logos/detour-icone-app.svg" alt="" className="mb-2 size-12" />
             <h1 className="m-0 font-display text-[34px] leading-tight font-semibold tracking-[-0.8px]">
               {titre}
             </h1>
