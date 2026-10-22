@@ -183,7 +183,7 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
   | --- | --- | --- |
   | `texte` | `{"texte": "…"}` | ajoute ce morceau à la bulle de l'assistant |
   | `outil` | `{"nom": "chercher_destinations"}` | peut montrer que l'assistant cherche |
-  | `demande` | `{"fiche": {…}, "recapitulatifConfirme": false}` | met à jour le récapitulatif ; une fois confirmé, lance la proposition |
+  | `demande` | `{"fiche": {…}, "recapitulatifConfirme": false, "langue": "fr"}` | met à jour le récapitulatif ; une fois confirmé, lance la proposition ; `langue` (`fr` ou `en`, US15) règle la langue des textes du chatbot |
   | `combinaison` | `{"destination": {…}, "niveaux": {…}, …}` | la combinaison retenue et ses trois niveaux |
   | `proposition` | `{"jeton": "…", "version": 2}` | une nouvelle version vient d'être envoyée au client : lien vers « Ma proposition » |
   | `erreur` | `{"erreur": "…"}` | affiche le message, déjà rédigé pour le client |

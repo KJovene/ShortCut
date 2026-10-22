@@ -56,7 +56,7 @@ Les tests de sécurité du ticket #181 vérifient ces règles service par servic
 ### Schémas
 
 - Les outils qui **écrivent** (`enregistrer_exigences`, `retenir_combinaison`, `calculer_budget`, `enregistrer_proposition`, `transmettre_au_conseiller`) sont en mode strict de l'API Claude (`"strict": true`) : le modèle respecte exactement leur schéma. Les trois outils de **recherche** sont en mode normal (`"strict": false`) : le serveur valide leur entrée et renvoie une erreur lisible si besoin.
-- Pourquoi ce partage : l'API limite les schémas stricts d'une même requête à 24 paramètres facultatifs et à 16 paramètres nullables. `enregistrer_exigences` en compte 21 à lui seul, et les agents Conversation et Modification reçoivent tous les outils qui écrivent (22 paramètres facultatifs au total).
+- Pourquoi ce partage : l'API limite les schémas stricts d'une même requête à 24 paramètres facultatifs et à 16 paramètres nullables. `enregistrer_exigences` en compte 22 à lui seul (dont `langue`, US15), et les agents Conversation et Modification reçoivent tous les outils qui écrivent (23 paramètres facultatifs au total).
 - Chaque objet a `"additionalProperties": false`. Un champ facultatif est simplement **absent de `required`** (le modèle l'omet), sans type `null`.
 - Vérifié le 16/10/2026 : l'API Claude accepte les outils de chacun des quatre agents (Haiku 5.5 pour Conversation, Sonnet 5.5 pour les autres), et les modèles les appellent avec des entrées conformes.
 - Les bornes (nombres positifs, dates cohérentes, mois de 1 à 12) sont vérifiées par le service avec le composant Validator de Symfony, pas par le schéma.
@@ -82,7 +82,7 @@ Entrée :
 ```json
 {
   "name": "enregistrer_exigences",
-  "description": "Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif.",
+  "description": "Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif. Les textes de la fiche (lieu, ville de départ, envies, contraintes) s'écrivent toujours en français, même si le client écrit en anglais : « Lisbonne », « plage ».",
   "strict": true,
   "input_schema": {
     "type": "object",
@@ -105,7 +105,8 @@ Entrée :
       "envies": {"type": "array", "items": {"type": "string"}, "description": "Activités, ambiance, rythme (« plage », « gastronomie »), y compris l'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Pas la destination : elle va dans lieuOuZone."},
       "contraintes": {"type": "array", "items": {"type": "string"}, "description": "Mobilité réduite (avec le type de besoin), régime, allergie (avec sa gravité), santé, animaux."},
       "client": {"type": "object", "properties": {"prenom": {"type": "string"}, "email": {"type": "string"}, "telephone": {"type": "string"}}, "required": [], "additionalProperties": false},
-      "recapitulatifConfirme": {"type": "boolean"}
+      "recapitulatifConfirme": {"type": "boolean"},
+      "langue": {"type": "string", "enum": ["fr", "en"], "description": "Langue dans laquelle le client écrit : « en » s'il écrit en anglais, « fr » sinon. À envoyer dès son premier message, puis s'il change de langue."}
     },
     "required": ["recapitulatifConfirme"],
     "additionalProperties": false
@@ -125,9 +126,12 @@ Sortie : la fiche telle qu'enregistrée et ce qui manque encore.
     "envies": ["romantique", "piscine privée", "bateau"], "contraintes": ["allergie sévère aux fruits de mer"]
   },
   "exigencesManquantes": ["températures"],
-  "recapitulatifConfirme": false
+  "recapitulatifConfirme": false,
+  "langue": "fr"
 }
 ```
+
+La langue (US15) n'est pas dans la fiche : elle règle la langue des réponses, de la proposition (page « Ma proposition » et PDF) et des textes fixes du site, mais la fiche reste en français pour les outils de recherche et le backoffice.
 
 Service : `DemandeService::enregistrerExigences(ContexteAgent, ExigencesDto)` convertit le budget en centimes, valide la fiche (`Demande` et ses contraintes), crée ou met à jour le `Client` lié à la demande, met à jour `modifieLe`. Quand `recapitulatifConfirme` passe à `true`, l'orchestrateur enchaîne sur l'agent Recherche. La confirmation est refusée (erreur renvoyée au modèle, exigences du message gardées) tant que la fiche n'a pas de type de voyage, de lieu ou de dates (#193).
 

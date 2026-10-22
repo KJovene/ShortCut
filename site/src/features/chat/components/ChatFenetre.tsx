@@ -3,13 +3,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Logo } from '@/components/layout/Logo'
 import { IconBulle, IconFermer, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '../chatContext'
+import { TEXTES } from '../textes'
 import { ID_SECTION_ASSISTANT, useOuvrirAssistant } from '../useOuvrirAssistant'
 import { ChatAccueil } from './ChatAccueil'
 import { ChatWorkspace } from './ChatWorkspace'
 
 /** Fenêtre plein écran du chatbot, ouverte depuis toutes les pages sauf l'accueil. */
 export function ChatFenetre() {
-  const { ouvert, fermer, statut, envoyer } = useChat()
+  const { ouvert, fermer, statut, envoyer, langue } = useChat()
+  const t = TEXTES[langue]
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
   const fermerBouton = useRef<HTMLButtonElement>(null)
   const visible = ouvert && !estAccueil
@@ -36,7 +38,7 @@ export function ChatFenetre() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Assistant voyage"
+      aria-label={t.fenetre}
       className="no-print fixed inset-0 z-50 flex flex-col bg-creme"
     >
       <header className="border-b border-lin">
@@ -50,26 +52,24 @@ export function ChatFenetre() {
               <IconBulle size={20} />
             </span>
             <span className="flex min-w-0 flex-col">
-              <span className="text-[15px] font-extrabold">Votre assistant voyage</span>
-              <span className="truncate text-xs text-taupe">
-                Je suis une IA · un conseiller confirme chaque proposition
-              </span>
+              <span className="text-[15px] font-extrabold">{t.titre}</span>
+              <span className="truncate text-xs text-taupe">{t.sousTitre}</span>
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => envoyer('Je voudrais parler à un conseiller')}
+              onClick={() => envoyer(t.messageConseiller)}
               className="hidden min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold hover:bg-sable md:flex"
             >
               <IconPersonne size={18} />
-              Parler à un conseiller
+              {t.parlerConseiller}
             </button>
             <button
               ref={fermerBouton}
               type="button"
               onClick={fermer}
-              aria-label="Fermer l'assistant"
+              aria-label={t.fermer}
               className="flex size-11 items-center justify-center rounded-full hover:bg-sable"
             >
               <IconFermer size={22} />
@@ -124,7 +124,8 @@ function useSectionAssistantVisible(estAccueil: boolean) {
 
 /** Bouton flottant présent sur toutes les pages, masqué quand la section de l'assistant est déjà à l'écran. */
 export function ChatLanceur() {
-  const { ouvert, statut } = useChat()
+  const { ouvert, statut, langue } = useChat()
+  const t = TEXTES[langue]
   const ouvrirAssistant = useOuvrirAssistant()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
   const estProposition = useLocation({ select: (l) => l.pathname.startsWith('/proposition') })
@@ -139,10 +140,10 @@ export function ChatLanceur() {
     >
       <IconBulle size={22} />
       {statut === 'conversation'
-        ? 'Reprendre la discussion'
+        ? t.reprendre
         : estProposition
-          ? 'Modifier dans le chat'
-          : "Parler à l'assistant"}
+          ? t.modifierDansLeChat
+          : t.parlerAssistant}
     </button>
   )
 }

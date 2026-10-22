@@ -41,6 +41,8 @@ final class AgentRedaction extends Agent
 
     public const MESSAGE_BROUILLON = 'Votre proposition détaillée, avec le programme jour par jour, est prête : votre conseiller la vérifie et vous l\'envoie dès qu\'il l\'a validée.';
     public const MESSAGE_NOUVELLE_VERSION = 'Votre proposition détaillée est à jour : la version %d est sur votre page « Ma proposition », la version %d reste consultable.';
+    public const MESSAGE_BROUILLON_EN = 'Your detailed proposal, with the day-by-day itinerary, is ready: your advisor is checking it and will send it to you as soon as it is approved.';
+    public const MESSAGE_NOUVELLE_VERSION_EN = 'Your detailed proposal is up to date: version %d is on your “My proposal” page, and version %d is still available.';
 
     /**
      * @param iterable<Outil> $outils
@@ -82,9 +84,10 @@ final class AgentRedaction extends Agent
             $enregistree = $tour->sortie('enregistrer_proposition');
             if (null !== $enregistree) {
                 $envoyee = null === $modification ? null : $this->envoyer($demande, (int) $enregistree['version']);
+                $langue = $demande->getLangue();
                 $message = null === $envoyee
-                    ? self::MESSAGE_BROUILLON
-                    : \sprintf(self::MESSAGE_NOUVELLE_VERSION, $envoyee->getVersion(), $modification->reference->getVersion());
+                    ? $langue->choisir(self::MESSAGE_BROUILLON, self::MESSAGE_BROUILLON_EN)
+                    : \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), $envoyee->getVersion(), $modification->reference->getVersion());
                 $this->ajouterALaConversation($conversation, $message);
                 if (null !== $envoyee) {
                     // Le site peut ouvrir la nouvelle version ; le lien des précédentes y mène aussi (#210).
@@ -102,7 +105,8 @@ final class AgentRedaction extends Agent
             'motif' => 'autre',
             'resume' => \sprintf('La rédaction automatique de la proposition n\'a pas abouti (chiffrage %s) : programme jour par jour à rédiger à partir de la combinaison présentée au client.', $chiffrageId),
         ]);
-        $message = 'Je n\'ai pas pu mettre en forme votre programme détaillé. '.$transmission['messagePourLeClient'];
+        $message = $demande->getLangue()->choisir('Je n\'ai pas pu mettre en forme votre programme détaillé. ', 'I could not put together your detailed itinerary. ')
+            .$transmission['messagePourLeClient'];
         $conversation->ajouterMessage('assistant', $message);
         $this->em->flush();
         yield self::evenement('texte', ['texte' => "\n\n".$message]);
@@ -150,7 +154,7 @@ final class AgentRedaction extends Agent
             $sections[] = $modification->pourLaRedaction();
         }
 
-        return implode("\n\n", $sections);
+        return implode("\n\n", $sections).AgentRecherche::langue($demande);
     }
 
     /**

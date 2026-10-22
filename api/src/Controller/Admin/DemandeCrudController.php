@@ -9,6 +9,7 @@ use App\Entity\Demande;
 use App\Entity\Prestation;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
+use App\Enum\Langue;
 use App\Enum\NiveauBudget;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
@@ -259,6 +260,11 @@ final class DemandeCrudController extends AbstractCrudController
         yield $this->estAdministrateur() ? $conseiller : $conseiller->hideOnForm();
         yield DateTimeField::new('creeLe', 'Reçue le')->hideOnForm();
         yield DateTimeField::new('modifieLe', 'Modifiée le')->onlyOnDetail();
+        // Le client a dialogué en anglais (US15) : le conseiller lui répond dans sa langue.
+        yield ChoiceField::new('langue', 'Langue du client')
+            ->setChoices(self::choix(Langue::cases()))
+            ->setFormTypeOption('choice_value', static fn (?Langue $l) => $l?->value)
+            ->onlyOnDetail();
 
         yield FormField::addFieldset('Voyage');
         yield ChoiceField::new('typeDeVoyage', 'Type de voyage')
@@ -503,7 +509,7 @@ final class DemandeCrudController extends AbstractCrudController
     /**
      * Libellés des cas d'une énumération, pour les listes déroulantes et les filtres.
      *
-     * @param list<StatutDemande|TypeDeVoyage> $cas
+     * @param list<StatutDemande|TypeDeVoyage|Langue> $cas
      *
      * @return array<string, StatutDemande|TypeDeVoyage|string>
      */

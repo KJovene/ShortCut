@@ -22,6 +22,7 @@ class Proposition
 {
     /** Mention affichée avec toute première proposition (décision D11). */
     public const MENTION = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
+    public const MENTION_EN = 'First proposal, estimated prices, to be confirmed by your advisor.';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -6,13 +6,9 @@ import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { ChatContext, type EtatChat, type Reprise } from './chatContext'
 import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
 import { type Demande, demandeVide } from './demande'
+import { TEXTES } from './textes'
 
 const CLE = 'chat'
-
-const INJOIGNABLE = 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.'
-
-const CONFIRMATION =
-  'Votre demande est bien prise en compte. Un conseiller de l’agence revient vers vous dans les plus brefs délais avec votre proposition.'
 
 const etatInitial = (): EtatChat => ({
   statut: 'accueil',
@@ -21,6 +17,7 @@ const etatInitial = (): EtatChat => ({
   reflexion: false,
   ouvert: false,
   brouillon: '',
+  langue: 'fr',
 })
 
 function restaurer(): EtatChat {
@@ -49,11 +46,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     etatCourant.current = etat
-    const { statut, messages, conversation, jeton, terminee } = etat
+    const { statut, messages, conversation, jeton, terminee, langue } = etat
     try {
       sessionStorage.setItem(
         CLE,
-        JSON.stringify({ statut, messages, conversation, jeton, terminee }),
+        JSON.stringify({ statut, messages, conversation, jeton, terminee, langue }),
       )
     } catch {
       // Sans stockage, la conversation dure le temps de la page.
@@ -116,6 +113,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setEtat((e) => ({ ...e, conversation: { ...e.conversation, demande: nouvelle } }))
               }
               confirme ||= ev.recapitulatifConfirme
+              // Le client écrit en anglais : les textes du chatbot passent en anglais (US15).
+              setEtat((e) => (e.langue === ev.langue ? e : { ...e, langue: ev.langue }))
               break
             }
             case 'erreur':
@@ -147,7 +146,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             {
               id: nouvelId(),
               auteur: 'assistant',
-              texte: err instanceof ApiError ? err.message : INJOIGNABLE,
+              texte:
+                err instanceof ApiError
+                  ? err.message
+                  : TEXTES[etatCourant.current.langue].injoignable,
             },
           ])
         }
@@ -161,7 +163,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       // Récapitulatif confirmé : la demande est enregistrée, la conversation est aboutie.
       if (confirme) {
         ajouter(
-          [{ id: nouvelId(), auteur: 'assistant', type: 'confirmation', texte: CONFIRMATION }],
+          [
+            {
+              id: nouvelId(),
+              auteur: 'assistant',
+              type: 'confirmation',
+              texte: TEXTES[etatCourant.current.langue].confirmation,
+            },
+          ],
           {
             terminee: true,
           },

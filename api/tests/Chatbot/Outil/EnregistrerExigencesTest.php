@@ -8,6 +8,7 @@ use App\Chatbot\Outil\OutilException;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
+use App\Enum\Langue;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -54,6 +55,21 @@ final class EnregistrerExigencesTest extends KernelTestCase
         $this->outil->executer($this->contexte, ['client' => ['email' => 'julien@shortcut.test'], 'recapitulatifConfirme' => false]);
 
         self::assertSame('julien@shortcut.test', $this->contexte->demande->getClient()?->getEmail());
+    }
+
+    public function testLaLangueDuClientEstEnregistree(): void
+    {
+        $sortie = $this->outil->executer($this->contexte, ['langue' => 'en', 'recapitulatifConfirme' => false]);
+
+        self::assertSame(Langue::Anglais, $this->contexte->demande->getLangue());
+        self::assertSame('en', $sortie['langue']);
+        self::assertArrayNotHasKey('langue', $sortie['fiche']);
+    }
+
+    public function testUneLangueInconnueEstRefusee(): void
+    {
+        $this->expectException(OutilException::class);
+        $this->outil->executer($this->contexte, ['langue' => 'de', 'recapitulatifConfirme' => false]);
     }
 
     public function testUnClientAvecTroisVoyagesEnCoursNEstPasRattache(): void

@@ -2,8 +2,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconCoche, IconTelecharger } from '@/components/ui/icons'
-import { formatEuros, labelType, MOIS } from '@/data/catalogue'
+import { formatEuros } from '@/data/catalogue'
 import { cn } from '@/lib/cn'
+import { type Langue, LOCALE, nomDuMois, typeDeVoyage } from '@/lib/langue'
 import {
   type Changement,
   type Comparaison,
@@ -24,16 +25,21 @@ import {
   versionQuery,
   voyageurs,
 } from './enLigne'
+import { TEXTES, type Textes } from './textes'
 
-const dateLongue = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(
-    new Date(iso),
-  )
+const dateLongue = (iso: string, langue: Langue) =>
+  new Intl.DateTimeFormat(LOCALE[langue], {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(iso))
 
-const dateJour = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(
-    new Date(iso),
-  )
+const dateJour = (iso: string, langue: Langue) =>
+  new Intl.DateTimeFormat(LOCALE[langue], {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(new Date(iso))
 
 const euros = (centimes: number) => formatEuros(centimes / 100)
 
@@ -45,7 +51,8 @@ function versionPrecedente(versions: Proposition['versions'], numero: number) {
 
 /**
  * Page « Ma proposition » d'une proposition envoyée par le conseiller (ticket #208). Quand le client a reçu plusieurs
- * versions (#211), il en choisit une et la compare à une autre : ce qui a changé est surligné (#212).
+ * versions (#211), il en choisit une et la compare à une autre : ce qui a changé est surligné (#212). Elle est dans la
+ * langue où le client a dialogué avec le chatbot (US15).
  *
  * @param jeton le jeton du lien ouvert, clé de la page en cache
  * @param proposition la version qui fait foi
@@ -69,6 +76,7 @@ export function PropositionEnLigne({
     ...versionQuery(jeton, numeroCompare ?? 0),
     enabled: numeroCompare !== null && numeroCompare !== actuelle.version,
   })
+  const t = TEXTES[actuelle.langue]
 
   const p = numero === actuelle.version ? actuelle : affichee.data
   const reference =
@@ -86,21 +94,20 @@ export function PropositionEnLigne({
 
   if (!p) {
     return (
-      <div className="pb-16">
+      <div className="pb-16" lang={actuelle.langue}>
         <ChoixDesVersions
           versions={actuelle.versions}
           numero={numero}
           numeroCompare={numeroCompare}
           onAfficher={afficher}
           onComparer={setNumeroCompare}
+          langue={actuelle.langue}
         />
         <p
           role={affichee.isError ? 'alert' : 'status'}
           className="mx-auto m-0 max-w-[1376px] px-4 py-8 text-taupe sm:px-8"
         >
-          {affichee.isError
-            ? `La version ${numero} n’est pas disponible.`
-            : `Chargement de la version ${numero}…`}
+          {affichee.isError ? t.versionIndisponible(numero) : t.chargementVersion(numero)}
         </p>
       </div>
     )
@@ -120,6 +127,7 @@ export function PropositionEnLigne({
           onAfficher={afficher}
           onComparer={setNumeroCompare}
           chargement={numeroCompare !== null && !reference}
+          langue={actuelle.langue}
         />
       }
       onActuelle={() => afficher(actuelle.version)}
@@ -142,6 +150,8 @@ function Page({
   choix: React.ReactNode
   onActuelle: () => void
 }) {
+  const langue = p.langue
+  const t = TEXTES[langue]
   const destination = p.destination
   const mois = p.demande.dateDebut ? new Date(p.demande.dateDebut).getMonth() : null
   const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
@@ -150,7 +160,7 @@ function Page({
   const activites = p.prestations.filter((x) => x.type === 'activite')
 
   return (
-    <div className="pb-16">
+    <div className="pb-16" lang={langue}>
       {/* Visible sans défiler : prix estimés tant que le conseiller n'a pas confirmé. */}
       <div
         className={cn(
@@ -165,7 +175,7 @@ function Page({
           )}
         >
           {p.mention}
-          {!confirmee && ' Confirmation annoncée sous 2 jours ouvrés.'}
+          {!confirmee && t.confirmationAnnoncee}
         </p>
       </div>
 
@@ -176,13 +186,13 @@ function Page({
           role="status"
           className="mx-auto m-0 mt-4 flex max-w-[1376px] flex-wrap items-center gap-x-3 gap-y-1 px-4 text-sm font-semibold text-rouille sm:px-8"
         >
-          Vous consultez la version {p.version}, remplacée par la version {actuelle.version}.
+          {t.versionRemplacee(p.version, actuelle.version)}
           <button
             type="button"
             onClick={onActuelle}
             className="rounded-full underline underline-offset-2 hover:text-encre"
           >
-            Voir la version actuelle
+            {t.voirActuelle}
           </button>
         </p>
       )}
@@ -192,8 +202,7 @@ function Page({
           role="status"
           className="mx-auto m-0 mt-4 max-w-[1376px] px-4 text-sm font-semibold text-rouille sm:px-8"
         >
-          Le lien ouvert concernait la version {p.versionDemandee} : voici la version {p.version}{' '}
-          qui la remplace.
+          {t.lienRemplace(p.versionDemandee, p.version)}
         </p>
       )}
 
@@ -201,21 +210,21 @@ function Page({
         <div className="flex min-w-0 flex-[1_1_560px] flex-col gap-4">
           <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
             Version {p.version} ·{' '}
-            {dateLongue(confirmee && p.confirmeeLe ? p.confirmeeLe : p.creeLe)}
-            {p.demande.typeDeVoyage && ` · ${labelType(p.demande.typeDeVoyage)}`}
+            {dateLongue(confirmee && p.confirmeeLe ? p.confirmeeLe : p.creeLe, langue)}
+            {p.demande.typeDeVoyage && ` · ${typeDeVoyage(p.demande.typeDeVoyage, langue)}`}
           </span>
           <h1 className="m-0 font-display text-[40px] leading-[1.05] font-semibold tracking-[-1.5px] sm:text-[52px]">
             {titreProposition(p)}
           </h1>
           {p.pourquoi && <p className="m-0 text-lg leading-relaxed text-taupe">{p.pourquoi}</p>}
           <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
-            <Chiffre label="Voyageurs" valeur={voyageurs(p.demande)} />
+            <Chiffre label={t.voyageurs} valeur={voyageurs(p.demande, langue)} />
             {p.demande.dateDebut && (
-              <Chiffre label="Départ" valeur={dateLongue(p.demande.dateDebut)} />
+              <Chiffre label={t.depart} valeur={dateLongue(p.demande.dateDebut, langue)} />
             )}
             {mois !== null && temperature !== null && (
               <Chiffre
-                label={`Température moyenne en ${MOIS[mois]}`}
+                label={t.temperatureEn(nomDuMois(mois, langue))}
                 valeur={`${Math.round(temperature)} °C`}
               />
             )}
@@ -228,16 +237,18 @@ function Page({
               className="flex min-h-11 items-center gap-2 rounded-full border-[1.5px] border-encre px-[18px] text-sm font-bold text-encre no-underline hover:bg-sable"
             >
               <IconTelecharger size={18} />
-              Télécharger le PDF
+              {t.telechargerPdf}
             </a>
             <Link
               to="/espace"
               className="flex min-h-11 items-center rounded-full px-[18px] text-sm font-bold text-rouille hover:bg-sable"
             >
-              Suivre mon voyage
+              {t.suivreVoyage}
             </Link>
           </div>
-          {comparaison && <CeQuiAChange comparaison={comparaison} versionAffichee={p.version} />}
+          {comparaison && (
+            <CeQuiAChange comparaison={comparaison} versionAffichee={p.version} langue={langue} />
+          )}
         </div>
         {destination?.photo ? (
           <img
@@ -252,7 +263,7 @@ function Page({
 
       <section className="mx-auto flex max-w-[1376px] flex-wrap items-start gap-8 px-4 pt-4 sm:px-8">
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
-          <h2 className="m-0 font-display text-[30px] font-semibold">Programme jour par jour</h2>
+          <h2 className="m-0 font-display text-[30px] font-semibold">{t.programme}</h2>
           <ol className="m-0 flex list-none flex-col overflow-hidden rounded-[22px] bg-white p-0 shadow-[0_8px_24px_rgba(43,29,20,0.08)]">
             {[
               ...p.programme.map((j) => ({ j, changement: comparaison?.jours.get(j.jour) })),
@@ -269,8 +280,11 @@ function Page({
                 )}
               >
                 <span className="flex w-16 shrink-0 flex-col">
-                  <span className="font-display font-semibold text-terre">J{j.jour}</span>
-                  <span className="text-xs text-taupe">{dateJour(j.date)}</span>
+                  <span className="font-display font-semibold text-terre">
+                    {t.jour}
+                    {j.jour}
+                  </span>
+                  <span className="text-xs text-taupe">{dateJour(j.date, langue)}</span>
                 </span>
                 <span className="flex flex-1 flex-col gap-0.5">
                   <strong className={cn('text-base', changement === 'retire' && 'line-through')}>
@@ -278,16 +292,14 @@ function Page({
                   </strong>
                   <span className="text-sm text-taupe">{j.description}</span>
                 </span>
-                <Marque changement={changement} />
+                <Marque changement={changement} t={t} />
               </li>
             ))}
           </ol>
 
           {p.argumentaire.length > 0 && (
             <>
-              <h2 className="m-0 mt-4 font-display text-[30px] font-semibold">
-                Pourquoi ce voyage vous correspond
-              </h2>
+              <h2 className="m-0 mt-4 font-display text-[30px] font-semibold">{t.pourquoi}</h2>
               <ul className="m-0 flex list-none flex-col gap-3 p-0">
                 {p.argumentaire.map((a) => (
                   <li key={a.exigence} className="flex gap-3 rounded-[18px] bg-white px-5 py-4">
@@ -308,16 +320,18 @@ function Page({
           )}
 
           <Prestations
-            titre="Hébergement"
+            titre={t.hebergement}
             liste={logements}
             retirees={comparaison?.prestationsRetirees.filter((x) => x.type === 'logement')}
             etats={comparaison?.prestations}
+            t={t}
           />
           <Prestations
-            titre="Activités incluses"
+            titre={t.activites}
             liste={activites}
             retirees={comparaison?.prestationsRetirees.filter((x) => x.type === 'activite')}
             etats={comparaison?.prestations}
+            t={t}
           />
         </div>
 
@@ -346,11 +360,13 @@ function Prestations({
   liste,
   retirees = [],
   etats,
+  t,
 }: {
   titre: string
   liste: Proposition['prestations']
   retirees?: Proposition['prestations']
   etats?: Map<number, Changement>
+  t: Textes
 }) {
   if (liste.length === 0 && retirees.length === 0) return null
   return (
@@ -380,7 +396,7 @@ function Prestations({
               />
             )}
             <div className="flex flex-col items-start gap-1.5 px-4 py-3.5">
-              <Marque changement={changement} />
+              <Marque changement={changement} t={t} />
               <h3
                 className={cn('m-0 text-base font-bold', changement === 'retire' && 'line-through')}
               >
@@ -413,6 +429,7 @@ function Budget({
   actuelle: boolean
 }) {
   const queryClient = useQueryClient()
+  const t = TEXTES[p.langue]
   const confirmee = p.etat === 'confirmee'
   const action = useMutation({
     mutationFn: (quoi: ActionProposition) => agirSurProposition(p.jeton, quoi),
@@ -423,20 +440,19 @@ function Budget({
   return (
     <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-4 rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
       <h2 className="m-0 font-display text-2xl font-semibold">
-        {confirmee ? 'Votre budget confirmé' : 'Votre budget estimé'}
+        {confirmee ? t.budgetConfirme : t.budgetEstime}
       </h2>
       <div className="flex flex-col gap-0.5">
         <span className="font-display text-5xl font-semibold tracking-[-1px]">
           {euros(p.totalCentimes)}
         </span>
         <span className="text-sm text-sable">
-          soit {euros(p.totalParPersonneCentimes)} par personne · frais de dossier de{' '}
-          {euros(p.fraisDeDossierCentimes)} inclus
+          {t.parPersonne(euros(p.totalParPersonneCentimes), euros(p.fraisDeDossierCentimes))}
         </span>
         {comparaison && (
           <span className="mt-1 text-sm font-bold">
-            <EcartDeBudget ecart={comparaison.total} sombre /> par rapport à la version{' '}
-            {comparaison.version}
+            <EcartDeBudget ecart={comparaison.total} langue={p.langue} sombre />
+            {t.parRapportA(comparaison.version)}
           </span>
         )}
       </div>
@@ -455,13 +471,17 @@ function Budget({
               )}
             >
               <dt className={cn('text-[11px]', retenu ? 'font-bold text-rouille' : 'text-sable')}>
-                {n.label}
-                {retenu && <span className="sr-only"> (niveau détaillé)</span>}
+                {t.niveaux[n.valeur]}
+                {retenu && <span className="sr-only">{t.niveauDetaille}</span>}
               </dt>
               <dd className="m-0 text-[15px] font-bold">{euros(budget.totalCentimes)}</dd>
               {comparaison?.niveaux[n.valeur] && comparaison.niveaux[n.valeur]!.centimes !== 0 && (
                 <dd className="m-0 text-[11px] font-bold">
-                  <EcartDeBudget ecart={comparaison.niveaux[n.valeur]!} sombre={!retenu} />
+                  <EcartDeBudget
+                    ecart={comparaison.niveaux[n.valeur]!}
+                    langue={p.langue}
+                    sombre={!retenu}
+                  />
                 </dd>
               )}
             </div>
@@ -471,7 +491,7 @@ function Budget({
 
       {(p.lignes.length > 0 || (comparaison?.lignesRetirees.length ?? 0) > 0) && (
         <div className="flex flex-col gap-2 border-t border-white/15 pt-3.5">
-          <span className="text-sm font-bold">Inclus dans le niveau détaillé</span>
+          <span className="text-sm font-bold">{t.inclus}</span>
           <ul className="m-0 flex flex-col gap-1 pl-[18px] text-[13px] text-sable">
             {[
               ...p.lignes.map((l) => ({ l, changement: comparaison?.lignes.get(cleLigne(l)) })),
@@ -485,7 +505,7 @@ function Budget({
                   {l.libelle}
                   {l.quantite > 1 && ` × ${l.quantite}`}
                 </span>{' '}
-                <Marque changement={changement} />
+                <Marque changement={changement} t={t} />
               </li>
             ))}
           </ul>
@@ -494,19 +514,21 @@ function Budget({
 
       {(p.hypotheses.length > 0 || (comparaison?.hypothesesRetirees.length ?? 0) > 0) && (
         <div className="flex flex-col gap-2 border-t border-white/15 pt-3.5">
-          <span className="text-sm font-bold">Hypothèses de budget</span>
+          <span className="text-sm font-bold">{t.hypotheses}</span>
           <ul className="m-0 pl-[18px] text-[13px] leading-relaxed text-sable">
             {p.hypotheses.map((h) => (
               <li key={h}>
                 {h}{' '}
                 <Marque
                   changement={comparaison?.hypothesesAjoutees.has(h) ? 'ajoute' : undefined}
+                  t={t}
                 />
               </li>
             ))}
             {comparaison?.hypothesesRetirees.map((h) => (
               <li key={`retiree-${h}`}>
-                <span className="line-through opacity-70">{h}</span> <Marque changement="retire" />
+                <span className="line-through opacity-70">{h}</span>{' '}
+                <Marque changement="retire" t={t} />
               </li>
             ))}
           </ul>
@@ -525,7 +547,7 @@ function Budget({
           onClick={() => action.mutate('acceptation')}
           className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-terre font-bold text-white hover:bg-rouille disabled:opacity-60"
         >
-          J’accepte cette proposition
+          {t.accepter}
         </button>
       )}
       {actuelle && p.actions.demanderConfirmation && (
@@ -535,7 +557,7 @@ function Budget({
           onClick={() => action.mutate('demande-de-confirmation')}
           className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-terre font-bold text-white hover:bg-rouille disabled:opacity-60"
         >
-          Demander la confirmation
+          {t.demanderConfirmation}
         </button>
       )}
       <p className="m-0 text-center text-xs text-sable">{etatSuivi(p)}</p>
@@ -556,31 +578,38 @@ const CONTOUR: Record<Changement, string> = {
   retire: 'ring-1 ring-lin',
 }
 
-const MARQUES: Record<Changement, { libelle: string; classe: string }> = {
-  ajoute: { libelle: 'Nouveau', classe: 'bg-[#DDF1E4] text-[#1F6B3A]' },
-  modifie: { libelle: 'Modifié', classe: 'bg-[#FFF1C7] text-[#5C4300]' },
-  retire: { libelle: 'Retiré', classe: 'bg-[#F9DED6] text-[#8F2A1C]' },
+const MARQUES: Record<Changement, string> = {
+  ajoute: 'bg-[#DDF1E4] text-[#1F6B3A]',
+  modifie: 'bg-[#FFF1C7] text-[#5C4300]',
+  retire: 'bg-[#F9DED6] text-[#8F2A1C]',
 }
 
 /** Étiquette du changement : le texte le dit, la couleur ne fait que le souligner. */
-function Marque({ changement }: { changement: Changement | undefined }) {
+function Marque({ changement, t }: { changement: Changement | undefined; t: Textes }) {
   if (!changement) return null
-  const { libelle, classe } = MARQUES[changement]
   return (
     <span
       className={cn(
         'inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold tracking-[0.4px] whitespace-nowrap uppercase no-underline',
-        classe,
+        MARQUES[changement],
       )}
     >
-      {libelle}
+      {t.marques[changement]}
     </span>
   )
 }
 
 /** « +166 € (+1,8 %) », en rouge s'il monte et en vert s'il baisse. */
-function EcartDeBudget({ ecart, sombre = false }: { ecart: Ecart; sombre?: boolean }) {
-  if (ecart.centimes === 0) return <span>Même budget</span>
+function EcartDeBudget({
+  ecart,
+  langue,
+  sombre = false,
+}: {
+  ecart: Ecart
+  langue: Langue
+  sombre?: boolean
+}) {
+  if (ecart.centimes === 0) return <span>{TEXTES[langue].memeBudget}</span>
   const hausse = ecart.centimes > 0
   return (
     <span
@@ -595,7 +624,7 @@ function EcartDeBudget({ ecart, sombre = false }: { ecart: Ecart; sombre?: boole
       )}
     >
       {formatEcart(ecart.centimes)}
-      {ecart.pourcentage !== null && ` (${formatPourcentage(ecart.pourcentage)})`}
+      {ecart.pourcentage !== null && ` (${formatPourcentage(ecart.pourcentage, langue)})`}
     </span>
   )
 }
@@ -604,14 +633,15 @@ function EcartDeBudget({ ecart, sombre = false }: { ecart: Ecart; sombre?: boole
 function CeQuiAChange({
   comparaison: c,
   versionAffichee,
+  langue,
 }: {
   comparaison: Comparaison
   versionAffichee: number
+  langue: Langue
 }) {
+  const t = TEXTES[langue]
   const titre =
-    c.version < versionAffichee
-      ? `Ce qui a changé depuis la version ${c.version}`
-      : `Différences avec la version ${c.version}`
+    c.version < versionAffichee ? t.changeDepuis(c.version) : t.differencesAvec(c.version)
   return (
     <section
       aria-label={titre}
@@ -619,26 +649,36 @@ function CeQuiAChange({
     >
       <h2 className="m-0 text-base font-bold">{titre}</h2>
       {c.nombre === 0 ? (
-        <p className="m-0 text-sm text-taupe">Aucun changement.</p>
+        <p className="m-0 text-sm text-taupe">{t.aucunChangement}</p>
       ) : (
         <ul className="m-0 flex flex-col gap-1 pl-[18px] text-sm">
           {c.demande.map((d) => (
             <li key={d.libelle}>
-              <strong>{d.libelle}</strong> : {d.apres}{' '}
-              <span className="text-taupe">(avant : {d.avant})</span>
+              <strong>{d.libelle}</strong>
+              {langue === 'en' ? ': ' : ' : '}
+              {d.apres}{' '}
+              <span className="text-taupe">
+                ({t.avant}
+                {langue === 'en' ? ': ' : ' : '}
+                {d.avant})
+              </span>
             </li>
           ))}
           <li>
-            <strong>Budget</strong> : <EcartDeBudget ecart={c.total} />
+            <strong>{t.budget}</strong>
+            {langue === 'en' ? ': ' : ' : '}
+            <EcartDeBudget ecart={c.total} langue={langue} />
             {c.total.centimes !== 0 && (
               <span className="text-taupe">
-                {' '}
-                ({euros(c.total.apres)} au lieu de {euros(c.total.avant)}, soit{' '}
-                {formatEcart(c.parPersonne.centimes)} par personne)
+                {t.auLieuDe(
+                  euros(c.total.apres),
+                  euros(c.total.avant),
+                  formatEcart(c.parPersonne.centimes),
+                )}
               </span>
             )}
           </li>
-          <li className="text-taupe">Les changements sont surlignés dans la proposition.</li>
+          <li className="text-taupe">{t.surlignes}</li>
         </ul>
       )}
     </section>
@@ -652,6 +692,7 @@ function ChoixDesVersions({
   onAfficher,
   onComparer,
   chargement = false,
+  langue,
 }: {
   versions: Proposition['versions']
   numero: number
@@ -659,20 +700,22 @@ function ChoixDesVersions({
   onAfficher: (version: number) => void
   onComparer: (version: number | null) => void
   chargement?: boolean
+  langue: Langue
 }) {
   if (versions.length < 2) return null
+  const t = TEXTES[langue]
   const derniere = Math.max(...versions.map((v) => v.version))
   const libelle = (v: Proposition['versions'][number]) =>
-    `Version ${v.version} · ${dateCourte(v.creeLe)} · ${euros(v.totalCentimes)}${
-      v.version === derniere ? ' (actuelle)' : ''
-    }${v.etat === 'confirmee' ? ' · confirmée' : ''}`
+    `Version ${v.version} · ${dateCourte(v.creeLe, langue)} · ${euros(v.totalCentimes)}${
+      v.version === derniere ? t.actuelle : ''
+    }${v.etat === 'confirmee' ? t.confirmee : ''}`
   const selectClasse =
     'min-h-11 rounded-xl border-[1.5px] border-lin bg-creme px-3 text-sm font-semibold text-encre focus:border-terre focus:bg-white focus:outline-none'
 
   return (
     <div className="no-print mx-auto mt-4 flex max-w-[1376px] flex-wrap items-end gap-3 px-4 sm:px-8">
       <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-        Version affichée
+        {t.versionAffichee}
         <select
           className={selectClasse}
           value={numero}
@@ -686,13 +729,13 @@ function ChoixDesVersions({
         </select>
       </label>
       <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-        Comparer avec
+        {t.comparerAvec}
         <select
           className={selectClasse}
           value={numeroCompare ?? ''}
           onChange={(e) => onComparer(e.target.value === '' ? null : Number(e.target.value))}
         >
-          <option value="">Aucune version</option>
+          <option value="">{t.aucuneVersion}</option>
           {versions
             .filter((v) => v.version !== numero)
             .map((v) => (
@@ -704,23 +747,21 @@ function ChoixDesVersions({
       </label>
       {chargement && (
         <span role="status" className="pb-3 text-sm text-taupe">
-          Chargement de la comparaison…
+          {t.chargementComparaison}
         </span>
       )}
     </div>
   )
 }
 
-const dateCourte = (iso: string) =>
-  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso))
+const dateCourte = (iso: string, langue: Langue) =>
+  new Intl.DateTimeFormat(LOCALE[langue], { day: 'numeric', month: 'short' }).format(new Date(iso))
 
 /** Où en est la proposition, du point de vue du client. */
 function etatSuivi(p: Proposition) {
-  if (p.statut === 'acceptee')
-    return 'Vous avez accepté cette proposition : votre conseiller réserve votre voyage.'
-  if (p.demande.statut === 'a_confirmer')
-    return 'Votre demande de confirmation est transmise : votre conseiller vérifie prix et disponibilités.'
-  if (p.etat === 'confirmee')
-    return 'Prix vérifiés par votre conseiller. Rien n’est réservé avant votre accord.'
-  return 'Rien n’est réservé ni payé avant la confirmation de votre conseiller.'
+  const t = TEXTES[p.langue]
+  if (p.statut === 'acceptee') return t.acceptee
+  if (p.demande.statut === 'a_confirmer') return t.confirmationTransmise
+  if (p.etat === 'confirmee') return t.prixVerifies
+  return t.rienReserve
 }

@@ -8,6 +8,7 @@ use App\Chiffrage\Periode;
 use App\Entity\Conversation;
 use App\Entity\JournalIA;
 use App\Enum\AgentIA;
+use App\Enum\Langue;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ServerEvent;
@@ -128,7 +129,10 @@ abstract class Agent
                     // Réponse incomplète : elle n'entre pas dans l'historique, ses outils ne sont pas exécutés.
                     $this->journaliser($contexte, $tour->historique, $debutDuTour, $resultat, [], $dureeMs);
                     $this->logger->warning('Agent {agent} : réponse interrompue ({raison}).', ['agent' => $nom, 'raison' => $resultat->stopReason]);
-                    yield self::evenement('erreur', ['erreur' => 'Je n\'ai pas pu terminer ma réponse. Pouvez-vous reformuler votre message ?']);
+                    yield self::evenement('erreur', ['erreur' => $contexte->demande->getLangue()->choisir(
+                        'Je n\'ai pas pu terminer ma réponse. Pouvez-vous reformuler votre message ?',
+                        'I could not finish my answer. Could you rephrase your message?',
+                    )]);
                     break;
                 }
 
@@ -154,6 +158,8 @@ abstract class Agent
                         yield self::evenement('demande', [
                             'fiche' => $sortie['fiche'] ?? null,
                             'recapitulatifConfirme' => $sortie['recapitulatifConfirme'] ?? false,
+                            // Le site affiche ses propres textes dans la langue du client (US15).
+                            'langue' => $sortie['langue'] ?? Langue::Francais->value,
                         ]);
                     } elseif ('retenir_combinaison' === $appelOutil->name) {
                         yield self::evenement('combinaison', $sortie);
@@ -170,14 +176,17 @@ abstract class Agent
 
                 if ($this->appelsMax() === $appel) {
                     $this->logger->warning('Agent {agent} : {max} appels sans réponse finale.', ['agent' => $nom, 'max' => $this->appelsMax()]);
-                    yield self::evenement('erreur', ['erreur' => 'Je n\'ai pas réussi à terminer. Pouvez-vous reformuler votre message ?']);
+                    yield self::evenement('erreur', ['erreur' => $contexte->demande->getLangue()->choisir(
+                        'Je n\'ai pas réussi à terminer. Pouvez-vous reformuler votre message ?',
+                        'I did not manage to finish. Could you rephrase your message?',
+                    )]);
                 }
             }
         } catch (ErreurClaude $e) {
             // Un appel en échec figure aussi au journal : le responsable voit tout ce qui a été tenté.
             $this->journaliserEchec($contexte, $tour->historique, $debutDuTour, $e, self::millisecondes($chrono));
             $this->logger->error('Agent {agent} : {erreur}', ['agent' => $nom, 'erreur' => $e->getMessage(), 'exception' => $e]);
-            yield self::evenement('erreur', ['erreur' => $e->messagePourLeClient()]);
+            yield self::evenement('erreur', ['erreur' => $e->messagePourLeClient($contexte->demande->getLangue())]);
         }
     }
 

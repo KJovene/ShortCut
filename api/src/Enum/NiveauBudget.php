@@ -17,4 +17,14 @@ enum NiveauBudget: string
             self::Confort => 'Confort',
         };
     }
+
+    /** Pour un client qui écrit en anglais (US15). */
+    public function labelEnAnglais(): string
+    {
+        return match ($this) {
+            self::Essentiel => 'Essential',
+            self::Equilibre => 'Balanced',
+            self::Confort => 'Comfort',
+        };
+    }
 }

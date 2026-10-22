@@ -27,6 +27,7 @@ final class AgentConversation extends Agent
     public const MODELE = 'claude-haiku-5-5';
     /** Réponse fixe une fois la conversation reprise par un conseiller. */
     public const MESSAGE_REPRISE = 'Votre demande est entre les mains d\'un conseiller de l\'agence : il a bien reçu votre message et vous recontacte sous 2 jours ouvrés.';
+    public const MESSAGE_REPRISE_EN = 'Your request is in the hands of an advisor from the agency: they have received your message and will contact you within 2 business days.';
 
     /**
      * @param iterable<Outil> $outils
@@ -54,11 +55,12 @@ final class AgentConversation extends Agent
 
         // Un conseiller a repris la conversation (US06) : le message lui est gardé, le chatbot ne répond plus.
         if ($conversation->isRepriseParConseiller()) {
+            $reprise = $demande->getLangue()->choisir(self::MESSAGE_REPRISE, self::MESSAGE_REPRISE_EN);
             $conversation->ajouterMessage('client', $message);
-            $conversation->ajouterMessage('assistant', self::MESSAGE_REPRISE);
+            $conversation->ajouterMessage('assistant', $reprise);
             $this->em->flush();
 
-            yield self::evenement('texte', ['texte' => self::MESSAGE_REPRISE]);
+            yield self::evenement('texte', ['texte' => $reprise]);
             yield self::evenement('fin', new \stdClass());
 
             return;
@@ -137,9 +139,10 @@ final class AgentConversation extends Agent
         $manquantes = EnregistrerExigences::manquantes($demande);
 
         return \sprintf(
-            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s.</etat_de_la_fiche>',
+            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s. Langue du client : %s.</etat_de_la_fiche>',
             json_encode((object) $remplis, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
             [] === $manquantes ? 'rien' : implode(', ', $manquantes),
+            $demande->getLangue()->value,
         );
     }
 

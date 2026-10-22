@@ -4,6 +4,7 @@ namespace App\Proposition;
 
 use App\Confirmation\PropositionClient;
 use App\Entity\Proposition;
+use App\Enum\Langue;
 use App\Enum\NiveauBudget;
 use App\Enum\TypeDeVoyage;
 use App\Repository\PrestationRepository;
@@ -42,7 +43,8 @@ final class PropositionPdf
         $dompdf->render();
 
         // Numéro de page en bas à droite, sur chaque page.
-        $dompdf->getCanvas()->page_text(520, 812, 'Page {PAGE_NUM} sur {PAGE_COUNT}', 'DejaVu Sans', 7, [0.43, 0.35, 0.29]);
+        $sur = Langue::Anglais === $proposition->getDemande()?->getLangue() ? 'of' : 'sur';
+        $dompdf->getCanvas()->page_text(520, 812, 'Page {PAGE_NUM} '.$sur.' {PAGE_COUNT}', 'DejaVu Sans', 7, [0.43, 0.35, 0.29]);
 
         return (string) $dompdf->output();
     }
@@ -52,6 +54,8 @@ final class PropositionPdf
     {
         $p = $this->client->presenter($proposition);
         $demande = $proposition->getDemande();
+        $anglais = Langue::Anglais === $demande?->getLangue();
+        $type = TypeDeVoyage::tryFrom((string) $p['demande']['typeDeVoyage']);
 
         $photos = [];
         $ids = array_column($p['prestations'], 'id');
@@ -63,10 +67,10 @@ final class PropositionPdf
             'p' => $p,
             'confirmee' => 'confirmee' === $p['etat'],
             'client' => $demande?->getClient()?->getPrenom() ?? $demande?->getClient()?->getNom(),
-            'type' => TypeDeVoyage::tryFrom((string) $p['demande']['typeDeVoyage'])?->label(),
+            'type' => null === $type ? null : ($anglais ? $type->labelEnAnglais() : $type->label()),
             'niveaux' => array_combine(
                 array_map(static fn (NiveauBudget $n): string => $n->value, NiveauBudget::cases()),
-                array_map(static fn (NiveauBudget $n): string => $n->label(), NiveauBudget::cases()),
+                array_map(static fn (NiveauBudget $n): string => $anglais ? $n->labelEnAnglais() : $n->label(), NiveauBudget::cases()),
             ),
             // Les totaux par niveau, en tableau : la présentation JSON en fait un objet.
             'budgets' => $proposition->getBudgetsParNiveau(),

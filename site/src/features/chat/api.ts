@@ -43,6 +43,8 @@ const evenementSchema = z.discriminatedUnion('type', [
     type: z.literal('demande'),
     fiche: ficheSchema.nullable(),
     recapitulatifConfirme: z.boolean(),
+    /** Langue du client, reconnue par l'assistant (US15). */
+    langue: z.enum(['fr', 'en']).default('fr'),
   }),
   z.object({ type: z.literal('erreur'), erreur: z.string() }),
   z.object({ type: z.literal('fin') }),

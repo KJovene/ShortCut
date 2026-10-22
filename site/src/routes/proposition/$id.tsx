@@ -22,12 +22,15 @@ export const Route = createFileRoute('/proposition/$id')({
     meta: [
       {
         title: loaderData
-          ? `Ma proposition · ${titreProposition(loaderData)}`
+          ? `${loaderData.langue === 'en' ? 'My proposal' : 'Ma proposition'} · ${titreProposition(loaderData)}`
           : 'Ma proposition de voyage',
       },
       {
         name: 'description',
-        content: 'Votre proposition de voyage sur mesure, à confirmer par votre conseiller.',
+        content:
+          loaderData?.langue === 'en'
+            ? 'Your tailor-made travel proposal, to be confirmed by your advisor.'
+            : 'Votre proposition de voyage sur mesure, à confirmer par votre conseiller.',
       },
       // Proposition personnelle accessible par lien unique : pas d'indexation.
       { name: 'robots', content: 'noindex' },
