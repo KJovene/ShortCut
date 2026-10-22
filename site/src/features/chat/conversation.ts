@@ -20,5 +20,5 @@ export const MESSAGE_ACCUEIL: Message = {
   auteur: 'assistant',
   // Un client étranger sait dès l'accueil qu'il peut écrire en anglais (US15).
   texte:
-    'Bonjour ! Je suis l’assistant de l’agence, une IA. Racontez-moi le voyage dont vous rêvez. (Hello! You can also write to me in English.)',
+    'Bonjour, je suis l’assistant de Détour, une intelligence artificielle. Racontez-moi le voyage dont vous rêvez : la plage, les montagnes ou ce petit pas de côté auquel vous n’avez pas encore pensé. (Hello! You can also write to me in English.)',
 }

@@ -89,7 +89,7 @@ final class NouvelleVersionTest extends WebTestCase
         $presentation = $messages[\count($messages) - 2];
         self::assertStringStartsWith('Voici votre proposition mise à jour (dates : du 21/05/2027 au 24/05/2027, 3 nuits) :', $presentation);
         self::assertStringContainsString('- Essentiel : Hôtel Alfama Vista, chambre double, ', $presentation);
-        self::assertStringEndsWith('Première proposition, prix estimés, à confirmer par votre conseiller.', $presentation);
+        self::assertMatchesRegularExpression('/\nPrix estimés le .+ à \d+ h( \d{2})? d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer\.$/', $presentation);
         self::assertSame(\sprintf(AgentRedaction::MESSAGE_NOUVELLE_VERSION, 2, 1), end($messages));
 
         // La version 2 est envoyée, la version 1 remplacée mais consultable.

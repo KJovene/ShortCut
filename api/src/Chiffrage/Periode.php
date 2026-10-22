@@ -56,6 +56,14 @@ final class Periode
         return \sprintf('%s %s %s', 1 === $numero ? '1er' : $numero, self::mois($date), $date->format('Y'));
     }
 
+    /** « 9 h 40 », « 15 h ». */
+    public static function heure(\DateTimeImmutable $date): string
+    {
+        $minutes = $date->format('i');
+
+        return \sprintf('%d h%s', (int) $date->format('G'), '00' === $minutes ? '' : ' '.$minutes);
+    }
+
     /** « sam. 12 juin », « ven. 22 oct. », pour les jours d'un programme. */
     public static function jourCourt(\DateTimeImmutable $date): string
     {

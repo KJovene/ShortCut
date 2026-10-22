@@ -59,9 +59,9 @@ final class DemandeFixtures extends Fixture implements DependentFixtureInterface
     {
         $conversation = (new Conversation())
             ->ajouterMessage('client', 'Bonjour, nous aimerions découvrir le Costa Rica à deux, une semaine de nature.')
-            ->ajouterMessage('assistant', 'Le Costa Rica, quelle belle idée ! À quelle période pensez-vous partir ?')
+            ->ajouterMessage('assistant', 'Une semaine de nature au Costa Rica : les paresseux vous attendent, sans se presser. À quelle période pensez-vous partir ?')
             ->ajouterMessage('client', 'Plutôt en février. En fait, je préférerais en parler directement avec quelqu\'un.')
-            ->ajouterMessage('assistant', 'Bien sûr : un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.')
+            ->ajouterMessage('assistant', 'Bien sûr. Un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.')
             ->setRepriseParConseiller(true);
         $demande->setConversation($conversation);
         $demande->transmettre(

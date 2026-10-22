@@ -31,6 +31,39 @@ export const pageQuery = (slug: string) =>
     staleTime: 5 * 60_000,
   })
 
+/** Page publiée et sa position dans le menu (« Ordre dans le menu » du backoffice) ; absente : hors du menu. */
+const PageDuMenu = z.object({ slug: z.string(), ordreMenu: z.number().nullish() })
+export type PageDuMenu = z.infer<typeof PageDuMenu>
+
+export async function chargerMenu(): Promise<PageDuMenu[]> {
+  const response = await fetch('/api/pages', { headers: { Accept: 'application/json' } })
+  if (!response.ok) {
+    throw new ApiError(response.status, 'Impossible de charger le menu.')
+  }
+  return z.array(PageDuMenu).parse(await response.json())
+}
+
+export const menuQuery = queryOptions({
+  queryKey: ['pages'],
+  queryFn: chargerMenu,
+  staleTime: 5 * 60_000,
+})
+
+/**
+ * Liens du menu rangés selon le backoffice : une page sans position ou non publiée en sort. Sans réponse
+ * de l'API (chargement, panne), les liens gardent leur ordre par défaut.
+ */
+export function ordonnerMenu<T extends { slug: string }>(
+  liens: readonly T[],
+  pages: PageDuMenu[] | undefined,
+): T[] {
+  if (!pages) return [...liens]
+  const ordre = new Map(pages.map((p) => [p.slug, p.ordreMenu]))
+  return liens
+    .filter((lien) => ordre.get(lien.slug) != null)
+    .sort((a, b) => ordre.get(a.slug)! - ordre.get(b.slug)!)
+}
+
 /** Balises title et description d'une page, avec un texte de secours si l'API n'a pas répondu. */
 export function metaPage(
   page: PageDuSite | null | undefined,

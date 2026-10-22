@@ -32,4 +32,10 @@ final class PeriodeTest extends TestCase
     {
         self::assertSame('du 21/10/2027 au 25/10/2027', Periode::sejour(new \DateTimeImmutable('2027-10-21'), 4));
     }
+
+    public function testHeure(): void
+    {
+        self::assertSame('9 h 40', Periode::heure(new \DateTimeImmutable('2026-10-22 09:40')));
+        self::assertSame('15 h', Periode::heure(new \DateTimeImmutable('2026-10-22 15:00')));
+    }
 }

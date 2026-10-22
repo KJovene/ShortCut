@@ -90,7 +90,7 @@ final class AgentRechercheTest extends WebTestCase
         self::assertSame(['Hôtel Alfama Vista, chambre double'], array_column($combinaison['niveaux']['essentiel']['logements'], 'nom'));
         self::assertSame(['Tejo Palace, suite vue fleuve'], array_column($combinaison['niveaux']['confort']['logements'], 'nom'));
         self::assertSame('/api/logements/'.$palace, $combinaison['niveaux']['confort']['logements'][0]['fiche']);
-        self::assertStringStartsWith('Première proposition, prix estimés', $combinaison['avertissement']);
+        self::assertStringStartsWith('Prix estimés le ', $combinaison['avertissement']);
 
         // Le refus est renvoyé au modèle avec sa raison, pour qu'il corrige son choix.
         $apresRefus = $this->claude->requetes[4]['corps']['messages'];
