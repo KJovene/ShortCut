@@ -2,7 +2,9 @@
 
 namespace App\DataFixtures;
 
+use App\Chatbot\Outil\CalculerBudget;
 use App\Chatbot\Outil\EnregistrerExigences;
+use App\Chiffrage\Periode;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Destination;
@@ -44,12 +46,13 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
             ->setEnvies(['culture', 'gastronomie', 'détente'])->setContraintes([]);
 
         // La conversation qui a mené à la proposition, affichée à côté des prix à confirmer.
-        $conversation = (new Conversation())->setDebutLe(new \DateTimeImmutable('-1 day'));
+        $debut = new \DateTimeImmutable('-1 day');
+        $conversation = (new Conversation())->setDebutLe($debut);
         foreach ([
             ['client', 'Bonjour, nous sommes 12 amis et cherchons un riad à Marrakech du 21 au 25 octobre 2027, départ de Paris.'],
-            ['assistant', 'Avec plaisir ! Quel budget envisagez-vous, et quelles envies pour ce séjour ?'],
+            ['assistant', 'Douze amis dans un riad rien que pour vous : la médina n\'a qu\'à bien se tenir. Quel budget envisagez-vous, par personne ou pour le groupe, et quelles envies pour ce séjour ?'],
             ['client', 'Environ 800 € par personne, vols compris. On aime la culture et la cuisine marocaine.'],
-            ['assistant', 'Je vous propose le Riad Dar Yasmine privatisé, une visite guidée de la médina et un cours de cuisine : 9 452 € pour le groupe, soit 787,67 € par personne. Première proposition, prix estimés, à confirmer par votre conseiller.'],
+            ['assistant', 'Je vous propose le Riad Dar Yasmine privatisé, une visite guidée de la médina et un cours de cuisine : 9 452 € pour le groupe, soit 787,67 € par personne, sous vos 800 €. '.\sprintf(CalculerBudget::AVERTISSEMENT, Periode::jour($debut), '10 h 20')],
         ] as [$role, $contenu]) {
             $conversation->ajouterMessage($role, $contenu);
         }
@@ -149,12 +152,13 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
             ->setDateFin(new \DateTimeImmutable('2027-06-19'))->setNombreDeJours(7)->setBudgetCentimes(null)
             ->setTransportInclus(true)->setEnvies(['romantique', 'plage'])->setContraintes([]);
 
-        $conversation = (new Conversation())->setDebutLe(new \DateTimeImmutable('-3 days'));
+        $debut = new \DateTimeImmutable('-3 days');
+        $conversation = (new Conversation())->setDebutLe($debut);
         foreach ([
             ['client', 'Bonjour, nous préparons notre voyage de noces à Santorin, du 12 au 19 juin 2027, au départ de Paris. Nous voulons faire une croisière.'],
-            ['assistant', 'Félicitations ! Je vous propose l\'Hôtel Fira Blue et une croisière en catamaran dans la caldeira : 2 688 € pour vous deux au niveau équilibré. Première proposition, prix estimés, à confirmer par votre conseiller.'],
+            ['assistant', 'Toutes nos félicitations. Je vous propose l\'Hôtel Fira Blue et une croisière en catamaran dans la caldeira : 2 688 € pour vous deux au niveau équilibré. '.\sprintf(CalculerBudget::AVERTISSEMENT, Periode::jour($debut), '18 h 05')],
             ['client', 'Pouvez-vous ajouter une nuit, jusqu\'au 20 juin, et une dégustation de vins ?'],
-            ['assistant', 'Voici votre proposition mise à jour (dates : du 12/06/2027 au 20/06/2027, 8 nuits ; envies : romantique, plage, gastronomie). Équilibré : Hôtel Fira Blue, croisière et dégustation, 3 012 €.'],
+            ['assistant', 'Voici votre proposition mise à jour (dates : du 12/06/2027 au 20/06/2027, 8 nuits ; envies : romantique, plage, gastronomie). Équilibré : Hôtel Fira Blue, croisière et dégustation, 3 012 €.'."\n".\sprintf(CalculerBudget::AVERTISSEMENT, Periode::jour($debut->modify('+1 day')), '9 h 40')],
             ['assistant', 'Votre proposition détaillée est à jour : la version 2 est sur votre page « Ma proposition », la version 1 reste consultable.'],
         ] as [$role, $contenu]) {
             $conversation->ajouterMessage($role, $contenu);

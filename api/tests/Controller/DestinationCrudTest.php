@@ -96,6 +96,8 @@ final class DestinationCrudTest extends WebTestCase
             'Destination[region]' => 'Campanie',
             'Destination[slug]' => 'naples',
             'Destination[description]' => 'Pizza, Vésuve et côte amalfitaine.',
+            'Destination[latitude]' => '40,8',
+            'Destination[longitude]' => '14,3',
         ]);
         // Les lignes de collection sont ajoutées par JavaScript dans le navigateur : on les envoie directement.
         $valeurs = $formulaire->getPhpValues();

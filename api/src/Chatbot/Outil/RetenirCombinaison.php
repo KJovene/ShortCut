@@ -196,7 +196,7 @@ final class RetenirCombinaison implements Outil
                 'totalEuros' => $a['totalEuros'],
                 'tientDansLeBudget' => $a['tientDansLeBudget'],
             ], $chiffrage['arbitrages'] ?? []),
-            'avertissement' => CalculerBudget::AVERTISSEMENT,
+            'avertissement' => $this->calculerBudget->avertissement($demande->getLangue()),
         ];
     }
 

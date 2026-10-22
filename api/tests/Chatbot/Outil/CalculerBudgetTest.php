@@ -15,6 +15,7 @@ use App\Entity\Prestataire;
 use App\Entity\Prestation;
 use App\Entity\RegleDePrix;
 use App\Enum\AgentIA;
+use App\Enum\Langue;
 use App\Enum\TypeDeVoyage;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
@@ -91,7 +92,9 @@ final class CalculerBudgetTest extends KernelTestCase
 
         self::assertSame(['montantEuros' => 5000, 'parPersonne' => false], $sortie['budgetClient']);
         self::assertFalse($sortie['budgetInsuffisant']);
-        self::assertSame(CalculerBudget::AVERTISSEMENT, $sortie['avertissement']);
+        // Estimation datée à l'heure de Paris (horloge du test : 19 octobre 2026, 15 h 30 UTC).
+        self::assertSame('Prix estimés le lundi 19 octobre 2026 à 17 h 30 d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.', $sortie['avertissement']);
+        self::assertSame('Prices estimated on Monday 19 October 2026 at 17:30 from our rates: your advisor checks every price and every place before confirming them.', $this->outil->avertissement(Langue::Anglais));
         self::assertSame([2286, 4956, 5502], array_column($sortie['niveaux'], 'totalEuros'));
 
         $equilibre = $sortie['niveaux']['equilibre'];

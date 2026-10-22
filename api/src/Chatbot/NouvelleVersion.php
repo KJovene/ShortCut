@@ -2,7 +2,6 @@
 
 namespace App\Chatbot;
 
-use App\Chatbot\Outil\CalculerBudget;
 use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\OutilException;
 use App\Chatbot\Outil\RetenirCombinaison;
@@ -184,7 +183,7 @@ final class NouvelleVersion
                 ? 'Even the essential level exceeds your budget'.([] === $arbitrages ? '.' : '; to get closer to it: '.implode(', ', $arbitrages).'.')
                 : 'Même le niveau essentiel dépasse votre budget'.([] === $arbitrages ? '.' : ' ; pour vous en rapprocher : '.implode(', ', $arbitrages).'.');
         }
-        $lignes[] = $langue->choisir(CalculerBudget::AVERTISSEMENT, CalculerBudget::AVERTISSEMENT_EN);
+        $lignes[] = $sortie['avertissement'];
 
         return implode("\n", $lignes);
     }
