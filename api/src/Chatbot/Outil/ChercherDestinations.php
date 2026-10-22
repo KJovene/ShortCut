@@ -116,8 +116,16 @@ final class ChercherDestinations implements Outil
 
         $resultat = ['destinations' => [], 'ecartees' => []];
         if (null !== $zone && [] === $candidates) {
-            // Zone large ou inconnue : le modèle choisit lui-même dans le catalogue.
-            $resultat['remarque'] = \sprintf('Aucune destination ne porte le nom « %s » : voici tout le catalogue publié.', $zone);
+            // Zone large ou inconnue : le modèle choisit lui-même dans le catalogue. Un lieu précis que l'agence ne
+            // propose pas se réoriente vers une destination qui lui ressemble, prise dans la liste complète.
+            $resultat['remarque'] = \sprintf(
+                'Aucune destination ne porte le nom « %s » : voici tout le catalogue publié. Si c\'est un lieu précis, l\'agence ne le propose pas : dis-le au client et propose-lui une ou deux destinations du catalogue qui lui ressemblent (ambiance, paysages, climat, région).',
+                $zone,
+            );
+            $resultat['catalogue'] = array_map(
+                static fn (Destination $d): string => \sprintf('%s : %s (%s, %s)', $d->getSlug(), $d->getVille(), $d->getPays(), $d->getRegion() ?? $d->getPays()),
+                $publiees,
+            );
             $candidates = $publiees;
         }
 

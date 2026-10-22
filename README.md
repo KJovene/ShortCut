@@ -185,6 +185,7 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
   | `outil` | `{"nom": "chercher_destinations"}` | peut montrer que l'assistant cherche |
   | `demande` | `{"fiche": {…}, "recapitulatifConfirme": false, "langue": "fr"}` | met à jour le récapitulatif ; une fois confirmé, lance la proposition ; `langue` (`fr` ou `en`, US15) règle la langue des textes du chatbot |
   | `piste` | `{"destination": {…}, "niveaux": {…}, "niveauConseille": "equilibre", "options": […], "avertissement": "…", …}` | carte de la piste retenue (`Chatbot/Piste`), sous le message de l'agent Recherche : dates, faits, les trois niveaux et leur total, le niveau conseillé, les options et leur prix |
+  | `suggestions` | `{"type": "suggestions", "elements": [{"id": 12, "type": "logement", "nom": "…", "photos": […], …}]}` | logements et activités recommandés par l'agent Conversation (`consulter_catalogue`, `Chatbot/Suggestions`), en cartes cliquables sous son message ; chaque carte ouvre la fiche complète, sans prix |
   | `recapitulatif` | `{"jeton": "…", "texte": "…", "totalCentimes": 574960, "options": […], …}` | carte du récapitulatif détaillé (`AgentRedaction::carte`) : lien vers « Ma proposition » ; s'il reste des options, boutons pour en ajouter une ou garder le voyage tel quel |
   | `erreur` | `{"erreur": "…"}` | affiche le message, déjà rédigé pour le client |
   | `fin` | `{"terminee": true}` | la réponse est complète ; `terminee` : la conversation n'attend plus rien du client (récapitulatif complet, conseiller), le site ferme la saisie |

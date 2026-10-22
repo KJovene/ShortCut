@@ -22,7 +22,7 @@ function etapeDe(outil: string): EtapeReflexion | undefined {
   return undefined
 }
 
-/** Un message gardé par l'API, avec sa carte s'il en a une (piste, récapitulatif). */
+/** Un message gardé par l'API, avec sa carte s'il en a une (piste, suggestions, récapitulatif). */
 function messageDeLApi(m: Reprise['messages'][number]): Message {
   if (m.role === 'client') return { id: nouvelId(), auteur: 'client', texte: m.contenu }
   const carte = carteSchema.safeParse(m.carte)
@@ -30,6 +30,15 @@ function messageDeLApi(m: Reprise['messages'][number]): Message {
   if (carte.data.type === 'piste') {
     const { type, ...piste } = carte.data
     return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, piste }
+  }
+  if (carte.data.type === 'suggestions') {
+    return {
+      id: nouvelId(),
+      auteur: 'assistant',
+      type: 'suggestions',
+      texte: m.contenu,
+      suggestions: carte.data.elements,
+    }
   }
   const { type, ...recapitulatif } = carte.data
   return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, recapitulatif }
@@ -184,6 +193,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 reflexion: true,
                 etape: 'redaction',
               })
+              break
+            }
+            case 'suggestions': {
+              // Les cartes suivent le texte qui les présente : la suite va dans une nouvelle bulle.
+              bulle = undefined
+              ajouter([
+                {
+                  id: nouvelId(),
+                  auteur: 'assistant',
+                  type: 'suggestions',
+                  texte: '',
+                  suggestions: ev.elements,
+                },
+              ])
               break
             }
             case 'recapitulatif': {
