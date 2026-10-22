@@ -52,8 +52,11 @@ final class DashboardController extends AbstractDashboardController
 
     public function configureAssets(): Assets
     {
-        // Sous /admin pour passer par le proxy Vite du site (localhost:5173), comme les pages du backoffice.
-        return Assets::new()->addCssFile('admin/backoffice.css');
+        // Sous /admin pour passer par le proxy Vite du site (localhost:5173), comme les pages du backoffice. La date
+        // du fichier dans l'adresse : le navigateur recharge la feuille dès qu'elle change, sans vider son cache.
+        $version = @filemtime($this->getParameter('kernel.project_dir').'/public/admin/backoffice.css') ?: 0;
+
+        return Assets::new()->addCssFile('admin/backoffice.css?v='.$version);
     }
 
     public function configureMenuItems(): iterable

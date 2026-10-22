@@ -579,3 +579,131 @@ trix-toolbar [data-trix-action="decreaseNestingLevel"],
 trix-toolbar [data-trix-action="increaseNestingLevel"] {
     display: none;
 }
+
+/* Tarifs d'une fiche (admin/champ/tarifs.html.twig) : période en cours mise en avant, passées effacées, jours
+   sans tarif signalés. */
+.bo-pastille {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--bo-accent-fond);
+    color: var(--bo-accent-fonce);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.6;
+    vertical-align: 1px;
+    white-space: nowrap;
+}
+
+.bo-pastille--discrete { background: #F1EEEA; color: var(--bo-libelle); }
+.bo-pastille--alerte { margin-left: 0; background: #F9DED6; color: #8F2A1C; }
+
+.bo-tarifs-en_cours td { background: #FFF8F3; }
+.bo-tarifs-passe td { color: var(--bo-libelle); }
+.bo-tarifs-passe .bo-fort { font-weight: 400; }
+
+.bo-tarifs-trou td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    background: #FDF3F0;
+    color: #8F2A1C;
+    font-size: 13px;
+}
+
+/* Fourchettes d'un transporteur en grille (admin/champ/fourchettes_transport.html.twig). */
+.bo-grille-transport tbody th {
+    padding: 12px 8px 12px 18px;
+    border-top: 1px solid var(--bo-bordure-douce);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--bo-texte);
+}
+
+/* Saisie en tableau (admin/form/tableau_saisie.html.twig) : intitulés en tête, une ligne par élément. */
+.bo-grille-saisie {
+    max-width: 960px;
+}
+
+.bo-grille-saisie-entete,
+.bo-grille-saisie-ligne {
+    display: grid;
+    grid-template-columns: repeat(var(--bo-colonnes), minmax(0, 1fr)) 36px;
+    gap: 8px;
+    align-items: start;
+}
+
+.bo-grille-saisie-entete {
+    padding: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--bo-libelle);
+}
+
+.bo-grille-saisie .ea-form-collection-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bo-grille-saisie-ligne.field-collection-item {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.bo-grille-saisie-ligne .field-collection-delete-button {
+    position: static;
+    margin-top: 2px;
+    padding: 6px;
+}
+
+.bo-grille-saisie-erreurs {
+    grid-column: 1 / -1;
+}
+
+.bo-grille-saisie:not(:has(.field-collection-item)) .bo-grille-saisie-entete,
+.bo-grille-saisie:has(.field-collection-item) .bo-grille-saisie-vide {
+    display: none;
+}
+
+.bo-grille-saisie-vide {
+    margin: 0;
+}
+
+/* Sur un petit écran, deux champs par ligne, chacun avec son intitulé. */
+@media (max-width: 767px) {
+    .bo-grille-saisie-entete {
+        display: none;
+    }
+
+    .bo-grille-saisie-ligne {
+        grid-template-columns: 1fr 1fr;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--bo-bordure-douce);
+    }
+
+    .bo-grille-saisie-cellule .visually-hidden {
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 0 2px !important;
+        overflow: visible !important;
+        clip: auto !important;
+        white-space: normal !important;
+        font-size: 12px;
+    }
+}
+
+.bo-tableau .bo-droite { text-align: right; }
+
+.bo-tarifs-avant td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    color: var(--bo-texte-doux);
+    font-size: 13px;
+}

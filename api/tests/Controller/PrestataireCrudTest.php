@@ -67,8 +67,10 @@ final class PrestataireCrudTest extends WebTestCase
             $transporteur->getFourchettesTransport(),
         );
 
+        // La fiche range le trajet dans la grille : ligne « Lisbonne », colonne du transfert sur place.
         $this->client->request('GET', '/admin/prestataire/'.$transporteur->getId());
-        self::assertSelectorTextContains('body', '18,50 € à 42,00 €');
+        self::assertSelectorTextContains('.bo-grille-transport tbody th', 'Lisbonne');
+        self::assertSelectorTextContains('.bo-grille-transport tbody td:last-child', '18,50 € à 42 €');
     }
 
     public function testLesFourchettesSontReserveesAuxTransporteursEtCoherentes(): void

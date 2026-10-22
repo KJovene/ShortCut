@@ -33,11 +33,10 @@ final class FourchetteTransportType extends AbstractType
             ->add('arrivee', TexteSuggereType::class, [
                 'label' => 'Arrivée',
                 'suggestions' => 'destinations',
-                'help' => 'La ville de la destination, à choisir dans la liste. Une variante (majuscules, accents, petite faute) est aussi reconnue.',
                 'attr' => ['placeholder' => 'Lisbonne'],
                 'constraints' => [new Assert\NotBlank(message: 'Indiquez la ville d\'arrivée.'), new Assert\Length(max: 150)],
             ])
-            ->add('minCentimes', MoneyType::class, ['label' => 'Prix minimum par personne'] + $prix)
-            ->add('maxCentimes', MoneyType::class, ['label' => 'Prix maximum par personne'] + $prix);
+            ->add('minCentimes', MoneyType::class, ['label' => 'Prix minimum (€)'] + $prix)
+            ->add('maxCentimes', MoneyType::class, ['label' => 'Prix maximum (€)'] + $prix);
     }
 }

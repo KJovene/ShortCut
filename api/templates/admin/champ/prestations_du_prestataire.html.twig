@@ -1,11 +1,28 @@
-{# Logements et activités d'un prestataire, avec leur destination. #}
-{% set prestations = entity.instance.prestations %}
+{# Logements et activités d'un prestataire, avec leur destination et leur tarif (GrilleTarifs::resume). #}
+{% set prestations = entity.instance.prestations|sort((a, b) => a.nom <=> b.nom) %}
 {% if prestations is empty %}
     <span class="bo-vide">Aucun logement ni activité</span>
 {% else %}
-    <ul class="list-unstyled m-0">
-        {% for prestation in prestations %}
-            <li>{{ prestation.nom }} <span class="bo-discret">· {{ prestation.type.label }} · {{ prestation.destination.ville }}</span></li>
-        {% endfor %}
-    </ul>
+    <div class="bo-tableau-defilant"><table class="bo-tableau">
+        <thead>
+            <tr>
+                <th scope="col">Nom</th>
+                <th scope="col">Destination</th>
+                <th scope="col">Tarif</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prestation in prestations %}
+                {% set crud = prestation.type.value == 'logement' ? 'App\\Controller\\Admin\\LogementCrudController' : 'App\\Controller\\Admin\\ActiviteCrudController' %}
+                <tr>
+                    <td>
+                        <a href="{{ ea_url().unsetAll().setController(crud).setAction('detail').setEntityId(prestation.id) }}">{{ prestation.nom }}</a>
+                        <br><small class="bo-discret">{{ prestation.type.label }}{% if prestation.categorie %} · {{ prestation.categorie }}{% endif %}</small>
+                    </td>
+                    <td>{{ prestation.destination.ville }}</td>
+                    <td>{% include 'admin/champ/resume_tarifs.html.twig' with {entity: {instance: prestation}} only %}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
 {% endif %}

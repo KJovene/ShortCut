@@ -71,7 +71,8 @@ abstract class PrestationCrudController extends AbstractCrudController
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Prestation $p) => (string) $p->getNom())
             ->setDefaultSort(['nom' => 'ASC'])
             ->setSearchFields(['nom', 'categorie', 'destination.ville', 'prestataire.nom'])
-            ->addFormTheme('admin/form/texte_suggere.html.twig');
+            ->addFormTheme('admin/form/texte_suggere.html.twig')
+            ->addFormTheme('admin/form/tableau_saisie.html.twig');
     }
 
     public function configureActions(Actions $actions): Actions
@@ -156,6 +157,10 @@ abstract class PrestationCrudController extends AbstractCrudController
             ->setFormTypeOption('suggestions', 'categories')
             ->setHelp($logement ? 'Ex. Hôtel 3 étoiles, Appartement, Villa.' : 'Ex. Excursion, Atelier, Sport nautique.');
         yield TextareaField::new('description', 'Description')->hideOnIndex();
+        yield Field::new('tarifs', 'Tarif')
+            ->setTemplatePath('admin/champ/resume_tarifs.html.twig')
+            ->setSortable(false)
+            ->onlyOnIndex();
 
         yield FormField::addFieldset('Caractéristiques');
         yield from $this->champsDuType($pageName);
@@ -178,13 +183,20 @@ abstract class PrestationCrudController extends AbstractCrudController
             ->hideOnIndex();
 
         yield FormField::addFieldset('Tarifs');
+        // Saisie en tableau, une ligne par saison (admin/form/tableau_saisie.html.twig).
         yield CollectionField::new('tarifs', 'Tarifs par période')
             ->setEntryType(TarifPrestationType::class)
-            ->setFormTypeOption('entry_options', ['unite' => $logement ? UniteTarif::ParNuit : UniteTarif::ParPersonne])
+            ->setFormTypeOption('entry_options', [
+                'unite' => $logement ? UniteTarif::ParNuit : UniteTarif::ParPersonne,
+                'block_prefix' => 'ligne_saisie',
+            ])
+            ->setFormTypeOption('block_prefix', 'tableau_saisie')
+            ->setFormTypeOption('attr', ['data-vide' => 'Aucun tarif pour l’instant.', 'data-ajouter' => 'Ajouter une saison'])
             ->setFormTypeOption('by_reference', false)
-            ->setEntryIsComplex()
+            ->addCssClass('field-array')
             ->setRequired(false)
-            ->setHelp('Une ligne par saison. Sans tarif pour ses dates, une fiche n\'est pas proposée par le chatbot.')
+            ->setHelp(($logement ? 'Prix d\'achat par nuit, pour le logement entier, avant marge.' : 'Prix d\'achat par personne, avant marge.')
+                .' Une ligne par saison : sans tarif pour ses dates, une fiche n\'est pas proposée par le chatbot.')
             ->onlyOnForms();
         yield Field::new('tarifs', 'Tarifs par période')
             ->setTemplatePath('admin/champ/tarifs.html.twig')
