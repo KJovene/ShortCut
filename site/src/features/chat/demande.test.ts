@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  demandeDepuisQuestionnaire,
-  demandeVide,
-  nombreRenseignes,
-  valeurCritere,
-} from './demande'
+import { demandeDepuisQuestionnaire, demandeVide, nombreRenseignes, valeurCritere } from './demande'
 
 describe('récapitulatif de la demande', () => {
   it('formate les critères renseignés', () => {
@@ -63,10 +58,7 @@ describe('récapitulatif de la demande', () => {
   })
 
   it('convertit les réponses du questionnaire en critères du voyage', () => {
-    const d = demandeDepuisQuestionnaire(
-      ['Noces', 'À deux', 'Plus de 3 000 €'],
-      demandeVide(),
-    )
+    const d = demandeDepuisQuestionnaire(['Noces', 'À deux', 'Plus de 3 000 €'], demandeVide())
 
     expect(d).toMatchObject({
       type: 'noces',

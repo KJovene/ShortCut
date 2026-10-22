@@ -7,6 +7,7 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\Role;
+use App\Enum\TypeDeVoyage;
 use App\Repository\ConversationRepository;
 use App\Repository\DemandeRepository;
 use App\Security\VisiteurChatbot;
@@ -20,7 +21,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use App\Enum\TypeDeVoyage;
 
 /**
  * Routes publiques du chatbot. Toute la logique IA passe par ici : le site ne parle jamais à l'API Claude.

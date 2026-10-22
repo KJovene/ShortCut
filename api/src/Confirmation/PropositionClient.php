@@ -25,7 +25,9 @@ use Symfony\Component\Workflow\WorkflowInterface;
  * - le client demande la confirmation d'une estimation (demande « à confirmer »), puis accepte la version confirmée
  *   (proposition et demande « acceptées »).
  * Les prix d'achat des lignes ne sont jamais montrés : seuls les totaux, marge et frais compris.
- * Chaque version envoyée reste consultable (`versions`, #211), même remplacée ; un brouillon jamais.
+ * Chaque version envoyée reste consultable (`versions`, #211), même remplacée. Avant la première version envoyée, le
+ * client consulte aussi son récapitulatif « préparé » avec l'assistant (apercu()), dans le même format ; ensuite, un
+ * brouillon n'est plus montré (le client garde la version envoyée jusqu'à la suivante).
  */
 final class PropositionClient
 {
@@ -40,23 +42,49 @@ final class PropositionClient
     ) {
     }
 
-    /** La version qui fait foi pour ce lien : la sienne, ou celle qui l'a remplacée. Jamais un brouillon. */
+    /**
+     * La version qui fait foi pour ce lien : la sienne, ou celle qui l'a remplacée. Un brouillon seulement s'il est le
+     * récapitulatif préparé (apercu()).
+     */
     public function versionQuiFaitFoi(Proposition $proposition): ?Proposition
     {
+        $demande = self::demande($proposition);
         if (StatutProposition::Brouillon === $proposition->getStatut()) {
-            return null;
+            return $proposition === self::apercu($demande) ? $proposition : null;
         }
         if (StatutProposition::Remplacee !== $proposition->getStatut()) {
             return $proposition;
         }
 
         $visibles = array_filter(
-            $proposition->getDemande()?->getPropositions()->toArray() ?? [],
+            $demande->getPropositions()->toArray(),
             static fn (Proposition $p): bool => !\in_array($p->getStatut(), [StatutProposition::Brouillon, StatutProposition::Remplacee], true),
         );
         usort($visibles, static fn (Proposition $a, Proposition $b): int => $b->getVersion() <=> $a->getVersion());
 
-        return $visibles[0] ?? $proposition;
+        return $visibles[0] ?? self::apercu($demande) ?? $proposition;
+    }
+
+    /**
+     * Le récapitulatif que le client consulte avant que son conseiller lui ait envoyé une version : le dernier
+     * brouillon de première proposition préparé avec l'assistant. Null dès qu'une version a été envoyée ou confirmée.
+     */
+    public static function apercu(Demande $demande): ?Proposition
+    {
+        $apercu = null;
+        foreach ($demande->getPropositions() as $proposition) {
+            $recue = null !== $proposition->getEnvoyeeLe() || null !== $proposition->getConfirmeeLe()
+                || \in_array($proposition->getStatut(), [StatutProposition::Envoyee, StatutProposition::Confirmee, StatutProposition::Acceptee, StatutProposition::Refusee], true);
+            if ($recue) {
+                return null;
+            }
+            if (StatutProposition::Brouillon === $proposition->getStatut() && TypeProposition::Premiere === $proposition->getType()
+                && (null === $apercu || $proposition->getVersion() > $apercu->getVersion())) {
+                $apercu = $proposition;
+            }
+        }
+
+        return $apercu;
     }
 
     /**
@@ -122,6 +150,7 @@ final class PropositionClient
     {
         $demande = self::demande($proposition);
         $confirmee = TypeProposition::Confirmee === $proposition->getType();
+        $preparee = StatutProposition::Brouillon === $proposition->getStatut();
         $langue = $demande->getLangue();
         // Hypothèses et libellés sont enregistrés en français par le chiffrage : traduits pour le client (US15).
         $traduire = Langue::Anglais === $langue ? Anglais::traduire(...) : static fn (string $texte): string => $texte;
@@ -133,11 +162,14 @@ final class PropositionClient
             // Le lien ouvert était celui d'une version remplacée : le site peut basculer sur ce jeton.
             'versionDemandee' => null !== $demandee && $demandee !== $proposition ? $demandee->getVersion() : null,
             'version' => $proposition->getVersion(),
-            'etat' => $confirmee ? 'confirmee' : 'estimee',
+            // « preparee » : le récapitulatif préparé avec l'assistant, que le conseiller n'a pas encore envoyé.
+            'etat' => self::etat($proposition),
             'statut' => $proposition->getStatut()->value,
-            'mention' => $confirmee
-                ? $langue->choisir(self::MENTION_CONFIRMEE, self::MENTION_CONFIRMEE_EN)
-                : $langue->choisir(Proposition::MENTION, Proposition::MENTION_EN),
+            'mention' => match (true) {
+                $confirmee => $langue->choisir(self::MENTION_CONFIRMEE, self::MENTION_CONFIRMEE_EN),
+                $preparee => $langue->choisir(Proposition::MENTION_PREPAREE, Proposition::MENTION_PREPAREE_EN),
+                default => $langue->choisir(Proposition::MENTION, Proposition::MENTION_EN),
+            },
             'creeLe' => $proposition->getCreeLe()->format(\DATE_ATOM),
             'confirmeeLe' => $proposition->getConfirmeeLe()?->format(\DATE_ATOM),
             'niveauBudget' => $proposition->getNiveauBudget()->value,
@@ -153,6 +185,12 @@ final class PropositionClient
             // Logements et activités retenus, avec leurs points forts et les niveaux qui les retiennent (#207), et leur
             // photo du catalogue.
             'prestations' => $this->avecPhotos($proposition->getPrestations()),
+            // Activités que le client peut encore ajouter, à leur prix pour le groupe.
+            'options' => array_map(static fn (array $o): array => [
+                'nom' => $o['nom'],
+                'prixCentimes' => $o['prixCentimes'],
+                'parPersonneCentimes' => $o['parPersonneCentimes'],
+            ], $proposition->getOptions()),
             // Les postes du niveau détaillé, sans leur prix d'achat.
             'lignes' => array_map(
                 static fn (LigneDePrestation $ligne): array => self::ligne($ligne, $traduire),
@@ -171,7 +209,7 @@ final class PropositionClient
             'versions' => array_map(static fn (Proposition $v): array => [
                 'version' => $v->getVersion(),
                 'jeton' => $v->getJetonPublic(),
-                'etat' => TypeProposition::Confirmee === $v->getType() ? 'confirmee' : 'estimee',
+                'etat' => self::etat($v),
                 'statut' => $v->getStatut()->value,
                 'creeLe' => $v->getCreeLe()->format(\DATE_ATOM),
                 'totalCentimes' => $v->getTotalCentimes(),
@@ -198,17 +236,29 @@ final class PropositionClient
         ];
     }
 
+    /** « confirmee », « estimee » (envoyée par le conseiller) ou « preparee » (récapitulatif pas encore envoyé). */
+    private static function etat(Proposition $proposition): string
+    {
+        return match (true) {
+            TypeProposition::Confirmee === $proposition->getType() => 'confirmee',
+            StatutProposition::Brouillon === $proposition->getStatut() => 'preparee',
+            default => 'estimee',
+        };
+    }
+
     /**
      * Les versions de la demande que le client a reçues (envoyées ou confirmées), de la plus ancienne à la plus
-     * récente. Un brouillon remplacé avant d'être envoyé n'a jamais été vu : il n'y est pas.
+     * récente, ou son récapitulatif préparé avant toute version envoyée. Un brouillon remplacé n'y est pas.
      *
      * @return list<Proposition>
      */
     private static function envoyees(Proposition $proposition): array
     {
+        $demande = self::demande($proposition);
+        $apercu = self::apercu($demande);
         $versions = array_values(array_filter(
-            self::demande($proposition)->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe(),
+            $demande->getPropositions()->toArray(),
+            static fn (Proposition $p): bool => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe() || $p === $apercu,
         ));
         usort($versions, static fn (Proposition $a, Proposition $b): int => $a->getVersion() <=> $b->getVersion());
 

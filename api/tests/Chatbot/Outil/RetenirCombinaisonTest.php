@@ -84,6 +84,20 @@ final class RetenirCombinaisonTest extends KernelTestCase
             }
         }
 
+        // Le niveau conseillé tient dans le budget ; les options sont des activités compatibles qu'il ne contient pas,
+        // à leur prix de vente pour le groupe : le total du niveau augmente d'autant.
+        $conseille = $sortie['niveaux'][$sortie['niveauConseille']];
+        self::assertContains($sortie['niveauConseille'], ['essentiel', 'equilibre'], $fichier);
+        self::assertLessThanOrEqual(RetenirCombinaison::OPTIONS_MAX, \count($sortie['options']), $fichier);
+        if ($sortie['budgetInsuffisant']) {
+            self::assertSame([], $sortie['options'], $fichier);
+        }
+        foreach ($sortie['options'] as $option) {
+            self::assertNotContains($option['id'], array_column($conseille['activites'], 'id'), $fichier);
+            self::assertGreaterThan(0, $option['prixEuros'], $fichier);
+            self::assertEqualsWithDelta($conseille['totalEuros'] + $option['prixEuros'], $option['totalAvecEuros'], 0.011, $fichier);
+        }
+
         // La justification vient des données : climat aux dates, trajet depuis la ville de départ, envies.
         $justification = $sortie['justification'];
         self::assertNotSame([], $justification['climatAuxDates'], $fichier);

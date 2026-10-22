@@ -62,8 +62,34 @@ describe('flux du chatbot', () => {
       { type: 'texte', texte: 'Très ' },
       { type: 'texte', texte: 'bien, à quelles dates ?' },
       { type: 'outil', nom: 'enregistrer_exigences' },
-      { type: 'fin' },
+      { type: 'fin', terminee: false },
     ])
+  })
+
+  it('lit la carte du récapitulatif et la fin de la conversation', async () => {
+    const recapitulatif = {
+      type: 'recapitulatif',
+      texte: 'Votre récapitulatif est prêt.',
+      jeton: 'a'.repeat(64),
+      version: 1,
+      ville: 'Kyoto',
+      jours: 15,
+      niveau: 'equilibre',
+      totalCentimes: 574960,
+      parPersonneCentimes: 574960,
+      voyageurs: 1,
+      options: [{ id: 12, nom: 'Cérémonie du thé', prixCentimes: 8500 }],
+    }
+    const evenements = await tout(
+      lireEvenements(
+        flux(
+          `event: recapitulatif\ndata: ${JSON.stringify(recapitulatif)}\n\n` +
+            'event: fin\ndata: {"terminee":true}\n\n',
+        ),
+      ),
+    )
+
+    expect(evenements).toEqual([recapitulatif, { type: 'fin', terminee: true }])
   })
 })
 

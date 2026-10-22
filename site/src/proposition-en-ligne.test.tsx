@@ -54,6 +54,7 @@ const PROPOSITION: PropositionEnLigne = {
       photo: '/uploads/prestations/suite-caldeira.jpg',
     },
   ],
+  options: [],
   lignes: [
     {
       type: 'logement',
@@ -120,6 +121,7 @@ const VERSION_2: PropositionEnLigne = {
       photo: null,
     },
   ],
+  options: [],
   lignes: [
     { ...PROPOSITION.lignes[0], dateDebut: '2027-05-17', dateFin: '2027-05-24' },
     {
@@ -190,6 +192,43 @@ describe('« Ma proposition » par son lien unique (#208)', () => {
       'href',
       `/api/propositions/${JETON}/versions/1/pdf`,
     )
+  })
+
+  it('montre le récapitulatif préparé avec l’assistant, ses options, et aucune action avant l’envoi du conseiller', async () => {
+    simulerApi({
+      [`GET /api/propositions/${JETON}`]: {
+        status: 200,
+        body: {
+          ...PROPOSITION,
+          etat: 'preparee',
+          statut: 'brouillon',
+          mention:
+            'Récapitulatif préparé avec l’assistant, prix estimés : votre conseiller le relit, vérifie chaque prix et chaque place, puis vous l’envoie.',
+          options: [
+            {
+              nom: 'Dégustation de vins volcaniques',
+              prixCentimes: 18000,
+              parPersonneCentimes: 9000,
+            },
+          ],
+          versions: [{ ...PROPOSITION.versions[0], etat: 'preparee', statut: 'brouillon' }],
+          actions: { demanderConfirmation: false, accepter: false },
+        } satisfies PropositionEnLigne,
+      },
+    })
+    afficher(`/proposition/${JETON}`)
+
+    expect(await screen.findByText(/^Votre récapitulatif · /)).toBeInTheDocument()
+    expect(screen.getByText(/Récapitulatif préparé avec l’assistant/)).toBeInTheDocument()
+    expect(screen.queryByText(/Confirmation annoncée/)).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Envie d’un petit plus ?' })).toBeInTheDocument()
+    expect(screen.getByText('Dégustation de vins volcaniques')).toBeInTheDocument()
+    expect(screen.getByText('+180 €')).toBeInTheDocument()
+    expect(screen.getByText(/Votre conseiller relit ce récapitulatif/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Demander la confirmation' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /J’accepte/ })).not.toBeInTheDocument()
   })
 
   it('s’affiche en anglais pour un client qui a dialogué en anglais (US15)', async () => {

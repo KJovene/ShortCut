@@ -36,6 +36,65 @@ export const ficheSchema = z.object({
 
 export type Fiche = z.infer<typeof ficheSchema>
 
+const NIVEAU = z.enum(['essentiel', 'equilibre', 'confort'])
+
+/** Piste retenue par la recherche (api/src/Chatbot/Piste.php), affichée en carte sous le message de l'assistant. */
+export const pisteSchema = z.object({
+  destination: z.object({ slug: z.string(), ville: z.string(), pays: z.string().nullable() }),
+  dateDebut: z.string(),
+  dateFin: z.string(),
+  nuits: z.number(),
+  voyageurs: z.number(),
+  temperatureMoyenne: z.number().nullable(),
+  villeDepart: z.string().nullable(),
+  tempsDeTrajetMinutes: z.number().nullable(),
+  envies: z.array(z.string()),
+  niveauConseille: NIVEAU,
+  niveaux: z.record(
+    NIVEAU,
+    z.object({
+      logements: z.array(z.string()),
+      activites: z.array(z.string()),
+      transport: z.string(),
+      totalEuros: z.number(),
+      parPersonneEuros: z.number(),
+    }),
+  ),
+  options: z.array(
+    z.object({
+      id: z.number(),
+      nom: z.string(),
+      prixEuros: z.number(),
+      parPersonneEuros: z.number(),
+    }),
+  ),
+  budgetInsuffisant: z.boolean(),
+  arbitrages: z.array(z.object({ libelle: z.string(), totalEuros: z.number() })),
+  avertissement: z.string(),
+})
+export type Piste = z.infer<typeof pisteSchema>
+
+/** Récapitulatif détaillé enregistré (AgentRedaction::carte) : son lien et, s'il reste à choisir, les options. */
+export const recapitulatifSchema = z.object({
+  texte: z.string(),
+  jeton: z.string(),
+  version: z.number(),
+  ville: z.string().nullable(),
+  jours: z.number(),
+  niveau: NIVEAU,
+  totalCentimes: z.number(),
+  parPersonneCentimes: z.number(),
+  voyageurs: z.number(),
+  options: z.array(z.object({ id: z.number(), nom: z.string(), prixCentimes: z.number() })),
+})
+export type RecapitulatifChat = z.infer<typeof recapitulatifSchema>
+
+/** Carte gardée avec un message de la conversation (messages de l'API). */
+export const carteSchema = z.discriminatedUnion('type', [
+  pisteSchema.extend({ type: z.literal('piste') }),
+  recapitulatifSchema.extend({ type: z.literal('recapitulatif') }),
+])
+
 const evenementSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('texte'), texte: z.string() }),
   z.object({ type: z.literal('outil'), nom: z.string() }),
@@ -46,8 +105,11 @@ const evenementSchema = z.discriminatedUnion('type', [
     /** Langue du client, reconnue par l'assistant (US15). */
     langue: z.enum(['fr', 'en']).default('fr'),
   }),
+  pisteSchema.extend({ type: z.literal('piste') }),
+  recapitulatifSchema.extend({ type: z.literal('recapitulatif') }),
   z.object({ type: z.literal('erreur'), erreur: z.string() }),
-  z.object({ type: z.literal('fin') }),
+  /** terminee : la conversation n'attend plus rien du client (récapitulatif complet, conseiller). */
+  z.object({ type: z.literal('fin'), terminee: z.boolean().default(false) }),
 ])
 
 export type EvenementChat = z.infer<typeof evenementSchema>

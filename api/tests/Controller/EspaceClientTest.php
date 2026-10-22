@@ -97,6 +97,24 @@ final class EspaceClientTest extends WebTestCase
         self::assertSame(376200, $proposition['totalCentimes']);
     }
 
+    public function testLeRecapitulatifPrepareEstVisibleAvantLaPremiereVersionEnvoyee(): void
+    {
+        $camille = $this->creerCompte('camille.test@shortcut.test', Role::Client);
+        $demande = $this->creerDemande($camille, 'Chypre', '-1 day');
+        $this->creerProposition($demande, 1, StatutProposition::Remplacee, 376200);
+        $this->creerProposition($demande, 2, StatutProposition::Brouillon, 410000);
+
+        $this->client->loginUser($camille);
+        $this->client->request('GET', '/api/moi/demandes');
+
+        $proposition = $this->reponse()[0]['proposition'];
+        self::assertSame(['version' => 2, 'etat' => 'preparee', 'totalCentimes' => 410000], [
+            'version' => $proposition['version'],
+            'etat' => $proposition['etat'],
+            'totalCentimes' => $proposition['totalCentimes'],
+        ]);
+    }
+
     private function creerCompte(string $email, Role $role): Utilisateur
     {
         $utilisateur = (new Utilisateur())->setEmail($email)->setNom('Compte de test')->setRole($role);

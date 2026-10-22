@@ -56,6 +56,14 @@ export const TEXTES = {
       'Votre demande de confirmation est transmise : votre conseiller vérifie prix et disponibilités.',
     prixVerifies: 'Prix vérifiés par votre conseiller. Rien n’est réservé avant votre accord.',
     rienReserve: 'Rien n’est réservé ni payé avant la confirmation de votre conseiller.',
+    // Récapitulatif préparé avec l'assistant, avant l'envoi du conseiller
+    recapitulatifDu: (date: string) => `Votre récapitulatif · ${date}`,
+    enRelecture:
+      'Votre conseiller relit ce récapitulatif : il vérifie chaque prix et chaque place, puis vous envoie votre proposition sous 2 jours ouvrés.',
+    optionsTitre: 'Envie d’un petit plus ?',
+    optionsDetail:
+      'Ces activités ne sont pas dans votre voyage. Pour en ajouter une, dites-le à l’assistant (« Modifier le voyage » dans votre espace) ou à votre conseiller.',
+    pourLeGroupe: (prix: string) => `+${prix}`,
     // Comparaison des versions
     dates: 'Dates',
     destination: 'Destination',
@@ -114,6 +122,13 @@ export const TEXTES = {
     chargementComparaison: 'Loading the comparison…',
     actuelle: ' (current)',
     confirmee: ' · confirmed',
+    recapitulatifDu: (date: string) => `Your summary · ${date}`,
+    enRelecture:
+      'Your advisor is reviewing this summary: they check every price and every place, then send you your proposal within 2 business days.',
+    optionsTitre: 'Fancy a little extra?',
+    optionsDetail:
+      'These activities are not in your trip. To add one, tell the assistant (“Change the trip” in your account) or your advisor.',
+    pourLeGroupe: (prix: string) => `+${prix}`,
     acceptee: 'You have accepted this proposal: your advisor is booking your trip.',
     confirmationTransmise:
       'Your confirmation request has been sent: your advisor is checking prices and availability.',

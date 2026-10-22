@@ -27,6 +27,10 @@ export function ChatWorkspace({ className }: { className?: string }) {
   } = useChat()
   const t = TEXTES[langue]
   const fil = useRef<HTMLDivElement>(null)
+  // Seul le dernier récapitulatif propose ses options : les précédents sont dépassés.
+  const dernierRecapitulatif = messages.findLast(
+    (m) => 'type' in m && m.type === 'recapitulatif',
+  )?.id
   const champ = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -74,7 +78,7 @@ export function ChatWorkspace({ className }: { className?: string }) {
             {t.aujourdhui}
           </span>
           {messages.map((m) => (
-            <Bulle key={m.id} message={m} />
+            <Bulle key={m.id} message={m} actif={!terminee && m.id === dernierRecapitulatif} />
           ))}
           {reflexion && <AssistantEcrit />}
         </div>

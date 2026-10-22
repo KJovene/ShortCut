@@ -82,15 +82,18 @@ final class AgentRechercheTest extends WebTestCase
         $evenements = $this->envoyer($jeton, 'Oui, c’est tout bon');
 
         self::assertSame(
-            ['outil', 'demande', 'texte', 'texte', 'texte', 'outil', 'outil', 'outil', 'combinaison', 'texte', 'outil', 'outil', 'texte', 'fin'],
+            ['outil', 'demande', 'texte', 'texte', 'texte', 'outil', 'outil', 'outil', 'texte', 'piste', 'outil', 'outil', 'recapitulatif', 'fin'],
             array_column($evenements, 0),
         );
-        $combinaison = current(array_filter($evenements, static fn (array $e) => 'combinaison' === $e[0]))[1];
-        self::assertSame('lisbonne', $combinaison['destination']['slug']);
-        self::assertSame(['Hôtel Alfama Vista, chambre double'], array_column($combinaison['niveaux']['essentiel']['logements'], 'nom'));
-        self::assertSame(['Tejo Palace, suite vue fleuve'], array_column($combinaison['niveaux']['confort']['logements'], 'nom'));
-        self::assertSame('/api/logements/'.$palace, $combinaison['niveaux']['confort']['logements'][0]['fiche']);
-        self::assertStringStartsWith('Prix estimés le ', $combinaison['avertissement']);
+        // La carte de la piste suit le message de l'agent : niveaux, totaux et avertissement du chiffrage.
+        $piste = current(array_filter($evenements, static fn (array $e) => 'piste' === $e[0]))[1];
+        self::assertSame('piste', $piste['type']);
+        self::assertSame('lisbonne', $piste['destination']['slug']);
+        self::assertSame(['Hôtel Alfama Vista, chambre double'], $piste['niveaux']['essentiel']['logements']);
+        self::assertSame(['Tejo Palace, suite vue fleuve'], $piste['niveaux']['confort']['logements']);
+        self::assertSame('equilibre', $piste['niveauConseille']);
+        self::assertSame(3, $piste['nuits']);
+        self::assertStringStartsWith('Prix estimés le ', $piste['avertissement']);
 
         // Le refus est renvoyé au modèle avec sa raison, pour qu'il corrige son choix.
         $apresRefus = $this->claude->requetes[4]['corps']['messages'];
@@ -101,7 +104,10 @@ final class AgentRechercheTest extends WebTestCase
         $conversation = $this->conversation($jeton);
         // Le gras markdown est retiré : le widget affiche du texte brut.
         $messages = $conversation->getMessages();
-        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 2]['contenu']);
+        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 3]['contenu']);
+        // La carte est gardée avec son texte, lisible là où elle ne s'affiche pas (Mon espace).
+        self::assertSame('piste', $messages[\count($messages) - 2]['carte']['type'] ?? null);
+        self::assertStringStartsWith('Lisbonne (Portugal), du 14 mai 2027 au 17 mai 2027, 3 nuits, 2 voyageurs.', $messages[\count($messages) - 2]['contenu']);
         $recherche = $this->em->getRepository(JournalIA::class)->findBy(['demande' => $conversation->getDemande(), 'agent' => AgentIA::Recherche]);
         self::assertCount(4, $recherche);
         self::assertSame(AgentRecherche::MODELE, $this->claude->requetes[2]['corps']['model']);
@@ -118,11 +124,18 @@ final class AgentRechercheTest extends WebTestCase
         self::assertStringContainsString('Le programme compte 3 jours ; le voyage en compte 4', json_decode($refus['content'], true)['erreur']);
         self::assertCount(8, $this->claude->requetes, 'Pas d\'appel après l\'enregistrement réussi.');
 
-        // La proposition est un brouillon que le conseiller relira : le client en est seulement prévenu.
-        self::assertSame("\n\n".AgentRedaction::MESSAGE_BROUILLON, $evenements[\count($evenements) - 2][1]['texte']);
+        // La proposition est un brouillon que le conseiller relira : le client consulte son récapitulatif par son lien,
+        // et répond aux options s'il y en a.
         $conversation = $this->conversation($jeton);
+        $proposition = $conversation->getDemande()?->getPropositions()->first() ?: throw new \LogicException('Aucune proposition.');
+        $question = [] !== $proposition->getOptions();
+        $recapitulatif = $evenements[\count($evenements) - 2][1];
+        self::assertSame($proposition->getJetonPublic(), $recapitulatif['jeton']);
+        self::assertSame(AgentRedaction::MESSAGE_PRET.' '.($question ? AgentRedaction::MESSAGE_QUESTION_OPTIONS : AgentRedaction::MESSAGE_SUITE), $recapitulatif['texte']);
+        self::assertSame(['terminee' => !$question], end($evenements)[1]);
         $messagesAuClient = $conversation->getMessages();
-        self::assertSame(AgentRedaction::MESSAGE_BROUILLON, end($messagesAuClient)['contenu']);
+        self::assertSame($recapitulatif['texte'], end($messagesAuClient)['contenu']);
+        self::assertSame('recapitulatif', end($messagesAuClient)['carte']['type'] ?? null);
 
         $demande = $conversation->getDemande() ?? throw new \LogicException();
         self::assertSame(StatutDemande::Nouvelle, $demande->getStatut());
@@ -136,7 +149,7 @@ final class AgentRechercheTest extends WebTestCase
         self::assertContains('essentiel', $proposition->getPrestations()[0]['niveaux']);
         self::assertSame(['Plain-pied', 'Chambre adaptée'], $proposition->getPrestations()[0]['pointsForts']);
         // Montants du chiffrage, jamais du modèle : le total du niveau détaillé et ses lignes.
-        self::assertEquals($combinaison['niveaux'][$proposition->getNiveauBudget()->value]['totalEuros'] * 100, $proposition->getTotalCentimes());
+        self::assertEquals($piste['niveaux'][$proposition->getNiveauBudget()->value]['totalEuros'] * 100, $proposition->getTotalCentimes());
         $lignes = array_values($proposition->getLignes()->toArray());
         self::assertSame([TypeLigne::Logement, TypeLigne::Transport, TypeLigne::Transport], array_map(static fn ($l) => $l->getType(), $lignes));
         self::assertSame(3, $lignes[0]->getQuantite());
@@ -160,13 +173,14 @@ final class AgentRechercheTest extends WebTestCase
 
         $evenements = $this->envoyer($jeton, 'Oui, c’est tout bon');
 
-        self::assertNotContains('proposition', array_column($evenements, 0));
+        self::assertNotContains('recapitulatif', array_column($evenements, 0));
         self::assertNotContains('erreur', array_column($evenements, 0));
+        self::assertSame(['terminee' => true], end($evenements)[1]);
         $conversation = $this->conversation($jeton);
         self::assertTrue($conversation->isRepriseParConseiller());
         self::assertCount(0, $conversation->getDemande()?->getPropositions() ?? []);
         $messages = $conversation->getMessages();
-        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 2]['contenu']);
+        self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 3]['contenu']);
         self::assertStringStartsWith('Je n\'ai pas pu mettre en forme votre programme détaillé. Un conseiller', end($messages)['contenu']);
     }
 

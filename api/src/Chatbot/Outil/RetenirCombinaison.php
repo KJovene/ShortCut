@@ -9,6 +9,7 @@ use App\Chiffrage\Montant;
 use App\Entity\Demande;
 use App\Entity\Destination;
 use App\Entity\Prestation;
+use App\Enum\NiveauBudget;
 use App\Repository\DestinationRepository;
 use App\Repository\PrestationRepository;
 
@@ -21,9 +22,16 @@ use App\Repository\PrestationRepository;
  * avec la raison. Il chiffre ensuite les trois niveaux (calculer_budget) : chaque niveau retient sa combinaison de
  * logements et d'activités. La sortie relie chaque prestation à sa fiche et donne les faits qui justifient le choix :
  * températures aux dates, temps de trajet, envies satisfaites.
+ *
+ * Elle donne aussi le niveau conseillé au client et, en option, jusqu'à trois activités compatibles que ce niveau ne
+ * contient pas, à leur prix de vente pour le groupe : le chatbot les lui propose comme le ferait un conseiller (sauf
+ * si même l'essentiel dépasse son budget).
  */
 final class RetenirCombinaison implements Outil
 {
+    /** Activités proposées en option au plus : au-delà, le client ne lit plus. */
+    public const OPTIONS_MAX = 3;
+
     public function __construct(
         private readonly ChercherDestinations $chercherDestinations,
         private readonly ChercherLogements $chercherLogements,
@@ -128,6 +136,8 @@ final class RetenirCombinaison implements Outil
             'adultes' => $demande->getAdultes(),
             'agesEnfants' => $demande->agesDesEnfants(),
             'accessibleObligatoire' => $accessible,
+            // Seulement pour l'ordre : les activités qui répondent aux envies d'abord (options).
+            'envies' => $demande->getEnvies(),
         ]);
         $demandees = Entree::entiers($entree, 'activitesDemandees');
         $suggerees = Entree::entiers($entree, 'activitesSuggerees');
@@ -149,6 +159,20 @@ final class RetenirCombinaison implements Outil
         }
 
         $fiches = $this->fiches([...$retenues, ...$demandees, ...$suggerees]);
+        $niveaux = array_map(static fn (array $niveau): array => [
+            'logements' => array_map(static fn (string $nom): array => self::parNom($fiches, $nom), $niveau['logements']),
+            'activites' => array_map(static fn (string $nom): array => self::parNom($fiches, $nom), $niveau['activites']),
+            // Seule différence entre deux niveaux aux mêmes prestations : l'estimation du transport.
+            'transport' => $niveau['transport'],
+            'totalEuros' => $niveau['totalEuros'],
+            'parPersonneEuros' => $niveau['parPersonneEuros'],
+        ], $chiffrage['niveaux']);
+        // Le niveau que le client a choisi (options, NouvelleVersion), sinon celui qui tient dans son budget.
+        $niveauConseille = NiveauBudget::tryFrom((string) ($entree['niveauDetaille'] ?? '')) ?? self::niveauConseille($demande, $niveaux);
+        $etapesChoisies = array_map(static fn (array $e): array => ['dateDebut' => $e['debut']->format('Y-m-d'), 'nombreDeNuits' => $e['nuits'], 'logementIds' => $e['logementIds']], $etapes);
+        // Pas d'option à un client dont même l'essentiel dépasse le budget : on l'aide d'abord à s'en rapprocher.
+        $options = $chiffrage['budgetInsuffisant'] ? [] : $this->options($demande, $slug, $etapesChoisies, $activites['activites'], $suggerees, $niveaux[$niveauConseille->value]);
+
         $combinaison = [
             'destination' => [
                 'slug' => $slug,
@@ -162,14 +186,9 @@ final class RetenirCombinaison implements Outil
                 'logements' => array_map(static fn (int $id): array => $fiches[$id], $e['logementIds']),
             ], $etapes),
             'justification' => self::justification($demande, $resultatDestination, $pourquoi),
-            'niveaux' => array_map(static fn (array $niveau): array => [
-                'logements' => array_map(static fn (string $nom): array => self::parNom($fiches, $nom), $niveau['logements']),
-                'activites' => array_map(static fn (string $nom): array => self::parNom($fiches, $nom), $niveau['activites']),
-                // Seule différence entre deux niveaux aux mêmes prestations : l'estimation du transport.
-                'transport' => $niveau['transport'],
-                'totalEuros' => $niveau['totalEuros'],
-                'parPersonneEuros' => $niveau['parPersonneEuros'],
-            ], $chiffrage['niveaux']),
+            'niveaux' => $niveaux,
+            'niveauConseille' => $niveauConseille->value,
+            'options' => $options,
         ];
 
         // La combinaison rejoint le chiffrage en cache : l'agent de rédaction la retrouve par le même identifiant.
@@ -178,7 +197,7 @@ final class RetenirCombinaison implements Outil
             'combinaison' => $combinaison,
             'choix' => [
                 'destination' => $slug,
-                'etapes' => array_map(static fn (array $e): array => ['dateDebut' => $e['debut']->format('Y-m-d'), 'nombreDeNuits' => $e['nuits'], 'logementIds' => $e['logementIds']], $etapes),
+                'etapes' => $etapesChoisies,
                 'activitesDemandees' => $demandees,
                 'activitesSuggerees' => $suggerees,
                 'pourquoi' => $pourquoi,
@@ -198,6 +217,64 @@ final class RetenirCombinaison implements Outil
             ], $chiffrage['arbitrages'] ?? []),
             'avertissement' => $this->calculerBudget->avertissement($demande->getLangue()),
         ];
+    }
+
+    /**
+     * Équilibré, sauf si son total dépasse le budget du client : l'essentiel, le plus proche de ce qu'il peut payer.
+     *
+     * @param array<string, array{totalEuros: int|float, parPersonneEuros: int|float}> $niveaux
+     */
+    public static function niveauConseille(Demande $demande, array $niveaux): NiveauBudget
+    {
+        $budget = $demande->getBudgetCentimes();
+        if (null === $budget) {
+            return NiveauBudget::Equilibre;
+        }
+        $equilibre = $niveaux[NiveauBudget::Equilibre->value];
+        $prix = $demande->isBudgetParPersonne() ? $equilibre['parPersonneEuros'] : $equilibre['totalEuros'];
+
+        return $prix * 100 <= $budget ? NiveauBudget::Equilibre : NiveauBudget::Essentiel;
+    }
+
+    /**
+     * Les activités compatibles que le niveau conseillé ne contient pas : les suggestions de l'agent d'abord, puis
+     * celles qui répondent aux envies (ordre de chercher_activites). Chacune avec son prix de vente pour le groupe et
+     * le total du niveau si le client l'ajoute.
+     *
+     * @param list<array{dateDebut: string, nombreDeNuits: int, logementIds: list<int>}> $etapes
+     * @param list<array<string, mixed>>                                                 $compatibles résultats de chercher_activites
+     * @param list<int>                                                                  $suggerees
+     * @param array{activites: list<array{id: int}>, totalEuros: int|float}              $niveau      le niveau conseillé
+     *
+     * @return list<array{id: int, nom: string, prixEuros: int|float, parPersonneEuros: int|float, participants: int, totalAvecEuros: int|float}>
+     */
+    private function options(Demande $demande, string $slug, array $etapes, array $compatibles, array $suggerees, array $niveau): array
+    {
+        $dejaIncluses = array_column($niveau['activites'], 'id');
+        $candidates = array_values(array_diff(
+            array_unique([...array_intersect($suggerees, array_column($compatibles, 'activiteId')), ...array_column($compatibles, 'activiteId')]),
+            $dejaIncluses,
+        ));
+        if ([] === $candidates) {
+            return [];
+        }
+
+        $options = [];
+        foreach ($this->calculerBudget->options($demande, ['destination' => $slug, 'etapes' => $etapes], \array_slice($candidates, 0, self::OPTIONS_MAX * 2)) as $option) {
+            $options[] = [
+                'id' => (int) $option['activite']->getId(),
+                'nom' => (string) $option['activite']->getNom(),
+                'prixEuros' => Montant::nombre($option['centimes']),
+                'parPersonneEuros' => Montant::nombre($option['parPersonneCentimes']),
+                'participants' => $option['participants'],
+                'totalAvecEuros' => Montant::nombre((int) round($niveau['totalEuros'] * 100) + $option['centimes']),
+            ];
+            if (self::OPTIONS_MAX === \count($options)) {
+                break;
+            }
+        }
+
+        return $options;
     }
 
     /**
