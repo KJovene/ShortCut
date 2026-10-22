@@ -38,7 +38,7 @@ final class Pages
             ],
             [
                 'slug' => 'types-de-voyages',
-                'titre' => 'Tous les voyages, *sur mesure*',
+                'titre' => '*Tous* les voyages, *sur mesure*',
                 'seoTitre' => 'Séjours, circuits, groupes, voyages de noces et entreprise',
                 'seoDescription' => 'Séjours détente, circuits accompagnés, voyages de groupe, voyages de noces et séminaires : l\'agence organise tous vos voyages.',
                 'contenu' => '<h2>Séjours</h2><p>Une destination, un hébergement choisi pour vous et des activités à la carte : plage, ville ou nature.</p><h2>Circuits</h2><p>Plusieurs étapes, un itinéraire pensé jour par jour, avec guide ou en autotour : Islande, Costa Rica…</p><h2>Groupes</h2><p>Amis, associations, scolaires : hébergements adaptés, transferts et visites guidées pour 10 à 60 personnes.</p><h2>Voyages de noces</h2><p>Suites avec vue, villas avec piscine privée, attentions pour les jeunes mariés.</p><h2>Entreprise</h2><p>Séminaires, conventions et incentives : salles de réunion, hébergement en bloc et activités de cohésion.</p>',
