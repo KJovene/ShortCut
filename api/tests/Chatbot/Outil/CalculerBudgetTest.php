@@ -91,7 +91,8 @@ final class CalculerBudgetTest extends KernelTestCase
 
         self::assertSame(['montantEuros' => 5000, 'parPersonne' => false], $sortie['budgetClient']);
         self::assertFalse($sortie['budgetInsuffisant']);
-        self::assertSame(CalculerBudget::AVERTISSEMENT, $sortie['avertissement']);
+        // Estimation datée à l'heure de Paris (horloge du test : 19 octobre 2026, 15 h 30 UTC).
+        self::assertSame('Prix estimés le lundi 19 octobre 2026 à 17 h 30 d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.', $sortie['avertissement']);
         self::assertSame([2286, 4956, 5502], array_column($sortie['niveaux'], 'totalEuros'));
 
         $equilibre = $sortie['niveaux']['equilibre'];

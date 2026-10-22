@@ -11,6 +11,7 @@ use App\Chiffrage\DemandeDeChiffrage;
 use App\Chiffrage\Etape;
 use App\Chiffrage\Montant;
 use App\Chiffrage\Niveau;
+use App\Chiffrage\Periode;
 use App\Chiffrage\Poste;
 use App\Chiffrage\ResultatChiffrage;
 use App\Entity\Demande;
@@ -33,7 +34,8 @@ use Psr\Clock\ClockInterface;
  */
 final class CalculerBudget implements Outil
 {
-    public const AVERTISSEMENT = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
+    /** Mention qui suit chaque présentation des totaux au client : l'estimation est datée (charte Détour). */
+    public const AVERTISSEMENT = 'Prix estimés le %s à %s d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.';
 
     public function __construct(
         private readonly BudgetCalculator $calculateur,
@@ -50,6 +52,14 @@ final class CalculerBudget implements Outil
     public function nom(): string
     {
         return 'calculer_budget';
+    }
+
+    /** « Prix estimés le jeudi 22 octobre 2026 à 9 h 40 d'après nos tarifs : … », à l'heure de Paris. */
+    public function avertissement(): string
+    {
+        $maintenant = $this->horloge->now()->setTimezone(new \DateTimeZone('Europe/Paris'));
+
+        return \sprintf(self::AVERTISSEMENT, Periode::jour($maintenant), Periode::heure($maintenant));
     }
 
     public function definition(): array
@@ -216,7 +226,7 @@ final class CalculerBudget implements Outil
                 'parPersonne' => $resultat->budgetParPersonne,
             ],
             'budgetInsuffisant' => $resultat->budgetInsuffisant,
-            'avertissement' => self::AVERTISSEMENT,
+            'avertissement' => $this->avertissement(),
             'niveaux' => null === $resultat->niveaux ? null : array_map(self::niveau(...), $resultat->niveaux),
             'exclusions' => $resultat->exclusions,
             'nonChiffrable' => null === $resultat->nonChiffrable ? null : [

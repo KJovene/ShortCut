@@ -361,7 +361,7 @@ Sortie (extrait) :
   "budgetClient": { "montantEuros": 3500, "parPersonne": false },
   "budgetInsuffisant": false,
   "arbitrages": [],
-  "avertissement": "Première proposition, prix estimés, à confirmer par votre conseiller."
+  "avertissement": "Prix estimés le lundi 19 octobre 2026 à 15 h 30 d'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer."
 }
 ```
 
@@ -426,7 +426,7 @@ Sortie (extrait, niveau essentiel seul) :
 }
 ```
 
-La sortie contient aussi `avertissement` (« Première proposition, prix estimés, à confirmer par votre conseiller. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
+La sortie contient aussi `avertissement`, la mention datée que l'agent recopie après les totaux (« Prix estimés le lundi 19 octobre 2026 à 15 h 30 d'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
 
 Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contient aussi `arbitrages` (ticket #206, voir `docs/chiffrage.md`) : l'agent les présente au client et, s'il en accepte un, rappelle l'outil avec ses `etapes`.
 

@@ -19,5 +19,5 @@ export const MESSAGE_ACCUEIL: Message = {
   id: 'accueil',
   auteur: 'assistant',
   texte:
-    'Bonjour ! Je suis l’assistant de l’agence, une IA. Racontez-moi le voyage dont vous rêvez.',
+    'Bonjour, je suis l’assistant de Détour, une intelligence artificielle. Racontez-moi le voyage dont vous rêvez : la plage, les montagnes ou ce petit pas de côté auquel vous n’avez pas encore pensé.',
 }

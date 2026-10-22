@@ -108,8 +108,8 @@ export function Recapitulatif({
         {terminee ? (
           <>
             <p className="m-0 text-xs leading-normal text-taupe-clair">
-              Votre conseiller vous recontacte dans les plus brefs délais avec votre proposition.
-              Prix estimés, rien n'est réservé avant sa confirmation.
+              Votre conseiller vous recontacte sous 2 jours ouvrés avec votre proposition. Prix
+              estimés, rien n'est réservé avant sa confirmation.
             </p>
             <p
               role="status"

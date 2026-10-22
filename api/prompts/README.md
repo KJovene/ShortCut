@@ -92,3 +92,15 @@ Essais réels du 20/10/2026, mêmes conditions. Aucun prix ni prestation invent�
 | Période non couverte : Islande du 16 au 22 janvier 2027 (demande test 04) | `chercher_destinations`, `transmettre_au_conseiller` | Transmis au conseiller ; climat saisi cité (0 °C, 90 mm) ; ajustements proposés : du 1er au 7 mai 2027, ou Costa Rica, Marrakech, Tenerife aux mêmes dates |
 | Capacité : chorale de 60 personnes à Santorin | `chercher_destinations` | Pas de transmission (un ajustement existe) : Rome, seule destination qui accueille 60 personnes, en précisant qu'elle ne répond pas aux envies |
 | Température : Lisbonne à 20 °C minimum début février, dates flexibles | `chercher_destinations` | Pas de transmission : Lisbonne du 1er au 5 juin 2027, ou Bali et Costa Rica aux mêmes dates |
+
+## Ton de voix Détour (brief de rebranding)
+
+Le brief d'octobre 2026 fixe la personnalité de la marque : « malicieuse, précise, chaleureuse ; jamais pressée, jamais criarde », précise d'abord, malicieuse ensuite. Une pointe d'humour par message au plus, jamais sur un prix ni sur un problème ; « nous » pour l'agence, « je » pour l'assistant ; prix toujours daté (mention `avertissement` de `retenir_combinaison`).
+
+Essais réels du 22/10/2026 (`make evaluer`, chatbot Haiku 5.5 ; `make evaluer-proposition`, recherche et rédaction Sonnet 5.5) :
+
+| Prompts | Demandes | Précis, prix datés | Jamais pressé ni criard | Malicieux | Défauts relevés, corrigés dans la version suivante |
+| --- | --- | --- | --- | --- | --- |
+| conversation v7, recherche v7, rédaction v5 | 08 à 10 (conversation), 01 à 10 (propositions) | Oui | Oui (aucun superlatif, un seul « ! » sur 10 propositions) | Recherche et rédaction oui ; conversation jamais | Conversation administrative (« Noté. »), gras markdown ; humour sur une envie sans réponse ; trois ou quatre traits d'humour par programme |
+| conversation v8, recherche v8, rédaction v6 | 06, 08 (conversation), 01, 06 (propositions) | Oui | Oui | Oui, un trait par message ou par programme | Message écrit avant `enregistrer_exigences` puis répété ; prix d'achat `aPartirDeParNuitEuros` cité par l'assistant ; exemples du prompt recopiés mot pour mot |
+| conversation v8 corrigée | 06, 08 (conversation) | Oui | Oui | Oui | Plus de message en double ni de prix d'achat cité. Les exemples d'humour du prompt ne reprennent plus les demandes test |

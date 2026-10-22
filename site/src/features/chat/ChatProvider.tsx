@@ -12,7 +12,7 @@ const CLE = 'chat'
 const INJOIGNABLE = 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.'
 
 const CONFIRMATION =
-  'Votre demande est bien prise en compte. Un conseiller de l’agence revient vers vous dans les plus brefs délais avec votre proposition.'
+  'Votre demande est bien arrivée chez nous. Un conseiller la reprend et vous envoie votre proposition, vérifiée, sous 2 jours ouvrés.'
 
 const etatInitial = (): EtatChat => ({
   statut: 'accueil',

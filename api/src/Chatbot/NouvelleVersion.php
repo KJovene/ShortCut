@@ -2,7 +2,6 @@
 
 namespace App\Chatbot;
 
-use App\Chatbot\Outil\CalculerBudget;
 use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\OutilException;
 use App\Chatbot\Outil\RetenirCombinaison;
@@ -173,7 +172,7 @@ final class NouvelleVersion
             );
             $lignes[] = 'Même le niveau essentiel dépasse votre budget'.([] === $arbitrages ? '.' : ' ; pour vous en rapprocher : '.implode(', ', $arbitrages).'.');
         }
-        $lignes[] = CalculerBudget::AVERTISSEMENT;
+        $lignes[] = $sortie['avertissement'];
 
         return implode("\n", $lignes);
     }
