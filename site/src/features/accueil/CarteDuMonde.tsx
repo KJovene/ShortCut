@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
+import { IconFleche } from '@/components/ui/icons'
 import {
   libelleTypePrincipal,
   type DestinationPublique,
@@ -218,6 +219,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
           className="pointer-events-none absolute inset-0 block size-full"
         />
         {epingles}
+        <BulleAssistant />
         {fiche && (
           <CarteVoyage
             d={fiche}
@@ -263,6 +265,43 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
         <CarteVoyageMobile d={active} />
       </div>
     </>
+  )
+}
+
+/**
+ * Bulle de l'assistant, en bas à gauche de la carte (maquette G3) : pour un voyage qui n'est pas sur la carte.
+ * Les épingles et la fiche passent au-dessus d’elle. À partir de 1280 px seulement : plus étroite, la carte
+ * serait en grande partie masquée (le bouton « Parler à l’assistant » reste là).
+ */
+function BulleAssistant() {
+  const ouvrirAssistant = useOuvrirAssistant()
+  return (
+    <aside
+      aria-labelledby="bulle-assistant-titre"
+      className="absolute top-[64%] left-[1.5%] z-[6] hidden w-[316px] flex-col gap-3 xl:flex rounded-[24px_24px_24px_6px] bg-encre p-[18px] text-creme shadow-[0_22px_50px_rgba(22,35,63,0.3)]"
+    >
+      <div className="flex items-center gap-3">
+        <img src="/new-logos/detour-avatar.svg" alt="" className="size-11 shrink-0" />
+        <h2
+          id="bulle-assistant-titre"
+          className="m-0 font-display text-xl leading-tight font-extrabold tracking-[-0.02em]"
+        >
+          Votre idée n’est pas sur la carte ?
+        </h2>
+      </div>
+      <p className="m-0 text-sm leading-normal text-ciel">
+        Racontez-la à notre assistant : il compose une première proposition, un conseiller la
+        vérifie et la signe.
+      </p>
+      <button
+        type="button"
+        onClick={() => ouvrirAssistant(undefined, { nouveauVoyage: true })}
+        className="flex min-h-11 items-center gap-2 self-start rounded-full bg-creme px-[18px] text-[15px] font-semibold text-encre hover:bg-sable"
+      >
+        Démarrer la conversation
+        <IconFleche size={18} strokeWidth={2.2} />
+      </button>
+    </aside>
   )
 }
 

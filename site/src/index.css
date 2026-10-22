@@ -53,6 +53,20 @@
     outline: 3px solid var(--color-encre);
     outline-offset: 2px;
   }
+
+  /* Tailwind 4 rend aux boutons le curseur par défaut : la main signale tout ce qui se clique. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label:has(> input[type='checkbox'], > input[type='radio']),
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
 }
 
 @keyframes pin-pulse {

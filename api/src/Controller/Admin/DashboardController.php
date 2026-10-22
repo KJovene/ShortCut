@@ -42,8 +42,8 @@ final class DashboardController extends AbstractDashboardController
     public function configureDashboard(): Dashboard
     {
         return Dashboard::new()
-            // Logo et favicon Détour, copiés du site dans public/admin (servis aussi par le proxy Vite).
-            ->setTitle('<img class="bo-logo-marque" src="/admin/logo-detour.svg" alt=""><span class="bo-logo-texte"><strong>Détour</strong><small>Backoffice</small></span>')
+            // Logo et favicon DÉTOUR (charte 2026), copiés du site dans public/admin (servis aussi par le proxy Vite).
+            ->setTitle('<img class="bo-logo-marque" src="/admin/logo-detour.svg" alt="Détour"><small class="bo-logo-texte">Backoffice</small>')
             ->setFaviconPath('admin/favicon.svg')
             ->setLocales(['fr'])
             // La maquette n'a qu'un thème clair.
@@ -57,6 +57,8 @@ final class DashboardController extends AbstractDashboardController
         $version = fn (string $fichier): string => $fichier.'?v='.(@filemtime($this->getParameter('kernel.project_dir').'/public/'.$fichier) ?: 0);
 
         return Assets::new()
+            // Polices de la charte, comme sur le site : Bricolage Grotesque (titres) et Instrument Sans (texte).
+            ->addCssFile('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap')
             ->addCssFile($version('admin/backoffice.css'))
             ->addJsFile($version('admin/lieux.js'));
     }
