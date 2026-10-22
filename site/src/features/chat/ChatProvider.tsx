@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { profilQuery } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
+import { langueDuSite, surChangementDeLangue } from '@/lib/langue'
 import { carteSchema, envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { ChatContext, type EtapeReflexion, type EtatChat, type Reprise } from './chatContext'
-import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
+import { messageAccueil, nouvelId, type Message } from './conversation'
 import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
@@ -32,14 +33,15 @@ function messageDeLApi(m: Reprise['messages'][number]): Message {
   return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, recapitulatif }
 }
 
-const etatInitial = (): EtatChat => ({
+/** Une nouvelle conversation démarre dans la langue du site ; l'assistant suit ensuite celle du client. */
+const etatInitial = (langue = langueDuSite()): EtatChat => ({
   statut: 'accueil',
-  messages: [MESSAGE_ACCUEIL],
+  messages: [messageAccueil(langue)],
   conversation: { demande: demandeVide() },
   reflexion: false,
   ouvert: false,
   brouillon: '',
-  langue: 'fr',
+  langue,
   questionnaire: { reponses: [], termine: false, transmis: false },
 })
 
@@ -118,6 +120,21 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [etat])
 
   useEffect(() => () => annulation.current?.abort(), [])
+
+  // Le visiteur change la langue du site avant d'écrire : l'accueil du chatbot la suit. Une conversation
+  // commencée garde la langue du client, reconnue par l'assistant.
+  useEffect(
+    () =>
+      surChangementDeLangue(() => {
+        const langue = langueDuSite()
+        setEtat((e) =>
+          e.jeton || e.statut !== 'accueil' || e.langue === langue
+            ? e
+            : { ...e, langue, messages: [messageAccueil(langue)] },
+        )
+      }),
+    [],
+  )
 
   /** Destinations publiées, pour reconnaître le lieu cité par le client ; vide si le catalogue est indisponible. */
   const catalogue = useCallback(
@@ -222,6 +239,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             reprendQuestionnaire ? questionnaire.reponses : undefined,
             etatCourant.current.destinationInvite,
             controleur.signal,
+            etatCourant.current.langue,
           )
           const nouveau = jeton
           setEtat((e) => ({ ...e, jeton: nouveau }))
@@ -231,7 +249,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
           if (!(err instanceof ApiError && err.status === 401)) throw err
-          const nouveau = await ouvrirConversation(undefined, undefined, controleur.signal)
+          const nouveau = await ouvrirConversation(
+            undefined,
+            undefined,
+            controleur.signal,
+            etatCourant.current.langue,
+          )
           setEtat((e) => ({ ...e, jeton: nouveau }))
           await lire(nouveau)
         }
