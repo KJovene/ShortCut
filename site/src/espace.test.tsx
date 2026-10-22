@@ -288,6 +288,25 @@ describe('mon espace', () => {
       expect(within(nouvelle).queryByText('Pour combien de personnes ?')).toBeNull()
     })
 
+    it('démarre un nouveau voyage vierge pendant une conversation en cours', async () => {
+      sessionStorage.setItem(
+        'chat',
+        JSON.stringify({
+          statut: 'conversation',
+          messages: [{ id: 'm1', auteur: 'client', texte: 'Une villa à Bali en mai.' }],
+          conversation: { demande: {} },
+          jeton: 'm'.repeat(64),
+        }),
+      )
+      afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: /Nouveau voyage/ }))
+
+      const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(fenetre).queryByText('Une villa à Bali en mai.')).toBeNull()
+    })
+
     it('supprime le voyage après confirmation', async () => {
       const api = simulerApi({
         'GET /api/moi': { status: 200, body: CAMILLE },

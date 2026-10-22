@@ -91,7 +91,7 @@ function PageEspace() {
         <div className="flex flex-col items-end gap-1.5">
           <button
             type="button"
-            onClick={() => ouvrirAssistant()}
+            onClick={() => ouvrirAssistant(undefined, { nouveauVoyage: true })}
             disabled={complet}
             aria-describedby={complet ? 'voyages-max' : undefined}
             className="flex min-h-12 items-center gap-2 rounded-full bg-terre px-[22px] text-[15px] font-extrabold text-white hover:bg-rouille disabled:cursor-not-allowed disabled:bg-beige disabled:text-taupe"
