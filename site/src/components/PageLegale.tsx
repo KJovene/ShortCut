@@ -17,7 +17,7 @@ export function PageLegale({ slug }: { slug: string }) {
       {aValider && (
         <p
           role="note"
-          className="m-0 mb-8 rounded-2xl bg-[#FFF4D6] px-4 py-3 font-semibold text-[#5C4300]"
+          className="m-0 mb-8 rounded-2xl bg-[#EAE2D2] px-4 py-3 font-semibold text-[#16233F]"
         >
           Modèle à valider par l'agence : ce texte doit être relu et complété avant la mise en
           ligne.

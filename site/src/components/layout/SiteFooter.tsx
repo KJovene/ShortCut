@@ -3,9 +3,14 @@ import { Logo } from './Logo'
 
 export function SiteFooter() {
   return (
-    <footer className="no-print bg-encre text-beige">
+    <footer className="no-print bg-encre text-ciel">
       <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
-        <Logo clair className="gap-2 text-[22px] sm:text-[22px] [&>img]:size-7" />
+        <div className="flex items-center gap-[18px]">
+          <Logo clair petit />
+          <span className="font-display text-[17px] font-semibold text-creme">
+            Prenez le pas de côté.
+          </span>
+        </div>
         <Link to="/types-de-voyages" className="hover:text-creme">
           Séjours · Circuits · Groupes · Voyages de noces · Entreprise
         </Link>

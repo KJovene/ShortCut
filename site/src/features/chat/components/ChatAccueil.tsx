@@ -1,4 +1,5 @@
 import { IconFleche } from '@/components/ui/icons'
+import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 
@@ -21,8 +22,8 @@ export function ChatAccueil({
 
   return (
     <div className="flex w-full max-w-[820px] flex-col items-center gap-4 text-center sm:gap-5">
-      <span className="flex items-center gap-2 text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
-        <span aria-hidden="true" className="size-2.5 rounded-full bg-vert" />
+      <span className="flex items-center gap-2 text-[13px] font-extrabold text-rouille">
+        <span aria-hidden="true" className="size-2.5 rounded-full bg-ciel" />
         Votre assistant voyage, disponible maintenant
       </span>
       <h2
@@ -35,14 +36,14 @@ export function ChatAccueil({
             : 'text-[32px]/[1.05] sm:text-[52px]/[1.05]',
         )}
       >
-        Racontez-nous vos <em className="font-normal text-terre">prochaines vacances</em>
+        Racontez-nous votre prochain <SautDuO texte="détour" />
       </h2>
       <p className="m-0 max-w-[620px] text-[15px] leading-relaxed text-taupe sm:text-lg">
         Vos envies, vos dates, votre budget : notre assistant vous remet un voyage complet et
         chiffré en moins de 2 minutes. Votre conseiller le confirme ensuite.
       </p>
       <form
-        className="flex w-full flex-col gap-2.5 rounded-[22px] bg-white p-2.5 text-left shadow-[0_20px_50px_rgba(43,29,20,0.14)] sm:rounded-[28px] sm:p-3"
+        className="flex w-full flex-col gap-2.5 rounded-[22px] bg-white p-2.5 text-left shadow-[0_20px_50px_rgba(22,35,63,0.14)] sm:rounded-[28px] sm:p-3"
         onSubmit={(e) => {
           e.preventDefault()
           envoyer(brouillon)
@@ -102,8 +103,8 @@ export function ChatAccueil({
         <li>Confirmée par un conseiller sous 2 jours</li>
       </ul>
       <p className="m-0 text-xs text-taupe-clair">
-        Je suis une IA. Mes prix sont des estimations, rien n'est réservé avant la confirmation de
-        votre conseiller.
+        Notre assistant est une IA. Ses prix sont des estimations datées : rien n'est réservé avant
+        la signature de votre conseiller.
       </p>
     </div>
   )

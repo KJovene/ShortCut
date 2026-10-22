@@ -89,7 +89,7 @@ function DestinationPage() {
         <aside className="flex min-w-0 flex-[1_1_340px] flex-col gap-4 self-start rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
           {d.prixAPartirDe !== null && (
             <>
-              <span className="text-[13px] font-extrabold tracking-[1.5px] text-ocre uppercase">
+              <span className="text-[13px] font-extrabold text-ocre">
                 À partir de
               </span>
               <div>
@@ -146,7 +146,7 @@ function Climat({
       <h2 id="climat-titre" className="m-0 font-display text-[30px] font-semibold">
         Le climat mois par mois
       </h2>
-      <div className="overflow-x-auto rounded-[22px] bg-white p-4 shadow-[0_8px_24px_rgba(43,29,20,0.08)] sm:p-6">
+      <div className="overflow-x-auto rounded-[22px] bg-white p-4 shadow-[0_8px_24px_rgba(22,35,63,0.08)] sm:p-6">
         <table className="w-full min-w-[560px] border-collapse text-center text-sm">
           <caption className="sr-only">Températures moyennes et pluie par mois</caption>
           <thead>
@@ -159,7 +159,7 @@ function Climat({
                   key={m}
                   scope="col"
                   className={cn(
-                    'pb-2 text-xs font-bold uppercase',
+                    'pb-2 text-xs font-bold',
                     i === moisIdeal ? 'text-terre' : 'text-taupe-clair',
                   )}
                 >
@@ -231,7 +231,7 @@ function Prestations({
         {prestations.map((p) => (
           <article
             key={p.nom}
-            className="overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(43,29,20,0.08)]"
+            className="overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(22,35,63,0.08)]"
           >
             {p.photo && <img src={p.photo} alt="" className="block h-36 w-full object-cover" />}
             <div className="flex flex-col gap-1 px-4 pt-3 pb-4">

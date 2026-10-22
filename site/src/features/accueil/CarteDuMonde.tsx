@@ -55,14 +55,14 @@ function Epingle({
         aria-hidden="true"
         className={cn(
           'absolute animate-pin-pulse rounded-full',
-          active ? 'size-14 bg-terre/45 md:size-16' : 'size-[38px] bg-terre/20 md:size-[42px]',
+          active ? 'size-14 bg-ciel md:size-16' : 'size-[38px] bg-ciel/60 md:size-[42px]',
         )}
       />
       <img
         src={d.photo}
         alt=""
         className={cn(
-          'relative box-border rounded-full border-[3px] object-cover shadow-[0_6px_16px_rgba(43,29,20,0.28)] transition-transform duration-200 group-hover:scale-115',
+          'relative box-border rounded-full border-[3px] object-cover shadow-[0_6px_16px_rgba(22,35,63,0.28)] transition-transform duration-200 group-hover:scale-115',
           active ? 'size-14 border-terre md:size-16' : 'size-[38px] border-white md:size-[42px]',
         )}
       />
@@ -89,7 +89,7 @@ function CarteVoyage({
       style={style}
       {...survol}
       className={cn(
-        'overflow-hidden rounded-3xl bg-white shadow-[0_30px_70px_rgba(43,29,20,0.28)]',
+        'overflow-hidden rounded-3xl bg-white shadow-[0_30px_70px_rgba(22,35,63,0.28)]',
         className,
       )}
     >
@@ -113,7 +113,7 @@ function CarteVoyage({
         ))}
       </div>
       <div className="flex flex-col gap-2 px-[18px] pt-3.5 pb-[18px]">
-        <span className="text-xs font-extrabold tracking-[1px] text-rouille uppercase">
+        <span className="text-xs font-extrabold text-rouille">
           {libelleTypePrincipal(d)} · idéal en {mois}
         </span>
         <h2 className="m-0 font-display text-2xl leading-tight font-semibold md:text-[26px]">
@@ -240,7 +240,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
         <div
           ref={defilement}
           aria-label="Carte des voyages, glissez pour explorer"
-          className="scrollbar-none relative flex-1 overflow-x-auto bg-[#F6EEE2]"
+          className="scrollbar-none relative flex-1 overflow-x-auto bg-[#EFE8DA]"
         >
           <div className="relative aspect-[360/142] h-full min-h-[300px]">
             <img
@@ -265,11 +265,11 @@ function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
   return (
     <article
       aria-live="polite"
-      className="relative z-10 mx-3 -mt-24 flex overflow-hidden rounded-[22px] bg-white shadow-[0_18px_44px_rgba(43,29,20,0.25)]"
+      className="relative z-10 mx-3 -mt-24 flex overflow-hidden rounded-[22px] bg-white shadow-[0_18px_44px_rgba(22,35,63,0.25)]"
     >
       <img src={d.photo} alt={d.alt} className="block w-[120px] shrink-0 object-cover" />
       <div className="flex min-w-0 flex-1 flex-col gap-1 px-3.5 py-3">
-        <span className="text-[11px] font-extrabold tracking-[0.8px] text-rouille uppercase">
+        <span className="text-[11px] font-extrabold tracking-[0.8px] text-rouille">
           {libelleTypePrincipal(d)}
           {d.temperatures[d.moisIdeal] !== null &&
             ` · ${d.temperatures[d.moisIdeal]} °C en ${MOIS[d.moisIdeal]}`}

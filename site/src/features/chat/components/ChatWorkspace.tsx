@@ -83,11 +83,11 @@ export function ChatWorkspace({ className }: { className?: string }) {
           }}
         >
           {terminee ? (
-            <p className="m-0 rounded-full bg-white px-5 py-3.5 text-center text-sm text-taupe shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
+            <p className="m-0 rounded-full bg-white px-5 py-3.5 text-center text-sm text-taupe shadow-[0_8px_24px_rgba(22,35,63,0.10)]">
               {t.transmise}
             </p>
           ) : (
-            <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pr-1.5 pl-2 shadow-[0_8px_24px_rgba(43,29,20,0.10)]">
+            <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pr-1.5 pl-2 shadow-[0_8px_24px_rgba(22,35,63,0.10)]">
               <label className="flex flex-1">
                 <span className="sr-only">{t.votreMessage}</span>
                 <input

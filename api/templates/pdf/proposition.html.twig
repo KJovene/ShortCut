@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 {#
  # La proposition en PDF (#213), rendue par Dompdf : CSS 2.1, tableaux plutôt que flexbox, polices DejaVu (accents
- # et « € »). Couleurs du site : terre #C2471E, encre #2B1D14, crème #FBF6EE, sable #F3E7D6, taupe #6E5A4B.
+ # et « € »). Charte DÉTOUR : encre #16233F (texte, aplats), craie #F6F1E7 (fonds), sable #EAE2D2, lin #E2D9C6
+ # (bordures), ciel #BCD3EA (sélection, confirmé), et le jaune #F2B705 réservé au O qui saute du grand titre.
+ # Titres en sans-serif gras, au plus près de Bricolage Grotesque (DejaVu n'a pas de grotesque de titrage).
  # En anglais pour un client qui a dialogué en anglais avec le chatbot (US15, p.langue).
  #}
 {% set en = p.langue == 'en' %}
@@ -11,47 +13,48 @@
 <title>{{ en ? 'Proposal' : 'Proposition' }} {{ p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'for your trip' : 'de voyage') }} · version {{ p.version }}</title>
 <style>
     @page { margin: 22mm 16mm 20mm 16mm; }
-    body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.45; color: #2B1D14; }
-    h1, h2, h3 { font-family: 'DejaVu Serif', serif; font-weight: bold; color: #2B1D14; margin: 0; }
-    h1 { font-size: 26pt; line-height: 1.1; margin: 6mm 0 2mm; }
-    h2 { font-size: 15pt; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 1.5px solid #E3CDB0; }
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.45; color: #16233F; }
+    h1, h2, h3 { font-family: 'DejaVu Sans', sans-serif; font-weight: bold; color: #16233F; margin: 0; }
+    h1 { font-size: 26pt; line-height: 1.1; letter-spacing: -0.5px; margin: 6mm 0 2mm; }
+    h2 { font-size: 15pt; letter-spacing: -0.2px; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 1.5px solid #E2D9C6; }
     h3 { font-size: 11pt; margin: 0 0 1mm; }
     p { margin: 0 0 2mm; }
-    .discret { color: #6E5A4B; }
+    .discret { color: #3B4762; }
     .petit { font-size: 8.5pt; }
-    .surtitre { font-size: 8.5pt; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; color: #9A3A18; }
+    .surtitre { font-size: 8.5pt; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; color: #2A3A63; }
     .saut { page-break-before: always; }
     .insecable { page-break-inside: avoid; }
+    /* Le O qui saute de la charte : premier « o » du grand titre, monté d'une demi-hauteur, en jaune. */
+    .saut-o { position: relative; top: -0.24em; color: #F2B705; }
 
     /* En-tête et pied répétés sur chaque page */
-    #entete { position: fixed; top: -15mm; left: 0; right: 0; height: 10mm; border-bottom: 1px solid #EADBC6; }
-    #entete img { width: 7mm; height: 7mm; vertical-align: middle; }
-    #entete .marque { font-family: 'DejaVu Serif', serif; font-size: 12pt; font-weight: bold; vertical-align: middle; margin-left: 2mm; }
-    #entete .droite { position: absolute; right: 0; top: 2mm; font-size: 8pt; color: #6E5A4B; }
-    #pied { position: fixed; bottom: -13mm; left: 0; right: 0; height: 9mm; border-top: 1px solid #EADBC6; padding-top: 2mm; font-size: 7pt; color: #6E5A4B; }
+    #entete { position: fixed; top: -15mm; left: 0; right: 0; height: 10mm; border-bottom: 1px solid #E2D9C6; }
+    #entete img { height: 6mm; }
+    #entete .droite { position: absolute; right: 0; top: 2mm; font-size: 8pt; color: #3B4762; }
+    #pied { position: fixed; bottom: -13mm; left: 0; right: 0; height: 9mm; border-top: 1px solid #E2D9C6; padding-top: 2mm; font-size: 7pt; color: #3B4762; }
 
-    /* Statut, visible en première page */
-    .statut { margin: 4mm 0; padding: 3.5mm 4.5mm; border-radius: 3mm; font-weight: bold; }
-    .statut--estimee { background: #FFF4D6; border: 1px solid #F0DCA0; color: #5C4300; }
-    .statut--confirmee { background: #DDF1E4; border: 1px solid #B9E0C6; color: #1F6B3A; }
-    .statut .etiquette { display: inline-block; padding: 0.8mm 2.5mm; border-radius: 2mm; font-size: 8pt; letter-spacing: 0.8px; text-transform: uppercase; color: #FFFFFF; margin-right: 2mm; }
-    .statut--estimee .etiquette { background: #9A6B00; }
-    .statut--confirmee .etiquette { background: #1F6B3A; }
+    /* Statut, visible en première page : sable pour l'estimation, ciel une fois confirmé. */
+    .statut { margin: 4mm 0; padding: 3.5mm 4.5mm; border-radius: 3mm; font-weight: bold; color: #16233F; }
+    .statut--estimee { background: #EAE2D2; border: 1px solid #C9C0AD; }
+    .statut--confirmee { background: #BCD3EA; border: 1px solid #9DBBD9; }
+    .statut .etiquette { display: inline-block; padding: 0.8mm 2.5mm; border-radius: 2mm; font-size: 8pt; letter-spacing: 0.8px; text-transform: uppercase; color: #F6F1E7; margin-right: 2mm; }
+    .statut--estimee .etiquette { background: #3B4762; }
+    .statut--confirmee .etiquette { background: #16233F; }
 
     .couverture-photo { width: 100%; height: 78mm; border-radius: 4mm; }
     table.chiffres { width: 100%; border-collapse: separate; border-spacing: 2.5mm 0; margin: 4mm -2.5mm 0; }
-    table.chiffres td { background: #FBF6EE; border: 1px solid #EADBC6; border-radius: 2.5mm; padding: 2.5mm 3.5mm; width: 25%; vertical-align: top; }
-    table.chiffres .valeur { font-family: 'DejaVu Serif', serif; font-size: 10.5pt; font-weight: bold; }
-    .total { margin-top: 5mm; padding: 4mm 5mm; background: #3A2418; color: #FBF6EE; border-radius: 4mm; }
-    .total .montant { font-family: 'DejaVu Serif', serif; font-size: 22pt; font-weight: bold; }
-    .total .discret { color: #F3E7D6; }
+    table.chiffres td { background: #F6F1E7; border: 1px solid #E2D9C6; border-radius: 2.5mm; padding: 2.5mm 3.5mm; width: 25%; vertical-align: top; }
+    table.chiffres .valeur { font-size: 10.5pt; font-weight: bold; }
+    .total { margin-top: 5mm; padding: 4mm 5mm; background: #16233F; color: #F6F1E7; border-radius: 4mm; }
+    .total .montant { font-size: 22pt; font-weight: bold; letter-spacing: -0.4px; }
+    .total .discret { color: #BCD3EA; }
 
     table.programme { width: 100%; border-collapse: collapse; }
-    table.programme td { padding: 2.5mm 2mm; border-bottom: 1px solid #F3E7D6; vertical-align: top; }
-    table.programme .jour { width: 24mm; color: #C2471E; font-family: 'DejaVu Serif', serif; font-weight: bold; }
-    table.programme .jour span { display: block; font-family: 'DejaVu Sans', sans-serif; font-weight: normal; font-size: 8pt; color: #6E5A4B; }
+    table.programme td { padding: 2.5mm 2mm; border-bottom: 1px solid #EAE2D2; vertical-align: top; }
+    table.programme .jour { width: 24mm; color: #16233F; font-weight: bold; }
+    table.programme .jour span { display: block; font-weight: normal; font-size: 8pt; color: #5B6376; }
 
-    table.prestation { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background: #FBF6EE; border-radius: 3mm; }
+    table.prestation { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background: #F6F1E7; border-radius: 3mm; }
     table.prestation td { padding: 3mm; vertical-align: top; }
     table.prestation .photo { width: 42mm; padding-right: 0; }
     table.prestation img { width: 42mm; height: 28mm; border-radius: 2mm; }
@@ -59,15 +62,15 @@
     li { margin-bottom: 0.8mm; }
 
     table.niveaux { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
-    table.niveaux th, table.niveaux td { padding: 2.5mm; border: 1px solid #EADBC6; text-align: left; }
-    table.niveaux th { background: #F3E7D6; font-size: 8.5pt; }
-    table.niveaux .retenu { background: #FBEDE6; font-weight: bold; }
+    table.niveaux th, table.niveaux td { padding: 2.5mm; border: 1px solid #E2D9C6; text-align: left; }
+    table.niveaux th { background: #EAE2D2; font-size: 8.5pt; }
+    table.niveaux .retenu { background: #BCD3EA; font-weight: bold; }
     .droite { text-align: right; }
 </style>
 </head>
 <body>
     <div id="entete">
-        <img src="{{ logo }}" alt=""><span class="marque">Détour</span>
+        <img src="{{ logo }}" alt="DÉTOUR">
         <span class="droite">{{ en ? 'Proposal' : 'Proposition' }} · version {{ p.version }}{{ confirmee ? (en ? ' · confirmed' : ' · confirmée') : (en ? ' · estimated prices' : ' · prix estimés') }}</span>
     </div>
     <div id="pied">
@@ -84,7 +87,10 @@
     <p class="surtitre">
         {{ type ?? (en ? 'Your trip' : 'Votre voyage') }} · version {{ p.version }} {{ en ? 'of' : 'du' }} {{ (confirmee and p.confirmeeLe ? p.confirmeeLe : p.creeLe)|date_longue(p.langue) }}
     </p>
-    <h1>{{ p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'Your trip' : 'Votre voyage') }}{% if p.programme is not empty %}, {{ p.programme|length }} {{ en ? 'days' : 'jours' }}{% endif %}</h1>
+    {% set titre = (p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'Your trip' : 'Votre voyage')) ~ (p.programme is not empty ? ', ' ~ p.programme|length ~ (en ? ' days' : ' jours') : '') %}
+    {# Le O qui saute : le premier « o » du titre. #}
+    {% set morceaux = titre|split('o', 2) %}
+    <h1>{% if morceaux|length == 2 %}{{ morceaux[0] }}<span class="saut-o">o</span>{{ morceaux[1] }}{% else %}{{ titre }}{% endif %}</h1>
     {% if client %}<p class="discret">{{ en ? 'Prepared for' : 'Préparée pour' }} {{ client }}</p>{% endif %}
 
     <div class="statut statut--{{ p.etat }}">

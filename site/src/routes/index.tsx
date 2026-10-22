@@ -41,12 +41,12 @@ const THEMES: { valeur: Theme; label: string; titreParDefaut: string }[] = [
   {
     valeur: 'chaud',
     label: 'Voyages chauds',
-    titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
+    titreParDefaut: 'Où irez-vous chercher le *soleil* ?',
   },
   {
     valeur: 'froid',
     label: 'Voyages froids',
-    titreParDefaut: 'Où irez-vous *chercher la fraîcheur* ?',
+    titreParDefaut: 'Où irez-vous chercher le *froid* ?',
   },
 ]
 
@@ -87,11 +87,14 @@ function HomePage() {
             >
               <TitreMisEnValeur texte={titre} />
             </h1>
+            <p className="m-0 font-display text-lg font-semibold text-taupe sm:text-[22px]">
+              Prenez le pas de côté.
+            </p>
           </div>
           <div
             role="group"
             aria-label="Thème des voyages"
-            className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(43,29,20,0.08)]"
+            className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(22,35,63,0.08)]"
           >
             {THEMES.map((t) => {
               const actif = t.valeur === theme
@@ -131,7 +134,7 @@ function HomePage() {
           href="#voyages"
           className="absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-2 px-4 text-sm font-bold text-taupe hover:text-encre sm:bottom-[18px]"
         >
-          Tous les voyages
+          Découvrez nos meilleurs voyages
           <IconFlecheBas size={18} />
         </a>
       </section>

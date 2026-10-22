@@ -1,9 +1,9 @@
 {
-  "name": "Détour · Voyages sur mesure",
-  "short_name": "Détour",
+  "name": "DÉTOUR · Prenez le pas de côté",
+  "short_name": "DÉTOUR",
   "icons": [{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }],
-  "theme_color": "#C2471E",
-  "background_color": "#FBF6EE",
+  "theme_color": "#16233F",
+  "background_color": "#F6F1E7",
   "display": "standalone",
   "start_url": "/"
 }
