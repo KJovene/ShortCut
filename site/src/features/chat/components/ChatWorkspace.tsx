@@ -32,13 +32,41 @@ export function ChatWorkspace({ className }: { className?: string }) {
     (m) => 'type' in m && m.type === 'recapitulatif',
   )?.id
   const champ = useRef<HTMLInputElement>(null)
+  /** Le client lit la fin du fil : il suit ce qui s'y ajoute. Remonté plus haut, il n'est pas dérangé. */
+  const enBas = useRef(true)
 
   useEffect(() => {
+    const el = fil.current
+    if (!el) return
     // Défilement instantané : un défilement doux ici interromprait celui de la page (Chrome n'en mène
     // qu'un à la fois), qui cale la section de l'accueil en haut de l'écran au premier message.
+    const descendre = () => {
+      if (enBas.current) el.scrollTop = el.scrollHeight
+    }
+    const surDefilement = () => {
+      enBas.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    }
+    // Le fil grandit sans nouveau message : réponse écrite au fil du flux, photos des cartes chargées après.
+    const observateur = new MutationObserver(descendre)
+    observateur.observe(el, { childList: true, subtree: true, characterData: true })
+    el.addEventListener('scroll', surDefilement)
+    el.addEventListener('load', descendre, true)
+    descendre()
+    return () => {
+      observateur.disconnect()
+      el.removeEventListener('scroll', surDefilement)
+      el.removeEventListener('load', descendre, true)
+    }
+  }, [estConnecte])
+
+  // Le client envoie un message : le fil revient en bas pour la réponse, même s'il était remonté.
+  const dernierAuteur = messages.at(-1)?.auteur
+  useEffect(() => {
+    if (dernierAuteur !== 'client') return
+    enBas.current = true
     const el = fil.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [messages.length, reflexion])
+  }, [messages.length, dernierAuteur])
 
   if (!estConnecte) return <QuestionnaireInvite />
 
