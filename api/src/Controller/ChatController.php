@@ -54,7 +54,9 @@ final class ChatController extends AbstractController
         $message = \is_string($message) ? trim($message) : '';
         if ('' === $message || mb_strlen($message) > self::MESSAGE_MAX) {
             return $this->json(
-                ['erreur' => \sprintf('Le message doit contenir entre 1 et %d caractères.', self::MESSAGE_MAX)],
+                ['erreur' => '' === $message
+                    ? 'Votre message est vide : dites-moi ce que vous avez en tête.'
+                    : \sprintf('Votre message dépasse %s caractères : pouvez-vous le raccourcir ?', number_format(self::MESSAGE_MAX, thousands_separator: ' '))],
                 Response::HTTP_BAD_REQUEST,
             );
         }

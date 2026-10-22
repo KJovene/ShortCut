@@ -39,9 +39,9 @@ final class AgentRedaction extends Agent
     /** Décision D22 : Sonnet 5.5 pour la recherche, le chiffrage et la rédaction. */
     public const MODELE = 'claude-sonnet-5-5';
 
-    public const MESSAGE_BROUILLON = 'Votre proposition détaillée, avec le programme jour par jour, est prête : votre conseiller la vérifie et vous l\'envoie dès qu\'il l\'a validée.';
+    public const MESSAGE_BROUILLON = 'Votre conseiller relit maintenant votre proposition détaillée, avec le programme jour par jour : il vérifie chaque prix et chaque place, puis vous l\'envoie.';
     public const MESSAGE_NOUVELLE_VERSION = 'Votre proposition détaillée est à jour : la version %d est sur votre page « Ma proposition », la version %d reste consultable.';
-    public const MESSAGE_BROUILLON_EN = 'Your detailed proposal, with the day-by-day itinerary, is ready: your advisor is checking it and will send it to you as soon as it is approved.';
+    public const MESSAGE_BROUILLON_EN = 'Your advisor is now reviewing your detailed proposal, with the day-by-day itinerary: they check every price and every place, then send it to you.';
     public const MESSAGE_NOUVELLE_VERSION_EN = 'Your detailed proposal is up to date: version %d is on your “My proposal” page, and version %d is still available.';
 
     /**

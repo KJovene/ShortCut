@@ -88,11 +88,25 @@ final class PageDuSiteCrudController extends AbstractCrudController
         parent::processUploadedFiles($form);
     }
 
+    /** La page modifiée ou consultée est l'accueil (le formulaire de création ne connaît pas encore son adresse). */
+    private function estAccueil(): bool
+    {
+        $page = $this->getContext()?->getEntity()->getInstance();
+
+        return $page instanceof PageDuSite && 'accueil' === $page->getSlug();
+    }
+
     public function configureFields(string $pageName): iterable
     {
         yield FormField::addFieldset('Page');
         yield TextField::new('titre', 'Titre')
-            ->setHelp('Grand titre en haut de la page. Les mots entre astérisques sont mis en valeur (italique orange) : « Où irez-vous *chercher le soleil* ? ».');
+            ->setHelp('Grand titre en haut de la page. Les mots entre astérisques sont mis en valeur (italique orange) : « Où irez-vous *chercher le soleil* ? ». Sur l\'accueil, c\'est le titre des voyages chauds.');
+        // L'accueil a deux thèmes de voyages : un titre chacun.
+        if ($this->estAccueil()) {
+            yield TextField::new('titreFroid', 'Titre des voyages froids')
+                ->setRequired(false)
+                ->setHelp('Titre de l\'accueil quand le visiteur choisit « Voyages froids », avec les mêmes astérisques : « Où irez-vous *chercher la fraîcheur* ? ».');
+        }
         yield SlugField::new('slug', 'Adresse sur le site')
             ->setTargetFieldName('titre')
             // Le site appelle chaque page par son adresse (accueil, agence, cgv…) : la changer la ferait disparaître.

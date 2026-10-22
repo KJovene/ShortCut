@@ -8,7 +8,7 @@ export const TEXTES = {
   fr: {
     injoignable: 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
     confirmation:
-      'Votre demande est bien prise en compte. Un conseiller de l’agence revient vers vous dans les plus brefs délais avec votre proposition.',
+      'Votre demande est bien arrivée chez nous. Un conseiller la reprend et vous envoie votre proposition, vérifiée, sous 2 jours ouvrés.',
     demandeTransmise: 'Demande transmise',
     assistantEcrit: "L'assistant écrit…",
     fenetre: 'Assistant voyage',
@@ -38,7 +38,7 @@ export const TEXTES = {
     signale: 'Signalé à votre conseiller',
     modifier: 'Modifier',
     rappelTerminee:
-      "Votre conseiller vous recontacte dans les plus brefs délais avec votre proposition. Prix estimés, rien n'est réservé avant sa confirmation.",
+      "Votre conseiller vous recontacte sous 2 jours ouvrés avec votre proposition. Prix estimés, rien n'est réservé avant sa confirmation.",
     transmiseConseiller: 'Demande transmise à votre conseiller',
     prochaineEtape:
       'Prochaine étape : votre proposition complète arrive ici dans moins de 2 minutes. Prix estimés, confirmés par votre conseiller sous 2 jours ouvrés.',
@@ -88,7 +88,7 @@ export const TEXTES = {
   en: {
     injoignable: 'I can’t reach the agency. Please check your connection and try again.',
     confirmation:
-      'Your request has been received. An advisor from the agency will get back to you as soon as possible with your proposal.',
+      'Your request has reached us. An advisor takes it from here and sends you your proposal, checked, within 2 business days.',
     demandeTransmise: 'Request sent',
     assistantEcrit: 'The assistant is typing…',
     fenetre: 'Travel assistant',
@@ -116,7 +116,7 @@ export const TEXTES = {
     signale: 'Flagged to your advisor',
     modifier: 'Change',
     rappelTerminee:
-      'Your advisor will contact you as soon as possible with your proposal. Estimated prices; nothing is booked until they confirm.',
+      'Your advisor will contact you within 2 business days with your proposal. Estimated prices; nothing is booked until they confirm.',
     transmiseConseiller: 'Request sent to your advisor',
     prochaineEtape:
       'Next step: your complete proposal arrives here in less than 2 minutes. Estimated prices, confirmed by your advisor within 2 business days.',

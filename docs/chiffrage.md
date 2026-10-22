@@ -7,7 +7,7 @@ Elles s'appuient uniquement sur les données du backoffice : tarifs par période
 
 - **Règles de l'agence** : marge de 20 % sur le coût des prestations, aucune commission, frais de dossier ajoutés une fois par dossier selon le type de voyage (décision du 16/10/2026, ticket #165).
 - **Montants en centimes** dans tous les calculs. L'arrondi à l'euro ne se fait **qu'à l'affichage**.
-- **Prix estimés** : la première proposition affiche toujours « Première proposition, prix estimés, à confirmer par votre conseiller ».
+- **Prix estimés** : la première proposition affiche toujours « Première proposition, prix estimés, à confirmer par votre conseiller ». Dans le chat, les totaux sont suivis d'une mention datée : « Prix estimés le jeudi 22 octobre 2026 à 9 h 40 d'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer. »
 - **Aucune donnée inventée** : si un tarif manque pour une nuit ou une activité, le poste ne peut pas être chiffré (voir [Données manquantes](#données-manquantes)).
 
 ## Formule
