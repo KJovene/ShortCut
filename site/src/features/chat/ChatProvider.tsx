@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLocation } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { profilQuery } from '@/lib/auth'
@@ -40,6 +41,7 @@ function restaurer(): EtatChat {
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [etat, setEtat] = useState<EtatChat>(restaurer)
   const queryClient = useQueryClient()
+  const chemin = useLocation({ select: (location) => location.pathname })
   const { data: profil } = useQuery(profilQuery)
   const estConnecte = profil !== null && profil !== undefined
   const etatCourant = useRef(etat)
@@ -47,6 +49,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const enCours = useRef(false)
   /** Annule la réponse en cours quand le client recommence. */
   const annulation = useRef<AbortController | null>(null)
+  const cheminPrecedent = useRef(chemin)
+
+  useEffect(() => {
+    if (cheminPrecedent.current !== chemin) {
+      cheminPrecedent.current = chemin
+      annulation.current?.abort()
+      enCours.current = false
+      setEtat((e) => ({ ...e, ouvert: false, reflexion: false }))
+    }
+  }, [chemin])
 
   useEffect(() => {
     etatCourant.current = etat
