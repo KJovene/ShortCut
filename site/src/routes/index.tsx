@@ -75,11 +75,14 @@ function HomePage() {
             >
               <TitreMisEnValeur texte={titre} />
             </h1>
+            <p className="m-0 font-display text-lg font-semibold text-taupe sm:text-[22px]">
+              {t.accroche}
+            </p>
           </div>
           <div
             role="group"
             aria-label={t.themeDesVoyages}
-            className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(43,29,20,0.08)]"
+            className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(22,35,63,0.08)]"
           >
             {THEMES.map((valeur) => {
               const actif = valeur === theme

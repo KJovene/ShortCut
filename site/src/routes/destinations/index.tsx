@@ -38,13 +38,6 @@ export const Route = createFileRoute('/destinations/')({
   component: DestinationsPage,
 })
 
-const TEMPERATURES = [15, 20, 25]
-
-const selectClasse =
-  'min-h-11 rounded-xl border-[1.5px] border-beige bg-white px-3 text-[15px] font-semibold text-encre hover:border-encre'
-
-const majuscule = (texte: string) => texte.charAt(0).toUpperCase() + texte.slice(1)
-
 function DestinationsPage() {
   const langue = useLangue()
   const t = TEXTES[langue].destinations
@@ -91,41 +84,6 @@ function DestinationsPage() {
       </EnTetePage>
 
       <section aria-label={t.filtres} className="mx-auto max-w-[1376px] px-4 sm:px-8">
-        <div className="flex flex-wrap items-end gap-3 rounded-[22px] bg-white p-3 shadow-[0_8px_24px_rgba(43,29,20,0.08)] sm:gap-4 sm:p-4">
-          <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-            {t.mois}
-            <select
-              className={selectClasse}
-              value={mois ?? ''}
-              onChange={(e) =>
-                changer({ mois: e.target.value === '' ? undefined : Number(e.target.value) })
-              }
-            >
-              <option value="">{t.meilleurMois}</option>
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i} value={i}>
-                  {majuscule(nomDuMois(i, langue))}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1 text-xs font-bold text-taupe">
-            {t.temperature}
-            <select
-              className={selectClasse}
-              value={temperature ?? ''}
-              onChange={(e) =>
-                changer({ temperature: e.target.value === '' ? undefined : Number(e.target.value) })
-              }
-            >
-              <option value="">{t.peuImporte}</option>
-              {TEMPERATURES.map((temp) => (
-                <option key={temp} value={temp}>
-                  {t.auMoins(temp)}
-                </option>
-              ))}
-            </select>
-          </label>
           <div role="group" aria-label={t.typeDeVoyage} className="flex flex-wrap gap-1.5">
             {filtresType.map((f) => {
               const actif = f.valeur === type
@@ -147,7 +105,6 @@ function DestinationsPage() {
               )
             })}
           </div>
-        </div>
       </section>
 
       <section aria-live="polite" className="mx-auto max-w-[1376px] px-4 py-10 sm:px-8 sm:pb-20">

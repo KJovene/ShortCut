@@ -36,6 +36,7 @@ export const TEXTES = {
     monProfil: 'Mon profil',
     seDeconnecter: 'Se déconnecter',
     votreCompte: 'Votre compte Détour',
+    accroche: 'Prenez le pas de côté.',
     lAssistantPropose: 'L’assistant propose, ',
     leConseillerConfirme: 'le conseiller confirme',
     avantages: [
@@ -96,6 +97,7 @@ export const TEXTES = {
     monProfil: 'My profile',
     seDeconnecter: 'Log out',
     votreCompte: 'Your Détour account',
+    accroche: 'Step off the beaten track.',
     lAssistantPropose: 'The assistant suggests, ',
     leConseillerConfirme: 'your advisor confirms',
     avantages: [

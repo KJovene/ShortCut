@@ -102,7 +102,8 @@ describe('accueil : carte et bandeau des voyages', () => {
     afficher()
 
     const titre = await screen.findByRole('heading', { level: 1, name: 'Cap sur le soleil !' })
-    expect(within(titre).getByText('le soleil').tagName).toBe('EM')
+    // Les mots entre astérisques sont l'emphase du titre (le « o » y fait le saut du O).
+    expect(titre.querySelector('em')).toHaveTextContent('le soleil')
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Voyages froids' }))
 

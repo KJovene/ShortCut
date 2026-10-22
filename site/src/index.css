@@ -1,24 +1,38 @@
 @import 'tailwindcss';
 
-/* Charte « chaleureuse » (maquette E) : crème, brun, terre cuite. */
+/*
+ * Charte DÉTOUR 2026 (brief de rebranding) : encre et craie font le travail, le jaune n'est que pour le O.
+ * Les anciens noms de couleurs (creme, terre, rouille…) sont gardés et pointent vers la nouvelle palette,
+ * pour que tout le site bascule sans renommer chaque classe.
+ */
 @theme {
-  --font-sans: 'Nunito Sans', system-ui, sans-serif;
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-sans: 'Instrument Sans', system-ui, sans-serif;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
 
-  --color-creme: #fbf6ee;
-  --color-sable: #f3e7d6;
-  --color-lin: #eadbc6;
-  --color-beige: #e3cdb0;
-  --color-encre: #2b1d14;
-  --color-brun: #3a2418;
-  --color-taupe: #6e5a4b;
-  --color-taupe-clair: #7d5f4b; /* 4,5:1 au moins sur creme, sable et blanc */
-  --color-terre: #c2471e;
-  --color-terre-pale: #fbede6;
-  --color-rouille: #9a3a18;
-  --color-ocre: #f2b33d;
-  --color-vert: #2f8f5b;
-  --color-vert-fonce: #2f6b45;
+  /* Palette de la charte */
+  --color-craie: #f6f1e7;
+  --color-ciel: #bcd3ea;
+  --color-jaune: #f2b705; /* le O qui saute, jamais du texte sur fond clair */
+  --color-brique: #c4553a; /* alertes et prix modifiés, en aplat ou bordure */
+  --color-brique-texte: #a8432c; /* brique assombrie pour le texte : 4,5:1 sur craie */
+  --color-ballast: #6b7385; /* bordures et pictos ; trop clair pour du petit texte sur craie (4,2:1) */
+
+  /* Anciens noms, nouvelle charte */
+  --color-white: #fffdf8; /* surfaces des cartes, un éclairci de craie */
+  --color-creme: #f6f1e7; /* craie, fond principal */
+  --color-sable: #eae2d2; /* craie foncée : surfaces secondaires */
+  --color-lin: #e2d9c6; /* bordures */
+  --color-beige: #c9c0ad; /* bordures marquées */
+  --color-encre: #16233f;
+  --color-brun: #16233f; /* aplats sombres : encre */
+  --color-taupe: #3b4762; /* texte secondaire (encre adoucie, 8:1 sur craie) */
+  --color-taupe-clair: #5b6376; /* texte tertiaire (5,3:1 sur craie) */
+  --color-terre: #16233f; /* actions principales : encre */
+  --color-terre-pale: #bcd3ea; /* sélection : ciel */
+  --color-rouille: #2a3a63; /* survol des actions, intitulés */
+  --color-ocre: #bcd3ea; /* accents sur fond encre : ciel */
+  --color-vert: #16233f; /* étapes faites, coches : encre */
+  --color-vert-fonce: #16233f;
 }
 
 @layer base {
@@ -26,12 +40,17 @@
     @apply bg-creme font-sans text-encre antialiased;
   }
 
+  h1,
+  h2 {
+    letter-spacing: -0.025em;
+  }
+
   ::placeholder {
-    color: #8a7666;
+    color: var(--color-taupe-clair);
   }
 
   :focus-visible {
-    outline: 3px solid var(--color-terre);
+    outline: 3px solid var(--color-encre);
     outline-offset: 2px;
   }
 }
@@ -64,6 +83,18 @@
 
 @utility animate-typing-dot {
   animation: typing-dot 1.2s infinite;
+}
+
+/*
+ * Le saut du O : dans un titre ou une accroche (28 px et plus), un seul o par composition, celui du mot qui porte
+ * l'idée, monte d'une demi-hauteur et passe en jaune. Jamais dans un texte courant, un prix ou une adresse.
+ */
+@utility saut-o {
+  /* Décalage relatif plutôt qu'inline-block + transform : une boîte inline-block est une coupure possible pour le
+     navigateur, qui renvoyait la fin du mot à la ligne (« s | oleil »). Ainsi le mot reste insécable. */
+  position: relative;
+  top: -0.24em;
+  color: var(--color-jaune);
 }
 
 @utility scrollbar-none {

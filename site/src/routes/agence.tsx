@@ -2,7 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
-import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
+import { SautDuO, TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconCoche } from '@/components/ui/icons'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
@@ -69,7 +69,7 @@ function AgencePage() {
               id="engagements-titre"
               className="m-0 mb-8 font-display text-[32px] font-semibold sm:text-[40px]"
             >
-              {engagements.titre}
+              <SautDuO texte={engagements.titre} />
             </h2>
             <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
               {engagements.elements.map((e) => (
@@ -106,7 +106,7 @@ function AgencePage() {
           {CONSEILLERS.map((c) => (
             <article
               key={c.nom}
-              className="flex gap-5 rounded-[22px] bg-white p-6 shadow-[0_8px_24px_rgba(43,29,20,0.08)]"
+              className="flex gap-5 rounded-[22px] bg-white p-6 shadow-[0_8px_24px_rgba(22,35,63,0.08)]"
             >
               <span
                 aria-hidden="true"

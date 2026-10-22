@@ -21,18 +21,19 @@ export const TEXTES = {
       themes: {
         chaud: {
           label: 'Voyages chauds',
-          titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
+          titreParDefaut: 'Où irez-vous chercher le *soleil* ?',
           aucunVoyage:
             'Aucun voyage au soleil à la une pour le moment. Décrivez vos envies à notre assistant : il vous en propose un sur mesure.',
         },
         froid: {
           label: 'Voyages froids',
-          titreParDefaut: 'Où irez-vous *chercher la fraîcheur* ?',
+          titreParDefaut: 'Où irez-vous chercher le *froid* ?',
           aucunVoyage:
             'Aucun voyage au frais à la une pour le moment. Décrivez vos envies à notre assistant : il vous en propose un sur mesure.',
         },
       },
-      tousLesVoyages: 'Tous les voyages',
+      tousLesVoyages: 'Découvrez nos meilleurs voyages',
+      accroche: 'Prenez le pas de côté.',
       // Carte du monde
       carte: 'Carte des voyages, glissez pour explorer',
       glissez: 'Glissez pour explorer',
@@ -254,18 +255,19 @@ export const TEXTES = {
       themes: {
         chaud: {
           label: 'Warm trips',
-          titreParDefaut: 'Where will you go *to find the sun*?',
+          titreParDefaut: 'Where will you go to find the *sun*?',
           aucunVoyage:
             'No sunny trips featured right now. Tell our assistant what you are looking for: it will suggest a tailor-made one.',
         },
         froid: {
           label: 'Cool trips',
-          titreParDefaut: 'Where will you go *to find cooler air*?',
+          titreParDefaut: 'Where will you go to find the *cold*?',
           aucunVoyage:
             'No cool-weather trips featured right now. Tell our assistant what you are looking for: it will suggest a tailor-made one.',
         },
       },
-      tousLesVoyages: 'All trips',
+      tousLesVoyages: 'Discover our best trips',
+      accroche: 'Step off the beaten track.',
       carte: 'Map of trips, swipe to explore',
       glissez: 'Swipe to explore',
       des: 'from',

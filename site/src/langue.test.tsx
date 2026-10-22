@@ -90,7 +90,7 @@ describe('bouton FR | EN', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Talk to the assistant' }))
 
     expect(
-      await screen.findByRole('heading', { name: 'Tell us about your next holiday' }),
+      await screen.findByRole('heading', { name: 'Tell us about your next detour' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Plan my trip/ })).toBeInTheDocument()
   })

@@ -73,11 +73,11 @@ export const mesDemandesQuery = queryOptions({
 })
 
 const CLASSE_STATUT = {
-  info: 'bg-[#E3EDF8] text-[#1E4E8C]',
-  attente: 'bg-[#FFF1D0] text-[#7A5200]',
-  succes: 'bg-[#DDF1E4] text-[#1F6B3A]',
+  info: 'bg-[#BCD3EA] text-[#16233F]',
+  attente: 'bg-[#E2D9C6] text-[#16233F]',
+  succes: 'bg-[#BCD3EA] text-[#16233F]',
   fini: 'bg-vert-fonce text-white',
-  clos: 'bg-[#EFEAE4] text-[#5A4A3E]',
+  clos: 'bg-[#EAE2D2] text-[#3B4762]',
 } as const
 
 /**

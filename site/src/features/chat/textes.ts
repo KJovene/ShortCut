@@ -6,14 +6,14 @@ import type { Langue } from '@/lib/langue'
  */
 export const TEXTES = {
   fr: {
-    injoignable: 'Je n’arrive pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
+    injoignable: 'Nous n’arrivons pas à joindre l’agence. Vérifiez votre connexion, puis réessayez.',
     confirmation:
       'Votre demande est bien arrivée chez nous. Un conseiller la reprend et vous envoie votre proposition, vérifiée, sous 2 jours ouvrés.',
     demandeTransmise: 'Demande transmise',
     assistantEcrit: "L'assistant écrit…",
     fenetre: 'Assistant voyage',
     titre: 'Votre assistant voyage',
-    sousTitre: 'Je suis une IA · un conseiller confirme chaque proposition',
+    sousTitre: 'Une IA · un conseiller vérifie et signe chaque proposition',
     parlerConseiller: 'Parler à un conseiller',
     messageConseiller: 'Je voudrais parler à un conseiller',
     fermer: "Fermer l'assistant",
@@ -24,14 +24,14 @@ export const TEXTES = {
     votreVoyage: 'Votre voyage',
     criteres: (n: number) => `${n} / 9 critères`,
     criteresRenseignes: 'Critères renseignés',
-    aujourdhui: "Aujourd'hui · Je suis une IA, un conseiller confirme chaque proposition",
+    aujourdhui: "Aujourd'hui · L'assistant est une IA, un conseiller vérifie et signe chaque proposition",
     transmise:
       'Votre demande est transmise. Pour préparer un autre voyage, cliquez sur « Recommencer ».',
     votreMessage: 'Votre message',
     placeholder: 'Ajouter une précision ou modifier votre demande…',
     envoyer: 'Envoyer',
     estimations:
-      "Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre conseiller.",
+      "Nos prix sont des estimations datées : rien n'est réservé avant la signature de votre conseiller.",
     recommencer: 'Recommencer',
     piste: 'Piste',
     aPreciser: 'À préciser',
@@ -69,8 +69,8 @@ export const TEXTES = {
     aucune: 'aucune',
     accueil: {
       surtitre: 'Votre assistant voyage, disponible maintenant',
-      titreDebut: 'Racontez-nous vos ',
-      titreAccent: 'prochaines vacances',
+      titreDebut: 'Racontez-nous votre prochain ',
+      titreAccent: 'détour',
       texte:
         'Vos envies, vos dates, votre budget : notre assistant vous remet un voyage complet et chiffré en moins de 2 minutes. Votre conseiller le confirme ensuite.',
       decrivez: 'Décrivez votre voyage',
@@ -82,18 +82,18 @@ export const TEXTES = {
         '3 budgets au choix',
         'Confirmée par un conseiller sous 2 jours',
       ],
-      ia: "Je suis une IA. Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre conseiller.",
+      ia: "Notre assistant est une IA. Ses prix sont des estimations datées : rien n'est réservé avant la signature de votre conseiller.",
     },
   },
   en: {
-    injoignable: 'I can’t reach the agency. Please check your connection and try again.',
+    injoignable: 'We can’t reach the agency. Please check your connection and try again.',
     confirmation:
       'Your request has reached us. An advisor takes it from here and sends you your proposal, checked, within 2 business days.',
     demandeTransmise: 'Request sent',
     assistantEcrit: 'The assistant is typing…',
     fenetre: 'Travel assistant',
     titre: 'Your travel assistant',
-    sousTitre: 'I am an AI · an advisor confirms every proposal',
+    sousTitre: 'An AI · an advisor checks and signs off every proposal',
     parlerConseiller: 'Talk to an advisor',
     messageConseiller: 'I would like to talk to an advisor',
     fermer: 'Close the assistant',
@@ -104,12 +104,12 @@ export const TEXTES = {
     votreVoyage: 'Your trip',
     criteres: (n: number) => `${n} / 9 criteria`,
     criteresRenseignes: 'Criteria filled in',
-    aujourdhui: 'Today · I am an AI, an advisor confirms every proposal',
+    aujourdhui: 'Today · The assistant is an AI, an advisor checks and signs off every proposal',
     transmise: 'Your request has been sent. To plan another trip, click “Start over”.',
     votreMessage: 'Your message',
     placeholder: 'Add a detail or change your request…',
     envoyer: 'Send',
-    estimations: 'My prices are estimates; nothing is booked until your advisor confirms.',
+    estimations: 'Our prices are dated estimates: nothing is booked until your advisor signs off.',
     recommencer: 'Start over',
     piste: 'Idea',
     aPreciser: 'To be specified',
@@ -146,8 +146,8 @@ export const TEXTES = {
     aucune: 'none',
     accueil: {
       surtitre: 'Your travel assistant, available now',
-      titreDebut: 'Tell us about your ',
-      titreAccent: 'next holiday',
+      titreDebut: 'Tell us about your next ',
+      titreAccent: 'detour',
       texte:
         'Your wishes, your dates, your budget: our assistant gives you a complete, priced trip in under 2 minutes. Your advisor then confirms it.',
       decrivez: 'Describe your trip',
@@ -159,7 +159,7 @@ export const TEXTES = {
         '3 budgets to choose from',
         'Confirmed by an advisor within 2 days',
       ],
-      ia: 'I am an AI. My prices are estimates; nothing is booked until your advisor confirms.',
+      ia: 'Our assistant is an AI. Its prices are dated estimates: nothing is booked until your advisor signs off.',
     },
   },
 } satisfies Record<Langue, unknown>

@@ -1,4 +1,5 @@
 import { IconFleche } from '@/components/ui/icons'
+import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { TEXTES } from '../textes'
@@ -21,8 +22,8 @@ export function ChatAccueil({
 
   return (
     <div className="flex w-full max-w-[820px] flex-col items-center gap-4 text-center sm:gap-5">
-      <span className="flex items-center gap-2 text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
-        <span aria-hidden="true" className="size-2.5 rounded-full bg-vert" />
+      <span className="flex items-center gap-2 text-[13px] font-extrabold text-rouille">
+        <span aria-hidden="true" className="size-2.5 rounded-full bg-ciel" />
         {t.surtitre}
       </span>
       <h2
@@ -36,13 +37,13 @@ export function ChatAccueil({
         )}
       >
         {t.titreDebut}
-        <em className="font-normal text-terre">{t.titreAccent}</em>
+        <SautDuO texte={t.titreAccent} />
       </h2>
       <p className="m-0 max-w-[620px] text-[15px] leading-relaxed text-taupe sm:text-lg">
         {t.texte}
       </p>
       <form
-        className="flex w-full flex-col gap-2.5 rounded-[22px] bg-white p-2.5 text-left shadow-[0_20px_50px_rgba(43,29,20,0.14)] sm:rounded-[28px] sm:p-3"
+        className="flex w-full flex-col gap-2.5 rounded-[22px] bg-white p-2.5 text-left shadow-[0_20px_50px_rgba(22,35,63,0.14)] sm:rounded-[28px] sm:p-3"
         onSubmit={(e) => {
           e.preventDefault()
           envoyer(brouillon)

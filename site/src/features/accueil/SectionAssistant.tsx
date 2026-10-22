@@ -11,7 +11,7 @@ function Polaroid({ d, rotation }: { d: DestinationPublique | undefined; rotatio
   if (!d) return null
   return (
     <div
-      className="bg-white p-2.5 pb-9 shadow-[0_14px_30px_rgba(43,29,20,0.18)]"
+      className="bg-white p-2.5 pb-9 shadow-[0_14px_30px_rgba(22,35,63,0.18)]"
       style={{ transform: `rotate(${rotation})` }}
     >
       <img src={d.photo} alt="" className="block h-[150px] w-[200px] object-cover" />

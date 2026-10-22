@@ -165,13 +165,13 @@ function Page({
       <div
         className={cn(
           'border-b',
-          confirmee ? 'border-[#B9E0C6] bg-[#DDF1E4]' : 'border-[#F0DCA0] bg-[#FFF4D6]',
+          confirmee ? 'border-[#A9C3DE] bg-[#BCD3EA]' : 'border-[#C9C0AD] bg-[#EAE2D2]',
         )}
       >
         <p
           className={cn(
             'mx-auto m-0 max-w-[1376px] px-4 py-3 text-sm font-semibold sm:px-8',
-            confirmee ? 'text-[#1F6B3A]' : 'text-[#5C4300]',
+            confirmee ? 'text-[#16233F]' : 'text-[#16233F]',
           )}
         >
           {p.mention}
@@ -208,7 +208,7 @@ function Page({
 
       <section className="mx-auto flex max-w-[1376px] flex-wrap gap-8 px-4 pt-8 pb-6 sm:px-8 sm:pt-10 lg:gap-10">
         <div className="flex min-w-0 flex-[1_1_560px] flex-col gap-4">
-          <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
+          <span className="text-[13px] font-extrabold text-rouille">
             Version {p.version} ·{' '}
             {dateLongue(confirmee && p.confirmeeLe ? p.confirmeeLe : p.creeLe, langue)}
             {p.demande.typeDeVoyage && ` · ${typeDeVoyage(p.demande.typeDeVoyage, langue)}`}
@@ -264,7 +264,7 @@ function Page({
       <section className="mx-auto flex max-w-[1376px] flex-wrap items-start gap-8 px-4 pt-4 sm:px-8">
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-5">
           <h2 className="m-0 font-display text-[30px] font-semibold">{t.programme}</h2>
-          <ol className="m-0 flex list-none flex-col overflow-hidden rounded-[22px] bg-white p-0 shadow-[0_8px_24px_rgba(43,29,20,0.08)]">
+          <ol className="m-0 flex list-none flex-col overflow-hidden rounded-[22px] bg-white p-0 shadow-[0_8px_24px_rgba(22,35,63,0.08)]">
             {[
               ...p.programme.map((j) => ({ j, changement: comparaison?.jours.get(j.jour) })),
               ...(comparaison?.joursRetires ?? []).map((j) => ({
@@ -348,7 +348,7 @@ function Page({
 
 function Chiffre({ label, valeur }: { label: string; valeur: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-2xl bg-white px-4 py-3.5 shadow-[0_2px_10px_rgba(43,29,20,0.06)]">
+    <div className="flex flex-col gap-0.5 rounded-2xl bg-white px-4 py-3.5 shadow-[0_2px_10px_rgba(22,35,63,0.06)]">
       <span className="text-xs font-semibold text-taupe">{label}</span>
       <span className="font-display text-xl font-semibold">{valeur}</span>
     </div>
@@ -380,7 +380,7 @@ function Prestations({
           <article
             key={`${changement === 'retire' ? 'retire-' : ''}${x.id}`}
             className={cn(
-              'flex overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(43,29,20,0.08)]',
+              'flex overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(22,35,63,0.08)]',
               changement && SURLIGNAGE[changement],
               changement && CONTOUR[changement],
             )}
@@ -545,7 +545,7 @@ function Budget({
           type="button"
           disabled={action.isPending}
           onClick={() => action.mutate('acceptation')}
-          className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-terre font-bold text-white hover:bg-rouille disabled:opacity-60"
+          className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-creme font-bold text-encre hover:bg-sable disabled:opacity-60"
         >
           {t.accepter}
         </button>
@@ -555,7 +555,7 @@ function Budget({
           type="button"
           disabled={action.isPending}
           onClick={() => action.mutate('demande-de-confirmation')}
-          className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-terre font-bold text-white hover:bg-rouille disabled:opacity-60"
+          className="no-print flex min-h-12 items-center justify-center rounded-[14px] bg-creme font-bold text-encre hover:bg-sable disabled:opacity-60"
         >
           {t.demanderConfirmation}
         </button>
@@ -567,21 +567,21 @@ function Budget({
 
 /** Fond d'un élément ajouté, modifié ou retiré par rapport à la version comparée. */
 const SURLIGNAGE: Record<Changement, string> = {
-  ajoute: 'bg-[#EEF8F1]',
-  modifie: 'bg-[#FFF8E6]',
+  ajoute: 'bg-[#EAF1F8]',
+  modifie: 'bg-[#FBF0EC]',
   retire: 'bg-creme',
 }
 
 const CONTOUR: Record<Changement, string> = {
-  ajoute: 'ring-2 ring-[#9FD3B2]',
-  modifie: 'ring-2 ring-[#F0DCA0]',
+  ajoute: 'ring-2 ring-[#A9C3DE]',
+  modifie: 'ring-2 ring-[#C9C0AD]',
   retire: 'ring-1 ring-lin',
 }
 
 const MARQUES: Record<Changement, string> = {
-  ajoute: 'bg-[#DDF1E4] text-[#1F6B3A]',
-  modifie: 'bg-[#FFF1C7] text-[#5C4300]',
-  retire: 'bg-[#F9DED6] text-[#8F2A1C]',
+  ajoute: 'bg-[#BCD3EA] text-[#16233F]',
+  modifie: 'bg-[#F7E3DD] text-[#16233F]',
+  retire: 'bg-[#F7E3DD] text-[#A8432C]',
 }
 
 /** Étiquette du changement : le texte le dit, la couleur ne fait que le souligner. */
@@ -590,7 +590,7 @@ function Marque({ changement, t }: { changement: Changement | undefined; t: Text
   return (
     <span
       className={cn(
-        'inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold tracking-[0.4px] whitespace-nowrap uppercase no-underline',
+        'inline-block shrink-0 rounded-full px-2 py-0.5 text-[11px] font-extrabold whitespace-nowrap no-underline',
         MARQUES[changement],
       )}
     >
@@ -616,11 +616,11 @@ function EcartDeBudget({
       className={cn(
         sombre
           ? hausse
-            ? 'text-[#F6B8A6]'
-            : 'text-[#A9DDBC]'
+            ? 'text-[#F2C2B3]'
+            : 'text-[#BCD3EA]'
           : hausse
-            ? 'text-[#8F2A1C]'
-            : 'text-[#1F6B3A]',
+            ? 'text-[#A8432C]'
+            : 'text-[#16233F]',
       )}
     >
       {formatEcart(ecart.centimes)}
@@ -645,7 +645,7 @@ function CeQuiAChange({
   return (
     <section
       aria-label={titre}
-      className="flex flex-col gap-2 rounded-[18px] border-[1.5px] border-[#F0DCA0] bg-[#FFFBEF] px-5 py-4"
+      className="flex flex-col gap-2 rounded-[18px] border-[1.5px] border-[#C9C0AD] bg-[#FBF0EC] px-5 py-4"
     >
       <h2 className="m-0 text-base font-bold">{titre}</h2>
       {c.nombre === 0 ? (

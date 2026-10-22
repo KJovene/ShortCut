@@ -40,7 +40,7 @@ export function EcranAuthentification({
             className="absolute inset-0 size-full object-cover"
           />
         )}
-        <div className="absolute right-8 bottom-8 left-8 flex max-w-[440px] flex-col gap-3 rounded-[22px] bg-creme/95 p-6 shadow-[0_18px_50px_rgba(43,29,20,0.18)]">
+        <div className="absolute right-8 bottom-8 left-8 flex max-w-[440px] flex-col gap-3 rounded-[22px] bg-creme/95 p-6 shadow-[0_18px_50px_rgba(22,35,63,0.18)]">
           <p className="m-0 font-display text-[26px] leading-tight font-semibold">
             {t.lAssistantPropose}
             <em className="font-normal text-terre">{t.leConseillerConfirme}</em>
@@ -62,9 +62,9 @@ export function EcranAuthentification({
       </aside>
 
       <section className="flex flex-[1_1_420px] items-center justify-center md:py-6">
-        <div className="flex w-full max-w-[440px] flex-col gap-6 rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(43,29,20,0.10)] sm:p-9">
+        <div className="flex w-full max-w-[440px] flex-col gap-6 rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(22,35,63,0.10)] sm:p-9">
           <div className="flex flex-col gap-2">
-            <img src="/logo-detour.svg" alt="" className="mb-2 size-11" />
+            <img src="/new-logos/detour-monogramme.svg" alt="" className="mb-2 size-12" />
             <h1 className="m-0 font-display text-[34px] leading-tight font-semibold tracking-[-0.8px]">
               {titre}
             </h1>

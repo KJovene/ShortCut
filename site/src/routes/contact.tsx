@@ -60,7 +60,7 @@ function ContactPage() {
             {t.ouvrirAssistant}
           </button>
         </article>
-        <article className="flex flex-col items-start gap-4 rounded-[28px] bg-white p-6 shadow-[0_8px_24px_rgba(43,29,20,0.08)] sm:p-8">
+        <article className="flex flex-col items-start gap-4 rounded-[28px] bg-white p-6 shadow-[0_8px_24px_rgba(22,35,63,0.08)] sm:p-8">
           <span
             aria-hidden="true"
             className="flex size-12 items-center justify-center rounded-full bg-encre text-creme"

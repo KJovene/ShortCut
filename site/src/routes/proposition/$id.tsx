@@ -61,7 +61,7 @@ function PropositionIntrouvable() {
   const t = textes.proposition
   return (
     <section className="mx-auto flex max-w-[720px] flex-col items-start gap-4 px-4 py-16 sm:px-8 sm:py-24">
-      <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
+      <span className="text-[13px] font-extrabold text-rouille">
         {t.surtitre}
       </span>
       <h1 className="m-0 font-display text-[40px] leading-tight font-semibold">{t.introuvable}</h1>
