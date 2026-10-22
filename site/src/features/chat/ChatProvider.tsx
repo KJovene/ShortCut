@@ -71,6 +71,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       langue,
       questionnaire,
       contexteInvite,
+      destinationInvite,
     } = etat
     try {
       sessionStorage.setItem(
@@ -84,6 +85,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           langue,
           questionnaire,
           contexteInvite,
+          destinationInvite,
         }),
       )
     } catch {
@@ -165,6 +167,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (!jeton || reprendQuestionnaire) {
           jeton = await ouvrirConversation(
             reprendQuestionnaire ? questionnaire.reponses : undefined,
+            etatCourant.current.destinationInvite,
             controleur.signal,
           )
           const nouveau = jeton
@@ -175,7 +178,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
           if (!(err instanceof ApiError && err.status === 401)) throw err
-          const nouveau = await ouvrirConversation(undefined, controleur.signal)
+          const nouveau = await ouvrirConversation(undefined, undefined, controleur.signal)
           setEtat((e) => ({ ...e, jeton: nouveau }))
           await lire(nouveau)
         }
@@ -241,9 +244,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         messages: [...x.messages, client],
       }))
       void discuter(
-        etatCourant.current.contexteInvite
-          ? `${etatCourant.current.contexteInvite}\n\n${propre}`
-          : propre,
+        [etatCourant.current.contexteInvite, etatCourant.current.destinationInvite]
+          .filter(Boolean)
+          .concat(propre)
+          .join('\n\n'),
       )
     },
     [discuter],
@@ -257,6 +261,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
       fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
       setBrouillon: (brouillon: string) => setEtat((e) => ({ ...e, brouillon })),
+      setDestinationInvite: (destination: string) =>
+        setEtat((e) => ({
+          ...e,
+          destinationInvite: destination,
+          conversation: { demande: { ...e.conversation.demande, zone: destination } },
+        })),
       recommencer: () => {
         annulation.current?.abort()
         enCours.current = false

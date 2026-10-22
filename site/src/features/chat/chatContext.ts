@@ -22,6 +22,7 @@ export interface EtatChat {
   questionnaire: QuestionnaireEtat
   /** Réponses du visiteur à transmettre au premier message après connexion. */
   contexteInvite?: string
+  destinationInvite?: string
 }
 
 export interface QuestionnaireEtat {
@@ -42,6 +43,7 @@ export interface ActionsChat {
   ouvrir: (brouillon?: string) => void
   fermer: () => void
   setBrouillon: (texte: string) => void
+  setDestinationInvite: (destination: string) => void
   recommencer: () => void
   /** Recharge une conversation existante et ouvre le chat pour la continuer. */
   reprendre: (reprise: Reprise) => void
