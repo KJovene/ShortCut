@@ -21,6 +21,7 @@ final class PageDuSiteFixtures extends Fixture
                 (new PageDuSite())
                     ->setSlug($p['slug'])
                     ->setTitre($p['titre'])
+                    ->setTitreFroid($p['titreFroid'] ?? null)
                     ->setSeoTitre($p['seoTitre'])
                     ->setSeoDescription($p['seoDescription'])
                     ->setContenu($p['contenu'])

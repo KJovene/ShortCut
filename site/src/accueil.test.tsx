@@ -8,6 +8,7 @@ import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
 import { DESTINATIONS_DE_DEMO } from './test/destinations'
+import { PAGES_DE_DEMO } from './test/pages'
 
 function afficher() {
   const queryClient = createQueryClient()
@@ -21,7 +22,7 @@ function afficher() {
 
 /** Voyages du bandeau sous la carte, par leur nom. */
 async function voyagesDuBandeau() {
-  const bandeau = await screen.findByRole('region', { name: 'Tous les voyages de la carte' })
+  const bandeau = await screen.findByRole('region', { name: 'Destinations à la une' })
   return within(bandeau)
     .getAllByRole('link')
     .map((lien) => lien.getAttribute('href'))
@@ -85,6 +86,27 @@ describe('accueil : carte et bandeau des voyages', () => {
     expect(liens).not.toContain('/destinations/sans-nom')
     expect(liens).toHaveLength(complet.length + 1)
     expect(console.warn).toHaveBeenCalled()
+  })
+
+  it('prend le titre de chaque thème dans les contenus du site', async () => {
+    simulerApi({
+      'GET /api/pages/accueil': {
+        status: 200,
+        body: {
+          ...PAGES_DE_DEMO.accueil,
+          titre: 'Cap sur *le soleil* !',
+          titreFroid: 'Cap sur *les aurores* !',
+        },
+      },
+    })
+    afficher()
+
+    const titre = await screen.findByRole('heading', { level: 1, name: 'Cap sur le soleil !' })
+    expect(within(titre).getByText('le soleil').tagName).toBe('EM')
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Voyages froids' }))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Cap sur les aurores !' })).toBeVisible()
   })
 
   it('passe aux voyages froids, avec une autre accroche', async () => {

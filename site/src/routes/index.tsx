@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { IconFlecheBas } from '@/components/ui/icons'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { BandeauVoyages } from '@/features/accueil/BandeauVoyages'
 import { type Theme, voyagesDuTheme } from '@/features/accueil/carte'
 import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
@@ -32,13 +33,22 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
-/** Les deux thèmes de la carte, avec l'accroche du titre qui leur correspond. */
-const THEMES: { valeur: Theme; label: string; debut: string; fin: string }[] = [
-  { valeur: 'chaud', label: 'Voyages chauds', debut: 'Où irez-vous', fin: 'chercher le soleil' },
-  { valeur: 'froid', label: 'Voyages froids', debut: 'Où irez-vous', fin: 'chercher la fraîcheur' },
+/**
+ * Les deux thèmes de la carte. Leur titre vient des contenus du site (page « accueil » : « Titre » pour les voyages
+ * chauds, « Titre des voyages froids ») ; sans l'API ou sans titre saisi, celui des maquettes.
+ */
+const THEMES: { valeur: Theme; label: string; titreParDefaut: string }[] = [
+  {
+    valeur: 'chaud',
+    label: 'Voyages chauds',
+    titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
+  },
+  {
+    valeur: 'froid',
+    label: 'Voyages froids',
+    titreParDefaut: 'Où irez-vous *chercher la fraîcheur* ?',
+  },
 ]
-
-const TITRE_PAR_DEFAUT = 'Où irez-vous *chercher le soleil* ?'
 
 function HomePage() {
   const [theme, setTheme] = useState<Theme>('chaud')
@@ -48,7 +58,10 @@ function HomePage() {
   const voyages = voyagesDuTheme(misesEnAvant, theme)
   const surCarte = voyages.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const accroche = THEMES.find((t) => t.valeur === theme)!
+  const { data: page } = useQuery(pageQuery('accueil'))
+  const titre =
+    (theme === 'chaud' ? page?.titre : page?.titreFroid) ||
+    THEMES.find((t) => t.valeur === theme)!.titreParDefaut
 
   // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
   const { data: destinations = [] } = useQuery(destinationsQuery())
@@ -72,7 +85,7 @@ function HomePage() {
               aria-live="polite"
               className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
             >
-              {accroche.debut} <em className="font-normal text-terre">{accroche.fin}</em> ?
+              <TitreMisEnValeur texte={titre} />
             </h1>
           </div>
           <div
@@ -131,7 +144,7 @@ function HomePage() {
         />
       )}
 
-      <SectionAssistant suggestion={survolee} photos={photos} />
+      <SectionAssistant suggestion={active} photos={photos} />
     </>
   )
 }
