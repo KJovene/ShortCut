@@ -67,23 +67,6 @@ export const TEXTES = {
     auTotal: 'au total',
     departDe: (ville: string) => `départ ${ville}`,
     aucune: 'aucune',
-    accueil: {
-      surtitre: 'Votre assistant voyage, disponible maintenant',
-      titreDebut: 'Racontez-nous vos ',
-      titreAccent: 'prochaines vacances',
-      texte:
-        'Vos envies, vos dates, votre budget : notre assistant vous remet un voyage complet et chiffré en moins de 2 minutes. Votre conseiller le confirme ensuite.',
-      decrivez: 'Décrivez votre voyage',
-      placeholder: 'Ex. : 10 jours en mai, au moins 25 °C, 4 000 € pour deux, sans voiture…',
-      suggestions: ['Voyage de noces', 'En famille', 'Entre amis'],
-      construire: 'Construire mon voyage',
-      avantages: [
-        'Proposition chiffrée en 2 min',
-        '3 budgets au choix',
-        'Confirmée par un conseiller sous 2 jours',
-      ],
-      ia: "Je suis une IA. Mes prix sont des estimations, rien n'est réservé avant la confirmation de votre conseiller.",
-    },
   },
   en: {
     injoignable: 'I can’t reach the agency. Please check your connection and try again.',
@@ -144,22 +127,5 @@ export const TEXTES = {
     auTotal: 'in total',
     departDe: (ville: string) => `from ${ville}`,
     aucune: 'none',
-    accueil: {
-      surtitre: 'Your travel assistant, available now',
-      titreDebut: 'Tell us about your ',
-      titreAccent: 'next holiday',
-      texte:
-        'Your wishes, your dates, your budget: our assistant gives you a complete, priced trip in under 2 minutes. Your advisor then confirms it.',
-      decrivez: 'Describe your trip',
-      placeholder: 'E.g. 10 days in May, at least 25 °C, €4,000 for two, no car…',
-      suggestions: ['Honeymoon', 'With family', 'With friends'],
-      construire: 'Plan my trip',
-      avantages: [
-        'Priced proposal in 2 min',
-        '3 budgets to choose from',
-        'Confirmed by an advisor within 2 days',
-      ],
-      ia: 'I am an AI. My prices are estimates; nothing is booked until your advisor confirms.',
-    },
   },
 } satisfies Record<Langue, unknown>

@@ -1,17 +1,14 @@
 import { Link } from '@tanstack/react-router'
-import { TEXTES } from '@/components/textes'
+import { formatEuros, labelType, MOIS } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
-import { euros, nomDuMois, typeDeVoyage, useLangue } from '@/lib/langue'
 
 /** Carte d'une destination dans les listes (photo, température du mois, prix « à partir de »). */
 export function CarteDestination({ d, mois }: { d: DestinationPublique; mois?: number }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   const m = mois ?? d.moisIdeal
   const temperature = d.temperatures[m]
   const details = [
-    ...d.types.map((type) => typeDeVoyage(type, langue)),
-    ...(d.prixAPartirDe === null ? [] : [t.desParPersonne(euros(d.prixAPartirDe, langue))]),
+    ...d.types.map(labelType),
+    ...(d.prixAPartirDe === null ? [] : [`dès ${formatEuros(d.prixAPartirDe)} / pers.`]),
   ]
   return (
     <Link
@@ -27,7 +24,7 @@ export function CarteDestination({ d, mois }: { d: DestinationPublique; mois?: n
         />
         {temperature !== null && (
           <span className="absolute top-3 left-3 rounded-full bg-white px-3 py-1.5 text-xs font-extrabold">
-            {t.temperatureEn(temperature, nomDuMois(m, langue))}
+            {temperature} °C en {MOIS[m]}
           </span>
         )}
       </div>

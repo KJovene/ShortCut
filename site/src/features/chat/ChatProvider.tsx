@@ -2,24 +2,22 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
-import { langueDuSite, surChangementDeLangue } from '@/lib/langue'
 import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { ChatContext, type EtatChat, type Reprise } from './chatContext'
-import { messageAccueil, nouvelId, type Message } from './conversation'
+import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
 import { type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
 const CLE = 'chat'
 
-/** Une nouvelle conversation démarre dans la langue du site ; l'assistant suit ensuite celle du client. */
-const etatInitial = (langue = langueDuSite()): EtatChat => ({
+const etatInitial = (): EtatChat => ({
   statut: 'accueil',
-  messages: [messageAccueil(langue)],
+  messages: [MESSAGE_ACCUEIL],
   conversation: { demande: demandeVide() },
   reflexion: false,
   ouvert: false,
   brouillon: '',
-  langue,
+  langue: 'fr',
 })
 
 function restaurer(): EtatChat {
@@ -60,21 +58,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [etat])
 
   useEffect(() => () => annulation.current?.abort(), [])
-
-  // Le visiteur change la langue du site avant d'écrire : l'accueil du chatbot la suit. Une conversation
-  // commencée garde la langue du client, reconnue par l'assistant.
-  useEffect(
-    () =>
-      surChangementDeLangue(() => {
-        const langue = langueDuSite()
-        setEtat((e) =>
-          e.jeton || e.statut !== 'accueil' || e.langue === langue
-            ? e
-            : { ...e, langue, messages: [messageAccueil(langue)] },
-        )
-      }),
-    [],
-  )
 
   /** Destinations publiées, pour reconnaître le lieu cité par le client ; vide si le catalogue est indisponible. */
   const catalogue = useCallback(
@@ -144,7 +127,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
       try {
         if (!jeton) {
-          jeton = await ouvrirConversation(controleur.signal, etatCourant.current.langue)
+          jeton = await ouvrirConversation(controleur.signal)
           const nouveau = jeton
           setEtat((e) => ({ ...e, jeton: nouveau }))
         }
@@ -153,7 +136,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } catch (err) {
           // Jeton inconnu (conversation expirée, base réinitialisée) : nouvelle conversation, une fois.
           if (!(err instanceof ApiError && err.status === 401)) throw err
-          const nouveau = await ouvrirConversation(controleur.signal, etatCourant.current.langue)
+          const nouveau = await ouvrirConversation(controleur.signal)
           setEtat((e) => ({ ...e, jeton: nouveau }))
           await lire(nouveau)
         }

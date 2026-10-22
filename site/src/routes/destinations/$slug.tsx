@@ -1,21 +1,11 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { IconAvion, IconCoche, IconFleche } from '@/components/ui/icons'
+import { formatDuree, formatEuros, labelType, MOIS } from '@/data/catalogue'
 import { destinationQuery, type Exemple } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
-import { TEXTES } from '@/features/pages/textes'
 import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/cn'
-import {
-  duree,
-  euros,
-  type Langue,
-  langueDuSite,
-  nomDuMois,
-  typeDeVoyage,
-  useLangue,
-} from '@/lib/langue'
 
 export const Route = createFileRoute('/destinations/$slug')({
   // Une destination masquée dans le backoffice répond 404, comme une destination inconnue.
@@ -27,7 +17,7 @@ export const Route = createFileRoute('/destinations/$slug')({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: TEXTES[langueDuSite()].destination.metaTitre(loaderData.nom) },
+          { title: `${loaderData.nom} · Climat, hébergements et prix` },
           { name: 'description', content: loaderData.description },
         ]
       : [],
@@ -40,13 +30,9 @@ export const Route = createFileRoute('/destinations/$slug')({
 const TEMP_MAX = 32
 
 function DestinationPage() {
-  const { slug } = Route.useParams()
-  const langue = useLangue()
-  const t = TEXTES[langue].destination
-  const { data: d } = useSuspenseQuery(destinationQuery(slug, langue))
+  const d = Route.useLoaderData()
   const ouvrirAssistant = useOuvrirAssistant()
-  const construire = () =>
-    ouvrirAssistant(TEXTES[langue].accueil.brouillon(d.ville, nomDuMois(d.moisIdeal, langue)))
+  const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)
 
   return (
     <>
@@ -59,7 +45,7 @@ function DestinationPage() {
         <div className="absolute inset-0 bg-linear-to-t from-encre/80 via-encre/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0">
           <div className="mx-auto flex max-w-[1376px] flex-col gap-2 px-4 pb-6 text-creme sm:px-8 sm:pb-10">
-            <nav aria-label={t.filAriane} className="text-sm font-semibold text-sable">
+            <nav aria-label="Fil d'Ariane" className="text-sm font-semibold text-sable">
               <Link to="/destinations" className="underline-offset-2 hover:underline">
                 Destinations
               </Link>{' '}
@@ -69,7 +55,7 @@ function DestinationPage() {
               {d.nom}
             </h1>
             <p className="m-0 text-base font-semibold text-sable sm:text-lg">
-              {[d.region, ...d.types.map((type) => typeDeVoyage(type, langue))].join(' · ')}
+              {[d.region, ...d.types.map(labelType)].join(' · ')}
             </p>
           </div>
         </div>
@@ -94,40 +80,28 @@ function DestinationPage() {
             </ul>
           </div>
 
-          <Climat
-            temperatures={d.temperatures}
-            pluie={d.pluie}
-            moisIdeal={d.moisIdeal}
-            langue={langue}
-          />
+          <Climat temperatures={d.temperatures} pluie={d.pluie} moisIdeal={d.moisIdeal} />
 
-          <Prestations
-            titre={t.hebergements}
-            prestations={d.logements}
-            unite="nuit"
-            langue={langue}
-          />
-          <Prestations
-            titre={t.activites}
-            prestations={d.activites}
-            unite="personne"
-            langue={langue}
-          />
+          <Prestations titre="Exemples d'hébergements" prestations={d.logements} unite="nuit" />
+          <Prestations titre="Exemples d'activités" prestations={d.activites} unite="personne" />
         </div>
 
         <aside className="flex min-w-0 flex-[1_1_340px] flex-col gap-4 self-start rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
           {d.prixAPartirDe !== null && (
             <>
               <span className="text-[13px] font-extrabold tracking-[1.5px] text-ocre uppercase">
-                {t.aPartirDe}
+                À partir de
               </span>
               <div>
                 <span className="font-display text-5xl font-semibold tracking-[-1px]">
-                  {euros(d.prixAPartirDe, langue)}
+                  {formatEuros(d.prixAPartirDe)}
                 </span>
-                <span className="text-sable">{t.parPersonne}</span>
+                <span className="text-sable"> / pers.</span>
               </div>
-              <p className="m-0 text-sm leading-relaxed text-sable">{t.estimation}</p>
+              <p className="m-0 text-sm leading-relaxed text-sable">
+                Estimation pour 7 nuits à deux, vols depuis Paris et transferts compris, marge et
+                frais de dossier inclus. Votre proposition est calculée sur vos dates exactes.
+              </p>
             </>
           )}
           <dl className="m-0 flex flex-col gap-2 border-t border-white/15 pt-4 text-sm">
@@ -135,9 +109,9 @@ function DestinationPage() {
               <div key={ville} className="flex items-center justify-between gap-3">
                 <dt className="flex items-center gap-2 text-sable">
                   <IconAvion size={16} />
-                  {t.depuis(ville)}
+                  Depuis {ville}
                 </dt>
-                <dd className="m-0 font-bold">{duree(minutes, langue)}</dd>
+                <dd className="m-0 font-bold">{formatDuree(minutes)}</dd>
               </div>
             ))}
           </dl>
@@ -146,10 +120,12 @@ function DestinationPage() {
             onClick={construire}
             className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-terre font-extrabold text-white hover:bg-rouille"
           >
-            {TEXTES[langue].construireMonVoyage}
+            Construire mon voyage
             <IconFleche size={18} strokeWidth={2.4} />
           </button>
-          <p className="m-0 text-center text-xs text-sable">{t.sousBouton}</p>
+          <p className="m-0 text-center text-xs text-sable">
+            Proposition chiffrée en 2 minutes, confirmée par un conseiller.
+          </p>
         </aside>
       </section>
     </>
@@ -160,37 +136,34 @@ function Climat({
   temperatures,
   pluie,
   moisIdeal,
-  langue,
 }: {
   temperatures: (number | null)[]
   pluie: (number | null)[]
   moisIdeal: number
-  langue: Langue
 }) {
-  const t = TEXTES[langue].destination
   return (
     <section aria-labelledby="climat-titre" className="flex flex-col gap-4">
       <h2 id="climat-titre" className="m-0 font-display text-[30px] font-semibold">
-        {t.climat}
+        Le climat mois par mois
       </h2>
       <div className="overflow-x-auto rounded-[22px] bg-white p-4 shadow-[0_8px_24px_rgba(43,29,20,0.08)] sm:p-6">
         <table className="w-full min-w-[560px] border-collapse text-center text-sm">
-          <caption className="sr-only">{t.legendeClimat}</caption>
+          <caption className="sr-only">Températures moyennes et pluie par mois</caption>
           <thead>
             <tr>
               <th scope="row" className="pb-2 text-left text-xs font-bold text-taupe-clair">
-                {t.mois}
+                Mois
               </th>
-              {Array.from({ length: 12 }, (_, i) => (
+              {MOIS.map((m, i) => (
                 <th
-                  key={i}
+                  key={m}
                   scope="col"
                   className={cn(
                     'pb-2 text-xs font-bold uppercase',
                     i === moisIdeal ? 'text-terre' : 'text-taupe-clair',
                   )}
                 >
-                  {nomDuMois(i, langue).slice(0, 3)}
+                  {m.slice(0, 3)}
                 </th>
               ))}
             </tr>
@@ -200,22 +173,20 @@ function Climat({
               <th scope="row" className="text-left text-xs font-bold text-taupe-clair">
                 °C
               </th>
-              {temperatures.map((temp, i) => (
+              {temperatures.map((t, i) => (
                 <td key={i} className="h-32 px-0.5 align-bottom">
-                  {temp === null ? (
+                  {t === null ? (
                     <span className="text-xs text-taupe-clair">–</span>
                   ) : (
                     <div className="flex h-full flex-col items-center justify-end gap-1">
-                      <span className="text-xs font-extrabold">{temp}°</span>
+                      <span className="text-xs font-extrabold">{t}°</span>
                       <span
                         aria-hidden="true"
                         className={cn(
                           'w-full max-w-7 rounded-t-md',
-                          temp >= 25 ? 'bg-terre' : temp >= 18 ? 'bg-ocre' : 'bg-beige',
+                          t >= 25 ? 'bg-terre' : t >= 18 ? 'bg-ocre' : 'bg-beige',
                         )}
-                        style={{
-                          height: `${Math.max(6, (Math.max(temp, 0) / TEMP_MAX) * 88)}px`,
-                        }}
+                        style={{ height: `${Math.max(6, (Math.max(t, 0) / TEMP_MAX) * 88)}px` }}
                       />
                     </div>
                   )}
@@ -224,7 +195,7 @@ function Climat({
             </tr>
             <tr>
               <th scope="row" className="pt-3 text-left text-xs font-bold text-taupe-clair">
-                {t.pluie}
+                Pluie
               </th>
               {pluie.map((p, i) => (
                 <td key={i} className="pt-3 text-xs text-taupe">
@@ -236,7 +207,8 @@ function Climat({
         </table>
       </div>
       <p className="m-0 text-xs text-taupe-clair">
-        {t.meilleurePeriode(nomDuMois(moisIdeal, langue))}
+        Températures moyennes saisies par nos conseillers. Meilleure période conseillée :{' '}
+        {MOIS[moisIdeal]}.
       </p>
     </section>
   )
@@ -246,14 +218,11 @@ function Prestations({
   titre,
   prestations,
   unite,
-  langue,
 }: {
   titre: string
   prestations: Exemple[]
   unite: 'nuit' | 'personne'
-  langue: Langue
 }) {
-  const t = TEXTES[langue].destination
   if (prestations.length === 0) return null
   return (
     <section className="flex flex-col gap-4">
@@ -270,20 +239,22 @@ function Prestations({
               <span className="text-sm text-taupe">
                 {p.categorie}
                 {unite === 'nuit'
-                  ? ` · ${t.pers(p.capacite)}`
+                  ? ` · ${p.capacite} pers.`
                   : p.duree
-                    ? ` · ${duree(p.duree, langue)}`
+                    ? ` · ${formatDuree(p.duree)}`
                     : ''}
-                {p.accessible && ` · ${t.accessible}`}
+                {p.accessible && ' · accessible'}
               </span>
               <span className="mt-1 text-sm">
-                {t.des} <strong>{euros(p.prix, langue)}</strong> / {t[unite]}
+                dès <strong>{formatEuros(p.prix)}</strong> / {unite}
               </span>
             </div>
           </article>
         ))}
       </div>
-      <p className="m-0 text-xs text-taupe-clair">{t.prixBas}</p>
+      <p className="m-0 text-xs text-taupe-clair">
+        Prix les plus bas de l'année, marge de l'agence comprise ; ils varient selon la saison.
+      </p>
     </section>
   )
 }

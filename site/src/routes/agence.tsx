@@ -6,13 +6,15 @@ import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconCoche } from '@/components/ui/icons'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
-import { TEXTES } from '@/features/pages/textes'
-import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/agence')({
   loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('agence')),
   head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].agence.meta),
+    meta: metaPage(loaderData, {
+      titre: "L'agence · Nos conseillers et nos engagements",
+      description:
+        'Une équipe de conseillers spécialistes de chaque destination, qui confirment chaque proposition avant votre départ.',
+    }),
   }),
   pendingComponent: PageEnChargement,
   errorComponent: PageIndisponible,
@@ -23,15 +25,15 @@ export const Route = createFileRoute('/agence')({
 const CONSEILLERS = [
   {
     nom: 'Léa Dubois',
-    role: 'conseillere',
+    role: 'Conseillère voyage',
     destinations: ['lisbonne', 'marrakech', 'santorin', 'rome'],
   },
   {
     nom: 'Hugo Bernard',
-    role: 'conseiller',
+    role: 'Conseiller voyage',
     destinations: ['tenerife', 'islande', 'bali', 'costa-rica'],
   },
-] as const
+]
 
 const initiales = (nom: string) =>
   nom
@@ -40,20 +42,18 @@ const initiales = (nom: string) =>
     .join('')
 
 function AgencePage() {
-  const langue = useLangue()
-  const t = TEXTES[langue].agence
-  // Présentation et engagements : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  const { data: page } = useSuspenseQuery(pageQuery('agence', langue))
+  // Présentation et engagements : contenus du site, modifiables dans le backoffice.
+  const { data: page } = useSuspenseQuery(pageQuery('agence'))
   const contenu = decouperContenu(page.contenu)
-  const engagements = trouverSection(contenu, 'Nos engagements', 'Our commitments')
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const engagements = trouverSection(contenu, 'Nos engagements')
+  const { data: destinations = [] } = useQuery(destinationsQuery())
 
   return (
     <>
       <EnTetePage
-        surtitre={t.surtitre}
+        surtitre="L'agence"
         titre={<TitreMisEnValeur texte={page.titre} />}
-        photo={page.photos[0] ? { src: page.photos[0], alt: t.photo } : undefined}
+        photo={page.photos[0] ? { src: page.photos[0], alt: "L'équipe de l'agence" } : undefined}
       >
         {contenu.intro.map((paragraphe) => (
           <p key={paragraphe} className="m-0">
@@ -99,9 +99,11 @@ function AgencePage() {
           id="equipe-titre"
           className="m-0 mb-2 font-display text-[32px] font-semibold sm:text-[40px]"
         >
-          {t.equipe}
+          L'équipe
         </h2>
-        <p className="m-0 mb-8 text-lg text-taupe">{t.equipeTexte}</p>
+        <p className="m-0 mb-8 text-lg text-taupe">
+          Votre proposition est confirmée par le conseiller de votre destination.
+        </p>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {CONSEILLERS.map((c) => (
             <article
@@ -116,7 +118,7 @@ function AgencePage() {
               </span>
               <div className="flex flex-col gap-1">
                 <h3 className="m-0 font-display text-2xl font-semibold">{c.nom}</h3>
-                <span className="text-sm font-bold text-rouille">{t[c.role]}</span>
+                <span className="text-sm font-bold text-rouille">{c.role}</span>
                 <span className="text-taupe">
                   {c.destinations
                     .flatMap((slug) => destinations.find((d) => d.slug === slug)?.ville ?? [])

@@ -1,13 +1,9 @@
 import { Link } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { IconChevronDroite, IconChevronGauche } from '@/components/ui/icons'
-import type { TypeDeVoyage } from '@/data/catalogue'
 import { formatEuros, MOIS } from '@/data/catalogue'
 import { libelleTypePrincipal, type DestinationPublique } from '@/features/catalogue/catalogue'
-import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
-import { euros, nomDuMois, useLangue } from '@/lib/langue'
-import { estVisible } from './carte'
 
 interface Props {
   destinations: DestinationPublique[]
@@ -15,10 +11,8 @@ interface Props {
   onActiver: (slug: string) => void
 }
 
-/** Bandeau des envies : tous les voyages du catalogue, à faire défiler, y compris ceux qui n'ont pas d'épingle. */
-export function BandeauVoyages({ destinations, active, type, onActiver }: Props) {
-  const langue = useLangue()
-  const t = TEXTES[langue].accueil
+/** Bandeau des envies : les voyages de la carte (mis en avant, du thème choisi), à faire défiler. */
+export function BandeauVoyages({ destinations, active, onActiver }: Props) {
   const liste = useRef<HTMLUListElement>(null)
   const defiler = (sens: 1 | -1) =>
     liste.current?.scrollBy({ left: sens * 504, behavior: 'smooth' })
@@ -29,19 +23,19 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
         <div className="flex flex-wrap items-end justify-between gap-4 pr-4 sm:pr-0">
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] font-extrabold tracking-[1.5px] text-ocre uppercase">
-              {t.bandeauSurtitre}
+              Le bandeau des envies
             </span>
             <h2
               id="bandeau-titre"
               className="m-0 font-display text-[28px] font-semibold tracking-[-1px] sm:text-[40px]"
             >
-              {t.bandeauTitre}
+              Destinations à la une
             </h2>
           </div>
           <div className="hidden gap-2 sm:flex">
             <button
               type="button"
-              aria-label={t.precedents}
+              aria-label="Voyages précédents"
               onClick={() => defiler(-1)}
               className="flex size-12 items-center justify-center rounded-full border-[1.5px] border-[#8A6A55] hover:bg-white/10"
             >
@@ -49,7 +43,7 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
             </button>
             <button
               type="button"
-              aria-label={t.suivants}
+              aria-label="Voyages suivants"
               onClick={() => defiler(1)}
               className="flex size-12 items-center justify-center rounded-full bg-creme text-brun hover:bg-white"
             >
@@ -80,14 +74,14 @@ export function BandeauVoyages({ destinations, active, type, onActiver }: Props)
                 />
                 {d.temperatures[d.moisIdeal] !== null && (
                   <span className="absolute top-3 left-3 rounded-full bg-white px-2.5 py-1 text-xs font-extrabold text-encre">
-                    {t.temperatureEn(d.temperatures[d.moisIdeal]!, nomDuMois(d.moisIdeal, langue))}
+                    {d.temperatures[d.moisIdeal]} °C en {MOIS[d.moisIdeal]}
                   </span>
                 )}
                 <span className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 bg-linear-to-t from-encre/90 to-encre/0 px-4 pt-10 pb-4">
                   <span className="font-display text-lg font-semibold sm:text-[22px]">{d.nom}</span>
                   <span className="text-xs text-sable sm:text-[13px]">
-                    {libelleTypePrincipal(d, langue)}
-                    {d.prixAPartirDe !== null && ` · ${t.des} ${euros(d.prixAPartirDe, langue)}`}
+                    {libelleTypePrincipal(d)}
+                    {d.prixAPartirDe !== null && ` · dès ${formatEuros(d.prixAPartirDe)}`}
                   </span>
                 </span>
               </Link>

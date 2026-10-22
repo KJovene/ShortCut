@@ -4,7 +4,7 @@ import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconFleche } from '@/components/ui/icons'
-import { TYPES_DE_VOYAGE } from '@/data/catalogue'
+import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import {
@@ -14,8 +14,6 @@ import {
   photoNommee,
   trouverSection,
 } from '@/features/pages/pageDuSite'
-import { TEXTES } from '@/features/pages/textes'
-import { type Langue, langueDuSite, typeDeVoyage, typesDeVoyage, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/types-de-voyages')({
   loader: ({ context }) => {
@@ -23,44 +21,50 @@ export const Route = createFileRoute('/types-de-voyages')({
     return context.queryClient.ensureQueryData(pageQuery('types-de-voyages'))
   },
   head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].types.meta),
+    meta: metaPage(loaderData, {
+      titre: 'Séjours, circuits, groupes, voyages de noces et entreprise',
+      description:
+        "Séjours détente, circuits accompagnés, voyages de groupe, voyages de noces et séminaires : l'agence organise tous vos voyages.",
+    }),
   }),
   pendingComponent: PageEnChargement,
   errorComponent: PageIndisponible,
   component: TypesPage,
 })
 
-/** « Voyages de noces » plutôt que « Noces » ; « Honeymoons » en anglais. */
-const titreType = (t: (typeof TYPES_DE_VOYAGE)[number], langue: Langue) =>
-  langue === 'fr' && t.pluriel === 'Noces' ? 'Voyages de noces' : typesDeVoyage(t, langue)
+/** Début de message proposé à l'assistant pour chaque type de voyage. */
+const BROUILLONS: Record<TypeDeVoyage, string> = {
+  sejour: 'Un séjour pour deux, ',
+  circuit: 'Un circuit en plusieurs étapes, ',
+  groupe: 'Un voyage de groupe pour 15 personnes, ',
+  noces: 'Notre voyage de noces, ',
+  entreprise: 'Un séminaire d’entreprise pour 30 collègues, ',
+}
+
+const titreType = (t: (typeof TYPES_DE_VOYAGE)[number]) =>
+  t.pluriel === 'Noces' ? 'Voyages de noces' : t.pluriel
 
 function TypesPage() {
-  const langue = useLangue()
-  const textes = TEXTES[langue]
   const ouvrirAssistant = useOuvrirAssistant()
   // Une section par type (intertitre « Séjours », « Circuits »…) et une photo nommée d'après le type :
-  // contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  const { data: page } = useSuspenseQuery(pageQuery('types-de-voyages', langue))
+  // contenus du site, modifiables dans le backoffice.
+  const { data: page } = useSuspenseQuery(pageQuery('types-de-voyages'))
   const contenu = decouperContenu(page.contenu)
   // Le nombre de destinations par type s'affiche une fois le catalogue chargé.
-  const { data: destinations } = useQuery(destinationsQuery(langue))
+  const { data: destinations } = useQuery(destinationsQuery())
 
   return (
     <>
-      <EnTetePage surtitre={textes.types.surtitre} titre={<TitreMisEnValeur texte={page.titre} />}>
-        <p className="m-0 max-w-[640px]">{textes.types.intro}</p>
+      <EnTetePage surtitre="Nos voyages" titre={<TitreMisEnValeur texte={page.titre} />}>
+        <p className="m-0 max-w-[640px]">
+          Quel que soit votre projet, l'assistant pose les questions propres à votre type de voyage
+          : étapes d'un circuit, taille du groupe, date du mariage ou objectif de l'entreprise.
+        </p>
       </EnTetePage>
 
       <section className="mx-auto flex max-w-[1376px] flex-col gap-6 px-4 pb-16 sm:px-8 sm:pb-24">
         {TYPES_DE_VOYAGE.map((t, i) => {
-          const section = trouverSection(
-            contenu,
-            titreType(t, 'fr'),
-            t.label,
-            t.pluriel,
-            titreType(t, 'en'),
-            typeDeVoyage(t.valeur, 'en'),
-          )
+          const section = trouverSection(contenu, titreType(t), t.label, t.pluriel)
           const photo = photoNommee(page.photos, t.valeur)
           const nb = destinations?.filter((d) => d.types.includes(t.valeur)).length
           return (
@@ -78,10 +82,10 @@ function TypesPage() {
               <div className="flex flex-1 flex-col justify-center gap-3 p-6 sm:p-10">
                 <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
                   {String(i + 1).padStart(2, '0')}
-                  {nb !== undefined && ` · ${textes.types.nbDestinations(nb)}`}
+                  {nb !== undefined && ` · ${nb} destination${nb > 1 ? 's' : ''}`}
                 </span>
                 <h2 className="m-0 font-display text-[32px] font-semibold sm:text-[40px]">
-                  {titreType(t, langue)}
+                  {titreType(t)}
                 </h2>
                 {section?.paragraphes.map((paragraphe) => (
                   <p key={paragraphe} className="m-0 text-lg leading-relaxed text-taupe">
@@ -89,15 +93,15 @@ function TypesPage() {
                   </p>
                 ))}
                 <p className="m-0 text-sm text-taupe-clair">
-                  {textes.types.fraisDeDossier(t.fraisDossier)}
+                  Frais de dossier : {t.fraisDossier} € par dossier.
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2.5">
                   <button
                     type="button"
-                    onClick={() => ouvrirAssistant(textes.types.brouillons[t.valeur])}
+                    onClick={() => ouvrirAssistant(BROUILLONS[t.valeur])}
                     className="flex min-h-11 items-center gap-2 rounded-full bg-terre px-5 text-sm font-extrabold text-white hover:bg-rouille"
                   >
-                    {textes.construireMonVoyage}
+                    Construire mon voyage
                     <IconFleche size={16} strokeWidth={2.4} />
                   </button>
                   <Link
@@ -105,7 +109,7 @@ function TypesPage() {
                     search={{ type: t.valeur }}
                     className="flex min-h-11 items-center rounded-full border-[1.5px] border-encre px-5 text-sm font-bold hover:bg-sable"
                   >
-                    {textes.types.voirDestinations}
+                    Voir les destinations
                   </Link>
                 </div>
               </div>
