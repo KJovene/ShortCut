@@ -41,32 +41,9 @@ final class FausseApiClaude
     /** Réponse finale : un bloc de réflexion (texte masqué, comme sur Haiku 5.5), puis le texte en deux morceaux. */
     public static function texte(string $texte): MockResponse
     {
-        return self::flux(self::blocsTexte($texte), 'end_turn');
-    }
-
-    /**
-     * Réponse finale dont le texte dépend de la requête reçue (une traduction suit l'ordre des textes envoyés).
-     *
-     * @param \Closure(array<string, mixed>): string $texte reçoit le corps de la requête
-     */
-    public function texteSelon(\Closure $texte): MockResponse
-    {
-        $morceaux = function () use ($texte): \Generator {
-            $requete = end($this->requetes) ?: throw new \LogicException('Aucune requête reçue.');
-            yield from self::morceaux(self::blocsTexte($texte($requete['corps'])), 'end_turn');
-        };
-
-        return new MockResponse($morceaux(), ['http_code' => 200, 'response_headers' => ['content-type' => 'text/event-stream']]);
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private static function blocsTexte(string $texte): array
-    {
         $milieu = intdiv(mb_strlen($texte), 2);
 
-        return [
+        return self::flux([
             ['type' => 'content_block_start', 'index' => 0, 'content_block' => ['type' => 'thinking', 'thinking' => '', 'signature' => '']],
             ['type' => 'content_block_delta', 'index' => 0, 'delta' => ['type' => 'signature_delta', 'signature' => 'signature-'.md5($texte)]],
             ['type' => 'content_block_stop', 'index' => 0],
@@ -74,7 +51,7 @@ final class FausseApiClaude
             ['type' => 'content_block_delta', 'index' => 1, 'delta' => ['type' => 'text_delta', 'text' => mb_substr($texte, 0, $milieu)]],
             ['type' => 'content_block_delta', 'index' => 1, 'delta' => ['type' => 'text_delta', 'text' => mb_substr($texte, $milieu)]],
             ['type' => 'content_block_stop', 'index' => 1],
-        ];
+        ], 'end_turn');
     }
 
     /**

@@ -1,7 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { ApiError } from '@/lib/api'
-import { type Langue, langueDuSite } from '@/lib/langue'
 
 /** Contenu d'une page du site, modifiable dans le backoffice (« Contenus du site »). */
 export const PageDuSite = z.object({
@@ -17,21 +16,18 @@ export const PageDuSite = z.object({
 })
 export type PageDuSite = z.infer<typeof PageDuSite>
 
-/** En anglais, l'API traduit les textes saisis en français dans le backoffice. */
-export async function chargerPage(slug: string, langue: Langue = 'fr'): Promise<PageDuSite> {
-  const response = await fetch(`/api/pages/${slug}${langue === 'en' ? '?langue=en' : ''}`, {
-    headers: { Accept: 'application/json' },
-  })
+export async function chargerPage(slug: string): Promise<PageDuSite> {
+  const response = await fetch(`/api/pages/${slug}`, { headers: { Accept: 'application/json' } })
   if (!response.ok) {
     throw new ApiError(response.status, 'Impossible de charger cette page.')
   }
   return PageDuSite.parse(await response.json())
 }
 
-export const pageQuery = (slug: string, langue: Langue = langueDuSite()) =>
+export const pageQuery = (slug: string) =>
   queryOptions({
-    queryKey: ['pages', slug, langue],
-    queryFn: () => chargerPage(slug, langue),
+    queryKey: ['pages', slug],
+    queryFn: () => chargerPage(slug),
     staleTime: 5 * 60_000,
   })
 
@@ -161,6 +157,5 @@ export function normaliser(texte: string) {
  * elle disparaît du contenu quand l'agence saisit ses propres textes dans le backoffice.
  */
 export function estMentionAValider(paragraphe: string) {
-  const texte = normaliser(paragraphe)
-  return texte.includes('a valider') || texte.includes('to be approved')
+  return normaliser(paragraphe).includes('a valider')
 }

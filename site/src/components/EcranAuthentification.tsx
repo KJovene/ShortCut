@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
-import { TEXTES } from '@/components/textes'
 import { IconCoche } from '@/components/ui/icons'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
-import { useLangue } from '@/lib/langue'
+
+const AVANTAGES = [
+  'Vos propositions de voyage, à retrouver à tout moment',
+  'Le suivi de la confirmation par votre conseiller',
+  'Vos conversations avec l’assistant',
+]
 
 /**
  * Gabarit des écrans de connexion et d'inscription (maquette BO-Login, aux couleurs du site) :
@@ -21,16 +25,14 @@ export function EcranAuthentification({
   /** Lien vers l'autre écran (« Pas encore de compte ? »…). */
   pied: ReactNode
 }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   // Une destination mise en avant dans le backoffice ; sans catalogue, l'encadré reste sans photo.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const photo = destinations.find((d) => d.miseEnAvant && d.photo)
 
   return (
     <div className="mx-auto flex max-w-[1376px] flex-wrap gap-6 px-4 py-6 sm:px-8 sm:py-10 lg:gap-10">
       <aside
-        aria-label={t.votreCompte}
+        aria-label="Votre compte Détour"
         className="relative hidden min-h-[560px] flex-[1_1_480px] overflow-hidden rounded-[28px] bg-sable md:block"
       >
         {photo && (
@@ -42,11 +44,10 @@ export function EcranAuthentification({
         )}
         <div className="absolute right-8 bottom-8 left-8 flex max-w-[440px] flex-col gap-3 rounded-[22px] bg-creme/95 p-6 shadow-[0_18px_50px_rgba(22,35,63,0.18)]">
           <p className="m-0 font-display text-[26px] leading-tight font-semibold">
-            {t.lAssistantPropose}
-            <em className="font-normal text-terre">{t.leConseillerConfirme}</em>
+            L’assistant propose, <em className="font-normal text-terre">le conseiller confirme</em>
           </p>
           <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[15px] text-taupe">
-            {t.avantages.map((avantage) => (
+            {AVANTAGES.map((avantage) => (
               <li key={avantage} className="flex items-start gap-2.5">
                 <span
                   aria-hidden="true"

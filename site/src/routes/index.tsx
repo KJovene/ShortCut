@@ -14,9 +14,7 @@ import {
   estSurCarte,
 } from '@/features/catalogue/catalogue'
 import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
-import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
-import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/')({
   // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement,
@@ -26,7 +24,11 @@ export const Route = createFileRoute('/')({
     return context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null)
   },
   head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].accueil.meta),
+    meta: metaPage(loaderData, {
+      titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
+      description:
+        "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+    }),
   }),
   component: HomePage,
 })
@@ -35,24 +37,34 @@ export const Route = createFileRoute('/')({
  * Les deux thèmes de la carte. Leur titre vient des contenus du site (page « accueil » : « Titre » pour les voyages
  * chauds, « Titre des voyages froids ») ; sans l'API ou sans titre saisi, celui des maquettes.
  */
-const THEMES: Theme[] = ['chaud', 'froid']
+const THEMES: { valeur: Theme; label: string; titreParDefaut: string }[] = [
+  {
+    valeur: 'chaud',
+    label: 'Voyages chauds',
+    titreParDefaut: 'Où irez-vous chercher le *soleil* ?',
+  },
+  {
+    valeur: 'froid',
+    label: 'Voyages froids',
+    titreParDefaut: 'Où irez-vous chercher le *froid* ?',
+  },
+]
 
 function HomePage() {
-  const langue = useLangue()
-  const t = TEXTES[langue].accueil
   const [theme, setTheme] = useState<Theme>('chaud')
   const [activeSlug, setActiveSlug] = useState('santorin')
   // Carte et bandeau : seulement les voyages mis en avant dans le backoffice, du thème choisi, 10 au plus.
-  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery(langue))
+  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery())
   const voyages = voyagesDuTheme(misesEnAvant, theme)
   const surCarte = voyages.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const { data: page } = useQuery(pageQuery('accueil', langue))
+  const { data: page } = useQuery(pageQuery('accueil'))
   const titre =
-    (theme === 'chaud' ? page?.titre : page?.titreFroid) || t.themes[theme].titreParDefaut
+    (theme === 'chaud' ? page?.titre : page?.titreFroid) ||
+    THEMES.find((t) => t.valeur === theme)!.titreParDefaut
 
   // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const parSlug = (slug: string) => destinations.find((d) => d.slug === slug)
   const photos = ['santorin', 'bali', 'marrakech', 'islande'].map(
     (slug, i) => parSlug(slug) ?? destinations[i],
@@ -76,28 +88,28 @@ function HomePage() {
               <TitreMisEnValeur texte={titre} />
             </h1>
             <p className="m-0 font-display text-lg font-semibold text-taupe sm:text-[22px]">
-              {t.accroche}
+              Prenez le pas de côté.
             </p>
           </div>
           <div
             role="group"
-            aria-label={t.themeDesVoyages}
+            aria-label="Thème des voyages"
             className="flex gap-1 rounded-full bg-white p-1 shadow-[0_2px_10px_rgba(22,35,63,0.08)]"
           >
-            {THEMES.map((valeur) => {
-              const actif = valeur === theme
+            {THEMES.map((t) => {
+              const actif = t.valeur === theme
               return (
                 <button
-                  key={valeur}
+                  key={t.valeur}
                   type="button"
                   aria-pressed={actif}
-                  onClick={() => setTheme(valeur)}
+                  onClick={() => setTheme(t.valeur)}
                   className={cn(
                     'min-h-[38px] cursor-pointer rounded-full px-4 text-[13px] font-bold sm:min-h-[42px] sm:px-5 sm:text-sm',
                     actif ? 'bg-encre text-creme' : 'text-encre hover:bg-sable',
                   )}
                 >
-                  {t.themes[valeur].label}
+                  {t.label}
                 </button>
               )
             })}
@@ -111,7 +123,8 @@ function HomePage() {
             // Rien à montrer (ou API injoignable) : l'assistant reste la porte d'entrée.
             !isPending && (
               <p className="m-0 max-w-md px-4 text-center text-lg text-taupe">
-                {t.themes[theme].aucunVoyage}
+                Aucun voyage {theme === 'froid' ? 'au frais' : 'au soleil'} à la une pour le moment.
+                Décrivez vos envies à notre assistant : il vous en propose un sur mesure.
               </p>
             )
           )}
@@ -121,7 +134,7 @@ function HomePage() {
           href="#voyages"
           className="absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-2 px-4 text-sm font-bold text-taupe hover:text-encre sm:bottom-[18px]"
         >
-          {t.tousLesVoyages}
+          Découvrez nos meilleurs voyages
           <IconFlecheBas size={18} />
         </a>
       </section>

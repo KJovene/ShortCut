@@ -3,26 +3,21 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { profilQuery } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
-import { langueDuSite, surChangementDeLangue } from '@/lib/langue'
 import { envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
 import { ChatContext, type EtatChat, type Reprise } from './chatContext'
-import { messageAccueil, nouvelId, type Message } from './conversation'
-import { type Demande, demandeVide } from './demande'
 import { MESSAGE_ACCUEIL, nouvelId, type Message } from './conversation'
 import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
 const CLE = 'chat'
 
-/** Une nouvelle conversation démarre dans la langue du site ; l'assistant suit ensuite celle du client. */
-const etatInitial = (langue = langueDuSite()): EtatChat => ({
+const etatInitial = (): EtatChat => ({
   statut: 'accueil',
-  messages: [messageAccueil(langue)],
+  messages: [MESSAGE_ACCUEIL],
   conversation: { demande: demandeVide() },
   reflexion: false,
   ouvert: false,
   brouillon: '',
-  langue,
   langue: 'fr',
   questionnaire: { reponses: [], termine: false, transmis: false },
 })
@@ -85,21 +80,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   }, [etat])
 
   useEffect(() => () => annulation.current?.abort(), [])
-
-  // Le visiteur change la langue du site avant d'écrire : l'accueil du chatbot la suit. Une conversation
-  // commencée garde la langue du client, reconnue par l'assistant.
-  useEffect(
-    () =>
-      surChangementDeLangue(() => {
-        const langue = langueDuSite()
-        setEtat((e) =>
-          e.jeton || e.statut !== 'accueil' || e.langue === langue
-            ? e
-            : { ...e, langue, messages: [messageAccueil(langue)] },
-        )
-      }),
-    [],
-  )
 
   /** Destinations publiées, pour reconnaître le lieu cité par le client ; vide si le catalogue est indisponible. */
   const catalogue = useCallback(

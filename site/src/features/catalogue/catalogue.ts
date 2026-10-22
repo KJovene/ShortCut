@@ -1,8 +1,7 @@
-import { keepPreviousData, queryOptions } from '@tanstack/react-query'
+import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { labelType, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { ApiError } from '@/lib/api'
-import { type Langue, langueDuSite, typeDeVoyage } from '@/lib/langue'
 
 /**
  * Catalogue du site public, lu dans l'API (GET /api/public/destinations) : seules les destinations publiées dans
@@ -167,12 +166,8 @@ export function versDestination(d: DestinationApi): DestinationPublique {
   }
 }
 
-/** En anglais, l'API traduit les textes saisis en français dans le backoffice (nom, description, points forts…). */
-async function lire(chemin: string, parametres: Record<string, string>, langue: Langue) {
-  const query = new URLSearchParams(langue === 'en' ? { ...parametres, langue } : parametres)
-  const response = await fetch(`/api/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, {
-    headers: { Accept: 'application/json' },
-  })
+async function lire(chemin: string) {
+  const response = await fetch(`/api/public/${chemin}`, { headers: { Accept: 'application/json' } })
   if (!response.ok) {
     throw new ApiError(response.status, 'Impossible de charger les destinations.')
   }
@@ -195,57 +190,45 @@ function destinationsValides(reponse: unknown): DestinationPublique[] {
     })
 }
 
-export async function chargerDestinations(langue: Langue = 'fr'): Promise<DestinationPublique[]> {
-  return destinationsValides(await lire('destinations', {}, langue))
+export async function chargerDestinations(): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations'))
 }
 
 /** Destinations « mises en avant » dans le backoffice, pour la carte et le bandeau de l'accueil. */
-export async function chargerDestinationsMisesEnAvant(
-  langue: Langue = 'fr',
-): Promise<DestinationPublique[]> {
-  return destinationsValides(await lire('destinations', { miseEnAvant: 'true' }, langue))
+export async function chargerDestinationsMisesEnAvant(): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations?miseEnAvant=true'))
 }
 
-export async function chargerDestination(
-  slug: string,
-  langue: Langue = 'fr',
-): Promise<DestinationPublique> {
-  return versDestination(DestinationApi.parse(await lire(`destinations/${slug}`, {}, langue)))
+export async function chargerDestination(slug: string): Promise<DestinationPublique> {
+  return versDestination(DestinationApi.parse(await lire(`destinations/${slug}`)))
 }
 
-/**
- * Au changement de langue, les destinations déjà affichées (et leurs photos) restent à l'écran pendant que celles
- * de l'autre langue se chargent : la traduction peut prendre quelques secondes.
- */
-export const destinationsQuery = (langue: Langue = langueDuSite()) =>
+export const destinationsQuery = () =>
   queryOptions({
-    queryKey: ['catalogue', 'destinations', langue],
-    queryFn: () => chargerDestinations(langue),
+    queryKey: ['catalogue', 'destinations'],
+    queryFn: chargerDestinations,
     staleTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
   })
 
-export const destinationsMisesEnAvantQuery = (langue: Langue = langueDuSite()) =>
+export const destinationsMisesEnAvantQuery = () =>
   queryOptions({
-    queryKey: ['catalogue', 'destinations', 'misesEnAvant', langue],
-    queryFn: () => chargerDestinationsMisesEnAvant(langue),
+    queryKey: ['catalogue', 'destinations', 'misesEnAvant'],
+    queryFn: chargerDestinationsMisesEnAvant,
     staleTime: 5 * 60_000,
-    placeholderData: keepPreviousData,
   })
 
-export const destinationQuery = (slug: string, langue: Langue = langueDuSite()) =>
+export const destinationQuery = (slug: string) =>
   queryOptions({
-    queryKey: ['catalogue', 'destination', slug, langue],
-    queryFn: () => chargerDestination(slug, langue),
+    queryKey: ['catalogue', 'destinations', slug],
+    queryFn: () => chargerDestination(slug),
     staleTime: 5 * 60_000,
     // Une destination masquée ou inconnue ne reviendra pas en redemandant : 404 tout de suite.
     retry: (essais, erreur) => !(erreur instanceof ApiError && erreur.status === 404) && essais < 1,
   })
 
 /** Type de voyage principal, pour les cartes ; « Sur mesure » si le conseiller n'en a choisi aucun. */
-export function libelleTypePrincipal(d: DestinationPublique, langue: Langue = 'fr') {
-  if (d.types[0]) return typeDeVoyage(d.types[0], langue)
-  return langue === 'en' ? 'Tailor-made' : 'Sur mesure'
+export function libelleTypePrincipal(d: DestinationPublique) {
+  return d.types[0] ? labelType(d.types[0]) : 'Sur mesure'
 }
 
 /** Destination placée sur la carte du monde de l'accueil. */

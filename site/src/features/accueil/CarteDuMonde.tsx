@@ -1,14 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
+import { formatEuros, MOIS } from '@/data/catalogue'
 import {
   libelleTypePrincipal,
   type DestinationPublique,
   type DestinationSurCarte,
 } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
-import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
-import { euros, nomDuMois, useLangue } from '@/lib/langue'
 import { position } from './carte'
 
 interface Props {
@@ -39,11 +38,10 @@ function Epingle({
   onActiver: () => void
 }) {
   const { x, y } = position(d)
-  const langue = useLangue()
   return (
     <button
       type="button"
-      aria-label={`${d.nom}, ${libelleTypePrincipal(d, langue).toLowerCase()}`}
+      aria-label={`${d.nom}, ${libelleTypePrincipal(d).toLowerCase()}`}
       aria-pressed={active}
       {...survol}
       onClick={onActiver}
@@ -84,9 +82,7 @@ function CarteVoyage({
   survol?: Omit<Survol, 'onFocus'> & { onFocus: () => void }
 }) {
   const ouvrirAssistant = useOuvrirAssistant()
-  const langue = useLangue()
-  const t = TEXTES[langue].accueil
-  const mois = nomDuMois(d.moisIdeal, langue)
+  const mois = MOIS[d.moisIdeal]
   return (
     <article
       aria-live="polite"
@@ -118,7 +114,7 @@ function CarteVoyage({
       </div>
       <div className="flex flex-col gap-2 px-[18px] pt-3.5 pb-[18px]">
         <span className="text-xs font-extrabold text-rouille">
-          {libelleTypePrincipal(d, langue)} · {t.idealEn(mois)}
+          {libelleTypePrincipal(d)} · idéal en {mois}
         </span>
         <h2 className="m-0 font-display text-2xl leading-tight font-semibold md:text-[26px]">
           <Link to="/destinations/$slug" params={{ slug: d.slug }} className="hover:text-terre">
@@ -129,17 +125,16 @@ function CarteVoyage({
         <div className="mt-1 flex items-center justify-between gap-2.5">
           {d.prixAPartirDe !== null && (
             <span className="text-[13px] text-taupe">
-              {t.des}{' '}
-              <strong className="text-[17px] text-encre">{euros(d.prixAPartirDe, langue)}</strong>
-              {t.parPers}
+              dès <strong className="text-[17px] text-encre">{formatEuros(d.prixAPartirDe)}</strong>{' '}
+              / pers.
             </span>
           )}
           <button
             type="button"
-            onClick={() => ouvrirAssistant(t.brouillon(d.ville, mois))}
+            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${mois}, `)}
             className="flex min-h-11 items-center rounded-full bg-terre px-[18px] text-sm font-extrabold text-white hover:bg-rouille"
           >
-            {t.construireCeVoyage}
+            Construire ce voyage
           </button>
         </div>
       </div>
@@ -155,7 +150,6 @@ function CarteVoyage({
 export function CarteDuMonde({ destinations, active, onActiver }: Props) {
   const { x } = position(active)
   const defilement = useRef<HTMLDivElement>(null)
-  const t = TEXTES[useLangue()].accueil
   const [ouverte, setOuverte] = useState<string | null>(null)
   const minuteur = useRef<number | undefined>(undefined)
   const fiche = destinations.find((d) => d.slug === ouverte)
@@ -245,7 +239,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
       <div className="relative flex min-h-0 w-full flex-1 flex-col md:hidden">
         <div
           ref={defilement}
-          aria-label={t.carte}
+          aria-label="Carte des voyages, glissez pour explorer"
           className="scrollbar-none relative flex-1 overflow-x-auto bg-[#EFE8DA]"
         >
           <div className="relative aspect-[360/142] h-full min-h-[300px]">
@@ -258,7 +252,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
           </div>
         </div>
         <span className="absolute top-2.5 left-3 rounded-full bg-creme/90 px-2.5 py-1 text-[11px] font-bold text-taupe">
-          {t.glissez}
+          Glissez pour explorer
         </span>
         <CarteVoyageMobile d={active} />
       </div>
@@ -268,9 +262,6 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
 
 function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
   const ouvrirAssistant = useOuvrirAssistant()
-  const langue = useLangue()
-  const t = TEXTES[langue].accueil
-  const mois = nomDuMois(d.moisIdeal, langue)
   return (
     <article
       aria-live="polite"
@@ -279,9 +270,9 @@ function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
       <img src={d.photo} alt={d.alt} className="block w-[120px] shrink-0 object-cover" />
       <div className="flex min-w-0 flex-1 flex-col gap-1 px-3.5 py-3">
         <span className="text-[11px] font-extrabold tracking-[0.8px] text-rouille">
-          {libelleTypePrincipal(d, langue)}
+          {libelleTypePrincipal(d)}
           {d.temperatures[d.moisIdeal] !== null &&
-            ` · ${t.temperatureEn(d.temperatures[d.moisIdeal]!, mois)}`}
+            ` · ${d.temperatures[d.moisIdeal]} °C en ${MOIS[d.moisIdeal]}`}
         </span>
         <h2 className="m-0 font-display text-xl font-semibold">
           <Link to="/destinations/$slug" params={{ slug: d.slug }}>
@@ -292,15 +283,15 @@ function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
         <div className="mt-1 flex items-center justify-between gap-1.5">
           {d.prixAPartirDe !== null && (
             <span className="text-xs text-taupe">
-              {t.des} <strong className="text-encre">{euros(d.prixAPartirDe, langue)}</strong>
+              dès <strong className="text-encre">{formatEuros(d.prixAPartirDe)}</strong>
             </span>
           )}
           <button
             type="button"
-            onClick={() => ouvrirAssistant(t.brouillon(d.ville, mois))}
+            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)}
             className="flex min-h-10 items-center rounded-full bg-terre px-3.5 text-[13px] font-extrabold text-white"
           >
-            {t.construire}
+            Construire
           </button>
         </div>
       </div>

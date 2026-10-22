@@ -3,6 +3,7 @@ import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconBulle, IconCoche, IconPersonne } from '@/components/ui/icons'
 import { SautDuO } from '@/components/ui/TitreMisEnValeur'
+import { formatEuros, MOIS } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import {
   assistantDisponible,
@@ -22,12 +23,10 @@ import {
   VOYAGES_EN_COURS_MAX,
 } from '@/features/espace/espace'
 import { urlRendezVous } from '@/features/espace/rendezVous'
-import { TEXTES } from '@/features/espace/textes'
 import { useChat } from '@/features/chat/chatContext'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { profilQuery } from '@/lib/auth'
 import { cn } from '@/lib/cn'
-import { euros, LOCALE, langueDuSite, nomDuMois, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/espace')({
   beforeLoad: async ({ context }) => {
@@ -41,22 +40,21 @@ export const Route = createFileRoute('/espace')({
     void context.queryClient.prefetchQuery(destinationsQuery())
     return context.queryClient.ensureQueryData(mesDemandesQuery)
   },
-  head: () => {
-    const t = TEXTES[langueDuSite()].meta
-    return {
-      meta: [
-        { title: t.titre },
-        { name: 'description', content: t.description },
-        { name: 'robots', content: 'noindex' },
-      ],
-    }
-  },
+  head: () => ({
+    meta: [
+      { title: 'Mon espace' },
+      {
+        name: 'description',
+        content:
+          'Suivez votre voyage étape par étape et retrouvez vos conversations avec l’assistant.',
+      },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: PageEspace,
 })
 
 function PageEspace() {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   const { data: profil } = useSuspenseQuery(profilQuery)
   const { data: demandes } = useSuspenseQuery(mesDemandesQuery)
   const ouvrirAssistant = useOuvrirAssistant()
@@ -73,12 +71,19 @@ function PageEspace() {
     <div className="mx-auto flex max-w-[1376px] flex-col gap-8 px-4 pt-9 pb-16 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-extrabold text-rouille">
-            {t.monEspace}
-          </span>
+          <span className="text-[13px] font-extrabold text-rouille">Mon espace</span>
           <h1 className="m-0 font-display text-[34px] leading-[1.05] font-semibold tracking-[-1px] sm:text-[46px]">
-            {t.bonjour(prenom)}{' '}
-            <SautDuO texte={suivi && estEnCours(suivi) ? t.voyageAvance : t.ouPartons} />
+            Bonjour {prenom},{' '}
+            {suivi && estEnCours(suivi) ? (
+              <>
+                votre <SautDuO texte="voyage" /> avance
+              </>
+            ) : (
+              <>
+                où <SautDuO texte="partons" />
+                -nous ?
+              </>
+            )}
           </h1>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -92,18 +97,19 @@ function PageEspace() {
             <span aria-hidden="true" className="text-xl leading-none">
               +
             </span>
-            {t.nouveauVoyage}
+            Nouveau voyage
           </button>
           {complet && (
             <p id="voyages-max" className="m-0 max-w-xs text-right text-[13px] text-taupe">
-              {t.voyagesMax(VOYAGES_EN_COURS_MAX)}
+              {VOYAGES_EN_COURS_MAX} voyages en cours, le maximum : poursuivez-en un, ou demandez à
+              votre conseiller d’en clore un.
             </p>
           )}
         </div>
       </div>
 
       {enCours.length > 1 && (
-        <div role="group" aria-label={t.mesVoyagesEnCours} className="flex flex-wrap gap-2.5">
+        <div role="group" aria-label="Mes voyages en cours" className="flex flex-wrap gap-2.5">
           {enCours.map((d) => {
             const actif = d.id === suivi?.id
             return (
@@ -119,9 +125,9 @@ function PageEspace() {
                     : 'border-lin bg-white text-encre hover:border-beige',
                 )}
               >
-                <span className="text-[15px] font-bold">{titreDemande(d, langue)}</span>
+                <span className="text-[15px] font-bold">{titreDemande(d)}</span>
                 <span className={cn('text-xs', actif ? 'text-sable' : 'text-taupe')}>
-                  {statutClient(d, langue).label}
+                  {statutClient(d).label}
                 </span>
               </button>
             )
@@ -137,33 +143,33 @@ function PageEspace() {
 }
 
 function AucunVoyage() {
-  const t = TEXTES[useLangue()]
   const ouvrirAssistant = useOuvrirAssistant()
 
   return (
     <section className="flex flex-col items-start gap-4 rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(22,35,63,0.10)]">
-      <h2 className="m-0 font-display text-[28px] font-semibold">{t.aucunVoyage}</h2>
-      <p className="m-0 max-w-xl text-taupe">{t.aucunVoyageTexte}</p>
+      <h2 className="m-0 font-display text-[28px] font-semibold">Pas encore de voyage en cours</h2>
+      <p className="m-0 max-w-xl text-taupe">
+        Décrivez vos envies à notre assistant : il vous prépare une proposition complète en quelques
+        minutes, puis un conseiller la confirme. Vous suivrez chaque étape ici.
+      </p>
       <button
         type="button"
         onClick={() => ouvrirAssistant()}
         className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-rouille"
       >
-        {t.construireMonVoyage}
+        Construire mon voyage
       </button>
     </section>
   )
 }
 
 function VoyageSuivi({ demande }: { demande: DemandeClient }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   // Photo et climat lus dans le catalogue de l'API ; sans lui, le voyage s'affiche sans photo.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
   const mois = moisDeDepart(demande)
   const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
-  const statut = statutClient(demande, langue)
+  const statut = statutClient(demande)
   const conseiller = prenomConseiller(demande)
 
   return (
@@ -181,7 +187,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
         )}
         {mois !== null && temperature !== null && (
           <span className="absolute top-[18px] left-[18px] rounded-full bg-white px-3 py-1.5 text-[13px] font-extrabold">
-            {t.temperatureEn(temperature, nomDuMois(mois, langue))}
+            {temperature} °C en {MOIS[mois]}
           </span>
         )}
       </div>
@@ -189,12 +195,12 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-[22px] px-6 py-7 sm:px-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex flex-col gap-1">
-            <span className="text-[13px] font-bold text-taupe">{metaDemande(demande, langue)}</span>
+            <span className="text-[13px] font-bold text-taupe">{metaDemande(demande)}</span>
             <h2
               id="titre-voyage"
               className="m-0 font-display text-[28px] font-semibold sm:text-[32px]"
             >
-              {titreDemande(demande, langue)}
+              {titreDemande(demande)}
             </h2>
           </div>
           <span
@@ -213,40 +219,39 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
             {demande.proposition ? (
               <>
                 <span className="text-xs font-extrabold text-rouille">
-                  {t.propositionActuelle(demande.proposition.version)}
+                  Proposition actuelle · v{demande.proposition.version}
                 </span>
                 <span className="font-display text-[30px] font-semibold">
-                  {euros(demande.proposition.totalCentimes / 100, langue)}
+                  {formatEuros(demande.proposition.totalCentimes / 100)}
                 </span>
                 <span className="text-[13px] text-taupe">
                   {demande.proposition.niveauBudget} ·{' '}
-                  {euros(demande.proposition.totalParPersonneCentimes / 100, langue)}{' '}
-                  {t.parPersonne} ·{' '}
-                  {demande.proposition.etat === 'confirmee' ? t.prixConfirme : t.prixEstime}
+                  {formatEuros(demande.proposition.totalParPersonneCentimes / 100)} par personne ·{' '}
+                  {demande.proposition.etat === 'confirmee'
+                    ? 'prix confirmé par votre conseiller'
+                    : 'prix estimé'}
                 </span>
                 <Link
                   to="/proposition/$id"
                   params={{ id: demande.proposition.jeton }}
                   className="mt-1.5 flex min-h-10 items-center self-start rounded-full bg-encre px-4 text-[13px] font-extrabold text-creme hover:bg-rouille"
                 >
-                  {t.voirProposition}
+                  Voir ma proposition
                 </Link>
               </>
             ) : (
               <>
-                <span className="text-xs font-extrabold text-rouille">
-                  {t.proposition}
+                <span className="text-xs font-extrabold text-rouille">Proposition</span>
+                <span className="text-[15px] font-bold">En préparation</span>
+                <span className="text-[13px] text-taupe">
+                  Elle apparaîtra ici dès qu’elle sera prête.
                 </span>
-                <span className="text-[15px] font-bold">{t.enPreparation}</span>
-                <span className="text-[13px] text-taupe">{t.apparaitra}</span>
               </>
             )}
           </div>
 
           <div className="flex flex-col gap-2 rounded-[18px] bg-creme px-[18px] py-4">
-            <span className="text-xs font-extrabold text-rouille">
-              {t.votreConseiller}
-            </span>
+            <span className="text-xs font-extrabold text-rouille">Votre conseiller</span>
             {demande.conseiller ? (
               <>
                 <div className="flex items-center gap-3">
@@ -261,12 +266,17 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                   </strong>
                 </div>
                 <span className="text-[13px] leading-[1.45] text-taupe">
-                  {t.suitVotreDossier(conseiller)}
-                  {assistantDisponible(demande) && t.ajustementLeger}
+                  {conseiller} suit votre dossier : les changements importants ou particuliers
+                  passent par votre conseiller.
+                  {assistantDisponible(demande) &&
+                    ' Pour un ajustement léger (voyageurs, envies, contraintes), passez par l’assistant avec « Modifier le voyage ».'}
                 </span>
               </>
             ) : (
-              <span className="text-[13px] leading-[1.45] text-taupe">{t.conseillerVaPrendre}</span>
+              <span className="text-[13px] leading-[1.45] text-taupe">
+                Un conseiller de l’agence va prendre votre dossier en charge. Il vérifiera les prix
+                et les disponibilités.
+              </span>
             )}
           </div>
         </div>
@@ -280,7 +290,6 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
  * conversation avec l'assistant pour un ajustement léger, tant qu'aucun conseiller n'a repris la main.
  */
 function ModifierVoyage({ demande }: { demande: DemandeClient }) {
-  const t = TEXTES[useLangue()]
   const [ouvert, setOuvert] = useState(false)
   const { reprendre } = useChat()
   const conseiller = prenomConseiller(demande)
@@ -290,7 +299,7 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
   return (
     <div className="flex flex-col gap-3 rounded-[18px] border-[1.5px] border-lin p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="m-0 text-sm text-taupe">{t.uneDateAChanger}</p>
+        <p className="m-0 text-sm text-taupe">Une date, un voyageur ou une envie à changer ?</p>
         <button
           type="button"
           aria-expanded={ouvert}
@@ -298,7 +307,7 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
           onClick={() => setOuvert((o) => !o)}
           className="flex min-h-11 items-center rounded-full border-[1.5px] border-encre px-5 text-sm font-bold hover:bg-sable"
         >
-          {t.modifierLeVoyage}
+          Modifier le voyage
         </button>
       </div>
 
@@ -322,10 +331,12 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
               </span>
               <span className="flex flex-col gap-0.5">
                 <strong>
-                  {t.rendezVousAvec(conseiller)}
-                  <span className="sr-only">{t.nouvelOnglet}</span>
+                  Prendre rendez-vous avec {conseiller ?? 'un conseiller'}
+                  <span className="sr-only"> (nouvel onglet)</span>
                 </strong>
-                <span className="text-[13px] text-taupe">{t.rendezVousTexte}</span>
+                <span className="text-[13px] text-taupe">
+                  Pour changer de destination, de dates ou de budget : choisissez un créneau.
+                </span>
               </span>
             </a>
           )}
@@ -349,14 +360,18 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
                 <IconBulle size={20} />
               </span>
               <span className="flex flex-col gap-0.5">
-                <strong>{t.continuerAssistant}</strong>
-                <span className="text-[13px] text-taupe">{t.continuerAssistantTexte}</span>
+                <strong>Continuer avec l’assistant</strong>
+                <span className="text-[13px] text-taupe">
+                  Pour un ajustement léger : nombre de voyageurs, envies, contraintes.
+                </span>
               </span>
             </button>
           ) : (
             <p className="m-0 rounded-2xl bg-creme p-4 text-[13px] text-taupe">
-              {t.changementsParConseiller(conseiller)}
-              {rendezVous ? t.surRendezVous : '.'}
+              {conseiller
+                ? `${conseiller} suit désormais votre dossier : les changements import passent par votre conseiller`
+                : 'Les changements de ce dossier passent par un conseiller de l’agence'}
+              {rendezVous ? ', sur rendez-vous.' : '.'}
             </p>
           )}
         </div>
@@ -384,13 +399,11 @@ const STYLE_ETAPE = {
 } as const
 
 function Etapes({ demande }: { demande: DemandeClient }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
-  const liste = etapes(demande, langue)
+  const liste = etapes(demande)
 
   return (
     <ol
-      aria-label={t.etapesDuVoyage}
+      aria-label="Étapes du voyage"
       className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-4 sm:gap-0"
     >
       {liste.map((etape, i) => {
@@ -419,8 +432,8 @@ function Etapes({ demande }: { demande: DemandeClient }) {
             </div>
             <strong className={cn('text-sm leading-[1.3]', style.titre)}>
               {etape.titre}
-              {etape.etat === 'faite' && <span className="sr-only">{t.terminee}</span>}
-              {etape.etat === 'en-cours' && <span className="sr-only">{t.enCours}</span>}
+              {etape.etat === 'faite' && <span className="sr-only"> (terminée)</span>}
+              {etape.etat === 'en-cours' && <span className="sr-only"> (en cours)</span>}
             </strong>
             <span className="text-xs leading-[1.4] text-taupe">{etape.detail}</span>
           </li>
@@ -431,7 +444,6 @@ function Etapes({ demande }: { demande: DemandeClient }) {
 }
 
 function Conversations({ demandes }: { demandes: DemandeClient[] }) {
-  const t = TEXTES[useLangue()]
   const avecConversation = demandes.filter((d) => d.conversation)
   const [choisie, setChoisie] = useState(avecConversation[0]!.id)
   const courante = avecConversation.find((d) => d.id === choisie) ?? avecConversation[0]!
@@ -444,9 +456,11 @@ function Conversations({ demandes }: { demandes: DemandeClient[] }) {
           id="titre-conversations"
           className="m-0 font-display text-[30px] font-semibold sm:text-[34px]"
         >
-          <SautDuO texte={t.mesConversations} />
+          Mes <SautDuO texte="conversations" />
         </h2>
-        <span className="text-sm text-taupe">{t.nbConversations(nombre)}</span>
+        <span className="text-sm text-taupe">
+          {nombre} conversation{nombre > 1 ? 's' : ''} avec l’assistant
+        </span>
       </div>
 
       <div className="flex flex-wrap items-stretch gap-5">
@@ -467,6 +481,10 @@ function Conversations({ demandes }: { demandes: DemandeClient[] }) {
   )
 }
 
+function dernierMessage(demande: DemandeClient) {
+  return demande.conversation?.messages.at(-1)?.contenu ?? 'Conversation sans message'
+}
+
 function CarteConversation({
   demande,
   active,
@@ -476,12 +494,9 @@ function CarteConversation({
   active: boolean
   onChoisir: () => void
 }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
-  const statut = statutClient(demande, langue)
-  const dernierMessage = demande.conversation?.messages.at(-1)?.contenu ?? t.sansMessage
+  const statut = statutClient(demande)
 
   return (
     <button
@@ -509,12 +524,12 @@ function CarteConversation({
       )}
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span className="flex justify-between gap-2">
-          <strong className="text-[15px]">{titreDemande(demande, langue)}</strong>
+          <strong className="text-[15px]">{titreDemande(demande)}</strong>
           <span className="text-xs whitespace-nowrap text-taupe-clair">
-            {dateCourte(demande.conversation!.debutLe, langue)}
+            {dateCourte(demande.conversation!.debutLe)}
           </span>
         </span>
-        <span className="truncate text-[13px] text-taupe">{dernierMessage}</span>
+        <span className="truncate text-[13px] text-taupe">{dernierMessage(demande)}</span>
         <span
           className={cn(
             'mt-0.5 self-start rounded-full px-[9px] py-0.5 text-[11px] font-extrabold',
@@ -536,34 +551,34 @@ const STYLE_MESSAGE = {
 } as const
 
 function Fil({ demande }: { demande: DemandeClient }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   const messages = demande.conversation!.messages
   const conseiller = prenomConseiller(demande)
-  const date = new Intl.DateTimeFormat(LOCALE[langue], {
+  const date = new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   }).format(new Date(demande.conversation!.debutLe))
   const meta = [
     date,
-    t.nbMessages(messages.length),
-    demande.proposition ? t.propositionVersion(demande.proposition.version) : t.pasDeProposition,
+    `${messages.length} message${messages.length > 1 ? 's' : ''}`,
+    demande.proposition
+      ? `proposition v${demande.proposition.version}`
+      : 'pas encore de proposition',
   ].join(' · ')
 
   return (
     <article
-      aria-label={t.conversationSelectionnee}
+      aria-label="Conversation sélectionnée"
       className="flex min-w-0 flex-[999_1_560px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0_12px_36px_rgba(22,35,63,0.08)]"
     >
       <div className="flex flex-col gap-0.5 border-b border-sable px-[22px] py-4">
-        <strong className="font-display text-[22px] font-semibold">
-          {titreDemande(demande, langue)}
-        </strong>
+        <strong className="font-display text-[22px] font-semibold">{titreDemande(demande)}</strong>
         <span className="text-xs text-taupe">{meta}</span>
       </div>
       <div className="flex max-h-[420px] flex-1 flex-col gap-3 overflow-y-auto bg-[#FFFDF8] px-[22px] py-[18px] text-sm leading-normal">
-        {messages.length === 0 && <p className="m-0 self-center text-taupe">{t.aucunMessage}</p>}
+        {messages.length === 0 && (
+          <p className="m-0 self-center text-taupe">Aucun message dans cette conversation.</p>
+        )}
         {messages.map((message, i) => (
           <p
             key={i}
@@ -578,8 +593,10 @@ function Fil({ demande }: { demande: DemandeClient }) {
       </div>
       {conseiller && (
         <p className="m-0 border-t border-sable px-[22px] py-3.5 text-[13px] text-taupe">
-          {t.dossierSuiviPar} <strong className="text-encre">{conseiller}</strong>
-          {assistantDisponible(demande) ? t.ajustezAvecAssistant : t.modifierParConseiller}
+          Dossier suivi par <strong className="text-encre">{conseiller}</strong>
+          {assistantDisponible(demande)
+            ? ' : ajustez les détails avec l’assistant (« Modifier le voyage »), votre conseiller voit chaque changement.'
+            : ' : pour modifier votre voyage, passez par votre conseiller.'}
         </p>
       )}
     </article>

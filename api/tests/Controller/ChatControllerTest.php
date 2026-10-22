@@ -5,7 +5,6 @@ namespace App\Tests\Controller;
 use App\Controller\ChatController;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
-use App\Enum\Langue;
 use App\Enum\Role;
 use App\Enum\StatutDemande;
 use Doctrine\ORM\EntityManagerInterface;
@@ -103,19 +102,6 @@ final class ChatControllerTest extends WebTestCase
         $this->em->getRepository(Demande::class)->findOneBy(['client' => $client])?->setStatut(StatutDemande::Perdue);
         $this->em->flush();
         $this->demarrer();
-    }
-
-    /** Bouton FR | EN du site : la conversation commence dans la langue choisie, en français sinon. */
-    public function testLaConversationCommenceDansLaLangueDuSite(): void
-    {
-        ['demande' => $sansLangue] = $this->demarrer();
-
-        $this->client->request('POST', '/api/chat/conversations', server: ['CONTENT_TYPE' => 'application/json'], content: '{"langue":"en"}');
-        self::assertResponseStatusCodeSame(201);
-        $enAnglais = $this->reponse()['demande'];
-
-        self::assertSame(Langue::Francais, $this->em->find(Demande::class, $sansLangue)?->getLangue());
-        self::assertSame(Langue::Anglais, $this->em->find(Demande::class, $enAnglais)?->getLangue());
     }
 
     public function testLaDemandeDUnVisiteurOuDUnConseillerResteSansClient(): void

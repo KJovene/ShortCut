@@ -1,11 +1,9 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ficheSchema } from '@/features/chat/api'
 import { ApiError } from '@/lib/api'
-import { type Langue, LOCALE, nomDuMois, typeDeVoyage } from '@/lib/langue'
-import { TEXTES } from './textes'
 
 const STATUTS = [
   'nouvelle',
@@ -84,24 +82,21 @@ const CLASSE_STATUT = {
  * Libellé et couleurs du statut, du point de vue du client. Tant que la demande est entre les mains d'un
  * conseiller, c'est lui que le client voit : « Pris en charge par Claire ».
  */
-export function statutClient(
-  demande: DemandeClient,
-  langue: Langue = 'fr',
-): { label: string; classe: string } {
+export function statutClient(demande: DemandeClient): { label: string; classe: string } {
   const conseiller = prenomConseiller(demande)
-  const t = TEXTES[langue].statuts
   switch (demande.statut) {
     case 'confirmee':
-      return { label: t.confirmee, classe: CLASSE_STATUT.succes }
+      return { label: 'Confirmée, à valider', classe: CLASSE_STATUT.succes }
     case 'acceptee':
-      return { label: t.acceptee, classe: CLASSE_STATUT.fini }
+      return { label: 'Voyage accepté', classe: CLASSE_STATUT.fini }
     case 'perdue':
-      return { label: t.perdue, classe: CLASSE_STATUT.clos }
+      return { label: 'Clôturée', classe: CLASSE_STATUT.clos }
     default:
-      if (conseiller) return { label: t.prisEnCharge(conseiller), classe: CLASSE_STATUT.attente }
+      if (conseiller)
+        return { label: `Pris en charge par ${conseiller}`, classe: CLASSE_STATUT.attente }
       return demande.statut === 'nouvelle'
-        ? { label: t.envoyee, classe: CLASSE_STATUT.info }
-        : { label: t.recue, classe: CLASSE_STATUT.attente }
+        ? { label: 'Demande envoyée', classe: CLASSE_STATUT.info }
+        : { label: 'Proposition reçue', classe: CLASSE_STATUT.attente }
   }
 }
 
@@ -121,8 +116,8 @@ export interface Etape {
   etat: EtatEtape
 }
 
-const dateCourte = (iso: string, langue: Langue = 'fr') =>
-  new Intl.DateTimeFormat(LOCALE[langue], { day: 'numeric', month: 'short' }).format(new Date(iso))
+const dateCourte = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(new Date(iso))
 
 /**
  * Nombre d'étapes franchies ; l'étape suivante est l'étape en cours. La prise en charge dure jusqu'à la
@@ -143,21 +138,29 @@ export function assistantDisponible(demande: DemandeClient) {
 }
 
 /** Les quatre étapes du voyage, de la demande à la réservation des prestations (maquette E-Espace). */
-export function etapes(demande: DemandeClient, langue: Langue = 'fr'): Etape[] {
-  const t = TEXTES[langue].etapes
+export function etapes(demande: DemandeClient): Etape[] {
   const conseiller = prenomConseiller(demande)
-  const depuis = demande.transmiseLe ? t.depuis(dateCourte(demande.transmiseLe, langue)) : ''
-  const creeLe = dateCourte(demande.creeLe, langue)
+  const depuis = demande.transmiseLe ? `Depuis le ${dateCourte(demande.transmiseLe)} · ` : ''
   const titres: [string, string][] = [
     [
-      t.demandeEnvoyee,
-      assistantDisponible(demande) ? t.ajustable(creeLe) : t.avecAssistant(creeLe),
+      'Demande envoyée',
+      assistantDisponible(demande)
+        ? `${dateCourte(demande.creeLe)} · vous pouvez encore l’ajuster avec l’assistant`
+        : `${dateCourte(demande.creeLe)} · avec l’assistant`,
     ],
     conseiller
-      ? [t.priseEnChargePar(conseiller), `${depuis}${t.changementsImportants}`]
-      : [t.priseEnCharge, t.unConseillerVaSuivre],
-    [t.finalisation, conseiller ? t.echangesAvec(conseiller) : t.echangesConseiller],
-    [t.reservation, t.reservationDetail],
+      ? [
+          `Prise en charge par ${conseiller}`,
+          `${depuis}les changements importants passent par votre conseiller`,
+        ]
+      : ['Prise en charge', 'Un conseiller de l’agence va suivre votre dossier'],
+    [
+      'Finalisation',
+      conseiller
+        ? `Échanges avec ${conseiller} pour finaliser votre voyage`
+        : 'Échanges avec votre conseiller pour finaliser votre voyage',
+    ],
+    ['Réservation des prestations', 'Vols, hôtels et activités réservés'],
   ]
   const faites = etapesFaites(demande)
 
@@ -195,30 +198,26 @@ export function moisDeDepart(demande: DemandeClient) {
 }
 
 /** « Chypre, 10 jours », « Voyage de noces, Bali » ou « Votre projet de voyage ». */
-export function titreDemande(demande: DemandeClient, langue: Langue = 'fr') {
-  const t = TEXTES[langue]
+export function titreDemande(demande: DemandeClient) {
   const lieu = demande.lieuOuZone
-  const duree = demande.nombreDeJours ? t.jours(demande.nombreDeJours) : null
-  const type = demande.typeDeVoyage
-    ? typeDeVoyage(demande.typeDeVoyage as TypeDeVoyage, langue)
-    : null
+  const duree = demande.nombreDeJours ? `${demande.nombreDeJours} jours` : null
+  const type = demande.typeDeVoyage ? labelType(demande.typeDeVoyage as TypeDeVoyage) : null
   if (lieu) return [lieu, duree ?? type].filter(Boolean).join(', ')
-  return type ? t.projet(type) : t.votreProjet
+  return type ? `Projet : ${type.toLowerCase()}` : 'Votre projet de voyage'
 }
 
 /** « Dossier D-0228 · 2 adultes · mai 2027 » */
-export function metaDemande(demande: DemandeClient, langue: Langue = 'fr') {
-  const t = TEXTES[langue]
+export function metaDemande(demande: DemandeClient) {
   const voyageurs = [
-    t.adultes(demande.adultes),
-    demande.enfants > 0 ? t.enfants(demande.enfants) : null,
+    `${demande.adultes} adulte${demande.adultes > 1 ? 's' : ''}`,
+    demande.enfants > 0 ? `${demande.enfants} enfant${demande.enfants > 1 ? 's' : ''}` : null,
   ]
     .filter(Boolean)
     .join(', ')
   const depart = demande.dateDebut
-    ? `${nomDuMois(new Date(demande.dateDebut).getMonth(), langue)} ${new Date(demande.dateDebut).getFullYear()}`
+    ? `${MOIS[new Date(demande.dateDebut).getMonth()]} ${new Date(demande.dateDebut).getFullYear()}`
     : null
-  return [t.dossier(referenceDossier(demande.id)), voyageurs, depart].filter(Boolean).join(' · ')
+  return [`Dossier ${referenceDossier(demande.id)}`, voyageurs, depart].filter(Boolean).join(' · ')
 }
 
 export function referenceDossier(id: number) {

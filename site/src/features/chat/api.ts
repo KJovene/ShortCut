@@ -2,7 +2,6 @@ import { z } from 'zod'
 import type { TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
-import type { Langue } from '@/lib/langue'
 import type { Demande } from './demande'
 
 /**
@@ -194,4 +193,3 @@ export function ficheVersDemande(
     contraintesSignalees: contraintes.filter((c) => A_SIGNALER.test(sansAccents(c))),
   }
 }
- 

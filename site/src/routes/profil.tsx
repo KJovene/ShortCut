@@ -3,7 +3,6 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Bandeau, Champ, classeBouton } from '@/components/Champ'
-import { TEXTES } from '@/features/pages/textes'
 import {
   ErreurFormulaire,
   type ModificationProfil,
@@ -11,7 +10,6 @@ import {
   type Profil,
   profilQuery,
 } from '@/lib/auth'
-import { type Langue, langueDuSite, messageApi, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/profil')({
   beforeLoad: async ({ context }) => {
@@ -20,32 +18,29 @@ export const Route = createFileRoute('/profil')({
       throw redirect({ to: '/connexion' })
     }
   },
-  head: () => {
-    const t = TEXTES[langueDuSite()].profil.meta
-    return {
-      meta: [
-        { title: t.titre },
-        { name: 'description', content: t.description },
-        { name: 'robots', content: 'noindex' },
-      ],
-    }
-  },
+  head: () => ({
+    meta: [
+      { title: 'Mon profil' },
+      { name: 'description', content: 'Vos coordonnées, votre e-mail et votre mot de passe.' },
+      { name: 'robots', content: 'noindex' },
+    ],
+  }),
   component: PageProfil,
 })
 
-const schemaProfil = (langue: Langue) => {
-  const t = TEXTES[langue].champs
-  return z.object({
-    prenom: z.string(),
-    nom: z.string().trim().min(1, t.nomVide),
-    email: z.email(t.emailInvalide),
-    telephone: z.string(),
-    motDePasseActuel: z.string(),
-    nouveauMotDePasse: z
-      .string()
-      .refine((valeur) => valeur === '' || valeur.length >= 8, t.motDePasseCourt),
-  })
-}
+const SchemaProfil = z.object({
+  prenom: z.string(),
+  nom: z.string().trim().min(1, 'Saisissez votre nom.'),
+  email: z.email('Saisissez une adresse e-mail valide.'),
+  telephone: z.string(),
+  motDePasseActuel: z.string(),
+  nouveauMotDePasse: z
+    .string()
+    .refine(
+      (valeur) => valeur === '' || valeur.length >= 8,
+      'Le mot de passe doit faire au moins 8 caractères.',
+    ),
+})
 
 function valeursInitiales(profil: Profil): ModificationProfil {
   return {
@@ -58,6 +53,12 @@ function valeursInitiales(profil: Profil): ModificationProfil {
   }
 }
 
+const LIBELLES_ROLE: Record<Profil['role'], string> = {
+  ROLE_CLIENT: 'Client',
+  ROLE_CONSEILLER: 'Conseiller',
+  ROLE_ADMIN: 'Administrateur',
+}
+
 function PageProfil() {
   const { data: profil } = useSuspenseQuery(profilQuery)
 
@@ -66,8 +67,6 @@ function PageProfil() {
 }
 
 function FormulaireProfil({ profil }: { profil: Profil }) {
-  const langue = useLangue()
-  const t = TEXTES[langue]
   const queryClient = useQueryClient()
 
   const modification = useMutation({
@@ -77,7 +76,7 @@ function FormulaireProfil({ profil }: { profil: Profil }) {
 
   const form = useForm({
     defaultValues: valeursInitiales(profil),
-    validators: { onSubmit: schemaProfil(langue) },
+    validators: { onSubmit: SchemaProfil },
     onSubmit: ({ value }) =>
       // Enregistré : les champs reprennent le profil à jour, mots de passe vidés.
       modification.mutate(value, {
@@ -86,9 +85,7 @@ function FormulaireProfil({ profil }: { profil: Profil }) {
   })
 
   const erreurServeur = (champ: string) =>
-    modification.error instanceof ErreurFormulaire
-      ? messageApi(modification.error.erreurs[champ], langue)
-      : undefined
+    modification.error instanceof ErreurFormulaire ? modification.error.erreurs[champ] : undefined
 
   const champTexte = (
     name: 'prenom' | 'nom' | 'email' | 'telephone' | 'motDePasseActuel' | 'nouveauMotDePasse',
@@ -113,9 +110,9 @@ function FormulaireProfil({ profil }: { profil: Profil }) {
 
   return (
     <section className="mx-auto max-w-md">
-      <h1 className="text-3xl font-bold">{t.profil.titre}</h1>
+      <h1 className="text-3xl font-bold">Mon profil</h1>
       <p className="mt-2 text-slate-600">
-        {t.profil.compte(t.profil.roles[profil.role])} · {profil.email}
+        Compte {LIBELLES_ROLE[profil.role].toLowerCase()} · {profil.email}
       </p>
 
       <form
@@ -126,34 +123,32 @@ function FormulaireProfil({ profil }: { profil: Profil }) {
           void form.handleSubmit()
         }}
       >
-        {modification.isError && (
-          <Bandeau ton="erreur">{messageApi(modification.error.message, langue)!}</Bandeau>
-        )}
-        {modification.isSuccess && <Bandeau ton="succes">{t.profil.misAJour}</Bandeau>}
+        {modification.isError && <Bandeau ton="erreur">{modification.error.message}</Bandeau>}
+        {modification.isSuccess && <Bandeau ton="succes">Profil mis à jour.</Bandeau>}
 
-        {champTexte('prenom', { label: t.champs.prenom, autoComplete: 'given-name' })}
-        {champTexte('nom', { label: t.champs.nom, autoComplete: 'family-name' })}
-        {champTexte('email', { label: t.champs.email, type: 'email', autoComplete: 'email' })}
-        {champTexte('telephone', { label: t.profil.telephone, type: 'tel', autoComplete: 'tel' })}
+        {champTexte('prenom', { label: 'Prénom', autoComplete: 'given-name' })}
+        {champTexte('nom', { label: 'Nom', autoComplete: 'family-name' })}
+        {champTexte('email', { label: 'E-mail', type: 'email', autoComplete: 'email' })}
+        {champTexte('telephone', { label: 'Téléphone', type: 'tel', autoComplete: 'tel' })}
 
         <fieldset className="space-y-5 border-t border-slate-200 pt-5">
-          <legend className="pr-2 text-sm font-semibold">{t.profil.changerMotDePasse}</legend>
+          <legend className="pr-2 text-sm font-semibold">Changer de mot de passe</legend>
           {champTexte('nouveauMotDePasse', {
-            label: t.profil.nouveauMotDePasse,
+            label: 'Nouveau mot de passe',
             type: 'password',
             autoComplete: 'new-password',
-            aide: t.profil.aideNouveau,
+            aide: 'Laissez vide pour garder le mot de passe actuel.',
           })}
           {champTexte('motDePasseActuel', {
-            label: t.profil.motDePasseActuel,
+            label: 'Mot de passe actuel',
             type: 'password',
             autoComplete: 'current-password',
-            aide: t.profil.aideActuel,
+            aide: "Exigé pour changer d'e-mail ou de mot de passe.",
           })}
         </fieldset>
 
         <button type="submit" disabled={modification.isPending} className={classeBouton}>
-          {modification.isPending ? t.profil.enCours : t.profil.enregistrer}
+          {modification.isPending ? 'Enregistrement…' : 'Enregistrer'}
         </button>
       </form>
     </section>

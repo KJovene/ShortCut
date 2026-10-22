@@ -230,13 +230,6 @@ Le catalogue est exposé avec API Platform (ticket #185). La documentation OpenA
 - `src/lib/cn.ts` : combine des classes Tailwind (`clsx` + `tailwind-merge`).
 - L'alias `@/` pointe vers `src/`.
 
-### Site en anglais (bouton FR | EN)
-
-- **Langue du site** : `src/lib/langue.ts` (`useLangue()` dans un composant, `langueDuSite()` dans un loader ou un `head`). Français par défaut ; le choix du visiteur est gardé dans `localStorage` et met à jour `<html lang>`.
-- **Textes fixes** : un fichier `textes.ts` par zone (`components/`, `features/pages/`, `features/espace/`, `features/chat/`), sur le modèle `TEXTES[langue].cle`. Un nouveau texte s'ajoute dans les deux langues.
-- **Contenus du backoffice** (pages, destinations) : le site les lit avec `?langue=en` ; `TraductionSubscriber` les traduit avec Claude Haiku (`Traducteur`, un appel par réponse pour tous les textes encore inconnus) et garde chaque traduction dans la table `traduction`. L'administrateur la corrige dans « Traductions anglaises » ; un texte français modifié est retraduit à la visite suivante. Sans réponse de Claude, le texte reste en français. Chaque appel est dans le Journal IA (agent « Traduction du site »).
-- **Chatbot** : il démarre dans la langue du site (`POST /api/chat/conversations` avec `{"langue": "en"}`), puis suit celle dans laquelle le client écrit (US15).
-
 ## Règles d'équipe
 
 - Pas de push direct sur `main` : pull request et relecture par un autre membre.

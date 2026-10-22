@@ -1,34 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
-import { TEXTES } from '@/components/textes'
 import { IconFlecheBas } from '@/components/ui/icons'
 import { useChat } from '@/features/chat/chatContext'
 import { accedeAuBackoffice, profilQuery, seDeconnecter, URL_BACKOFFICE } from '@/lib/auth'
-import { useLangue } from '@/lib/langue'
 
 const classeLien =
   'flex min-h-11 items-center rounded-lg px-3 text-[15px] font-semibold hover:bg-sable'
 
 /** Connexion et inscription, ou menu « Mon espace » une fois connecté. */
 export function MenuCompte() {
-  const t = TEXTES[useLangue()]
   const { data: profil } = useQuery(profilQuery)
 
   if (!profil) {
     return (
-      <nav aria-label={t.compte} className="flex items-center gap-2">
+      <nav aria-label="Compte" className="flex items-center gap-2">
         <Link
           to="/connexion"
           className="flex min-h-11 items-center rounded-full px-4 text-sm font-bold hover:bg-sable"
         >
-          {t.connexion}
+          Connexion
         </Link>
         <Link
           to="/inscription"
           className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-rouille"
         >
-          {t.inscription}
+          Inscription
         </Link>
       </nav>
     )
@@ -38,7 +35,6 @@ export function MenuCompte() {
 }
 
 function MenuConnecte() {
-  const t = TEXTES[useLangue()]
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { recommencer } = useChat()
@@ -94,30 +90,30 @@ function MenuConnecte() {
         >
           {initiale}
         </span>
-        {t.monEspace}
+        Mon espace
         <IconFlecheBas size={14} strokeWidth={2.4} />
       </button>
 
       {ouvert && (
         <nav
           id="menu-compte"
-          aria-label={t.compte}
+          aria-label="Compte"
           className="absolute right-0 z-40 mt-2 flex w-60 flex-col gap-0.5 rounded-2xl border border-lin bg-white p-2 shadow-[0_12px_36px_rgba(22,35,63,0.12)]"
         >
           <p className="px-3 pt-1 pb-2 text-xs text-taupe">
-            {t.connecteEnTantQue} <strong className="text-encre">{profil.email}</strong>
+            Connecté en tant que <strong className="text-encre">{profil.email}</strong>
           </p>
           {accedeAuBackoffice(profil) ? (
             <a href={URL_BACKOFFICE} className={classeLien}>
-              {t.backoffice}
+              Backoffice
             </a>
           ) : (
             <Link to="/espace" onClick={fermer} className={classeLien}>
-              {t.mesVoyages}
+              Mes voyages
             </Link>
           )}
           <Link to="/profil" onClick={fermer} className={classeLien}>
-            {t.monProfil}
+            Mon profil
           </Link>
           <button
             type="button"
@@ -125,7 +121,7 @@ function MenuConnecte() {
             disabled={deconnexion.isPending}
             className={`${classeLien} text-left text-rouille disabled:opacity-60`}
           >
-            {t.seDeconnecter}
+            Se déconnecter
           </button>
         </nav>
       )}

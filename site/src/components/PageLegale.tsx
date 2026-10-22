@@ -1,13 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { TEXTES } from '@/components/textes'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { decouperContenu, estMentionAValider, pageQuery } from '@/features/pages/pageDuSite'
-import { useLangue } from '@/lib/langue'
 
 /** Gabarit des pages légales, lues depuis les contenus du site (module Contenus du backoffice). */
 export function PageLegale({ slug }: { slug: string }) {
-  const langue = useLangue()
-  const { data: page } = useSuspenseQuery(pageQuery(slug, langue))
+  const { data: page } = useSuspenseQuery(pageQuery(slug))
   const contenu = decouperContenu(page.contenu)
   const aValider = contenu.intro.some(estMentionAValider)
   const intro = contenu.intro.filter((p) => !estMentionAValider(p))
@@ -22,7 +19,8 @@ export function PageLegale({ slug }: { slug: string }) {
           role="note"
           className="m-0 mb-8 rounded-2xl bg-[#EAE2D2] px-4 py-3 font-semibold text-[#16233F]"
         >
-          {TEXTES[langue].modeleAValider}
+          Modèle à valider par l'agence : ce texte doit être relu et complété avant la mise en
+          ligne.
         </p>
       )}
       <div className="prose-agence">
