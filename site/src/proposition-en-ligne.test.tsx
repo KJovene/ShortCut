@@ -29,7 +29,13 @@ const PROPOSITION: PropositionEnLigne = {
   totalCentimes: 376200,
   totalParPersonneCentimes: 188100,
   fraisDeDossierCentimes: 15000,
-  destination: { slug: 'santorin', ville: 'Santorin' },
+  destination: {
+    slug: 'santorin',
+    ville: 'Santorin',
+    photo: '/uploads/destinations/santorin.jpg',
+    photoAlt: 'Maisons blanches et dômes bleus d’Oia face à la mer',
+    temperatures: [12, 12, 14, 17, 21.4, 25, 27, 27, 24, 20, 17, null],
+  },
   pourquoi: 'Des villages blancs au-dessus de la mer, et des couchers de soleil inoubliables.',
   argumentaire: [{ exigence: 'Au moins 25 °C', reponse: '27 °C en moyenne en mai.' }],
   hypotheses: ['Vols depuis Paris au tarif moyen de mai.'],
@@ -44,6 +50,7 @@ const PROPOSITION: PropositionEnLigne = {
       nom: 'Suite avec vue caldeira',
       pointsForts: ['Piscine privée'],
       niveaux: ['equilibre'],
+      photo: '/uploads/prestations/suite-caldeira.jpg',
     },
   ],
   lignes: [
@@ -109,6 +116,7 @@ const VERSION_2: PropositionEnLigne = {
       nom: 'Croisière au coucher du soleil',
       pointsForts: ['Dîner à bord'],
       niveaux: ['equilibre'],
+      photo: null,
     },
   ],
   lignes: [
@@ -245,6 +253,57 @@ describe('« Ma proposition » par son lien unique (#208)', () => {
     expect(await screen.findByText(/prix vérifiés auprès des prestataires/)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Votre budget confirmé' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'J’accepte cette proposition' })).toBeInTheDocument()
+  })
+
+  it('montre les photos et le climat que l’API renvoie avec la proposition', async () => {
+    simulerApi({ [`GET /api/propositions/${JETON}`]: { status: 200, body: PROPOSITION } })
+    afficher(`/proposition/${JETON}`)
+
+    expect(
+      await screen.findByRole('img', {
+        name: 'Maisons blanches et dômes bleus d’Oia face à la mer',
+      }),
+    ).toHaveAttribute('src', '/uploads/destinations/santorin.jpg')
+    // Départ le 10 mai : la température de mai, arrondie.
+    expect(screen.getByText('Température moyenne en mai')).toBeInTheDocument()
+    expect(screen.getByText('21 °C')).toBeInTheDocument()
+    const suite = screen
+      .getByRole('heading', { name: 'Suite avec vue caldeira' })
+      .closest('article')!
+    expect(suite.querySelector('img')).toHaveAttribute(
+      'src',
+      '/uploads/prestations/suite-caldeira.jpg',
+    )
+  })
+
+  it('reste lisible quand l’API ne renvoie ni photo ni climat', async () => {
+    simulerApi({
+      [`GET /api/propositions/${JETON}`]: {
+        status: 200,
+        body: {
+          ...PROPOSITION,
+          destination: { slug: 'santorin', ville: 'Santorin' },
+          // Champ absent de la réponse (undefined n'est pas sérialisé).
+          prestations: PROPOSITION.prestations.map((p) => ({ ...p, photo: undefined })),
+        },
+      },
+    })
+    afficher(`/proposition/${JETON}`)
+
+    const suite = (await screen.findByRole('heading', { name: 'Suite avec vue caldeira' })).closest(
+      'article',
+    )!
+    expect(suite.querySelector('img')).toBeNull()
+    expect(screen.queryByText('Température moyenne en mai')).not.toBeInTheDocument()
+  })
+
+  it('signale une adresse qui n’est pas un lien de proposition', async () => {
+    simulerApi({})
+    afficher('/proposition/exemple')
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Proposition introuvable' }),
+    ).toBeInTheDocument()
   })
 
   it('signale un lien qui ne mène à aucune proposition', async () => {

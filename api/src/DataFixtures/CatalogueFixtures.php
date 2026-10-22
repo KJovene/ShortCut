@@ -22,7 +22,7 @@ use Doctrine\Persistence\ObjectManager;
  */
 final class CatalogueFixtures extends Fixture implements DependentFixtureInterface
 {
-    /** Conseiller qui « saisit » le catalogue de chaque destination. */
+    /** Conseiller qui « saisit » le catalogue des destinations d'origine ; les autres indiquent le leur (saisiPar). */
     private const SAISI_PAR = [
         'lisbonne' => UtilisateurFixtures::LEA, 'marrakech' => UtilisateurFixtures::LEA,
         'santorin' => UtilisateurFixtures::LEA, 'rome' => UtilisateurFixtures::LEA,
@@ -34,6 +34,8 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
     private array $destinations = [];
     /** @var array<string, list<array{int, int, float}>> */
     private array $saisons = [];
+    /** @var array<string, string> référence du conseiller, par destination */
+    private array $saisiPar = [];
     /** @var array<string, Prestataire> */
     private array $prestataires = [];
 
@@ -64,6 +66,7 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
     private function chargerDestinations(ObjectManager $manager): void
     {
         foreach (Catalogue::destinations() as $slug => $d) {
+            $this->saisiPar[$slug] = self::SAISI_PAR[$slug] ?? $d['saisiPar'];
             $destination = (new Destination())
                 ->setSlug($slug)
                 ->setPays($d['pays'])
@@ -77,6 +80,7 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
                 ->setNom($d['nom'])
                 ->setAccroche($d['accroche'])
                 ->setTypesDeVoyage($d['typesDeVoyage'])
+                ->setZones($d['zones'])
                 ->setMoisIdeal($d['moisIdeal'])
                 ->setLatitude($d['latitude'])
                 ->setLongitude($d['longitude'])
@@ -187,6 +191,6 @@ final class CatalogueFixtures extends Fixture implements DependentFixtureInterfa
 
     private function conseiller(string $slug): Utilisateur
     {
-        return $this->getReference(self::SAISI_PAR[$slug], Utilisateur::class);
+        return $this->getReference($this->saisiPar[$slug], Utilisateur::class);
     }
 }

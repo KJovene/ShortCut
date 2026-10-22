@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconCoche, IconTelecharger } from '@/components/ui/icons'
-import { formatEuros, labelType, MOIS, trouverDestination } from '@/data/catalogue'
+import { formatEuros, labelType, MOIS } from '@/data/catalogue'
 import { cn } from '@/lib/cn'
 import {
   type Changement,
@@ -16,15 +16,14 @@ import {
 import {
   type ActionProposition,
   agirSurProposition,
+  NIVEAUX,
   pdfProposition,
-  photoPrestation,
   type PropositionEnLigne as Proposition,
   propositionQuery,
   titreProposition,
   versionQuery,
   voyageurs,
 } from './enLigne'
-import { NIVEAUX } from './proposition'
 
 const dateLongue = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(
@@ -143,8 +142,9 @@ function Page({
   choix: React.ReactNode
   onActuelle: () => void
 }) {
-  const destination = p.destination?.slug ? trouverDestination(p.destination.slug) : undefined
+  const destination = p.destination
   const mois = p.demande.dateDebut ? new Date(p.demande.dateDebut).getMonth() : null
+  const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
   const confirmee = p.etat === 'confirmee'
   const logements = p.prestations.filter((x) => x.type === 'logement')
   const activites = p.prestations.filter((x) => x.type === 'activite')
@@ -213,10 +213,10 @@ function Page({
             {p.demande.dateDebut && (
               <Chiffre label="Départ" valeur={dateLongue(p.demande.dateDebut)} />
             )}
-            {destination && mois !== null && (
+            {mois !== null && temperature !== null && (
               <Chiffre
                 label={`Température moyenne en ${MOIS[mois]}`}
-                valeur={`${destination.temperatures[mois]} °C`}
+                valeur={`${Math.round(temperature)} °C`}
               />
             )}
           </div>
@@ -239,10 +239,10 @@ function Page({
           </div>
           {comparaison && <CeQuiAChange comparaison={comparaison} versionAffichee={p.version} />}
         </div>
-        {destination ? (
+        {destination?.photo ? (
           <img
             src={destination.photo}
-            alt={destination.alt}
+            alt={destination.photoAlt ?? ''}
             className="block min-h-[260px] w-full min-w-0 flex-[1_1_420px] rounded-[28px] object-cover sm:min-h-[340px]"
           />
         ) : (
@@ -360,48 +360,42 @@ function Prestations({
         {[
           ...liste.map((x) => ({ x, changement: etats?.get(x.id) })),
           ...retirees.map((x) => ({ x, changement: 'retire' as const })),
-        ].map(({ x, changement }) => {
-          const photo = photoPrestation(x.nom)
-          return (
-            <article
-              key={`${changement === 'retire' ? 'retire-' : ''}${x.id}`}
-              className={cn(
-                'flex overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(43,29,20,0.08)]',
-                changement && SURLIGNAGE[changement],
-                changement && CONTOUR[changement],
-              )}
-            >
-              {photo && (
-                <img
-                  src={photo}
-                  alt=""
-                  className={cn(
-                    'block w-28 shrink-0 object-cover sm:w-32',
-                    changement === 'retire' && 'opacity-50 grayscale',
-                  )}
-                />
-              )}
-              <div className="flex flex-col items-start gap-1.5 px-4 py-3.5">
-                <Marque changement={changement} />
-                <h3
-                  className={cn(
-                    'm-0 text-base font-bold',
-                    changement === 'retire' && 'line-through',
-                  )}
-                >
-                  {x.nom}
-                </h3>
-                {x.pointsForts.length > 0 && (
-                  <ul className="m-0 list-disc pl-4 text-sm text-taupe">
-                    {x.pointsForts.map((pf) => (
-                      <li key={pf}>{pf}</li>
-                    ))}
-                  </ul>
+        ].map(({ x, changement }) => (
+          <article
+            key={`${changement === 'retire' ? 'retire-' : ''}${x.id}`}
+            className={cn(
+              'flex overflow-hidden rounded-[22px] bg-white shadow-[0_8px_24px_rgba(43,29,20,0.08)]',
+              changement && SURLIGNAGE[changement],
+              changement && CONTOUR[changement],
+            )}
+          >
+            {x.photo && (
+              <img
+                src={x.photo}
+                alt=""
+                className={cn(
+                  'block w-28 shrink-0 object-cover sm:w-32',
+                  changement === 'retire' && 'opacity-50 grayscale',
                 )}
-              </div>
-            </article>
-          )
-        })}
+              />
+            )}
+            <div className="flex flex-col items-start gap-1.5 px-4 py-3.5">
+              <Marque changement={changement} />
+              <h3
+                className={cn('m-0 text-base font-bold', changement === 'retire' && 'line-through')}
+              >
+                {x.nom}
+              </h3>
+              {x.pointsForts.length > 0 && (
+                <ul className="m-0 list-disc pl-4 text-sm text-taupe">
+                  {x.pointsForts.map((pf) => (
+                    <li key={pf}>{pf}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </article>
+        ))}
       </div>
     </>
   )

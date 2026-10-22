@@ -1,5 +1,6 @@
 import { z } from 'zod'
-import { DESTINATIONS, type TypeDeVoyage } from '@/data/catalogue'
+import type { TypeDeVoyage } from '@/data/catalogue'
+import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
 import type { Demande } from './demande'
 
@@ -139,21 +140,35 @@ const sansAccents = (texte: string) =>
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase()
 
+/** Mots entiers, sans accents ni ponctuation : « Costa-Rica » → « costa rica ». */
+const mots = (texte: string) =>
+  ` ${sansAccents(texte)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()} `
+
 /** Régime, allergie, mobilité, santé : à signaler au conseiller dans le récapitulatif. */
 const A_SIGNALER = /allerg|regime|vegetarien|vegan|sans gluten|mobilite|fauteuil|handicap|sante/
 
-/** Traduit la fiche de l'API dans la fiche du site, lue par le récapitulatif et la proposition. */
-export function ficheVersDemande(fiche: Fiche, precedente: Demande): Demande {
-  const lieu = fiche.lieuOuZone ? sansAccents(fiche.lieuOuZone) : undefined
+/**
+ * Traduit la fiche de l'API dans la fiche du site, lue par le récapitulatif. Le lieu cité est rapproché des
+ * destinations publiées du catalogue (GET /api/public/destinations) ; sans catalogue, il reste une zone libre.
+ */
+export function ficheVersDemande(
+  fiche: Fiche,
+  precedente: Demande,
+  catalogue: DestinationPublique[],
+): Demande {
+  // Mots entiers : « Rome » ne doit pas désigner un voyage « romantique ».
+  const lieu = fiche.lieuOuZone ? mots(fiche.lieuOuZone) : undefined
   const destination = lieu
-    ? DESTINATIONS.find((d) => lieu.includes(sansAccents(d.ville)) || lieu.includes(d.slug))
+    ? catalogue.find((d) => lieu.includes(mots(d.ville)) || lieu.includes(mots(d.slug)))
     : undefined
   const contraintes = fiche.contraintes.filter((c) => !/^(aucune?|rien|non)$/i.test(c.trim()))
 
   return {
     ...precedente,
     type: (fiche.typeDeVoyage ?? undefined) as TypeDeVoyage | undefined,
-    destination: destination?.slug,
+    destination: destination && { slug: destination.slug, nom: destination.nom },
     // Le lieu tel que le client l'a dit, s'il ne désigne pas une destination du catalogue.
     zone: destination ? undefined : (fiche.lieuOuZone ?? undefined),
     mois: fiche.dateDebut ? Number(fiche.dateDebut.slice(5, 7)) - 1 : undefined,
@@ -170,6 +185,5 @@ export function ficheVersDemande(fiche: Fiche, precedente: Demande): Demande {
     contraintes:
       fiche.contraintes.length > 0 && contraintes.length === 0 ? ['aucune'] : contraintes,
     contraintesSignalees: contraintes.filter((c) => A_SIGNALER.test(sansAccents(c))),
-    libres: {},
   }
 }

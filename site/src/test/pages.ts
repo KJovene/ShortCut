@@ -8,7 +8,7 @@ const A_VALIDER =
 export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   accueil: {
     slug: 'accueil',
-    titre: 'Votre voyage sur mesure, proposé en quelques minutes',
+    titre: 'Où irez-vous *chercher le soleil* ?',
     contenu: '<p>Dites-nous où vous rêvez d’aller.</p>',
     photos: ['/uploads/pages/accueil.jpg'],
     seoTitre: 'Agence de voyage sur mesure',
@@ -16,7 +16,7 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   },
   'types-de-voyages': {
     slug: 'types-de-voyages',
-    titre: 'Nos types de voyages',
+    titre: 'Tous les voyages, *sur mesure*',
     contenu:
       '<h2>Séjours</h2><p>Une destination, un hébergement choisi pour vous et des activités à la carte.</p>' +
       '<h2>Circuits</h2><p>Plusieurs étapes, un itinéraire pensé jour par jour.</p>' +
@@ -31,7 +31,7 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   },
   agence: {
     slug: 'agence',
-    titre: "L'agence",
+    titre: 'Des conseillers qui *connaissent le terrain*',
     contenu:
       '<p>Depuis plus de quinze ans, nos conseillers construisent des voyages sur mesure.</p>' +
       '<h2>Nos engagements</h2><ul><li>Une première proposition complète en quelques minutes.</li>' +
@@ -42,7 +42,7 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   },
   contact: {
     slug: 'contact',
-    titre: 'Contact',
+    titre: 'Une question ? *Parlons-en*',
     contenu:
       '<p>Le plus rapide : ouvrez l’assistant et décrivez votre projet.</p>' +
       '<h2>Horaires des conseillers</h2><p>Du lundi au vendredi de 9 h à 18 h 30.</p>' +

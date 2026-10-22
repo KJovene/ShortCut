@@ -3,7 +3,9 @@
 namespace App\Confirmation;
 
 use App\Entity\Demande;
+use App\Entity\Destination;
 use App\Entity\LigneDePrestation;
+use App\Entity\Prestation;
 use App\Entity\Proposition;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
@@ -131,16 +133,14 @@ final class PropositionClient
             'totalCentimes' => $proposition->getTotalCentimes(),
             'totalParPersonneCentimes' => $proposition->getTotalParPersonneCentimes(),
             'fraisDeDossierCentimes' => $proposition->getFraisDeDossierCentimes(),
-            'destination' => null === $proposition->getDestination() ? null : [
-                'slug' => $proposition->getDestination()->getSlug(),
-                'ville' => $proposition->getDestination()->getVille(),
-            ],
+            'destination' => null === $proposition->getDestination() ? null : self::destination($proposition->getDestination()),
             'pourquoi' => $proposition->getPourquoi(),
             'argumentaire' => $proposition->getArgumentaire(),
             'hypotheses' => $proposition->getHypotheses(),
             'programme' => $proposition->getProgramme(),
-            // Logements et activités retenus, avec leurs points forts et les niveaux qui les retiennent (#207).
-            'prestations' => $proposition->getPrestations(),
+            // Logements et activités retenus, avec leurs points forts et les niveaux qui les retiennent (#207), et leur
+            // photo du catalogue.
+            'prestations' => $this->avecPhotos($proposition->getPrestations()),
             // Les postes du niveau détaillé, sans leur prix d'achat.
             'lignes' => array_map(self::ligne(...), ConfirmationService::lignesTriees($proposition)),
             'demande' => [
@@ -203,5 +203,48 @@ final class PropositionClient
     private static function demande(Proposition $proposition): Demande
     {
         return $proposition->getDemande() ?? throw new \LogicException('Proposition sans demande.');
+    }
+
+    /**
+     * La destination telle que le site l'affiche : photo du catalogue et température moyenne de chaque mois
+     * (la période saisie qui commence ce mois-là, null si aucune).
+     *
+     * @return array{slug: ?string, ville: ?string, nom: string, photo: ?string, photoAlt: ?string, temperatures: list<float|null>}
+     */
+    private static function destination(Destination $destination): array
+    {
+        $temperatures = array_fill(0, 12, null);
+        foreach ($destination->getPeriodesClimatiques() as $periode) {
+            $mois = (int) $periode->getDebut()?->format('n') - 1;
+            if ($mois >= 0 && null === $temperatures[$mois]) {
+                $temperatures[$mois] = $periode->getTemperatureMoyenne();
+            }
+        }
+
+        return [
+            'slug' => $destination->getSlug(),
+            'ville' => $destination->getVille(),
+            'nom' => $destination->getNomAffiche(),
+            'photo' => $destination->getUrlPhoto(),
+            'photoAlt' => $destination->getPhotoAlt(),
+            'temperatures' => $temperatures,
+        ];
+    }
+
+    /**
+     * @param list<array{id: int, type: string, nom: string, pointsForts: list<string>, niveaux: list<string>}> $prestations
+     *
+     * @return list<array{id: int, type: string, nom: string, pointsForts: list<string>, niveaux: list<string>, photo: ?string}>
+     */
+    private function avecPhotos(array $prestations): array
+    {
+        $ids = array_column($prestations, 'id');
+        $photos = [];
+        foreach ([] === $ids ? [] : $this->em->getRepository(Prestation::class)->findBy(['id' => $ids]) as $prestation) {
+            $photo = $prestation->getPhotoPrincipale();
+            $photos[(int) $prestation->getId()] = null === $photo ? null : '/uploads/prestations/'.$photo;
+        }
+
+        return array_map(static fn (array $p): array => $p + ['photo' => $photos[$p['id']] ?? null], $prestations);
     }
 }

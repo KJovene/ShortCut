@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
+import { versDestination } from '@/features/catalogue/catalogue'
+import { DESTINATIONS_DE_DEMO } from '@/test/destinations'
 import { type EvenementChat, type Fiche, ficheVersDemande, lireEvenements } from './api'
 import { demandeVide } from './demande'
+
+/** Destinations publiées, telles que le site les lit dans l'API. */
+const CATALOGUE = DESTINATIONS_DE_DEMO.map(versDestination)
 
 /** Flux découpé en morceaux de 7 octets : les coupures tombent au milieu des événements et des accents. */
 function flux(texte: string) {
@@ -76,11 +81,12 @@ describe('fiche de l’API dans le récapitulatif', () => {
         contraintes: ['Allergie sévère aux fruits de mer'],
       },
       demandeVide(),
+      CATALOGUE,
     )
 
     expect(d).toMatchObject({
       type: 'noces',
-      destination: 'santorin',
+      destination: { slug: 'santorin', nom: 'Santorin, Grèce' },
       zone: undefined,
       mois: 5,
       jours: 7,
@@ -94,11 +100,26 @@ describe('fiche de l’API dans le récapitulatif', () => {
     const d = ficheVersDemande(
       { ...ficheVide, lieuOuZone: 'la Méditerranée', contraintes: ['aucune'] },
       demandeVide(),
+      CATALOGUE,
     )
 
     expect(d.destination).toBeUndefined()
     expect(d.zone).toBe('la Méditerranée')
     expect(d.contraintes).toEqual(['aucune'])
     expect(d.contraintesSignalees).toEqual([])
+  })
+  it('reconnaît une destination sur des mots entiers, et rien sans catalogue', () => {
+    const fiche = { ...ficheVide, lieuOuZone: 'Le Costa Rica, en circuit' }
+    expect(ficheVersDemande(fiche, demandeVide(), CATALOGUE).destination).toEqual({
+      slug: 'costa-rica',
+      nom: 'Costa Rica',
+    })
+    // « Rome » n'est pas cité dans « romantique ».
+    const romantique = { ...ficheVide, lieuOuZone: 'Un endroit romantique' }
+    expect(ficheVersDemande(romantique, demandeVide(), CATALOGUE).destination).toBeUndefined()
+    // Catalogue indisponible : le lieu reste une zone libre.
+    const sansCatalogue = ficheVersDemande(fiche, demandeVide(), [])
+    expect(sansCatalogue.destination).toBeUndefined()
+    expect(sansCatalogue.zone).toBe('Le Costa Rica, en circuit')
   })
 })

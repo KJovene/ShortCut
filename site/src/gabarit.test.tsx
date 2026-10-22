@@ -29,7 +29,8 @@ const PAGES = [
   ['/types-de-voyages', /voyage/],
   ['/agence', /conseillers/],
   ['/contact', /Parlons-en/],
-  ['/proposition/exemple', 'Santorin, Grèce'],
+  // Sans jeton, aucune proposition : la page le dit.
+  ['/proposition/exemple', 'Proposition introuvable'],
   ['/mentions-legales', 'Mentions légales'],
   ['/cgv', 'Conditions générales de vente'],
   ['/confidentialite', /confidentialité/],

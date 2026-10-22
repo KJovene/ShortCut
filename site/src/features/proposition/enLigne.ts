@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { ACTIVITES, LOGEMENTS, TYPES_DE_VOYAGE } from '@/data/catalogue'
+import { TYPES_DE_VOYAGE } from '@/data/catalogue'
 import { ApiError } from '@/lib/api'
 
 /**
@@ -11,7 +11,16 @@ import { ApiError } from '@/lib/api'
 /** Jeton public d'une proposition : 64 caractères hexadécimaux, non devinable. */
 export const estJetonProposition = (id: string) => /^[0-9a-f]{64}$/.test(id)
 
-const NIVEAU = z.enum(['essentiel', 'equilibre', 'confort'])
+/** Les trois niveaux de budget d'une proposition, du moins cher au plus cher. */
+export const NIVEAUX = [
+  { valeur: 'essentiel', label: 'Essentiel' },
+  { valeur: 'equilibre', label: 'Équilibré' },
+  { valeur: 'confort', label: 'Confort' },
+] as const
+
+export type Niveau = (typeof NIVEAUX)[number]['valeur']
+
+const NIVEAU = z.enum(NIVEAUX.map((n) => n.valeur))
 const ETAT = z.enum(['estimee', 'confirmee'])
 const Budget = z.object({ totalCentimes: z.number(), parPersonneCentimes: z.number() })
 
@@ -30,7 +39,17 @@ export const PropositionEnLigne = z.object({
   totalCentimes: z.number(),
   totalParPersonneCentimes: z.number(),
   fraisDeDossierCentimes: z.number(),
-  destination: z.object({ slug: z.string().nullable(), ville: z.string() }).nullable(),
+  /** Photo et climat de la destination, tels que le backoffice les décrit (absents des anciennes réponses). */
+  destination: z
+    .object({
+      slug: z.string().nullable(),
+      ville: z.string(),
+      photo: z.string().nullable().default(null),
+      photoAlt: z.string().nullable().default(null),
+      /** Température moyenne de chaque mois, index 0 = janvier ; null si le mois n'est pas saisi. */
+      temperatures: z.array(z.number().nullable()).default([]),
+    })
+    .nullable(),
   pourquoi: z.string().nullable(),
   argumentaire: z.array(z.object({ exigence: z.string(), reponse: z.string() })),
   hypotheses: z.array(z.string()),
@@ -44,6 +63,8 @@ export const PropositionEnLigne = z.object({
       nom: z.string(),
       pointsForts: z.array(z.string()),
       niveaux: z.array(z.string()),
+      /** Photo principale de la prestation dans le catalogue. */
+      photo: z.string().nullable().default(null),
     }),
   ),
   lignes: z.array(
@@ -139,11 +160,6 @@ export async function agirSurProposition(
     headers: { Accept: 'application/json' },
   })
   return lire(response)
-}
-
-/** Photo du catalogue d'une prestation retenue, retrouvée par son nom. */
-export function photoPrestation(nom: string) {
-  return [...LOGEMENTS, ...ACTIVITES].find((p) => p.nom === nom)?.photo
 }
 
 /** Nombre de voyageurs, pour l'en-tête : « 2 adultes, 1 enfant ». */

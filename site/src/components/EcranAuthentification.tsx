@@ -1,6 +1,7 @@
+import { useQuery } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 import { IconCoche } from '@/components/ui/icons'
-import { trouverDestination } from '@/data/catalogue'
+import { destinationsQuery } from '@/features/catalogue/catalogue'
 
 const AVANTAGES = [
   'Vos propositions de voyage, à retrouver à tout moment',
@@ -24,19 +25,23 @@ export function EcranAuthentification({
   /** Lien vers l'autre écran (« Pas encore de compte ? »…). */
   pied: ReactNode
 }) {
-  const photo = trouverDestination('santorin')!
+  // Une destination mise en avant dans le backoffice ; sans catalogue, l'encadré reste sans photo.
+  const { data: destinations = [] } = useQuery(destinationsQuery())
+  const photo = destinations.find((d) => d.miseEnAvant && d.photo)
 
   return (
     <div className="mx-auto flex max-w-[1376px] flex-wrap gap-6 px-4 py-6 sm:px-8 sm:py-10 lg:gap-10">
       <aside
         aria-label="Votre compte Détour"
-        className="relative hidden min-h-[560px] flex-[1_1_480px] overflow-hidden rounded-[28px] md:block"
+        className="relative hidden min-h-[560px] flex-[1_1_480px] overflow-hidden rounded-[28px] bg-sable md:block"
       >
-        <img
-          src={photo.photo}
-          alt={photo.alt}
-          className="absolute inset-0 size-full object-cover"
-        />
+        {photo && (
+          <img
+            src={photo.photo}
+            alt={photo.alt}
+            className="absolute inset-0 size-full object-cover"
+          />
+        )}
         <div className="absolute right-8 bottom-8 left-8 flex max-w-[440px] flex-col gap-3 rounded-[22px] bg-creme/95 p-6 shadow-[0_18px_50px_rgba(43,29,20,0.18)]">
           <p className="m-0 font-display text-[26px] leading-tight font-semibold">
             L’assistant propose, <em className="font-normal text-terre">le conseiller confirme</em>
