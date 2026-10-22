@@ -15,7 +15,7 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Environment;
 
 /**
- * La proposition en PDF (ticket #213, US12), aux couleurs de l'agence : couverture avec le statut (estimée ou
+ * La proposition en PDF (ticket #213, US12), à la charte DÉTOUR (encre, craie, ciel, le O qui saute) : couverture avec le statut (estimée ou
  * confirmée), programme jour par jour, hébergements et activités avec photo, budget en trois niveaux, hypothèses.
  * Mêmes données que la page « Ma proposition » (PropositionClient::presenter) : jamais de prix d'achat.
  * Dompdf lit les photos sur le disque (public/uploads), sans accès réseau.
@@ -44,7 +44,7 @@ final class PropositionPdf
 
         // Numéro de page en bas à droite, sur chaque page.
         $sur = Langue::Anglais === $proposition->getDemande()?->getLangue() ? 'of' : 'sur';
-        $dompdf->getCanvas()->page_text(520, 812, 'Page {PAGE_NUM} '.$sur.' {PAGE_COUNT}', 'DejaVu Sans', 7, [0.43, 0.35, 0.29]);
+        $dompdf->getCanvas()->page_text(520, 812, 'Page {PAGE_NUM} '.$sur.' {PAGE_COUNT}', 'DejaVu Sans', 7, [0.23, 0.28, 0.38]);
 
         return (string) $dompdf->output();
     }
@@ -76,7 +76,8 @@ final class PropositionPdf
             'budgets' => $proposition->getBudgetsParNiveau(),
             'photoDestination' => $this->fichier('destinations', $proposition->getDestination()?->getPhoto()),
             'photos' => $photos,
-            'logo' => $this->public.'/admin/logo-detour.svg',
+            // Logo DÉTOUR de la charte, en PNG : Dompdf rend mal les SVG complexes.
+            'logo' => $this->public.'/pdf/detour-logo.png',
         ]);
     }
 

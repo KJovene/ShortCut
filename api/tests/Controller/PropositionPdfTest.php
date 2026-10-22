@@ -72,7 +72,9 @@ final class PropositionPdfTest extends WebTestCase
         self::assertIsString($premierePage);
         self::assertStringContainsString('Proposition estimée', $premierePage);
         self::assertStringContainsString(Proposition::MENTION, $premierePage);
-        self::assertStringContainsString('Santorin, 9 jours', $premierePage);
+        // Le titre, avec le O qui saute de la charte sur son premier « o ».
+        self::assertStringContainsString('Santorin, 9 jours', strip_tags($premierePage));
+        self::assertStringContainsString('Sant<span class="saut-o">o</span>rin, 9 jours', $premierePage);
         self::assertStringContainsString('12 juin 2027', $premierePage);
         self::assertStringContainsString('3 012 €', $premierePage);
         self::assertStringContainsString('sam. 12 juin', $html);
