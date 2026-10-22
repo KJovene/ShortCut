@@ -145,13 +145,20 @@ a:hover {
     font-weight: 700;
 }
 
-/* Liste EasyAdmin : carte blanche bordée, en-têtes en petites capitales. */
+/* Liste EasyAdmin : carte blanche bordée, en-têtes en petites capitales. Coins arrondis cellule par cellule,
+   sans « overflow: hidden » : il couperait le menu des actions (« … ») d'une liste de quelques lignes. */
 .datagrid {
     background: var(--bo-surface);
     border: 1px solid var(--bo-bordure);
     border-radius: 12px;
-    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
 }
+
+.datagrid thead th:first-child { border-top-left-radius: 11px; }
+.datagrid thead th:last-child { border-top-right-radius: 11px; }
+.datagrid tbody tr:last-child td:first-child { border-bottom-left-radius: 11px; }
+.datagrid tbody tr:last-child td:last-child { border-bottom-right-radius: 11px; }
 
 .datagrid thead th {
     background: var(--gray-50);
