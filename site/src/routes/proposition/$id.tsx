@@ -8,6 +8,8 @@ import {
   titreProposition,
 } from '@/features/proposition/enLigne'
 import { PropositionEnLigne } from '@/features/proposition/PropositionEnLigne'
+import { TEXTES } from '@/features/pages/textes'
+import { langueDuSite, useLangue } from '@/lib/langue'
 
 /**
  * « Ma proposition » : par son lien unique (jeton), la proposition envoyée par le conseiller, lue dans l'API.
@@ -23,14 +25,12 @@ export const Route = createFileRoute('/proposition/$id')({
       {
         title: loaderData
           ? `${loaderData.langue === 'en' ? 'My proposal' : 'Ma proposition'} · ${titreProposition(loaderData)}`
-          : 'Ma proposition de voyage',
+          : TEXTES[langueDuSite()].proposition.metaTitre,
       },
       {
         name: 'description',
-        content:
-          loaderData?.langue === 'en'
-            ? 'Your tailor-made travel proposal, to be confirmed by your advisor.'
-            : 'Votre proposition de voyage sur mesure, à confirmer par votre conseiller.',
+        // Une proposition garde la langue de sa conversation ; sans proposition, celle du site.
+        content: TEXTES[loaderData?.langue ?? langueDuSite()].proposition.metaDescription,
       },
       // Proposition personnelle accessible par lien unique : pas d'indexation.
       { name: 'robots', content: 'noindex' },
@@ -57,25 +57,22 @@ function PropositionDuLien({ jeton }: { jeton: string }) {
 
 function PropositionIntrouvable() {
   const { ouvrir } = useChat()
+  const textes = TEXTES[useLangue()]
+  const t = textes.proposition
   return (
     <section className="mx-auto flex max-w-[720px] flex-col items-start gap-4 px-4 py-16 sm:px-8 sm:py-24">
       <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
-        Ma proposition
+        {t.surtitre}
       </span>
-      <h1 className="m-0 font-display text-[40px] leading-tight font-semibold">
-        Proposition introuvable
-      </h1>
-      <p className="m-0 text-lg text-taupe">
-        Ce lien ne correspond à aucune proposition, ou elle a expiré. Décrivez votre voyage à
-        l'assistant pour en recevoir une nouvelle en 2 minutes.
-      </p>
+      <h1 className="m-0 font-display text-[40px] leading-tight font-semibold">{t.introuvable}</h1>
+      <p className="m-0 text-lg text-taupe">{t.introuvableTexte}</p>
       <div className="flex flex-wrap gap-2.5">
         <button
           type="button"
           onClick={() => ouvrir()}
           className="flex min-h-12 items-center rounded-full bg-terre px-6 font-extrabold text-white"
         >
-          Construire mon voyage
+          {textes.construireMonVoyage}
         </button>
       </div>
     </section>

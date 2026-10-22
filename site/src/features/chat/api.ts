@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
+import type { Langue } from '@/lib/langue'
 import type { Demande } from './demande'
 
 /**
@@ -62,11 +63,18 @@ async function erreurApi(reponse: Response): Promise<ApiError> {
   return new ApiError(reponse.status, message)
 }
 
-/** Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. */
-export async function ouvrirConversation(signal?: AbortSignal): Promise<string> {
+/**
+ * Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. La langue du site est celle
+ * dans laquelle l'assistant commence ; il suit ensuite celle du client.
+ */
+export async function ouvrirConversation(
+  signal?: AbortSignal,
+  langue: Langue = 'fr',
+): Promise<string> {
   const reponse = await fetch('/api/chat/conversations', {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ langue }),
     signal,
   })
   if (!reponse.ok) throw await erreurApi(reponse)

@@ -1,22 +1,23 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
+import { ChoixLangue } from '@/components/ChoixLangue'
 import { MenuCompte } from '@/components/MenuCompte'
+import { TEXTES } from '@/components/textes'
 import { IconFermer, IconMenu } from '@/components/ui/icons'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
+import { useLangue } from '@/lib/langue'
 import { Logo } from './Logo'
 
 const LIENS = [
-  { to: '/destinations', label: 'Destinations' },
-  { to: '/types-de-voyages', label: 'Nos voyages' },
-  { to: '/agence', label: "L'agence" },
-  { to: '/contact', label: 'Contact' },
+  { to: '/destinations', cle: 'destinations' },
+  { to: '/types-de-voyages', cle: 'voyages' },
+  { to: '/agence', cle: 'agence' },
+  { to: '/contact', cle: 'contact' },
 ] as const
 
-/** Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu. */
-const LIENS_MOBILE = [{ to: '/', label: 'Accueil' }, ...LIENS] as const
-
 export function SiteHeader({ className }: { className?: string }) {
+  const t = TEXTES[useLangue()]
   const pathname = useLocation({ select: (l) => l.pathname })
   // Le menu mobile reste ouvert sur la page où il a été ouvert : changer de page le referme.
   const [ouvertSur, setOuvertSur] = useState<string | null>(null)
@@ -24,6 +25,12 @@ export function SiteHeader({ className }: { className?: string }) {
   const setMenuOuvert = (ouvert: boolean) => setOuvertSur(ouvert ? pathname : null)
   const bouton = useRef<HTMLButtonElement>(null)
   const ouvrirAssistant = useOuvrirAssistant()
+
+  /** Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu. */
+  const liensMobile = [
+    { to: '/', label: t.accueil },
+    ...LIENS.map((lien) => ({ to: lien.to, label: t.liens[lien.cle] })),
+  ]
 
   // Échap referme le menu et rend le focus au bouton.
   useEffect(() => {
@@ -43,7 +50,7 @@ export function SiteHeader({ className }: { className?: string }) {
         <Logo />
 
         <nav
-          aria-label="Navigation principale"
+          aria-label={t.navigationPrincipale}
           className="hidden gap-[26px] text-[15px] font-bold md:flex"
         >
           {LIENS.map((lien) => (
@@ -53,19 +60,20 @@ export function SiteHeader({ className }: { className?: string }) {
               className="hover:text-terre"
               activeProps={{ className: 'text-terre', 'aria-current': 'page' }}
             >
-              {lien.label}
+              {t.liens[lien.cle]}
             </Link>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
+          <ChoixLangue />
           {/* Connexion et inscription, ou « Mon espace » une fois connecté. */}
           <div className="hidden sm:flex">
             <MenuCompte />
           </div>
           <button
             type="button"
-            aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-label={menuOuvert ? t.fermerMenu : t.ouvrirMenu}
             aria-expanded={menuOuvert}
             aria-controls="menu-mobile"
             ref={bouton}
@@ -80,11 +88,11 @@ export function SiteHeader({ className }: { className?: string }) {
       {menuOuvert && (
         <nav
           id="menu-mobile"
-          aria-label="Navigation principale"
+          aria-label={t.navigationPrincipale}
           className="absolute inset-x-0 top-full border-y border-lin bg-creme px-4 pb-5 shadow-lg md:hidden"
         >
           <ul className="flex flex-col">
-            {LIENS_MOBILE.map((lien) => (
+            {liensMobile.map((lien) => (
               <li key={lien.to}>
                 <Link
                   to={lien.to}
@@ -106,7 +114,7 @@ export function SiteHeader({ className }: { className?: string }) {
             }}
             className="mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-terre font-extrabold text-white"
           >
-            Construire mon voyage
+            {t.construireMonVoyage}
           </button>
           <div className="mt-3 flex justify-center sm:hidden">
             <MenuCompte />

@@ -10,7 +10,9 @@ import { CarteDuMonde } from '@/features/accueil/CarteDuMonde'
 import { SectionAssistant } from '@/features/accueil/SectionAssistant'
 import { destinationsQuery, estSurCarte } from '@/features/catalogue/catalogue'
 import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
+import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
+import { langueDuSite, typesDeVoyage, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/')({
   // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement,
@@ -20,31 +22,26 @@ export const Route = createFileRoute('/')({
     return context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null)
   },
   head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, {
-      titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
-      description:
-        "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
-    }),
+    meta: metaPage(loaderData, TEXTES[langueDuSite()].accueil.meta),
   }),
   component: HomePage,
 })
 
-const FILTRES: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
-  { valeur: 'tous', label: 'Tous' },
-  ...TYPES_DE_VOYAGE.map((t) => ({ valeur: t.valeur, label: t.pluriel })),
-]
-
-const TITRE_PAR_DEFAUT = 'Où irez-vous *chercher le soleil* ?'
-
 function HomePage() {
+  const langue = useLangue()
+  const t = TEXTES[langue].accueil
   const [type, setType] = useState<TypeDeVoyage | 'tous'>('tous')
   /** Voyage survolé, sur la carte ou dans le bandeau ; à défaut, l'épingle active. */
   const [activeSlug, setActiveSlug] = useState<string>()
   /** Épingle active : la carte la garde quand le bandeau survole un voyage qui n'est pas sur la carte. */
   const [slugCarte, setSlugCarte] = useState<string>()
-  const { data: catalogue = [] } = useQuery(destinationsQuery())
+  const { data: catalogue = [] } = useQuery(destinationsQuery(langue))
   // Titre des contenus du site ; sans l'API, celui des maquettes.
-  const { data: page } = useQuery(pageQuery('accueil'))
+  const { data: page } = useQuery(pageQuery('accueil', langue))
+  const filtres: { valeur: TypeDeVoyage | 'tous'; label: string }[] = [
+    { valeur: 'tous', label: t.tous },
+    ...TYPES_DE_VOYAGE.map((type) => ({ valeur: type.valeur, label: typesDeVoyage(type, langue) })),
+  ]
   // Destinations « mises en avant » dans le backoffice d'abord : la carte s'ouvre sur la première,
   // le bandeau et les polaroïds de l'assistant commencent par elles.
   const destinations = [
@@ -71,23 +68,21 @@ function HomePage() {
         <div className="mx-auto flex w-full max-w-[1376px] flex-wrap items-end justify-between gap-2.5 px-4 pb-3 sm:gap-4 sm:px-8 sm:pt-1 sm:pb-0">
           <div className="flex flex-col gap-1.5">
             <span className="hidden text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase sm:block">
-              {destinations.length > 0
-                ? `${destinations.length} destinations sur mesure, partout dans le monde`
-                : 'Des destinations sur mesure, partout dans le monde'}
+              {destinations.length > 0 ? t.nbDestinations(destinations.length) : t.desDestinations}
             </span>
             <h1
               id="hero-titre"
               className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
             >
-              <TitreMisEnValeur texte={page?.titre ?? TITRE_PAR_DEFAUT} />
+              <TitreMisEnValeur texte={page?.titre ?? t.titreParDefaut} />
             </h1>
           </div>
           <div
             role="group"
-            aria-label="Filtrer par type de voyage"
+            aria-label={t.filtrer}
             className="scrollbar-none -mr-4 flex gap-1.5 overflow-x-auto pr-4 sm:mr-0 sm:flex-wrap sm:pr-0"
           >
-            {FILTRES.map((f) => {
+            {filtres.map((f) => {
               const actif = f.valeur === type
               return (
                 <button
@@ -119,7 +114,7 @@ function HomePage() {
           href="#voyages"
           className="absolute bottom-2 left-1/2 flex min-h-11 -translate-x-1/2 items-center gap-2 px-4 text-sm font-bold text-taupe hover:text-encre sm:bottom-[18px]"
         >
-          Tous les voyages
+          {t.tousLesVoyages}
           <IconFlecheBas size={18} />
         </a>
       </section>

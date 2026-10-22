@@ -4,6 +4,8 @@ import { useChat } from '@/features/chat/chatContext'
 import { ChatAccueil } from '@/features/chat/components/ChatAccueil'
 import { ChatWorkspace } from '@/features/chat/components/ChatWorkspace'
 import { ID_SECTION_ASSISTANT } from '@/features/chat/useOuvrirAssistant'
+import { TEXTES } from '@/features/pages/textes'
+import { useLangue } from '@/lib/langue'
 
 function Polaroid({ d, rotation }: { d: DestinationPublique | undefined; rotation: string }) {
   if (!d) return null
@@ -29,6 +31,7 @@ export function SectionAssistant({
   photos: DestinationPublique[]
 }) {
   const { statut } = useChat()
+  const t = TEXTES[useLangue()].accueil
   const section = useRef<HTMLElement>(null)
   const precedent = useRef(statut)
 
@@ -73,7 +76,7 @@ export function SectionAssistant({
             <Polaroid d={photos[1]} rotation="3deg" />
           </div>
           <div className="flex min-w-0 flex-1 justify-center">
-            <ChatAccueil suggestion={suggestion && `Comme ${suggestion.ville}, à mes dates`} />
+            <ChatAccueil suggestion={suggestion && t.suggestion(suggestion.ville)} />
           </div>
           <div
             aria-hidden="true"
@@ -86,7 +89,7 @@ export function SectionAssistant({
       ) : (
         <div className="mx-auto flex max-w-[1376px] flex-col px-4 pt-6 pb-4 sm:px-8 lg:h-[clamp(720px,100vh,960px)]">
           <h2 id="discussion-titre" className="sr-only">
-            Discussion avec l'assistant
+            {t.discussion}
           </h2>
           <ChatWorkspace className="min-h-[70vh] flex-1 lg:min-h-0" />
         </div>
