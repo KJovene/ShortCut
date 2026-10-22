@@ -25,7 +25,7 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   },
   'types-de-voyages': {
     slug: 'types-de-voyages',
-    titre: 'Tous les voyages, *sur mesure*',
+    titre: '*Tous* les voyages, *sur mesure*',
     contenu:
       '<h2>Séjours</h2><p>Une destination, un hébergement choisi pour vous et des activités à la carte.</p>' +
       '<h2>Circuits</h2><p>Plusieurs étapes, un itinéraire pensé jour par jour.</p>' +
