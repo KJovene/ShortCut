@@ -10,13 +10,19 @@ import { ApiError } from '@/lib/api'
 
 const TYPES = TYPES_DE_VOYAGE.map((t) => t.valeur) as readonly string[]
 
+/**
+ * Un champ vide peut être absent de la réponse : l'API (API Platform) omet les valeurs nulles. Il est lu comme null,
+ * pour qu'une destination incomplète saisie dans le backoffice ne casse pas l'affichage.
+ */
+const vide = <T>(valeur: T | null | undefined): T | null => valeur ?? null
+
 const ExempleApi = z.object({
   type: z.enum(['logement', 'activite']),
   nom: z.string(),
-  categorie: z.string().nullable(),
+  categorie: z.string().nullish().transform(vide),
   capacite: z.number(),
   accessible: z.boolean(),
-  dureeMinutes: z.number().nullable(),
+  dureeMinutes: z.number().nullish().transform(vide),
   envies: z.array(z.string()),
   photos: z.array(z.string()),
   prixAPartirDeEuros: z.number(),
@@ -28,28 +34,30 @@ export const DestinationApi = z.object({
   nom: z.string(),
   ville: z.string(),
   pays: z.string(),
-  region: z.string().nullable(),
-  description: z.string().nullable(),
-  accroche: z.string().nullable(),
-  pointsForts: z.array(z.string()),
-  tempsDeTrajet: z.record(z.string(), z.number()),
-  photo: z.string().nullable(),
-  photoAlt: z.string().nullable(),
-  typesDeVoyage: z.array(z.string()),
-  moisIdeal: z.number().int().min(1).max(12).nullable(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
+  region: z.string().nullish().transform(vide),
+  description: z.string().nullish().transform(vide),
+  accroche: z.string().nullish().transform(vide),
+  pointsForts: z.array(z.string()).default([]),
+  tempsDeTrajet: z.record(z.string(), z.number()).default({}),
+  photo: z.string().nullish().transform(vide),
+  photoAlt: z.string().nullish().transform(vide),
+  typesDeVoyage: z.array(z.string()).default([]),
+  moisIdeal: z.number().int().min(1).max(12).nullish().transform(vide),
+  latitude: z.number().nullish().transform(vide),
+  longitude: z.number().nullish().transform(vide),
   miseEnAvant: z.boolean(),
-  periodesClimatiques: z.array(
-    z.object({
-      debut: z.string(),
-      fin: z.string(),
-      temperatureMoyenne: z.number(),
-      pluieMm: z.number().nullable(),
-    }),
-  ),
-  prixAPartirDeParPersonneEuros: z.number().nullable(),
-  exemples: z.array(ExempleApi),
+  periodesClimatiques: z
+    .array(
+      z.object({
+        debut: z.string(),
+        fin: z.string(),
+        temperatureMoyenne: z.number(),
+        pluieMm: z.number().nullish().transform(vide),
+      }),
+    )
+    .default([]),
+  prixAPartirDeParPersonneEuros: z.number().nullish().transform(vide),
+  exemples: z.array(ExempleApi).default([]),
 })
 export type DestinationApi = z.infer<typeof DestinationApi>
 
@@ -166,11 +174,29 @@ async function lire(chemin: string) {
   return (await response.json()) as unknown
 }
 
-export async function chargerDestinations(): Promise<DestinationPublique[]> {
+/**
+ * Valide chaque destination séparément : une destination mal saisie est écartée (et signalée dans la console)
+ * au lieu de vider toute la liste.
+ */
+function destinationsValides(reponse: unknown): DestinationPublique[] {
   return z
-    .array(DestinationApi)
-    .parse(await lire('destinations'))
-    .map(versDestination)
+    .array(z.unknown())
+    .parse(reponse)
+    .flatMap((brute) => {
+      const destination = DestinationApi.safeParse(brute)
+      if (destination.success) return [versDestination(destination.data)]
+      console.warn('Destination ignorée, données incomplètes :', brute, destination.error.issues)
+      return []
+    })
+}
+
+export async function chargerDestinations(): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations'))
+}
+
+/** Destinations « mises en avant » dans le backoffice, pour la carte et le bandeau de l'accueil. */
+export async function chargerDestinationsMisesEnAvant(): Promise<DestinationPublique[]> {
+  return destinationsValides(await lire('destinations?miseEnAvant=true'))
 }
 
 export async function chargerDestination(slug: string): Promise<DestinationPublique> {
@@ -181,6 +207,13 @@ export const destinationsQuery = () =>
   queryOptions({
     queryKey: ['catalogue', 'destinations'],
     queryFn: chargerDestinations,
+    staleTime: 5 * 60_000,
+  })
+
+export const destinationsMisesEnAvantQuery = () =>
+  queryOptions({
+    queryKey: ['catalogue', 'destinations', 'misesEnAvant'],
+    queryFn: chargerDestinationsMisesEnAvant,
     staleTime: 5 * 60_000,
   })
 

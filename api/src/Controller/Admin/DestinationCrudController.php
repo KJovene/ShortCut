@@ -134,12 +134,12 @@ final class DestinationCrudController extends AbstractCrudController
             ->hideOnIndex();
         yield NumberField::new('latitude', 'Latitude')
             ->setNumDecimals(1)
-            ->setRequired(false)
+            ->setRequired(true)
             ->setHelp('Position de l\'épingle sur la carte du monde de l\'accueil, ex. 38,7 pour Lisbonne.')
             ->hideOnIndex();
         yield NumberField::new('longitude', 'Longitude')
             ->setNumDecimals(1)
-            ->setRequired(false)
+            ->setRequired(true)
             ->setHelp('Ex. -9,1 pour Lisbonne (ouest négatif).')
             ->hideOnIndex();
 

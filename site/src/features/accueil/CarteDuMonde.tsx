@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useRef, type CSSProperties } from 'react'
-import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
+import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react'
+import { formatEuros, MOIS } from '@/data/catalogue'
 import {
   libelleTypePrincipal,
   type DestinationPublique,
@@ -8,24 +8,33 @@ import {
 } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { cn } from '@/lib/cn'
-import { estVisible, position } from './carte'
+import { position } from './carte'
 
 interface Props {
   destinations: DestinationSurCarte[]
   active: DestinationSurCarte
-  type: TypeDeVoyage | 'tous'
   onActiver: (slug: string) => void
+}
+
+/** Délai avant de fermer la fiche : le temps de passer du point à la fiche sans qu'elle disparaisse. */
+const DELAI_FERMETURE = 150
+
+interface Survol {
+  onMouseEnter: () => void
+  onMouseLeave: () => void
+  onFocus: () => void
+  onBlur: (e: FocusEvent<HTMLElement>) => void
 }
 
 function Epingle({
   d,
   active,
-  visible,
+  survol,
   onActiver,
 }: {
   d: DestinationSurCarte
   active: boolean
-  visible: boolean
+  survol: Survol
   onActiver: () => void
 }) {
   const { x, y } = position(d)
@@ -34,13 +43,11 @@ function Epingle({
       type="button"
       aria-label={`${d.nom}, ${libelleTypePrincipal(d).toLowerCase()}`}
       aria-pressed={active}
-      onMouseEnter={onActiver}
-      onFocus={onActiver}
+      {...survol}
       onClick={onActiver}
       className={cn(
-        'group absolute flex -translate-1/2 cursor-pointer items-center justify-center rounded-full transition-opacity',
+        'group absolute flex -translate-1/2 cursor-pointer items-center justify-center rounded-full',
         active ? 'z-10 size-[60px] md:size-[68px]' : 'z-[2] size-11 md:size-12',
-        !visible && 'opacity-30',
       )}
       style={{ left: `${x}%`, top: `${y}%` }}
     >
@@ -67,10 +74,12 @@ function CarteVoyage({
   d,
   className,
   style,
+  survol,
 }: {
   d: DestinationPublique
   className?: string
   style?: CSSProperties
+  survol?: Omit<Survol, 'onFocus'> & { onFocus: () => void }
 }) {
   const ouvrirAssistant = useOuvrirAssistant()
   const mois = MOIS[d.moisIdeal]
@@ -78,6 +87,7 @@ function CarteVoyage({
     <article
       aria-live="polite"
       style={style}
+      {...survol}
       className={cn(
         'overflow-hidden rounded-3xl bg-white shadow-[0_30px_70px_rgba(43,29,20,0.28)]',
         className,
@@ -132,10 +142,43 @@ function CarteVoyage({
   )
 }
 
-/** Carte du monde interactive : une épingle photo par voyage, la fiche s'ouvre au survol. */
-export function CarteDuMonde({ destinations, active, type, onActiver }: Props) {
-  const { x, y } = position(active)
+/**
+ * Carte du monde interactive : une épingle photo par voyage. Sur ordinateur, la fiche s'ouvre au survol (ou au
+ * focus) d'un point et se ferme quand on quitte le point et la fiche ; sur mobile, la fiche du point touché
+ * reste en bas de la carte.
+ */
+export function CarteDuMonde({ destinations, active, onActiver }: Props) {
+  const { x } = position(active)
   const defilement = useRef<HTMLDivElement>(null)
+  const [ouverte, setOuverte] = useState<string | null>(null)
+  const minuteur = useRef<number | undefined>(undefined)
+  const fiche = destinations.find((d) => d.slug === ouverte)
+
+  const garder = () => window.clearTimeout(minuteur.current)
+  const fermer = () => {
+    garder()
+    minuteur.current = window.setTimeout(() => setOuverte(null), DELAI_FERMETURE)
+  }
+  const ouvrir = (slug: string) => {
+    garder()
+    setOuverte(slug)
+    onActiver(slug)
+  }
+  // Le focus qui passe du point à la fiche (ou dans la fiche) la garde ouverte.
+  const quitter = (e: FocusEvent<HTMLElement>) => {
+    if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node | null)) fermer()
+  }
+  useEffect(() => () => window.clearTimeout(minuteur.current), [])
+
+  // Échap ferme la fiche.
+  useEffect(() => {
+    if (!ouverte) return
+    const touche = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOuverte(null)
+    }
+    document.addEventListener('keydown', touche)
+    return () => document.removeEventListener('keydown', touche)
+  }, [ouverte])
 
   // Sur mobile, la carte glisse horizontalement : on centre l'épingle active.
   useEffect(() => {
@@ -149,8 +192,13 @@ export function CarteDuMonde({ destinations, active, type, onActiver }: Props) {
       key={d.slug}
       d={d}
       active={d.slug === active.slug}
-      visible={estVisible(d, type)}
-      onActiver={() => onActiver(d.slug)}
+      survol={{
+        onMouseEnter: () => ouvrir(d.slug),
+        onMouseLeave: fermer,
+        onFocus: () => ouvrir(d.slug),
+        onBlur: quitter,
+      }}
+      onActiver={() => ouvrir(d.slug)}
     />
   ))
 
@@ -164,16 +212,27 @@ export function CarteDuMonde({ destinations, active, type, onActiver }: Props) {
           className="pointer-events-none absolute inset-0 block size-full"
         />
         {epingles}
-        <CarteVoyage
-          d={active}
-          className="absolute z-20 w-[360px]"
-          // La fiche se place du côté où il reste de la place.
-          style={{
-            left: `${x}%`,
-            top: `${y}%`,
-            transform: `translate(${x > 55 ? 'calc(-100% - 44px)' : '44px'}, ${y < 35 ? '-18%' : y > 60 ? '-86%' : '-50%'})`,
-          }}
-        />
+        {fiche && (
+          <CarteVoyage
+            d={fiche}
+            className="absolute z-20 w-[360px]"
+            // La fiche se place du côté où il reste de la place.
+            style={(() => {
+              const p = position(fiche)
+              return {
+                left: `${p.x}%`,
+                top: `${p.y}%`,
+                transform: `translate(${p.x > 55 ? 'calc(-100% - 44px)' : '44px'}, ${p.y < 35 ? '-18%' : p.y > 60 ? '-86%' : '-50%'})`,
+              }
+            })()}
+            survol={{
+              onMouseEnter: garder,
+              onMouseLeave: fermer,
+              onFocus: garder,
+              onBlur: quitter,
+            }}
+          />
+        )}
       </div>
 
       {/* Mobile : carte à faire glisser, fiche en bas. */}
