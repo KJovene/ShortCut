@@ -1,6 +1,6 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { IconBulle, IconCoche, IconPersonne } from '@/components/ui/icons'
 import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { formatEuros, MOIS } from '@/data/catalogue'
@@ -19,12 +19,14 @@ import {
   moisDeDepart,
   prenomConseiller,
   statutClient,
+  supprimerDemande,
   titreDemande,
   VOYAGES_EN_COURS_MAX,
 } from '@/features/espace/espace'
 import { urlRendezVous } from '@/features/espace/rendezVous'
 import { useChat } from '@/features/chat/chatContext'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
+import { ApiError } from '@/lib/api'
 import { profilQuery } from '@/lib/auth'
 import { cn } from '@/lib/cn'
 
@@ -292,8 +294,9 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
 }
 
 /**
- * « Modifier le voyage » : un rendez-vous avec le conseiller pour les changements importants (Calendly), ou la
- * conversation avec l'assistant pour un ajustement léger, tant qu'aucun conseiller n'a repris la main.
+ * « Modifier le voyage » : un rendez-vous avec le conseiller pour les changements importants (Calendly), la
+ * conversation avec l'assistant pour un ajustement léger, tant qu'aucun conseiller n'a repris la main, ou la
+ * suppression du voyage, après confirmation.
  */
 function ModifierVoyage({ demande }: { demande: DemandeClient }) {
   const [ouvert, setOuvert] = useState(false)
@@ -382,6 +385,85 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
           )}
         </div>
       )}
+
+      {ouvert && <SupprimerVoyage demande={demande} />}
+    </div>
+  )
+}
+
+/** « Supprimer ce voyage », confirmé avant l'appel : la suppression est définitive. */
+function SupprimerVoyage({ demande }: { demande: DemandeClient }) {
+  const [confirmation, setConfirmation] = useState(false)
+  const annuler = useRef<HTMLButtonElement>(null)
+  const queryClient = useQueryClient()
+  const { jeton, recommencer } = useChat()
+  const suppression = useMutation({
+    mutationFn: () => supprimerDemande(demande.id),
+    onSuccess: async () => {
+      // Le chat montrait ce voyage (« Continuer avec l'assistant ») : il repart d'une discussion vierge.
+      if (jeton !== undefined && jeton === demande.conversation?.jeton) recommencer()
+      await queryClient.invalidateQueries({ queryKey: mesDemandesQuery.queryKey })
+    },
+  })
+
+  // Le focus va sur « Annuler » : une validation au clavier par mégarde ne supprime rien.
+  useEffect(() => {
+    if (confirmation) annuler.current?.focus()
+  }, [confirmation])
+
+  if (!confirmation) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirmation(true)}
+        className="self-start text-sm font-bold text-brique-texte underline-offset-2 hover:underline"
+      >
+        Supprimer ce voyage
+      </button>
+    )
+  }
+
+  return (
+    <div
+      role="alertdialog"
+      aria-labelledby={`supprimer-titre-${demande.id}`}
+      aria-describedby={`supprimer-texte-${demande.id}`}
+      className="flex flex-col gap-3 rounded-2xl border-[1.5px] border-brique bg-creme p-4"
+    >
+      <strong id={`supprimer-titre-${demande.id}`}>Supprimer « {titreDemande(demande)} » ?</strong>
+      <p id={`supprimer-texte-${demande.id}`} className="m-0 text-[13px] text-taupe">
+        Le voyage, sa conversation et ses propositions seront définitivement effacés
+        {demande.conseiller ? ', et votre conseiller n’y aura plus accès' : ''}. Cette action est
+        irréversible.
+      </p>
+      {suppression.isError && (
+        <p role="alert" className="m-0 text-[13px] font-bold text-brique-texte">
+          {suppression.error instanceof ApiError && suppression.error.status === 409
+            ? 'Ce voyage est réservé : contactez votre conseiller pour l’annuler.'
+            : 'La suppression a échoué. Réessayez dans un instant.'}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => suppression.mutate()}
+          disabled={suppression.isPending}
+          className="flex min-h-11 items-center rounded-full bg-brique-texte px-5 text-sm font-extrabold text-white hover:bg-encre disabled:opacity-50"
+        >
+          {suppression.isPending ? 'Suppression…' : 'Oui, supprimer'}
+        </button>
+        <button
+          ref={annuler}
+          type="button"
+          onClick={() => {
+            setConfirmation(false)
+            suppression.reset()
+          }}
+          className="flex min-h-11 items-center rounded-full border-[1.5px] border-encre px-5 text-sm font-bold hover:bg-sable"
+        >
+          Annuler
+        </button>
+      </div>
     </div>
   )
 }

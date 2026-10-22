@@ -82,6 +82,45 @@ final class EspaceClientTest extends WebTestCase
         self::assertNull($demandes[1]['transmiseLe']);
     }
 
+    public function testLeClientSupprimeSonVoyageAvecSaConversation(): void
+    {
+        $camille = $this->creerCompte('camille.test@shortcut.test', Role::Client);
+        $demande = $this->creerDemande($camille, 'Chypre', '-1 day');
+        $conversation = new Conversation();
+        $demande->setConversation($conversation);
+        $this->em->persist($conversation);
+        $this->em->flush();
+        $id = $demande->getId();
+        $jeton = $conversation->getJeton();
+
+        $this->client->loginUser($camille);
+        $this->client->request('DELETE', '/api/moi/demandes/'.$id);
+
+        self::assertResponseStatusCodeSame(204);
+        $this->em->clear();
+        self::assertNull($this->em->find(Demande::class, $id));
+        self::assertNull($this->em->getRepository(Conversation::class)->findOneBy(['jeton' => $jeton]));
+    }
+
+    public function testLeClientNeSupprimeNiLeVoyageDUnAutreNiUnVoyageReserve(): void
+    {
+        $camille = $this->creerCompte('camille.test@shortcut.test', Role::Client);
+        $autre = $this->creerCompte('autre.test@shortcut.test', Role::Client);
+        $sienne = $this->creerDemande($autre, 'Bali', '-1 hour');
+        $reservee = $this->creerDemande($camille, 'Chypre', '-1 day')->setStatut(StatutDemande::Acceptee);
+        $this->em->flush();
+
+        $this->client->loginUser($camille);
+        $this->client->request('DELETE', '/api/moi/demandes/'.$sienne->getId());
+        self::assertResponseStatusCodeSame(404);
+        $this->client->request('DELETE', '/api/moi/demandes/'.$reservee->getId());
+        self::assertResponseStatusCodeSame(409);
+
+        $this->em->clear();
+        self::assertNotNull($this->em->find(Demande::class, $sienne->getId()));
+        self::assertNotNull($this->em->find(Demande::class, $reservee->getId()));
+    }
+
     public function testLesBrouillonsDePropositionRestentCachesAuClient(): void
     {
         $camille = $this->creerCompte('camille.test@shortcut.test', Role::Client);

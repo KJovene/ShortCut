@@ -288,6 +288,51 @@ describe('mon espace', () => {
       expect(within(nouvelle).queryByText('Pour combien de personnes ?')).toBeNull()
     })
 
+    it('supprime le voyage après confirmation', async () => {
+      const api = simulerApi({
+        'GET /api/moi': { status: 200, body: CAMILLE },
+        'GET /api/moi/demandes': [
+          { status: 200, body: [BALI] },
+          { status: 200, body: [] },
+        ],
+        'DELETE /api/moi/demandes/240': { status: 204 },
+      })
+      afficher('/espace')
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Supprimer ce voyage' }))
+
+      // Rien ne part avant la confirmation ; « Annuler » a le focus.
+      const confirmation = screen.getByRole('alertdialog', { name: /Supprimer « Bali/ })
+      expect(within(confirmation).getByRole('button', { name: 'Annuler' })).toHaveFocus()
+      expect(api.fetch).not.toHaveBeenCalledWith('/api/moi/demandes/240', expect.anything())
+
+      await user.click(within(confirmation).getByRole('button', { name: 'Oui, supprimer' }))
+      expect(api.fetch).toHaveBeenCalledWith(
+        '/api/moi/demandes/240',
+        expect.objectContaining({ method: 'DELETE' }),
+      )
+      expect(await screen.findByRole('button', { name: /Construire mon voyage/ })).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'Modifier le voyage' })).toBeNull()
+    })
+
+    it('n’efface rien quand le client annule la suppression', async () => {
+      const api = afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Supprimer ce voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Annuler' }))
+
+      expect(screen.queryByRole('alertdialog')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Supprimer ce voyage' })).toBeVisible()
+      expect(api.fetch).not.toHaveBeenCalledWith(
+        '/api/moi/demandes/240',
+        expect.objectContaining({ method: 'DELETE' }),
+      )
+    })
+
     it('garde l’assistant pour les détails quand le dossier est simplement pris en charge', async () => {
       afficherEspace([
         {

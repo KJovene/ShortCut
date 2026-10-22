@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
+import { destinationDuLieu, destinationsQuery } from '@/features/catalogue/catalogue'
 import { Link } from '@tanstack/react-router'
-import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
 import { CRITERES, nombreRenseignes, valeurCritere } from '../demande'
@@ -17,9 +17,11 @@ export function Recapitulatif({
   const { conversation, reflexion, terminee, langue, recapitulatif, fermer } = useChat()
   const t = TEXTES[langue]
   const d = conversation.demande
-  // Photo et climat de la destination reconnue, lus dans le catalogue de l'API.
+  // Photo et climat de la destination reconnue, ou du lieu saisi (« Nairobi »), lus dans le catalogue de l'API.
   const { data: destinations = [] } = useQuery(destinationsQuery())
-  const destination = destinations.find((x) => x.slug === d.destination?.slug)
+  const destination =
+    destinations.find((x) => x.slug === d.destination?.slug) ??
+    destinationDuLieu(d.destination?.nom ?? d.zone, destinations)
   const renseignes = nombreRenseignes(d)
   const mois = d.mois ?? destination?.moisIdeal
   const temperature = mois === undefined ? null : (destination?.temperatures[mois] ?? null)
