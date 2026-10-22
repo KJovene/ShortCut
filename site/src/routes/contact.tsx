@@ -25,7 +25,7 @@ function ContactPage() {
   const langue = useLangue()
   const t = TEXTES[langue].contact
   // Introduction, horaires et adresse : contenus du site, modifiables dans le backoffice.
-  const { data: page } = useSuspenseQuery(pageQuery('contact', langue))
+  const { data: page } = useSuspenseQuery(pageQuery('contact'))
   const contenu = decouperContenu(page.contenu)
 
   return (

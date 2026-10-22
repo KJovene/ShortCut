@@ -7,7 +7,7 @@ import { useLangue } from '@/lib/langue'
 /** Gabarit des pages légales, lues depuis les contenus du site (module Contenus du backoffice). */
 export function PageLegale({ slug }: { slug: string }) {
   const langue = useLangue()
-  const { data: page } = useSuspenseQuery(pageQuery(slug, langue))
+  const { data: page } = useSuspenseQuery(pageQuery(slug))
   const contenu = decouperContenu(page.contenu)
   const aValider = contenu.intro.some(estMentionAValider)
   const intro = contenu.intro.filter((p) => !estMentionAValider(p))

@@ -43,7 +43,7 @@ function DestinationPage() {
   const { slug } = Route.useParams()
   const langue = useLangue()
   const t = TEXTES[langue].destination
-  const { data: d } = useSuspenseQuery(destinationQuery(slug, langue))
+  const { data: d } = useSuspenseQuery(destinationQuery(slug))
   const ouvrirAssistant = useOuvrirAssistant()
   const construire = () =>
     ouvrirAssistant(TEXTES[langue].accueil.brouillon(d.ville, nomDuMois(d.moisIdeal, langue)), {

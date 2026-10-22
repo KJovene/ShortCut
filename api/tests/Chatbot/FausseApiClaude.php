@@ -45,21 +45,6 @@ final class FausseApiClaude
     }
 
     /**
-     * Réponse finale dont le texte dépend de la requête reçue (une traduction suit l'ordre des textes envoyés).
-     *
-     * @param \Closure(array<string, mixed>): string $texte reçoit le corps de la requête
-     */
-    public function texteSelon(\Closure $texte): MockResponse
-    {
-        $morceaux = function () use ($texte): \Generator {
-            $requete = end($this->requetes) ?: throw new \LogicException('Aucune requête reçue.');
-            yield from self::morceaux(self::blocsTexte($texte($requete['corps'])), 'end_turn');
-        };
-
-        return new MockResponse($morceaux(), ['http_code' => 200, 'response_headers' => ['content-type' => 'text/event-stream']]);
-    }
-
-    /**
      * @return list<array<string, mixed>>
      */
     private static function blocsTexte(string $texte): array

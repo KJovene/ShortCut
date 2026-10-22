@@ -43,10 +43,10 @@ function AgencePage() {
   const langue = useLangue()
   const t = TEXTES[langue].agence
   // Présentation et engagements : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  const { data: page } = useSuspenseQuery(pageQuery('agence', langue))
+  const { data: page } = useSuspenseQuery(pageQuery('agence'))
   const contenu = decouperContenu(page.contenu)
   const engagements = trouverSection(contenu, 'Nos engagements', 'Our commitments')
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
 
   return (
     <>
