@@ -70,7 +70,7 @@ function TypesPage() {
           return (
             <article
               key={t.valeur}
-              className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_8px_24px_rgba(43,29,20,0.08)] md:flex-row md:even:flex-row-reverse"
+              className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_8px_24px_rgba(22,35,63,0.08)] md:flex-row md:even:flex-row-reverse"
             >
               {photo && (
                 <img
@@ -80,7 +80,7 @@ function TypesPage() {
                 />
               )}
               <div className="flex flex-1 flex-col justify-center gap-3 p-6 sm:p-10">
-                <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
+                <span className="text-[13px] font-extrabold text-rouille">
                   {String(i + 1).padStart(2, '0')}
                   {nb !== undefined && ` · ${nb} destination${nb > 1 ? 's' : ''}`}
                 </span>

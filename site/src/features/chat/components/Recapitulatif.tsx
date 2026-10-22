@@ -24,7 +24,7 @@ export function Recapitulatif({
   const temperature = mois === undefined ? null : (destination?.temperatures[mois] ?? null)
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(43,29,20,0.12)]">
+    <div className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(22,35,63,0.12)]">
       <div className="relative h-[150px] shrink-0 bg-sable">
         {destination ? (
           <>

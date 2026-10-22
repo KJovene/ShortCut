@@ -22,7 +22,7 @@ export function MenuCompte() {
         </Link>
         <Link
           to="/inscription"
-          className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-brun"
+          className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-rouille"
         >
           Inscription
         </Link>
@@ -93,7 +93,7 @@ function MenuConnecte() {
         <nav
           id="menu-compte"
           aria-label="Compte"
-          className="absolute right-0 z-40 mt-2 flex w-60 flex-col gap-0.5 rounded-2xl border border-lin bg-white p-2 shadow-[0_12px_36px_rgba(43,29,20,0.12)]"
+          className="absolute right-0 z-40 mt-2 flex w-60 flex-col gap-0.5 rounded-2xl border border-lin bg-white p-2 shadow-[0_12px_36px_rgba(22,35,63,0.12)]"
         >
           <p className="px-3 pt-1 pb-2 text-xs text-taupe">
             Connecté en tant que <strong className="text-encre">{profil.email}</strong>

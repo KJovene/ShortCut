@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, redirect } from '@tanstack/react-router'
 import { useState } from 'react'
 import { IconBulle, IconCoche, IconPersonne } from '@/components/ui/icons'
+import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { formatEuros, MOIS } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import {
@@ -70,14 +71,21 @@ function PageEspace() {
     <div className="mx-auto flex max-w-[1376px] flex-col gap-8 px-4 pt-9 pb-16 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-extrabold tracking-[1.5px] text-rouille uppercase">
+          <span className="text-[13px] font-extrabold text-rouille">
             Mon espace
           </span>
           <h1 className="m-0 font-display text-[34px] leading-[1.05] font-semibold tracking-[-1px] sm:text-[46px]">
             Bonjour {prenom},{' '}
-            <em className="font-normal text-terre">
-              {suivi && estEnCours(suivi) ? 'votre voyage avance' : 'où partons-nous ?'}
-            </em>
+            {suivi && estEnCours(suivi) ? (
+              <>
+                votre <SautDuO texte="voyage" /> avance
+              </>
+            ) : (
+              <>
+                où <SautDuO texte="partons" />
+                -nous ?
+              </>
+            )}
           </h1>
         </div>
         <div className="flex flex-col items-end gap-1.5">
@@ -140,7 +148,7 @@ function AucunVoyage() {
   const ouvrirAssistant = useOuvrirAssistant()
 
   return (
-    <section className="flex flex-col items-start gap-4 rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(43,29,20,0.10)]">
+    <section className="flex flex-col items-start gap-4 rounded-[28px] bg-white p-8 shadow-[0_18px_50px_rgba(22,35,63,0.10)]">
       <h2 className="m-0 font-display text-[28px] font-semibold">Pas encore de voyage en cours</h2>
       <p className="m-0 max-w-xl text-taupe">
         Décrivez vos envies à notre assistant : il vous prépare une proposition complète en quelques
@@ -149,7 +157,7 @@ function AucunVoyage() {
       <button
         type="button"
         onClick={() => ouvrirAssistant()}
-        className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-brun"
+        className="flex min-h-11 items-center rounded-full bg-encre px-5 text-sm font-bold text-creme hover:bg-rouille"
       >
         Construire mon voyage
       </button>
@@ -169,7 +177,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
   return (
     <section
       aria-labelledby="titre-voyage"
-      className="flex flex-wrap overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(43,29,20,0.10)]"
+      className="flex flex-wrap overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_rgba(22,35,63,0.10)]"
     >
       <div className="relative min-h-[240px] flex-[1_1_380px] bg-sable">
         {destination?.photo && (
@@ -212,7 +220,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
           <div className="flex flex-col gap-1.5 rounded-[18px] bg-creme px-[18px] py-4">
             {demande.proposition ? (
               <>
-                <span className="text-xs font-extrabold tracking-[1px] text-rouille uppercase">
+                <span className="text-xs font-extrabold text-rouille">
                   Proposition actuelle · v{demande.proposition.version}
                 </span>
                 <span className="font-display text-[30px] font-semibold">
@@ -228,14 +236,14 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                 <Link
                   to="/proposition/$id"
                   params={{ id: demande.proposition.jeton }}
-                  className="mt-1.5 flex min-h-10 items-center self-start rounded-full bg-encre px-4 text-[13px] font-extrabold text-creme hover:bg-brun"
+                  className="mt-1.5 flex min-h-10 items-center self-start rounded-full bg-encre px-4 text-[13px] font-extrabold text-creme hover:bg-rouille"
                 >
                   Voir ma proposition
                 </Link>
               </>
             ) : (
               <>
-                <span className="text-xs font-extrabold tracking-[1px] text-rouille uppercase">
+                <span className="text-xs font-extrabold text-rouille">
                   Proposition
                 </span>
                 <span className="text-[15px] font-bold">En préparation</span>
@@ -247,7 +255,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
           </div>
 
           <div className="flex flex-col gap-2 rounded-[18px] bg-creme px-[18px] py-4">
-            <span className="text-xs font-extrabold tracking-[1px] text-rouille uppercase">
+            <span className="text-xs font-extrabold text-rouille">
               Votre conseiller
             </span>
             {demande.conseiller ? (
@@ -454,7 +462,7 @@ function Conversations({ demandes }: { demandes: DemandeClient[] }) {
           id="titre-conversations"
           className="m-0 font-display text-[30px] font-semibold sm:text-[34px]"
         >
-          Mes conversations
+          Mes <SautDuO texte="conversations" />
         </h2>
         <span className="text-sm text-taupe">
           {nombre} conversation{nombre > 1 ? 's' : ''} avec l’assistant
@@ -544,7 +552,7 @@ function CarteConversation({
 const STYLE_MESSAGE = {
   client: 'self-end rounded-[18px_6px_18px_18px] bg-encre text-creme',
   assistant:
-    'self-start rounded-[6px_18px_18px_18px] bg-white text-encre shadow-[0_2px_10px_rgba(43,29,20,0.07)]',
+    'self-start rounded-[6px_18px_18px_18px] bg-white text-encre shadow-[0_2px_10px_rgba(22,35,63,0.07)]',
   info: 'self-center rounded-full bg-sable text-taupe',
 } as const
 
@@ -567,13 +575,13 @@ function Fil({ demande }: { demande: DemandeClient }) {
   return (
     <article
       aria-label="Conversation sélectionnée"
-      className="flex min-w-0 flex-[999_1_560px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0_12px_36px_rgba(43,29,20,0.08)]"
+      className="flex min-w-0 flex-[999_1_560px] flex-col overflow-hidden rounded-3xl bg-white shadow-[0_12px_36px_rgba(22,35,63,0.08)]"
     >
       <div className="flex flex-col gap-0.5 border-b border-sable px-[22px] py-4">
         <strong className="font-display text-[22px] font-semibold">{titreDemande(demande)}</strong>
         <span className="text-xs text-taupe">{meta}</span>
       </div>
-      <div className="flex max-h-[420px] flex-1 flex-col gap-3 overflow-y-auto bg-[#FFFCF8] px-[22px] py-[18px] text-sm leading-normal">
+      <div className="flex max-h-[420px] flex-1 flex-col gap-3 overflow-y-auto bg-[#FFFDF8] px-[22px] py-[18px] text-sm leading-normal">
         {messages.length === 0 && (
           <p className="m-0 self-center text-taupe">Aucun message dans cette conversation.</p>
         )}

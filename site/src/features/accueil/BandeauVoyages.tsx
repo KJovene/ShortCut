@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { IconChevronDroite, IconChevronGauche } from '@/components/ui/icons'
 import { formatEuros, MOIS } from '@/data/catalogue'
 import { libelleTypePrincipal, type DestinationPublique } from '@/features/catalogue/catalogue'
+import { SautDuO } from '@/components/ui/TitreMisEnValeur'
 import { cn } from '@/lib/cn'
 
 interface Props {
@@ -22,14 +23,14 @@ export function BandeauVoyages({ destinations, active, onActiver }: Props) {
       <div className="mx-auto flex max-w-[1376px] flex-col gap-4 py-8 pl-4 sm:gap-[22px] sm:px-8 sm:pt-12 sm:pb-[52px]">
         <div className="flex flex-wrap items-end justify-between gap-4 pr-4 sm:pr-0">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-extrabold tracking-[1.5px] text-ocre uppercase">
+            <span className="text-[13px] font-extrabold text-ocre">
               Le bandeau des envies
             </span>
             <h2
               id="bandeau-titre"
               className="m-0 font-display text-[28px] font-semibold tracking-[-1px] sm:text-[40px]"
             >
-              Destinations à la une
+              <SautDuO texte="Destinations" /> à la une
             </h2>
           </div>
           <div className="hidden gap-2 sm:flex">
@@ -37,7 +38,7 @@ export function BandeauVoyages({ destinations, active, onActiver }: Props) {
               type="button"
               aria-label="Voyages précédents"
               onClick={() => defiler(-1)}
-              className="flex size-12 items-center justify-center rounded-full border-[1.5px] border-[#8A6A55] hover:bg-white/10"
+              className="flex size-12 items-center justify-center rounded-full border-[1.5px] border-[#6B7385] hover:bg-white/10"
             >
               <IconChevronGauche />
             </button>
