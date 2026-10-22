@@ -28,6 +28,15 @@ final class Pages
                 'ordreMenu' => null,
             ],
             [
+                'slug' => 'destinations',
+                'titre' => 'Où partir, *et quand* ?',
+                'seoTitre' => 'Destinations · Où partir, et quand ?',
+                'seoDescription' => 'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
+                'contenu' => '<p>Choisissez un mois et une température : nous vous montrons les destinations dont le climat convient, d\'après les relevés saisis par nos conseillers.</p>',
+                'photos' => [],
+                'ordreMenu' => 1,
+            ],
+            [
                 'slug' => 'types-de-voyages',
                 'titre' => 'Tous les voyages, *sur mesure*',
                 'seoTitre' => 'Séjours, circuits, groupes, voyages de noces et entreprise',

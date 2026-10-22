@@ -69,7 +69,29 @@ final class PageDuSiteTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
-    private function creerPage(string $slug, bool $publiee): void
+    public function testLeMenuDonneLesPagesPublieesDansLOrdreDuBackoffice(): void
+    {
+        $this->creerPage('page-c', publiee: true, ordreMenu: 2);
+        $this->creerPage('page-a', publiee: true, ordreMenu: 1);
+        $this->creerPage('page-hors-menu', publiee: true);
+        $this->creerPage('page-masquee', publiee: false, ordreMenu: 1);
+
+        $this->client->request('GET', '/api/pages', server: ['HTTP_ACCEPT' => 'application/json']);
+
+        self::assertResponseIsSuccessful();
+        $pages = array_values(array_filter(
+            json_decode((string) $this->client->getResponse()->getContent(), true),
+            static fn (array $page): bool => str_starts_with($page['slug'], 'page-'),
+        ));
+        self::assertSame([
+            ['slug' => 'page-a', 'ordreMenu' => 1],
+            ['slug' => 'page-c', 'ordreMenu' => 2],
+            // API Platform omet les champs vides : une page hors du menu arrive sans position.
+            ['slug' => 'page-hors-menu'],
+        ], $pages);
+    }
+
+    private function creerPage(string $slug, bool $publiee, ?int $ordreMenu = null): void
     {
         $page = (new PageDuSite())
             ->setSlug($slug)
@@ -78,7 +100,8 @@ final class PageDuSiteTest extends WebTestCase
             ->setPhotos(['agence.jpg'])
             ->setSeoTitre('Titre pour les moteurs')
             ->setSeoDescription('Description pour les moteurs')
-            ->setPubliee($publiee);
+            ->setPubliee($publiee)
+            ->setOrdreMenu($ordreMenu);
         $this->em->persist($page);
         $this->em->flush();
     }

@@ -4,9 +4,11 @@ import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { z } from 'zod'
 import { CarteDestination } from '@/components/ui/CarteDestination'
 import { EnTetePage } from '@/components/ui/EnTetePage'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
+import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
 
 const TYPES = TYPES_DE_VOYAGE.map((t) => t.valeur) as [TypeDeVoyage, ...TypeDeVoyage[]]
@@ -17,18 +19,27 @@ const filtresSchema = z.object({
   type: z.enum(TYPES).optional().catch(undefined),
 })
 
+/** Textes de la page si son contenu du backoffice manque (masqué ou API indisponible) : le catalogue reste affiché. */
+const SECOURS = {
+  titre: 'Où partir, *et quand* ?',
+  intro:
+    "Choisissez un mois et une température : nous vous montrons les destinations dont le climat convient, d'après les relevés saisis par nos conseillers.",
+  seoTitre: 'Destinations · Où partir, et quand ?',
+  seoDescription:
+    'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
+}
+
 export const Route = createFileRoute('/destinations/')({
   validateSearch: filtresSchema,
-  loader: ({ context }) => context.queryClient.ensureQueryData(destinationsQuery()),
-  head: () => ({
-    meta: [
-      { title: 'Destinations · Où partir, et quand ?' },
-      {
-        name: 'description',
-        content:
-          'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
-      },
-    ],
+  loader: async ({ context }) => {
+    const [, page] = await Promise.all([
+      context.queryClient.ensureQueryData(destinationsQuery()),
+      context.queryClient.ensureQueryData(pageQuery('destinations')).catch(() => null),
+    ])
+    return page
+  },
+  head: ({ loaderData }) => ({
+    meta: metaPage(loaderData, { titre: SECOURS.seoTitre, description: SECOURS.seoDescription }),
   }),
   pendingComponent: PageEnChargement,
   errorComponent: PageIndisponible,
@@ -45,6 +56,9 @@ function DestinationsPage() {
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
   const { data: destinations } = useSuspenseQuery(destinationsQuery())
+  // Titre, introduction et photo : contenus du site, modifiables dans le backoffice.
+  const page = Route.useLoaderData()
+  const intro = page ? decouperContenu(page.contenu).intro : [SECOURS.intro]
 
   const resultats = destinations.filter(
     (d) =>
@@ -60,16 +74,14 @@ function DestinationsPage() {
     <>
       <EnTetePage
         surtitre="Destinations"
-        titre={
-          <>
-            Où partir, <em className="font-normal text-terre">et quand</em> ?
-          </>
-        }
+        titre={<TitreMisEnValeur texte={page?.titre ?? SECOURS.titre} />}
+        photo={page?.photos[0] ? { src: page.photos[0], alt: 'Destinations' } : undefined}
       >
-        <p className="m-0 max-w-[640px]">
-          Choisissez un mois et une température : nous vous montrons les destinations dont le climat
-          convient, d'après les relevés saisis par nos conseillers.
-        </p>
+        {intro.map((paragraphe) => (
+          <p key={paragraphe} className="m-0 max-w-[640px]">
+            {paragraphe}
+          </p>
+        ))}
       </EnTetePage>
 
       <section aria-label="Filtres" className="mx-auto max-w-[1376px] px-4 sm:px-8">

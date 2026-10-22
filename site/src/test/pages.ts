@@ -15,6 +15,14 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
     seoTitre: 'Agence de voyage sur mesure',
     seoDescription: 'Décrivez vos envies à notre assistant.',
   },
+  destinations: {
+    slug: 'destinations',
+    titre: 'Où partir, *et quand* ?',
+    contenu: '<p>Choisissez un mois et une température.</p>',
+    photos: [],
+    seoTitre: 'Destinations · Où partir, et quand ?',
+    seoDescription: 'Toutes nos destinations, filtrables par mois et température.',
+  },
   'types-de-voyages': {
     slug: 'types-de-voyages',
     titre: 'Tous les voyages, *sur mesure*',
@@ -85,3 +93,15 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
     seoDescription: 'Données collectées par l’assistant et le site, finalités et vos droits.',
   },
 }
+
+/** Positions du menu des données de démo (GET /api/pages). */
+export const MENU_DE_DEMO = [
+  { slug: 'accueil' },
+  { slug: 'cgv' },
+  { slug: 'confidentialite' },
+  { slug: 'mentions-legales' },
+  { slug: 'destinations', ordreMenu: 1 },
+  { slug: 'types-de-voyages', ordreMenu: 2 },
+  { slug: 'agence', ordreMenu: 3 },
+  { slug: 'contact', ordreMenu: 4 },
+]

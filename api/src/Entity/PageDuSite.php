@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Link;
 use App\ApiPlatform\PublieeExtension;
 use App\Repository\PageDuSiteRepository;
@@ -17,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
  * Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
- * répond 404 comme une page inconnue.
+ * répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
  */
 #[ApiResource(
     operations: [
@@ -25,6 +26,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             uriTemplate: '/pages/{slug}',
             uriVariables: ['slug' => new Link(fromClass: self::class, identifiers: ['slug'])],
             requirements: ['slug' => '[a-z0-9-]+'],
+        ),
+        // Menu du site : chaque page publiée avec sa position (« Ordre dans le menu » du backoffice).
+        new GetCollection(
+            uriTemplate: '/pages',
+            paginationEnabled: false,
+            order: ['ordreMenu' => 'ASC', 'titre' => 'ASC'],
+            normalizationContext: ['groups' => ['menu:read']],
         ),
     ],
     normalizationContext: ['groups' => ['public:read']],
@@ -53,7 +61,7 @@ class PageDuSite
 
     #[ORM\Column(type: Types::STRING, length: 150, unique: true)]
     #[Assert\NotBlank]
-    #[Groups(['public:read'])]
+    #[Groups(['public:read', 'menu:read'])]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -78,6 +86,7 @@ class PageDuSite
 
     /** Vide : la page n'apparaît pas dans le menu. */
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    #[Groups(['menu:read'])]
     private ?int $ordreMenu = null;
 
     public function getId(): ?int
