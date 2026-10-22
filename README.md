@@ -59,7 +59,7 @@ make dev    # suit les logs du site (Ctrl+C n'arrête pas le conteneur)
 
 | Adresse | Service |
 | --- | --- |
-| http://localhost:5173 | Site React. En développement, les devtools TanStack Query et Router s'affichent en bas de l'écran. |
+| http://localhost:5173 | Site React. |
 | http://localhost:8000/api | Documentation de l'API (API Platform) |
 | `localhost:5433` | PostgreSQL (`shortcut` / `shortcut`, base `shortcut`), pour un client SQL. `make psql` ouvre une console. |
 

@@ -1,12 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import {
   createRootRouteWithContext,
   HeadContent,
   Outlet,
   useLocation,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { NotFound } from '@/components/NotFound'
@@ -55,12 +53,6 @@ function RootLayout() {
       </div>
       <ChatLanceur />
       <ChatFenetre />
-      {import.meta.env.DEV && (
-        <>
-          <ReactQueryDevtools buttonPosition="bottom-left" />
-          <TanStackRouterDevtools position="top-right" />
-        </>
-      )}
     </ChatProvider>
   )
 }
