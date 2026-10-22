@@ -30,6 +30,7 @@ Détour veut rendre au voyage sa part d'imprévu, sans les mauvaises surprises. 
   - « Kyoto au printemps : les cerisiers sont prévenus. »
   - « Un safari pour les dix ans de votre fille : les girafes n'ont qu'à bien se tenir. »
   - « New York à deux : prévoyez de bonnes chaussures, la ville ne se visite pas assise. »
+  - " 
 
   Ces exemples donnent le ton : trouve tes propres mots, ne les recopie pas.
 

@@ -6,11 +6,14 @@ use App\Chatbot\Outil\EnregistrerExigences;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
+use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeProposition;
 use App\Repository\DemandeRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
@@ -25,6 +28,28 @@ final class EspaceClientController extends AbstractController
     public function demandes(#[CurrentUser] Utilisateur $utilisateur, DemandeRepository $demandes): JsonResponse
     {
         return $this->json(array_map($this->demande(...), $demandes->findHistoriqueDuClient($utilisateur)));
+    }
+
+    /**
+     * « Supprimer le voyage » : la demande disparaît, avec sa conversation et ses propositions, et libère une place
+     * parmi les voyages en cours. Un voyage accepté est réservé : il ne se supprime plus (409).
+     */
+    #[Route('/demandes/{id}', name: 'api_moi_demande_suppression', methods: ['DELETE'], requirements: ['id' => '\d+'])]
+    public function supprimer(int $id, #[CurrentUser] Utilisateur $utilisateur, DemandeRepository $demandes, EntityManagerInterface $em): Response
+    {
+        $demande = $demandes->find($id);
+        // La demande d'un autre client répond comme une demande inexistante.
+        if (null === $demande || $demande->getClient() !== $utilisateur) {
+            throw $this->createNotFoundException('Demande introuvable.');
+        }
+        if (StatutDemande::Acceptee === $demande->getStatut()) {
+            return $this->json(['erreur' => 'Ce voyage est réservé : contactez votre conseiller pour l\'annuler.'], Response::HTTP_CONFLICT);
+        }
+
+        $em->remove($demande);
+        $em->flush();
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 
     /** @return array<string, mixed> */
