@@ -9,6 +9,7 @@ export const PAGES_DE_DEMO: Record<string, PageDuSite> = {
   accueil: {
     slug: 'accueil',
     titre: 'Où irez-vous *chercher le soleil* ?',
+    titreFroid: 'Où irez-vous *chercher la fraîcheur* ?',
     contenu: '<p>Dites-nous où vous rêvez d’aller.</p>',
     photos: ['/uploads/pages/accueil.jpg'],
     seoTitre: 'Agence de voyage sur mesure',

@@ -4,6 +4,7 @@ import type { PropositionEnLigne } from './enLigne'
 
 const base: PropositionEnLigne = {
   jeton: 'a'.repeat(64),
+  langue: 'fr',
   versionDemandee: null,
   version: 1,
   etat: 'estimee',

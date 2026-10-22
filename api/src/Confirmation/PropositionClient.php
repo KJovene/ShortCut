@@ -7,10 +7,12 @@ use App\Entity\Destination;
 use App\Entity\LigneDePrestation;
 use App\Entity\Prestation;
 use App\Entity\Proposition;
+use App\Enum\Langue;
 use App\Enum\StatutDemande;
 use App\Enum\StatutProposition;
 use App\Enum\TypeLigne;
 use App\Enum\TypeProposition;
+use App\Texte\Anglais;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Target;
@@ -28,6 +30,7 @@ use Symfony\Component\Workflow\WorkflowInterface;
 final class PropositionClient
 {
     public const MENTION_CONFIRMEE = 'Proposition confirmée par votre conseiller : prix vérifiés auprès des prestataires.';
+    public const MENTION_CONFIRMEE_EN = 'Proposal confirmed by your advisor: prices checked with the providers.';
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -76,9 +79,10 @@ final class PropositionClient
     {
         $demande = self::demande($proposition);
         if (StatutProposition::Envoyee !== $proposition->getStatut() || !$this->workflowDemande->can($demande, 'demander_confirmation')) {
+            $langue = $demande->getLangue();
             $raison = StatutDemande::AConfirmer === $demande->getStatut()
-                ? 'Votre demande de confirmation est déjà transmise à votre conseiller.'
-                : 'Cette proposition ne peut plus être soumise à confirmation.';
+                ? $langue->choisir('Votre demande de confirmation est déjà transmise à votre conseiller.', 'Your confirmation request has already been sent to your advisor.')
+                : $langue->choisir('Cette proposition ne peut plus être soumise à confirmation.', 'This proposal can no longer be submitted for confirmation.');
 
             throw new ConfirmationImpossible($raison);
         }
@@ -93,10 +97,11 @@ final class PropositionClient
     {
         $demande = self::demande($proposition);
         if (!$this->workflowProposition->can($proposition, 'accepter') || !$this->workflowDemande->can($demande, 'accepter')) {
+            $langue = $demande->getLangue();
             $raison = match ($proposition->getStatut()) {
-                StatutProposition::Acceptee => 'Vous avez déjà accepté cette proposition.',
-                StatutProposition::Envoyee => 'Seule une proposition confirmée par votre conseiller peut être acceptée.',
-                default => 'Cette proposition ne peut plus être acceptée.',
+                StatutProposition::Acceptee => $langue->choisir('Vous avez déjà accepté cette proposition.', 'You have already accepted this proposal.'),
+                StatutProposition::Envoyee => $langue->choisir('Seule une proposition confirmée par votre conseiller peut être acceptée.', 'Only a proposal confirmed by your advisor can be accepted.'),
+                default => $langue->choisir('Cette proposition ne peut plus être acceptée.', 'This proposal can no longer be accepted.'),
             };
 
             throw new ConfirmationImpossible($raison);
@@ -117,15 +122,22 @@ final class PropositionClient
     {
         $demande = self::demande($proposition);
         $confirmee = TypeProposition::Confirmee === $proposition->getType();
+        $langue = $demande->getLangue();
+        // Hypothèses et libellés sont enregistrés en français par le chiffrage : traduits pour le client (US15).
+        $traduire = Langue::Anglais === $langue ? Anglais::traduire(...) : static fn (string $texte): string => $texte;
 
         return [
             'jeton' => $proposition->getJetonPublic(),
+            // Langue de la page et du PDF : celle dans laquelle le client a dialogué avec le chatbot.
+            'langue' => $langue->value,
             // Le lien ouvert était celui d'une version remplacée : le site peut basculer sur ce jeton.
             'versionDemandee' => null !== $demandee && $demandee !== $proposition ? $demandee->getVersion() : null,
             'version' => $proposition->getVersion(),
             'etat' => $confirmee ? 'confirmee' : 'estimee',
             'statut' => $proposition->getStatut()->value,
-            'mention' => $confirmee ? self::MENTION_CONFIRMEE : Proposition::MENTION,
+            'mention' => $confirmee
+                ? $langue->choisir(self::MENTION_CONFIRMEE, self::MENTION_CONFIRMEE_EN)
+                : $langue->choisir(Proposition::MENTION, Proposition::MENTION_EN),
             'creeLe' => $proposition->getCreeLe()->format(\DATE_ATOM),
             'confirmeeLe' => $proposition->getConfirmeeLe()?->format(\DATE_ATOM),
             'niveauBudget' => $proposition->getNiveauBudget()->value,
@@ -136,13 +148,16 @@ final class PropositionClient
             'destination' => null === $proposition->getDestination() ? null : self::destination($proposition->getDestination()),
             'pourquoi' => $proposition->getPourquoi(),
             'argumentaire' => $proposition->getArgumentaire(),
-            'hypotheses' => $proposition->getHypotheses(),
+            'hypotheses' => array_map($traduire, $proposition->getHypotheses()),
             'programme' => $proposition->getProgramme(),
             // Logements et activités retenus, avec leurs points forts et les niveaux qui les retiennent (#207), et leur
             // photo du catalogue.
             'prestations' => $this->avecPhotos($proposition->getPrestations()),
             // Les postes du niveau détaillé, sans leur prix d'achat.
-            'lignes' => array_map(self::ligne(...), ConfirmationService::lignesTriees($proposition)),
+            'lignes' => array_map(
+                static fn (LigneDePrestation $ligne): array => self::ligne($ligne, $traduire),
+                ConfirmationService::lignesTriees($proposition),
+            ),
             'demande' => [
                 'statut' => $demande->getStatut()->value,
                 'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
@@ -169,13 +184,13 @@ final class PropositionClient
     }
 
     /** @return array<string, mixed> un poste, sans son prix d'achat */
-    private static function ligne(LigneDePrestation $ligne): array
+    private static function ligne(LigneDePrestation $ligne, \Closure $traduire): array
     {
         $source = $ligne->getPrestation();
 
         return [
             'type' => $ligne->getType()?->value,
-            'libelle' => $ligne->getLibelle(),
+            'libelle' => $traduire((string) $ligne->getLibelle()),
             'dateDebut' => $ligne->getDateDebut()?->format('Y-m-d'),
             'dateFin' => $ligne->getDateFin()?->format('Y-m-d'),
             'quantite' => $ligne->getQuantite(),

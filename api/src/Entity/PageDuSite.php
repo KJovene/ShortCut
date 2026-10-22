@@ -46,6 +46,11 @@ class PageDuSite
     #[Groups(['public:read'])]
     private ?string $titre = null;
 
+    /** Accueil seulement : titre du thème « voyages froids » ; le titre ci-dessus est celui des voyages chauds. */
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
+    #[Groups(['public:read'])]
+    private ?string $titreFroid = null;
+
     #[ORM\Column(type: Types::STRING, length: 150, unique: true)]
     #[Assert\NotBlank]
     #[Groups(['public:read'])]
@@ -88,6 +93,18 @@ class PageDuSite
     public function setTitre(string $titre): static
     {
         $this->titre = $titre;
+
+        return $this;
+    }
+
+    public function getTitreFroid(): ?string
+    {
+        return $this->titreFroid;
+    }
+
+    public function setTitreFroid(?string $titreFroid): static
+    {
+        $this->titreFroid = $titreFroid;
 
         return $this;
     }

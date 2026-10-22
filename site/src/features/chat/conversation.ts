@@ -18,6 +18,7 @@ export const nouvelId = () => `m${Date.now().toString(36)}${(suivant++).toString
 export const MESSAGE_ACCUEIL: Message = {
   id: 'accueil',
   auteur: 'assistant',
+  // Un client étranger sait dès l'accueil qu'il peut écrire en anglais (US15).
   texte:
-    'Bonjour, je suis l’assistant de Détour, une intelligence artificielle. Racontez-moi le voyage dont vous rêvez : la plage, les montagnes ou ce petit pas de côté auquel vous n’avez pas encore pensé.',
+    'Bonjour, je suis l’assistant de Détour, une intelligence artificielle. Racontez-moi le voyage dont vous rêvez : la plage, les montagnes ou ce petit pas de côté auquel vous n’avez pas encore pensé. (Hello! You can also write to me in English.)',
 }

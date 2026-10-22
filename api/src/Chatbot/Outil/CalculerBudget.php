@@ -18,6 +18,7 @@ use App\Entity\Demande;
 use App\Entity\Destination;
 use App\Entity\Prestation;
 use App\Entity\RegleDePrix;
+use App\Enum\Langue;
 use App\Enum\TypePrestataire;
 use App\Enum\TypePrestation;
 use App\Repository\DestinationRepository;
@@ -36,6 +37,7 @@ final class CalculerBudget implements Outil
 {
     /** Mention qui suit chaque présentation des totaux au client : l'estimation est datée (charte Détour). */
     public const AVERTISSEMENT = 'Prix estimés le %s à %s d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.';
+    public const AVERTISSEMENT_EN = 'Prices estimated on %s at %s from our rates: your advisor checks every price and every place before confirming them.';
 
     public function __construct(
         private readonly BudgetCalculator $calculateur,
@@ -54,12 +56,17 @@ final class CalculerBudget implements Outil
         return 'calculer_budget';
     }
 
-    /** « Prix estimés le jeudi 22 octobre 2026 à 9 h 40 d'après nos tarifs : … », à l'heure de Paris. */
-    public function avertissement(): string
+    /**
+     * « Prix estimés le jeudi 22 octobre 2026 à 9 h 40 d'après nos tarifs : … », à l'heure de Paris ; en anglais,
+     * « Prices estimated on Thursday 22 October 2026 at 09:40 … ».
+     */
+    public function avertissement(Langue $langue = Langue::Francais): string
     {
         $maintenant = $this->horloge->now()->setTimezone(new \DateTimeZone('Europe/Paris'));
 
-        return \sprintf(self::AVERTISSEMENT, Periode::jour($maintenant), Periode::heure($maintenant));
+        return Langue::Anglais === $langue
+            ? \sprintf(self::AVERTISSEMENT_EN, $maintenant->format('l j F Y'), $maintenant->format('H:i'))
+            : \sprintf(self::AVERTISSEMENT, Periode::jour($maintenant), Periode::heure($maintenant));
     }
 
     public function definition(): array

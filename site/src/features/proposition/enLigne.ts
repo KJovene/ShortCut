@@ -2,6 +2,8 @@ import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { TYPES_DE_VOYAGE } from '@/data/catalogue'
 import { ApiError } from '@/lib/api'
+import type { Langue } from '@/lib/langue'
+import { TEXTES } from './textes'
 
 /**
  * Proposition envoyée par le conseiller, lue par son lien unique : GET /api/propositions/{jeton}
@@ -26,6 +28,8 @@ const Budget = z.object({ totalCentimes: z.number(), parPersonneCentimes: z.numb
 
 export const PropositionEnLigne = z.object({
   jeton: z.string(),
+  /** Langue dans laquelle le client a dialogué avec le chatbot (US15) : celle de la page. */
+  langue: z.enum(['fr', 'en']).default('fr'),
   /** Version du lien ouvert, quand elle a été remplacée par celle-ci. */
   versionDemandee: z.number().nullable(),
   version: z.number(),
@@ -163,17 +167,17 @@ export async function agirSurProposition(
 }
 
 /** Nombre de voyageurs, pour l'en-tête : « 2 adultes, 1 enfant ». */
-export function voyageurs({ adultes, enfants }: PropositionEnLigne['demande']) {
-  return [
-    `${adultes} adulte${adultes > 1 ? 's' : ''}`,
-    enfants > 0 ? `${enfants} enfant${enfants > 1 ? 's' : ''}` : null,
-  ]
-    .filter(Boolean)
-    .join(', ')
+export function voyageurs(
+  { adultes, enfants }: PropositionEnLigne['demande'],
+  langue: Langue = 'fr',
+) {
+  const t = TEXTES[langue]
+  return [t.adulte(adultes), enfants > 0 ? t.enfant(enfants) : null].filter(Boolean).join(', ')
 }
 
 /** « Santorin, 8 jours » : la destination retenue et la durée du programme. */
 export function titreProposition(p: PropositionEnLigne) {
-  const lieu = p.destination?.ville ?? p.demande.lieuOuZone ?? 'Votre voyage'
-  return p.programme.length > 0 ? `${lieu}, ${p.programme.length} jours` : lieu
+  const t = TEXTES[p.langue]
+  const lieu = p.destination?.ville ?? p.demande.lieuOuZone ?? t.votreVoyage
+  return p.programme.length > 0 ? `${lieu}, ${p.programme.length} ${t.jours}` : lieu
 }

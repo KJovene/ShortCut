@@ -229,9 +229,14 @@ final class CatalogueApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
         self::assertArrayHasKey('capacite', $this->violations());
 
-        $this->envoyer('POST', '/api/destinations', ['pays' => 'Italie', 'ville' => 'Naples', 'slug' => 'Naples !']);
+        $this->envoyer('POST', '/api/destinations', ['pays' => 'Italie', 'ville' => 'Naples', 'slug' => 'Naples !', 'latitude' => 40.8, 'longitude' => 14.3]);
         self::assertResponseStatusCodeSame(422);
         self::assertSame(['slug'], array_keys($this->violations()));
+
+        // Sans position, pas d'épingle sur la carte de l'accueil.
+        $this->envoyer('POST', '/api/destinations', ['pays' => 'Italie', 'ville' => 'Naples', 'slug' => 'naples']);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['latitude', 'longitude'], array_keys($this->violations()));
 
         $activite = $this->em->getRepository(Prestation::class)->findOneBy(['type' => TypePrestation::Activite]);
         self::assertNotNull($activite);

@@ -12,7 +12,7 @@ final class Pages
     private const A_VALIDER = '<p><strong>Modèle à valider par l\'agence</strong> : ce texte doit être relu et complété avant la mise en ligne.</p>';
 
     /**
-     * @return list<array{slug: string, titre: string, seoTitre: string, seoDescription: string, contenu: string, photos: list<string>, ordreMenu: ?int}>
+     * @return list<array{slug: string, titre: string, titreFroid?: string, seoTitre: string, seoDescription: string, contenu: string, photos: list<string>, ordreMenu: ?int}>
      */
     public static function toutes(): array
     {
@@ -20,6 +20,7 @@ final class Pages
             [
                 'slug' => 'accueil',
                 'titre' => 'Où irez-vous *chercher le soleil* ?',
+                'titreFroid' => 'Où irez-vous *chercher la fraîcheur* ?',
                 'seoTitre' => 'Agence de voyage sur mesure',
                 'seoDescription' => 'Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu\'un conseiller confirme ensuite.',
                 'contenu' => '<p>Dites-nous où vous rêvez d\'aller, quand, avec qui et pour quel budget. Notre assistant vous prépare une première proposition complète : destination, programme jour par jour, hébergements, activités et budget en trois niveaux.</p><p>Un conseiller de l\'agence vérifie ensuite les prix et les disponibilités, puis vous confirme votre voyage.</p>',

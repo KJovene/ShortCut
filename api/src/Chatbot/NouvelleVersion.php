@@ -10,10 +10,12 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Enum\AgentIA;
+use App\Enum\Langue;
 use App\Enum\NiveauBudget;
 use App\Enum\StatutProposition;
 use App\Enum\TypeProposition;
 use App\Repository\PrestationRepository;
+use App\Texte\Anglais;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ServerEvent;
@@ -68,7 +70,10 @@ final class NouvelleVersion
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         $changement = Changement::entre($reference->getExigences(), EnregistrerExigences::fiche($demande));
         if ($changement->vide()) {
-            $message = \sprintf('Votre demande n\'a pas changé : votre proposition (version %d) reste valable.', $reference->getVersion());
+            $message = \sprintf($demande->getLangue()->choisir(
+                'Votre demande n\'a pas changé : votre proposition (version %d) reste valable.',
+                'Your request has not changed: your proposal (version %d) is still valid.',
+            ), $reference->getVersion());
             $this->ajouter($conversation, $message);
             yield self::evenement('texte', ['texte' => "\n\n".$message]);
 
@@ -92,7 +97,7 @@ final class NouvelleVersion
             }
 
             yield self::evenement('combinaison', $sortie);
-            $message = self::presentation($changement, $sortie);
+            $message = self::presentation($changement, $sortie, $demande->getLangue());
             $this->ajouter($conversation, $message);
             yield self::evenement('texte', ['texte' => "\n\n".$message]);
             yield from $this->redaction->rediger($conversation, (string) $sortie['chiffrageId'], $modification);
@@ -153,24 +158,30 @@ final class NouvelleVersion
      *
      * @param array<string, mixed> $sortie sortie de retenir_combinaison
      */
-    private static function presentation(Changement $changement, array $sortie): string
+    private static function presentation(Changement $changement, array $sortie, Langue $langue = Langue::Francais): string
     {
-        $lignes = [\sprintf('Voici votre proposition mise à jour (%s) :', implode(' ; ', $changement->resume()))];
+        $anglais = Langue::Anglais === $langue;
+        $lignes = [\sprintf(
+            $langue->choisir('Voici votre proposition mise à jour (%s) :', 'Here is your updated proposal (%s):'),
+            implode(' ; ', $changement->resume($langue)),
+        )];
         foreach (NiveauBudget::cases() as $niveau) {
             $n = $sortie['niveaux'][$niveau->value];
             $lignes[] = \sprintf(
-                '- %s : %s, %s',
-                $niveau->label(),
+                $langue->choisir('- %s : %s, %s', '- %s: %s, %s'),
+                $anglais ? $niveau->labelEnAnglais() : $niveau->label(),
                 implode(', ', array_column([...$n['logements'], ...$n['activites']], 'nom')),
                 Montant::euros((int) round($n['totalEuros'] * 100)),
             );
         }
         if ($sortie['budgetInsuffisant']) {
             $arbitrages = array_map(
-                static fn (array $a): string => \sprintf('%s (%s)', lcfirst($a['libelle']), Montant::euros((int) round($a['totalEuros'] * 100))),
+                static fn (array $a): string => \sprintf('%s (%s)', lcfirst($anglais ? Anglais::traduire($a['libelle']) : $a['libelle']), Montant::euros((int) round($a['totalEuros'] * 100))),
                 $sortie['arbitrages'],
             );
-            $lignes[] = 'Même le niveau essentiel dépasse votre budget'.([] === $arbitrages ? '.' : ' ; pour vous en rapprocher : '.implode(', ', $arbitrages).'.');
+            $lignes[] = $anglais
+                ? 'Even the essential level exceeds your budget'.([] === $arbitrages ? '.' : '; to get closer to it: '.implode(', ', $arbitrages).'.')
+                : 'Même le niveau essentiel dépasse votre budget'.([] === $arbitrages ? '.' : ' ; pour vous en rapprocher : '.implode(', ', $arbitrages).'.');
         }
         $lignes[] = $sortie['avertissement'];
 

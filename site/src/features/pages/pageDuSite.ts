@@ -6,6 +6,8 @@ import { ApiError } from '@/lib/api'
 export const PageDuSite = z.object({
   slug: z.string(),
   titre: z.string(),
+  /** Accueil : titre du thème « voyages froids » ; absent pour les autres pages. */
+  titreFroid: z.string().nullish(),
   /** HTML simple saisi dans le backoffice : paragraphes, intertitres h2 et listes. */
   contenu: z.string(),
   photos: z.array(z.string()),

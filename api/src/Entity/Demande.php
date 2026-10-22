@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\Langue;
 use App\Enum\MotifTransmission;
 use App\Enum\StatutDemande;
 use App\Enum\TypeDeVoyage;
@@ -46,6 +47,10 @@ class Demande
 
     #[ORM\Column(enumType: StatutDemande::class)]
     private StatutDemande $statut = StatutDemande::Nouvelle;
+
+    /** Langue du client, reconnue par l'agent Conversation (US15) : celle des réponses et de la proposition. */
+    #[ORM\Column(length: 2, enumType: Langue::class, options: ['default' => 'fr'])]
+    private Langue $langue = Langue::Francais;
 
     /** Le client a demandé à parler à un conseiller, ou le chatbot manque de données pour la période. */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
@@ -220,6 +225,18 @@ class Demande
     public function setStatut(StatutDemande $statut): static
     {
         $this->statut = $statut;
+
+        return $this;
+    }
+
+    public function getLangue(): Langue
+    {
+        return $this->langue;
+    }
+
+    public function setLangue(Langue $langue): static
+    {
+        $this->langue = $langue;
 
         return $this;
     }

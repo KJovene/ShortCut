@@ -6,6 +6,7 @@ use App\Confirmation\ConfirmationService;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
+use App\Enum\Langue;
 use App\Proposition\PropositionPdf;
 use App\Twig\DateExtension;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
@@ -120,6 +121,28 @@ final class PropositionPdfTest extends WebTestCase
     {
         self::assertSame('1er mai 2027', DateExtension::dateLongue('2027-05-01'));
         self::assertSame('ven. 22 oct.', DateExtension::dateJour('2027-10-22'));
+    }
+
+    public function testUnClientQuiDialogueEnAnglaisRecoitSonPdfEnAnglais(): void
+    {
+        [, $v2] = $this->versions('Santorin');
+        $v2->getDemande()?->setLangue(Langue::Anglais);
+        $html = static::getContainer()->get(PropositionPdf::class)->html($v2);
+
+        self::assertStringContainsString('<html lang="en">', $html);
+        self::assertStringContainsString('Estimated proposal', $html);
+        self::assertStringContainsString(Proposition::MENTION_EN, $html);
+        self::assertStringContainsString('Santorin, 9 days', $html);
+        self::assertStringContainsString('12 June 2027', $html);
+        self::assertStringContainsString('Sat 12 Jun', $html);
+        self::assertStringContainsString('Day-by-day itinerary', $html);
+        self::assertStringContainsString('Budget assumptions', $html);
+        self::assertStringContainsString('Balanced', $html);
+        // Les montants restent ceux de la version française.
+        self::assertStringContainsString('3 012 €', $html);
+        self::assertStringNotContainsString('Programme jour par jour', $html);
+        self::assertStringNotContainsString('Hypothèses de budget', $html);
+        self::assertStringNotContainsString('Frais de dossier', $html);
     }
 
     /** @return list<Proposition> les versions de la demande, dans l'ordre */
