@@ -1,0 +1,444 @@
+/**
+ * Textes fixes des pages du site, en français et en anglais : titres et descriptions pour les moteurs (utilisés
+ * quand l'API n'en donne pas), intitulés, boutons et messages. Les textes saisis dans le backoffice arrivent déjà
+ * traduits par l'API.
+ */
+export const TEXTES = {
+  fr: {
+    racine: {
+      titre: 'Agence de voyage sur mesure',
+      description:
+        "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+    },
+    accueil: {
+      meta: {
+        titre: 'Agence de voyage sur mesure · Votre voyage chiffré en 2 minutes',
+        description:
+          "Décrivez vos envies à notre assistant : il vous propose un voyage complet et chiffré, qu'un conseiller confirme ensuite.",
+      },
+      titreParDefaut: 'Où irez-vous *chercher le soleil* ?',
+      nbDestinations: (n: number) => `${n} destinations sur mesure, partout dans le monde`,
+      desDestinations: 'Des destinations sur mesure, partout dans le monde',
+      filtrer: 'Filtrer par type de voyage',
+      tous: 'Tous',
+      tousLesVoyages: 'Tous les voyages',
+      // Carte du monde
+      carte: 'Carte des voyages, glissez pour explorer',
+      glissez: 'Glissez pour explorer',
+      des: 'dès',
+      parPers: ' / pers.',
+      idealEn: (mois: string) => `idéal en ${mois}`,
+      temperatureEn: (temperature: number, mois: string) => `${temperature} °C en ${mois}`,
+      construire: 'Construire',
+      construireCeVoyage: 'Construire ce voyage',
+      brouillon: (ville: string, mois: string) => `Un voyage à ${ville} en ${mois}, `,
+      // Bandeau
+      bandeauSurtitre: 'Le bandeau des envies',
+      bandeauTitre: 'Tous nos voyages',
+      precedents: 'Voyages précédents',
+      suivants: 'Voyages suivants',
+      // Assistant
+      suggestion: (ville: string) => `Comme ${ville}, à mes dates`,
+      discussion: "Discussion avec l'assistant",
+    },
+    agence: {
+      meta: {
+        titre: "L'agence · Nos conseillers et nos engagements",
+        description:
+          'Une équipe de conseillers spécialistes de chaque destination, qui confirment chaque proposition avant votre départ.',
+      },
+      surtitre: "L'agence",
+      photo: "L'équipe de l'agence",
+      equipe: "L'équipe",
+      equipeTexte: 'Votre proposition est confirmée par le conseiller de votre destination.',
+      conseillere: 'Conseillère voyage',
+      conseiller: 'Conseiller voyage',
+    },
+    contact: {
+      meta: {
+        titre: "Contacter l'agence",
+        description: 'Posez vos questions à notre assistant ou demandez à parler à un conseiller.',
+      },
+      surtitre: 'Contact',
+      photo: "L'accueil de l'agence",
+      assistant: "L'assistant, 24 h sur 24",
+      assistantTexte: 'Une proposition complète et chiffrée en moins de 2 minutes.',
+      ouvrirAssistant: "Ouvrir l'assistant",
+      unConseiller: 'Un conseiller',
+      etreRappele: 'Être rappelé par un conseiller',
+    },
+    types: {
+      meta: {
+        titre: 'Séjours, circuits, groupes, voyages de noces et entreprise',
+        description:
+          "Séjours détente, circuits accompagnés, voyages de groupe, voyages de noces et séminaires : l'agence organise tous vos voyages.",
+      },
+      surtitre: 'Nos voyages',
+      intro:
+        "Quel que soit votre projet, l'assistant pose les questions propres à votre type de voyage : étapes d'un circuit, taille du groupe, date du mariage ou objectif de l'entreprise.",
+      nbDestinations: (n: number) => `${n} destination${n > 1 ? 's' : ''}`,
+      fraisDeDossier: (montant: number) => `Frais de dossier : ${montant} € par dossier.`,
+      voirDestinations: 'Voir les destinations',
+      brouillons: {
+        sejour: 'Un séjour pour deux, ',
+        circuit: 'Un circuit en plusieurs étapes, ',
+        groupe: 'Un voyage de groupe pour 15 personnes, ',
+        noces: 'Notre voyage de noces, ',
+        entreprise: 'Un séminaire d’entreprise pour 30 collègues, ',
+      },
+    },
+    destinations: {
+      meta: {
+        titre: 'Destinations · Où partir, et quand ?',
+        description:
+          'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
+      },
+      surtitre: 'Destinations',
+      titreDebut: 'Où partir, ',
+      titreAccent: 'et quand',
+      titreFin: ' ?',
+      intro:
+        "Choisissez un mois et une température : nous vous montrons les destinations dont le climat convient, d'après les relevés saisis par nos conseillers.",
+      filtres: 'Filtres',
+      mois: 'Mois',
+      meilleurMois: 'Le meilleur mois',
+      temperature: 'Température moyenne',
+      peuImporte: 'Peu importe',
+      auMoins: (t: number) => `Au moins ${t} °C`,
+      typeDeVoyage: 'Type de voyage',
+      resultats: (n: number) => `${n} destination${n > 1 ? 's' : ''}`,
+      enMois: (mois: string) => ` en ${mois}`,
+      aucune: 'Aucune destination ne correspond',
+      aucuneTexte:
+        "Essayez un autre mois ou une température plus douce, ou décrivez votre envie à l'assistant : il cherche aussi les destinations voisines.",
+      effacer: 'Effacer les filtres',
+      demander: "Demander à l'assistant",
+    },
+    destination: {
+      metaTitre: (nom: string) => `${nom} · Climat, hébergements et prix`,
+      filAriane: "Fil d'Ariane",
+      aPartirDe: 'À partir de',
+      parPersonne: ' / pers.',
+      estimation:
+        'Estimation pour 7 nuits à deux, vols depuis Paris et transferts compris, marge et frais de dossier inclus. Votre proposition est calculée sur vos dates exactes.',
+      depuis: (ville: string) => `Depuis ${ville}`,
+      sousBouton: 'Proposition chiffrée en 2 minutes, confirmée par un conseiller.',
+      climat: 'Le climat mois par mois',
+      legendeClimat: 'Températures moyennes et pluie par mois',
+      mois: 'Mois',
+      pluie: 'Pluie',
+      meilleurePeriode: (mois: string) =>
+        `Températures moyennes saisies par nos conseillers. Meilleure période conseillée : ${mois}.`,
+      hebergements: "Exemples d'hébergements",
+      activites: "Exemples d'activités",
+      pers: (n: number) => `${n} pers.`,
+      accessible: 'accessible',
+      des: 'dès',
+      nuit: 'nuit',
+      personne: 'personne',
+      prixBas:
+        "Prix les plus bas de l'année, marge de l'agence comprise ; ils varient selon la saison.",
+    },
+    legales: {
+      'mentions-legales': {
+        titre: 'Mentions légales',
+        description: "Éditeur du site, hébergement et immatriculation de l'agence.",
+      },
+      cgv: {
+        titre: 'Conditions générales de vente',
+        description:
+          "Conditions de réservation, de paiement, de modification et d'annulation des voyages.",
+      },
+      confidentialite: {
+        titre: 'Confidentialité et cookies',
+        description:
+          "Données collectées par l'assistant et le site, finalités, durée de conservation et vos droits.",
+      },
+    },
+    introuvable: {
+      titre: 'Page introuvable',
+      description: "Cette page n'existe pas ou a été déplacée. Retrouvez nos destinations.",
+    },
+    connexion: {
+      meta: {
+        titre: 'Connexion',
+        description:
+          'Connectez-vous pour suivre vos voyages, vos propositions et vos conversations.',
+      },
+      titre: 'Connexion',
+      sousTitre: 'Retrouvez vos voyages, vos propositions et vos conversations.',
+      pasDeCompte: 'Pas encore de compte ?',
+      creerUnCompte: 'Créer un compte',
+      enCours: 'Connexion…',
+      seConnecter: 'Se connecter',
+    },
+    inscription: {
+      meta: {
+        titre: 'Créer un compte',
+        description:
+          'Créez votre compte pour retrouver vos propositions de voyage et suivre leur confirmation.',
+      },
+      titre: 'Créer un compte',
+      sousTitre:
+        'Suivez vos demandes de voyage et leurs propositions, du premier message à la réservation.',
+      dejaUnCompte: 'Déjà un compte ?',
+      seConnecter: 'Se connecter',
+      aideMotDePasse: 'Au moins 8 caractères.',
+      enCours: 'Création…',
+      creer: 'Créer mon compte',
+    },
+    profil: {
+      meta: {
+        titre: 'Mon profil',
+        description: 'Vos coordonnées, votre e-mail et votre mot de passe.',
+      },
+      titre: 'Mon profil',
+      compte: (role: string) => `Compte ${role.toLowerCase()}`,
+      roles: { ROLE_CLIENT: 'Client', ROLE_CONSEILLER: 'Conseiller', ROLE_ADMIN: 'Administrateur' },
+      misAJour: 'Profil mis à jour.',
+      telephone: 'Téléphone',
+      changerMotDePasse: 'Changer de mot de passe',
+      nouveauMotDePasse: 'Nouveau mot de passe',
+      aideNouveau: 'Laissez vide pour garder le mot de passe actuel.',
+      motDePasseActuel: 'Mot de passe actuel',
+      aideActuel: "Exigé pour changer d'e-mail ou de mot de passe.",
+      enCours: 'Enregistrement…',
+      enregistrer: 'Enregistrer',
+    },
+    // Champs des formulaires de compte
+    champs: {
+      email: 'E-mail',
+      motDePasse: 'Mot de passe',
+      prenom: 'Prénom',
+      nom: 'Nom',
+      emailInvalide: 'Saisissez une adresse e-mail valide.',
+      motDePasseVide: 'Saisissez votre mot de passe.',
+      nomVide: 'Saisissez votre nom.',
+      motDePasseCourt: 'Le mot de passe doit faire au moins 8 caractères.',
+    },
+    proposition: {
+      metaTitre: 'Ma proposition de voyage',
+      metaDescription: 'Votre proposition de voyage sur mesure, à confirmer par votre conseiller.',
+      surtitre: 'Ma proposition',
+      introuvable: 'Proposition introuvable',
+      introuvableTexte:
+        "Ce lien ne correspond à aucune proposition, ou elle a expiré. Décrivez votre voyage à l'assistant pour en recevoir une nouvelle en 2 minutes.",
+    },
+    construireMonVoyage: 'Construire mon voyage',
+  },
+  en: {
+    racine: {
+      titre: 'Tailor-made travel agency',
+      description:
+        'Describe what you are looking for to our assistant: it suggests a complete, priced trip, which an advisor then confirms.',
+    },
+    accueil: {
+      meta: {
+        titre: 'Tailor-made travel agency · Your trip priced in 2 minutes',
+        description:
+          'Describe what you are looking for to our assistant: it suggests a complete, priced trip, which an advisor then confirms.',
+      },
+      titreParDefaut: 'Where will you go *to find the sun*?',
+      nbDestinations: (n: number) => `${n} tailor-made destinations, all over the world`,
+      desDestinations: 'Tailor-made destinations, all over the world',
+      filtrer: 'Filter by type of trip',
+      tous: 'All',
+      tousLesVoyages: 'All trips',
+      carte: 'Map of trips, swipe to explore',
+      glissez: 'Swipe to explore',
+      des: 'from',
+      parPers: ' / person',
+      idealEn: (mois: string) => `best in ${mois}`,
+      temperatureEn: (temperature: number, mois: string) => `${temperature} °C in ${mois}`,
+      construire: 'Plan',
+      construireCeVoyage: 'Plan this trip',
+      brouillon: (ville: string, mois: string) => `A trip to ${ville} in ${mois}, `,
+      bandeauSurtitre: 'Inspiration',
+      bandeauTitre: 'All our trips',
+      precedents: 'Previous trips',
+      suivants: 'Next trips',
+      suggestion: (ville: string) => `Like ${ville}, on my dates`,
+      discussion: 'Conversation with the assistant',
+    },
+    agence: {
+      meta: {
+        titre: 'The agency · Our advisors and our commitments',
+        description:
+          'A team of advisors who specialise in each destination and confirm every proposal before you leave.',
+      },
+      surtitre: 'The agency',
+      photo: 'The agency team',
+      equipe: 'The team',
+      equipeTexte: 'Your proposal is confirmed by the advisor for your destination.',
+      conseillere: 'Travel advisor',
+      conseiller: 'Travel advisor',
+    },
+    contact: {
+      meta: {
+        titre: 'Contact the agency',
+        description: 'Ask our assistant your questions or ask to speak to an advisor.',
+      },
+      surtitre: 'Contact',
+      photo: 'The agency reception',
+      assistant: 'The assistant, 24/7',
+      assistantTexte: 'A complete, priced proposal in under 2 minutes.',
+      ouvrirAssistant: 'Open the assistant',
+      unConseiller: 'An advisor',
+      etreRappele: 'Get a call back from an advisor',
+    },
+    types: {
+      meta: {
+        titre: 'Stays, tours, groups, honeymoons and corporate travel',
+        description:
+          'Relaxing stays, guided tours, group trips, honeymoons and seminars: the agency organises all your travel.',
+      },
+      surtitre: 'Our trips',
+      intro:
+        'Whatever your plans, the assistant asks the questions that matter for your type of trip: the stages of a tour, the size of the group, the wedding date or the company’s goal.',
+      nbDestinations: (n: number) => `${n} destination${n > 1 ? 's' : ''}`,
+      fraisDeDossier: (montant: number) => `Booking fee: €${montant} per booking.`,
+      voirDestinations: 'See destinations',
+      brouillons: {
+        sejour: 'A stay for two, ',
+        circuit: 'A tour with several stops, ',
+        groupe: 'A group trip for 15 people, ',
+        noces: 'Our honeymoon, ',
+        entreprise: 'A company seminar for 30 colleagues, ',
+      },
+    },
+    destinations: {
+      meta: {
+        titre: 'Destinations · Where to go, and when?',
+        description:
+          'All our destinations, filtered by month, average temperature and type of trip.',
+      },
+      surtitre: 'Destinations',
+      titreDebut: 'Where to go, ',
+      titreAccent: 'and when',
+      titreFin: '?',
+      intro:
+        'Choose a month and a temperature: we show you the destinations whose climate suits you, based on the records kept by our advisors.',
+      filtres: 'Filters',
+      mois: 'Month',
+      meilleurMois: 'The best month',
+      temperature: 'Average temperature',
+      peuImporte: 'Any',
+      auMoins: (t: number) => `At least ${t} °C`,
+      typeDeVoyage: 'Type of trip',
+      resultats: (n: number) => `${n} destination${n > 1 ? 's' : ''}`,
+      enMois: (mois: string) => ` in ${mois}`,
+      aucune: 'No destination matches',
+      aucuneTexte:
+        'Try another month or a milder temperature, or describe what you would like to the assistant: it also looks at nearby destinations.',
+      effacer: 'Clear filters',
+      demander: 'Ask the assistant',
+    },
+    destination: {
+      metaTitre: (nom: string) => `${nom} · Climate, accommodation and prices`,
+      filAriane: 'Breadcrumb',
+      aPartirDe: 'From',
+      parPersonne: ' / person',
+      estimation:
+        'Estimate for 7 nights for two, flights from Paris and transfers included, agency margin and booking fee included. Your proposal is priced on your exact dates.',
+      depuis: (ville: string) => `From ${ville}`,
+      sousBouton: 'Priced proposal in 2 minutes, confirmed by an advisor.',
+      climat: 'The climate month by month',
+      legendeClimat: 'Average temperatures and rainfall by month',
+      mois: 'Month',
+      pluie: 'Rain',
+      meilleurePeriode: (mois: string) =>
+        `Average temperatures recorded by our advisors. Best time to go: ${mois}.`,
+      hebergements: 'Accommodation examples',
+      activites: 'Activity examples',
+      pers: (n: number) => `${n} people`,
+      accessible: 'accessible',
+      des: 'from',
+      nuit: 'night',
+      personne: 'person',
+      prixBas: 'Lowest prices of the year, agency margin included; they vary with the season.',
+    },
+    legales: {
+      'mentions-legales': {
+        titre: 'Legal notice',
+        description: 'Website publisher, hosting and registration of the agency.',
+      },
+      cgv: {
+        titre: 'Terms and conditions of sale',
+        description: 'Booking, payment, modification and cancellation terms for trips.',
+      },
+      confidentialite: {
+        titre: 'Privacy and cookies',
+        description:
+          'Data collected by the assistant and the website, purposes, retention period and your rights.',
+      },
+    },
+    introuvable: {
+      titre: 'Page not found',
+      description: 'This page does not exist or has been moved. Discover our destinations.',
+    },
+    connexion: {
+      meta: {
+        titre: 'Log in',
+        description: 'Log in to follow your trips, your proposals and your conversations.',
+      },
+      titre: 'Log in',
+      sousTitre: 'Find your trips, your proposals and your conversations.',
+      pasDeCompte: 'No account yet?',
+      creerUnCompte: 'Create an account',
+      enCours: 'Logging in…',
+      seConnecter: 'Log in',
+    },
+    inscription: {
+      meta: {
+        titre: 'Create an account',
+        description:
+          'Create your account to find your travel proposals and follow their confirmation.',
+      },
+      titre: 'Create an account',
+      sousTitre:
+        'Follow your travel requests and their proposals, from the first message to the booking.',
+      dejaUnCompte: 'Already have an account?',
+      seConnecter: 'Log in',
+      aideMotDePasse: 'At least 8 characters.',
+      enCours: 'Creating…',
+      creer: 'Create my account',
+    },
+    profil: {
+      meta: {
+        titre: 'My profile',
+        description: 'Your contact details, email and password.',
+      },
+      titre: 'My profile',
+      compte: (role: string) => `${role} account`,
+      roles: { ROLE_CLIENT: 'Client', ROLE_CONSEILLER: 'Advisor', ROLE_ADMIN: 'Administrator' },
+      misAJour: 'Profile updated.',
+      telephone: 'Phone',
+      changerMotDePasse: 'Change password',
+      nouveauMotDePasse: 'New password',
+      aideNouveau: 'Leave blank to keep your current password.',
+      motDePasseActuel: 'Current password',
+      aideActuel: 'Required to change your email or password.',
+      enCours: 'Saving…',
+      enregistrer: 'Save',
+    },
+    champs: {
+      email: 'Email',
+      motDePasse: 'Password',
+      prenom: 'First name',
+      nom: 'Last name',
+      emailInvalide: 'Enter a valid email address.',
+      motDePasseVide: 'Enter your password.',
+      nomVide: 'Enter your last name.',
+      motDePasseCourt: 'Your password must be at least 8 characters long.',
+    },
+    proposition: {
+      metaTitre: 'My travel proposal',
+      metaDescription: 'Your tailor-made travel proposal, to be confirmed by your advisor.',
+      surtitre: 'My proposal',
+      introuvable: 'Proposal not found',
+      introuvableTexte:
+        'This link does not match any proposal, or it has expired. Describe your trip to the assistant to receive a new one in 2 minutes.',
+    },
+    construireMonVoyage: 'Plan my trip',
+  },
+}
