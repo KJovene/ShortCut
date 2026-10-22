@@ -1,34 +1,37 @@
 import { Link } from '@tanstack/react-router'
+import { TEXTES } from '@/components/textes'
+import { useLangue } from '@/lib/langue'
 import { Logo } from './Logo'
 
 export function SiteFooter() {
+  const t = TEXTES[useLangue()]
   return (
     <footer className="no-print bg-encre text-ciel">
       <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
         <div className="flex items-center gap-[18px]">
           <Logo clair petit />
           <span className="font-display text-[17px] font-semibold text-creme">
-            Prenez le pas de côté.
+            {t.accroche}
           </span>
         </div>
         <Link to="/types-de-voyages" className="hover:text-creme">
-          Séjours · Circuits · Groupes · Voyages de noces · Entreprise
+          {t.typesDeVoyage}
         </Link>
-        <nav aria-label="Liens légaux" className="flex flex-wrap gap-[18px]">
+        <nav aria-label={t.liensLegaux} className="flex flex-wrap gap-[18px]">
           <Link
             to="/mentions-legales"
             className="underline-offset-2 hover:text-creme hover:underline"
           >
-            Mentions légales
+            {t.mentionsLegales}
           </Link>
           <Link to="/cgv" className="underline-offset-2 hover:text-creme hover:underline">
-            CGV
+            {t.cgv}
           </Link>
           <Link
             to="/confidentialite"
             className="underline-offset-2 hover:text-creme hover:underline"
           >
-            Confidentialité et cookies
+            {t.confidentialite}
           </Link>
         </nav>
       </div>

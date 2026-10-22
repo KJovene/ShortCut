@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Bandeau, Champ, classeBouton } from '@/components/Champ'
 import { EcranAuthentification } from '@/components/EcranAuthentification'
+import { TEXTES } from '@/features/pages/textes'
 import {
   accedeAuBackoffice,
   ouvrirBackoffice,
@@ -11,32 +12,35 @@ import {
   profilQuery,
   seConnecter,
 } from '@/lib/auth'
+import { type Langue, langueDuSite, messageApi, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/connexion')({
-  head: () => ({
-    meta: [
-      { title: 'Connexion' },
-      {
-        name: 'description',
-        content: 'Connectez-vous pour suivre vos voyages, vos propositions et vos conversations.',
-      },
-    ],
-  }),
+  head: () => {
+    const t = TEXTES[langueDuSite()].connexion.meta
+    return {
+      meta: [{ title: t.titre }, { name: 'description', content: t.description }],
+    }
+  },
   component: PageConnexion,
 })
 
-const Identifiants = z.object({
-  email: z.email('Saisissez une adresse e-mail valide.'),
-  motDePasse: z.string().min(1, 'Saisissez votre mot de passe.'),
-})
+const identifiants = (langue: Langue) => {
+  const t = TEXTES[langue].champs
+  return z.object({
+    email: z.email(t.emailInvalide),
+    motDePasse: z.string().min(1, t.motDePasseVide),
+  })
+}
 
 /** Connexion commune : les conseillers et l'administrateur vont au backoffice, les clients restent sur le site. */
 function PageConnexion() {
+  const langue = useLangue()
+  const t = TEXTES[langue]
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
   const connexion = useMutation({
-    mutationFn: ({ email, motDePasse }: z.infer<typeof Identifiants>) =>
+    mutationFn: ({ email, motDePasse }: { email: string; motDePasse: string }) =>
       seConnecter(email, motDePasse),
     onSuccess: (profil: Profil) => {
       queryClient.setQueryData(profilQuery.queryKey, profil)
@@ -50,7 +54,7 @@ function PageConnexion() {
 
   const form = useForm({
     defaultValues: { email: '', motDePasse: '' },
-    validators: { onSubmit: Identifiants },
+    validators: { onSubmit: identifiants(langue) },
     onSubmit: ({ value }) => connexion.mutate(value),
   })
 
@@ -58,16 +62,16 @@ function PageConnexion() {
 
   return (
     <EcranAuthentification
-      titre="Connexion"
-      sousTitre="Retrouvez vos voyages, vos propositions et vos conversations."
+      titre={t.connexion.titre}
+      sousTitre={t.connexion.sousTitre}
       pied={
         <>
-          Pas encore de compte ?{' '}
+          {t.connexion.pasDeCompte}{' '}
           <Link
             to="/inscription"
             className="font-bold text-rouille underline-offset-2 hover:underline"
           >
-            Créer un compte
+            {t.connexion.creerUnCompte}
           </Link>
         </>
       }
@@ -80,13 +84,15 @@ function PageConnexion() {
           void form.handleSubmit()
         }}
       >
-        {connexion.isError && <Bandeau ton="erreur">{connexion.error.message}</Bandeau>}
+        {connexion.isError && (
+          <Bandeau ton="erreur">{messageApi(connexion.error.message, langue)!}</Bandeau>
+        )}
 
         <form.Field name="email">
           {(field) => (
             <Champ
               id="email"
-              label="E-mail"
+              label={t.champs.email}
               type="email"
               autoComplete="username"
               value={field.state.value}
@@ -101,7 +107,7 @@ function PageConnexion() {
           {(field) => (
             <Champ
               id="motDePasse"
-              label="Mot de passe"
+              label={t.champs.motDePasse}
               type="password"
               autoComplete="current-password"
               value={field.state.value}
@@ -113,7 +119,7 @@ function PageConnexion() {
         </form.Field>
 
         <button type="submit" disabled={enCours} className={classeBouton}>
-          {enCours ? 'Connexion…' : 'Se connecter'}
+          {enCours ? t.connexion.enCours : t.connexion.seConnecter}
         </button>
       </form>
     </EcranAuthentification>
