@@ -974,7 +974,7 @@ paths:
                 type: object
                 description: 'Destination.jsonld-public.read collection.'
                 allOf:
-                  - { $ref: '#/components/schemas/HydraCollectionBaseSchema' }
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchemaNoPagination' }
                   - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/Destination.jsonld-public.read' } } } }
             application/json:
               schema:
@@ -997,17 +997,6 @@ paths:
       summary: 'Retrieves the collection of Destination resources.'
       description: 'Retrieves the collection of Destination resources.'
       parameters:
-        -
-          name: page
-          in: query
-          description: 'The collection page number'
-          required: false
-          deprecated: false
-          schema:
-            type: integer
-            default: 1
-          style: form
-          explode: true
         -
           name: miseEnAvant
           in: query
@@ -2836,6 +2825,14 @@ components:
               - noces
               - entreprise
           description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        zones:
+          maxItems: 10
+          description: |-
+            Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+            « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+          type: array
+          items:
+            type: string
         moisIdeal:
           minimum: 1
           maximum: 12
@@ -2935,6 +2932,14 @@ components:
               - noces
               - entreprise
           description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        zones:
+          maxItems: 10
+          description: |-
+            Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+            « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+          type: array
+          items:
+            type: string
         moisIdeal:
           minimum: 1
           maximum: 12
@@ -3037,6 +3042,14 @@ components:
               - noces
               - entreprise
           description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        zones:
+          maxItems: 10
+          description: |-
+            Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+            « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+          type: array
+          items:
+            type: string
         moisIdeal:
           minimum: 1
           maximum: 12
@@ -3139,6 +3152,14 @@ components:
               - noces
               - entreprise
           description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+        zones:
+          maxItems: 10
+          description: |-
+            Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+            « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+          type: array
+          items:
+            type: string
         moisIdeal:
           minimum: 1
           maximum: 12
@@ -3253,6 +3274,14 @@ components:
                   - noces
                   - entreprise
               description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+            zones:
+              maxItems: 10
+              description: |-
+                Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+                « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+              type: array
+              items:
+                type: string
             moisIdeal:
               minimum: 1
               maximum: 12
@@ -3359,6 +3388,14 @@ components:
                   - noces
                   - entreprise
               description: 'Types de voyage proposés pour cette destination, le principal en premier (valeurs de TypeDeVoyage).'
+            zones:
+              maxItems: 10
+              description: |-
+                Zones larges où le client peut chercher la destination sans la nommer (« Europe », « Méditerranée »,
+                « Asie du Sud-Est », « Caraïbes ») ; le pays, la région et la ville sont déjà cherchés.
+              type: array
+              items:
+                type: string
             moisIdeal:
               minimum: 1
               maximum: 12
@@ -4079,7 +4116,9 @@ components:
             - 'null'
     Prestataire-prestataire.ecriture:
       type: object
-      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
       required:
         - nom
         - type
@@ -4131,7 +4170,9 @@ components:
                   type: string
     Prestataire-prestataire.ecriture.jsonMergePatch:
       type: object
-      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
       properties:
         nom:
           maxLength: 150
@@ -4180,7 +4221,9 @@ components:
                   type: string
     Prestataire-prestataire.lecture:
       type: object
-      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
       properties:
         id:
           readOnly: true
@@ -4287,10 +4330,15 @@ components:
           required:
             - nom
             - type
-      description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
+      description: |-
+        Hébergeur, transporteur, guide ou prestataire d'activités.
+        Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
     Tarif-prestation.public_prestation.interne_prestation.tarifs:
       type: object
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
       properties:
         id:
           readOnly: true
@@ -4322,7 +4370,10 @@ components:
         - prixCentimes
     Tarif-tarif.ecriture:
       type: object
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
       required:
         - prestation
         - debut
@@ -4356,7 +4407,10 @@ components:
             - 'null'
     Tarif-tarif.ecriture.jsonMergePatch:
       type: object
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
       properties:
         prestation:
           type: string
@@ -4385,7 +4439,10 @@ components:
             - 'null'
     Tarif-tarif.lecture:
       type: object
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
       properties:
         id:
           readOnly: true
@@ -4458,7 +4515,10 @@ components:
             - debut
             - fin
             - prixCentimes
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
     Tarif.jsonld-tarif.lecture:
       allOf:
         -
@@ -4502,7 +4562,10 @@ components:
             - debut
             - fin
             - prixCentimes
-      description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+      description: |-
+        Prix d'un logement ou d'une activité sur une période.
+        Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+        Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
   responses: {  }
   parameters: {  }
   examples: {  }
@@ -4525,7 +4588,9 @@ tags:
       répond 404 comme une page inconnue.
   -
     name: Prestataire
-    description: "Hébergeur, transporteur, guide ou prestataire d'activités.\r\nDonnées internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site."
+    description: |-
+      Hébergeur, transporteur, guide ou prestataire d'activités.
+      Données internes de l'agence (contacts, fourchettes d'achat) : jamais exposées au site.
   -
     name: Logement
     description: |-
@@ -4542,6 +4607,9 @@ tags:
       Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
   -
     name: Tarif
-    description: "Prix d'un logement ou d'une activité sur une période.\r\nPrix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.\r\nGroupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation."
+    description: |-
+      Prix d'un logement ou d'une activité sur une période.
+      Prix d'achat au prestataire, avant marge : donnée interne, jamais exposée au site.
+      Groupe `prestation:tarifs` : vue d'un tarif dans la fiche de sa prestation.
 webhooks: {  }
 

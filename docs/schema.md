@@ -57,6 +57,7 @@ erDiagram
         string nom "nullable"
         string accroche "nullable"
         json types_de_voyage
+        json zones
         smallint mois_ideal "nullable"
         float latitude "nullable"
         float longitude "nullable"
@@ -71,6 +72,7 @@ erDiagram
         json sortie
         integer tokens_entree "nullable"
         integer tokens_sortie "nullable"
+        integer duree_ms "nullable"
         datetime_immutable cree_le
         integer demande_id FK "nullable"
     }
@@ -145,6 +147,8 @@ erDiagram
         text pourquoi "nullable"
         json argumentaire
         json prestations
+        json choix
+        json exigences
         json programme
         string niveau_budget "enum NiveauBudget"
         json budgets_par_niveau
@@ -153,6 +157,7 @@ erDiagram
         integer frais_de_dossier_centimes
         json hypotheses
         datetime_immutable confirmee_le "nullable"
+        datetime_immutable envoyee_le "nullable"
         datetime_immutable cree_le
         integer demande_id FK
         integer destination_id FK "nullable"

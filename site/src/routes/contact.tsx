@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
+import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconBulle, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '@/features/chat/chatContext'
 import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
@@ -29,11 +30,7 @@ function ContactPage() {
     <>
       <EnTetePage
         surtitre="Contact"
-        titre={
-          <>
-            Une question ? <em className="font-normal text-terre">Parlons-en</em>
-          </>
-        }
+        titre={<TitreMisEnValeur texte={page.titre} />}
         photo={page.photos[0] ? { src: page.photos[0], alt: "L'accueil de l'agence" } : undefined}
       >
         {contenu.intro.map((paragraphe) => (

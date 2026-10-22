@@ -43,17 +43,49 @@ final class CatalogueDeDemoTest extends KernelTestCase
 
     public function testLeCatalogueContientLesVolumesPrevus(): void
     {
-        self::assertCount(8, $this->em->getRepository(Destination::class)->findAll());
-        self::assertCount(15, $this->em->getRepository(Prestataire::class)->findAll());
-        self::assertCount(30, $this->logements());
-        self::assertCount(20, $this->em->getRepository(Prestation::class)->findBy(['type' => TypePrestation::Activite]));
+        // Les 8 destinations d'origine et 50 dans le monde entier, chacune dans un pays différent.
+        $destinations = $this->em->getRepository(Destination::class)->findAll();
+        self::assertCount(58, $destinations);
+        self::assertCount(58, array_unique(array_map(static fn (Destination $d): ?string => $d->getPays(), $destinations)));
+        self::assertCount(44, $this->em->getRepository(Prestataire::class)->findAll());
+        self::assertCount(\count(Catalogue::logements()), $this->logements());
+        self::assertGreaterThanOrEqual(200, \count($this->logements()));
+        self::assertCount(\count(Catalogue::activites()), $this->em->getRepository(Prestation::class)->findBy(['type' => TypePrestation::Activite]));
         // Administrateur, Léa et Hugo, trois clients pour « Mon espace ».
         self::assertCount(6, $this->em->getRepository(Utilisateur::class)->findAll());
 
         foreach ($this->em->getRepository(Destination::class)->findAll() as $destination) {
             self::assertCount(12, $destination->getPeriodesClimatiques(), $destination->getVille() ?? '');
             self::assertNotNull($destination->getPhoto());
+            self::assertNotNull($destination->getPhotoAlt());
             self::assertNotNull($destination->getDescription());
+            self::assertNotEmpty($destination->getZones(), $destination->getVille() ?? '');
+            self::assertNotEmpty($destination->getTypesDeVoyage(), $destination->getVille() ?? '');
+        }
+    }
+
+    /**
+     * Les agents ne proposent une destination que pour les types de voyage qu'elle annonce : chacune a de quoi les
+     * chiffrer (un logement pour une famille de quatre, 20 places pour un groupe, une salle pour une entreprise, un
+     * logement romantique pour deux pour des noces).
+     */
+    public function testChaqueDestinationPeutAccueillirSesTypesDeVoyage(): void
+    {
+        foreach ($this->em->getRepository(Destination::class)->findAll() as $destination) {
+            $nom = (string) $destination->getVille();
+            $logements = array_filter($destination->getPrestations()->toArray(), static fn (Prestation $p): bool => TypePrestation::Logement === $p->getType());
+            $capacites = array_map(static fn (Prestation $p): int => (int) $p->getCapacite(), $logements);
+            self::assertGreaterThanOrEqual(4, max($capacites), $nom);
+            $types = $destination->getTypesDeVoyage();
+            if (\in_array(TypeDeVoyage::Groupe->value, $types, true)) {
+                self::assertGreaterThanOrEqual(20, max($capacites), $nom.' : groupe');
+            }
+            if (\in_array(TypeDeVoyage::Entreprise->value, $types, true)) {
+                self::assertNotEmpty(array_filter($logements, static fn (Prestation $p): bool => [] !== array_filter($p->getEquipements(), static fn (string $e): bool => str_contains($e, 'salle de réunion'))), $nom.' : entreprise');
+            }
+            if (\in_array(TypeDeVoyage::Noces->value, $types, true)) {
+                self::assertNotEmpty(array_filter($logements, static fn (Prestation $p): bool => 2 === $p->getCapacite() && \in_array('romantique', $p->getEnvies(), true)), $nom.' : noces');
+            }
         }
     }
 

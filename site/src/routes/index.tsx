@@ -38,6 +38,8 @@ const THEMES: { valeur: Theme; label: string; debut: string; fin: string }[] = [
   { valeur: 'froid', label: 'Voyages froids', debut: 'Où irez-vous', fin: 'chercher la fraîcheur' },
 ]
 
+const TITRE_PAR_DEFAUT = 'Où irez-vous *chercher le soleil* ?'
+
 function HomePage() {
   const [theme, setTheme] = useState<Theme>('chaud')
   const [activeSlug, setActiveSlug] = useState('santorin')
@@ -129,7 +131,7 @@ function HomePage() {
         />
       )}
 
-      <SectionAssistant suggestion={active} photos={photos} />
+      <SectionAssistant suggestion={survolee} photos={photos} />
     </>
   )
 }

@@ -234,5 +234,9 @@ export function libelleTypePrincipal(d: DestinationPublique) {
 /** Destination placée sur la carte du monde de l'accueil. */
 export type DestinationSurCarte = DestinationPublique & { lon: number; lat: number }
 
+/**
+ * Seules les destinations mises en avant dans le backoffice ont leur épingle : avec tout le catalogue, elles se
+ * chevaucheraient. Les autres restent dans le bandeau sous la carte et sur la page Destinations.
+ */
 export const estSurCarte = (d: DestinationPublique): d is DestinationSurCarte =>
-  d.lon !== null && d.lat !== null
+  d.miseEnAvant && d.lon !== null && d.lat !== null

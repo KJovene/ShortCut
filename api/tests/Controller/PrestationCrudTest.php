@@ -2,6 +2,7 @@
 
 namespace App\Tests\Controller;
 
+use App\DataFixtures\Donnees\Catalogue;
 use App\Entity\Destination;
 use App\Entity\Prestataire;
 use App\Entity\Prestation;
@@ -65,10 +66,10 @@ final class PrestationCrudTest extends WebTestCase
     {
         $this->client->request('GET', '/admin/logement');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', '30 résultats');
+        self::assertSelectorTextContains('body', \count(Catalogue::logements()).' résultats');
 
         $this->client->request('GET', '/admin/activite');
-        self::assertSelectorTextContains('body', '20 résultats');
+        self::assertSelectorTextContains('body', \count(Catalogue::activites()).' résultats');
 
         $activite = $this->em->getRepository(Prestation::class)->findOneBy(['type' => TypePrestation::Activite]);
         self::assertNotNull($activite);

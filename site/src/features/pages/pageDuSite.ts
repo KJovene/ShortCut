@@ -59,22 +59,48 @@ export interface ContenuDecoupe {
 export function decouperContenu(html: string): ContenuDecoupe {
   const document = new DOMParser().parseFromString(html, 'text/html')
   const resultat: ContenuDecoupe = { intro: [], sections: [] }
-  const texte = (el: Element) => el.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+  const texte = (el: Element) => nettoyer(el.textContent ?? '')
 
   for (const el of Array.from(document.body.children)) {
     const courante = resultat.sections.at(-1)
-    if (el.tagName === 'H2') {
+    if (el.tagName === 'H1' || el.tagName === 'H2') {
       resultat.sections.push({ titre: texte(el), paragraphes: [], elements: [] })
     } else if (el.tagName === 'UL' || el.tagName === 'OL') {
       const elements = Array.from(el.querySelectorAll('li')).map(texte).filter(Boolean)
       if (courante) courante.elements.push(...elements)
       else resultat.intro.push(...elements)
-    } else if (texte(el)) {
-      if (courante) courante.paragraphes.push(texte(el))
-      else resultat.intro.push(texte(el))
+    } else {
+      const paragraphes = lignes(el).map(nettoyer).filter(Boolean)
+      if (courante) courante.paragraphes.push(...paragraphes)
+      else resultat.intro.push(...paragraphes)
     }
   }
   return resultat
+}
+
+function nettoyer(texte: string) {
+  return texte.replace(/\s+/g, ' ').trim()
+}
+
+/** Texte d'un bloc coupé à chaque retour à la ligne : l'éditeur du backoffice les écrit en <br>. */
+function lignes(el: Element) {
+  const resultat = ['']
+  const parcourir = (noeud: Node) => {
+    if (noeud.nodeName === 'BR') resultat.push('')
+    else if (noeud.nodeType === Node.TEXT_NODE)
+      resultat[resultat.length - 1] += noeud.textContent ?? ''
+    else noeud.childNodes.forEach(parcourir)
+  }
+  el.childNodes.forEach(parcourir)
+  return resultat
+}
+
+/**
+ * Photo d'une page choisie par son nom de fichier : « sejour.jpg » (jeu de démo) ou « sejour-1a2b3c.jpg »
+ * (envoyée depuis le backoffice, qui ajoute une empreinte au nom).
+ */
+export function photoNommee(photos: string[], nom: string) {
+  return photos.find((url) => new RegExp(`/${nom}[-.][^/]*$`).test(url))
 }
 
 /** Section dont l'intertitre correspond, sans tenir compte des majuscules ni des accents. */
