@@ -68,6 +68,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       conversation,
       jeton,
       terminee,
+      reprise,
       langue,
       questionnaire,
       contexteInvite,
@@ -82,6 +83,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           conversation,
           jeton,
           terminee,
+          reprise,
           langue,
           questionnaire,
           contexteInvite,
@@ -113,7 +115,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       const actif = () => !controleur.signal.aborted
       let jeton = etatCourant.current.jeton
       const questionnaire = etatCourant.current.questionnaire
-      const reprendQuestionnaire = Boolean(etatCourant.current.contexteInvite && !questionnaire.transmis)
+      const reprendQuestionnaire = Boolean(
+        etatCourant.current.contexteInvite && !questionnaire.transmis,
+      )
       let demande: Demande = etatCourant.current.conversation.demande
       let confirme = false
       /** Bulle de l'assistant en cours d'écriture. */
@@ -259,7 +263,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     () => ({
       ouvrir: (brouillon?: string) =>
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
-      fermer: () => setEtat((e) => ({ ...e, ouvert: false })),
+      // Fin d'une modification de voyage : ses changements sont enregistrés côté API, le chat repart à zéro.
+      fermer: () => {
+        if (etatCourant.current.reprise) {
+          annulation.current?.abort()
+          enCours.current = false
+        }
+        setEtat((e) => (e.reprise ? etatInitial() : { ...e, ouvert: false }))
+      },
       setBrouillon: (brouillon: string) => setEtat((e) => ({ ...e, brouillon })),
       setDestinationInvite: (destination: string) =>
         setEtat((e) => ({
@@ -302,6 +313,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               : { id: nouvelId(), auteur: 'assistant', texte: m.contenu },
           ),
           conversation: { demande },
+          reprise: true,
           ouvert: true,
         })
       },
@@ -347,29 +359,26 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     envoyer,
   ])
 
-  const valeur = useMemo(
-    () => {
-      const pretChat = estConnecte && etat.questionnaire.termine && etat.statut === 'accueil'
-      const etatVisible = pretChat
-        ? {
-            ...etat,
-            statut: 'conversation' as const,
-            messages: [
-              ...etat.messages,
-              {
-                id: 'questionnaire-termine',
-                auteur: 'assistant' as const,
-                texte:
-                  'Merci pour ces premières indications. Vous pouvez maintenant préciser votre voyage.',
-              },
-            ],
-          }
-        : etat
+  const valeur = useMemo(() => {
+    const pretChat = estConnecte && etat.questionnaire.termine && etat.statut === 'accueil'
+    const etatVisible = pretChat
+      ? {
+          ...etat,
+          statut: 'conversation' as const,
+          messages: [
+            ...etat.messages,
+            {
+              id: 'questionnaire-termine',
+              auteur: 'assistant' as const,
+              texte:
+                'Merci pour ces premières indications. Vous pouvez maintenant préciser votre voyage.',
+            },
+          ],
+        }
+      : etat
 
-      return { ...etatVisible, ...actions, envoyer, estConnecte }
-    },
-    [etat, actions, envoyer, estConnecte],
-  )
+    return { ...etatVisible, ...actions, envoyer, estConnecte }
+  }, [etat, actions, envoyer, estConnecte])
 
   return <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
 }

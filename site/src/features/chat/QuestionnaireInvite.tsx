@@ -23,7 +23,7 @@ export function QuestionnaireInvite() {
 
   if (!question) {
     return (
-      <div className="flex w-full max-w-[620px] flex-col items-stretch gap-4">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col items-stretch gap-4">
         <BullePresentation />
         <div className="flex flex-col gap-4 rounded-[24px] bg-white p-6 text-center shadow-[0_20px_50px_rgba(43,29,20,0.14)] sm:p-8">
           <h2 className="m-0 font-display text-[30px] leading-tight font-semibold">
@@ -58,7 +58,7 @@ export function QuestionnaireInvite() {
   }
 
   return (
-    <div className="flex w-full max-w-[620px] flex-col items-stretch gap-4">
+    <div className="mx-auto flex w-full max-w-[620px] flex-col items-stretch gap-4">
       <BullePresentation />
       <div className="flex flex-col gap-5 rounded-[24px] bg-white p-6 text-center shadow-[0_20px_50px_rgba(43,29,20,0.14)] sm:p-8">
         <div

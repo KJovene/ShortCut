@@ -131,7 +131,7 @@ function CarteVoyage({
           )}
           <button
             type="button"
-            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${mois}, `)}
+            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${mois}, `, { nouveauVoyage: true })}
             className="flex min-h-11 items-center rounded-full bg-terre px-[18px] text-sm font-extrabold text-white hover:bg-rouille"
           >
             Construire ce voyage
@@ -288,7 +288,7 @@ function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
           )}
           <button
             type="button"
-            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `)}
+            onClick={() => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `, { nouveauVoyage: true })}
             className="flex min-h-10 items-center rounded-full bg-terre px-3.5 text-[13px] font-extrabold text-white"
           >
             Construire
