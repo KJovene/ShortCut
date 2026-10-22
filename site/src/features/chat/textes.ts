@@ -35,7 +35,7 @@ export const TEXTES = {
     estimations:
       "Nos prix sont des estimations datées : rien n'est réservé avant la signature de votre conseiller.",
     recommencer: 'Recommencer',
-    piste: 'Piste',
+    pisteRetenue: 'Piste',
     aPreciser: 'À préciser',
     signale: 'Signalé à votre conseiller',
     modifier: 'Modifier',
@@ -46,6 +46,36 @@ export const TEXTES = {
       'Prochaine étape : votre proposition complète arrive ici dans moins de 2 minutes. Prix estimés, confirmés par votre conseiller sous 2 jours ouvrés.',
     enPreparation: 'Proposition en préparation…',
     apresVosReponses: 'Proposition après vos réponses',
+    voirRecapitulatif: 'Voir mon récapitulatif',
+    recapitulatifPret:
+      'Votre récapitulatif détaillé est prêt : votre conseiller le relit, vérifie chaque prix et chaque place, puis vous l’envoie sous 2 jours ouvrés.',
+    etapes: {
+      recherche: 'Je cherche la destination, les logements et les activités…',
+      redaction: 'Je rédige votre programme jour par jour…',
+    },
+    piste: {
+      titre: 'Votre piste',
+      dates: (debut: string, fin: string) => `Du ${debut} au ${fin}`,
+      nuits: (n: number) => `${n} nuit${n > 1 ? 's' : ''}`,
+      voyageurs: (n: number) => `${n} voyageur${n > 1 ? 's' : ''}`,
+      temperature: (t: number) => `${t} °C en moyenne`,
+      trajet: (duree: string, ville: string) => `${duree} de trajet depuis ${ville}`,
+      niveaux: { essentiel: 'Essentiel', equilibre: 'Équilibré', confort: 'Confort' },
+      conseille: 'Conseillé',
+      parPersonne: (montant: string) => `${montant} / pers.`,
+      options: 'En option',
+      arbitrages: 'Pour vous rapprocher de votre budget',
+    },
+    recapitulatif: {
+      titre: 'Votre récapitulatif',
+      transmis: 'Transmis à votre conseiller',
+      sousTitre: (ville: string | null, jours: number) =>
+        [ville, `${jours} jours`].filter(Boolean).join(', '),
+      ajouter: (nom: string, prix: string) => `Ajouter ${nom} · +${prix}`,
+      garder: 'Garder le voyage tel quel',
+      messageAjout: (nom: string) => `J’ajoute l’option « ${nom} ».`,
+      messageGarder: 'Je garde le voyage tel quel, sans option.',
+    },
     /** Les neuf critères du récapitulatif (CRITERES, demande.ts). */
     libelles: {
       type: 'Type',
@@ -96,7 +126,7 @@ export const TEXTES = {
     envoyer: 'Send',
     estimations: 'My prices are estimates; nothing is booked until your advisor confirms.',
     recommencer: 'Start over',
-    piste: 'Idea',
+    pisteRetenue: 'Idea',
     aPreciser: 'To be specified',
     signale: 'Flagged to your advisor',
     modifier: 'Change',
@@ -107,6 +137,36 @@ export const TEXTES = {
       'Next step: your complete proposal arrives here in less than 2 minutes. Estimated prices, confirmed by your advisor within 2 business days.',
     enPreparation: 'Preparing your proposal…',
     apresVosReponses: 'Proposal after your answers',
+    voirRecapitulatif: 'See my summary',
+    recapitulatifPret:
+      'Your detailed summary is ready: your advisor reviews it, checks every price and every place, then sends it to you within 2 business days.',
+    etapes: {
+      recherche: 'Looking for the destination, accommodation and activities…',
+      redaction: 'Writing your day-by-day itinerary…',
+    },
+    piste: {
+      titre: 'Your trip idea',
+      dates: (debut: string, fin: string) => `From ${debut} to ${fin}`,
+      nuits: (n: number) => `${n} night${n > 1 ? 's' : ''}`,
+      voyageurs: (n: number) => `${n} traveller${n > 1 ? 's' : ''}`,
+      temperature: (t: number) => `${t} °C on average`,
+      trajet: (duree: string, ville: string) => `${duree} from ${ville}`,
+      niveaux: { essentiel: 'Essential', equilibre: 'Balanced', confort: 'Comfort' },
+      conseille: 'Recommended',
+      parPersonne: (montant: string) => `${montant} / person`,
+      options: 'Optional extras',
+      arbitrages: 'To get closer to your budget',
+    },
+    recapitulatif: {
+      titre: 'Your summary',
+      transmis: 'Sent to your advisor',
+      sousTitre: (ville: string | null, jours: number) =>
+        [ville, `${jours} days`].filter(Boolean).join(', '),
+      ajouter: (nom: string, prix: string) => `Add ${nom} · +${prix}`,
+      garder: 'Keep the trip as it is',
+      messageAjout: (nom: string) => `I’d like to add “${nom}”.`,
+      messageGarder: 'I’ll keep the trip as it is, no extras.',
+    },
     libelles: {
       type: 'Type',
       destination: 'Destination',

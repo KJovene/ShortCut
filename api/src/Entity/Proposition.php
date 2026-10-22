@@ -23,6 +23,9 @@ class Proposition
     /** Mention affichée avec toute première proposition (décision D11). */
     public const MENTION = 'Première proposition, prix estimés, à confirmer par votre conseiller.';
     public const MENTION_EN = 'First proposal, estimated prices, to be confirmed by your advisor.';
+    /** Mention du récapitulatif que le client consulte avant que son conseiller l'ait relu et envoyé. */
+    public const MENTION_PREPAREE = 'Récapitulatif préparé avec l\'assistant, prix estimés : votre conseiller le relit, vérifie chaque prix et chaque place, puis vous l\'envoie.';
+    public const MENTION_PREPAREE_EN = 'Summary prepared with the assistant, estimated prices: your advisor reviews it, checks every price and every place, then sends it to you.';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -79,6 +82,19 @@ class Proposition
      */
     #[ORM\Column(type: Types::JSON)]
     private array $choix = [];
+
+    /**
+     * Les activités proposées en option au client, en plus du niveau détaillé (RetenirCombinaison::options) : prix de
+     * vente pour le groupe, marge comprise. Le chatbot les lui propose ; il les ajoute ou garde le voyage tel quel.
+     *
+     * @var list<array{id: int, nom: string, prixCentimes: int, parPersonneCentimes: int, participants: int}>
+     */
+    #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
+    private array $options = [];
+
+    /** Le client a répondu aux options (ajoutées ou non) : le chatbot ne les lui propose plus. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?\DateTimeImmutable $optionsChoisiesLe = null;
 
     /**
      * La fiche demande au moment du chiffrage (EnregistrerExigences::fiche) : ce que le client a changé depuis.
@@ -246,6 +262,36 @@ class Proposition
     public function setChoix(array $choix): static
     {
         $this->choix = $choix;
+
+        return $this;
+    }
+
+    /**
+     * @return list<array{id: int, nom: string, prixCentimes: int, parPersonneCentimes: int, participants: int}>
+     */
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    /**
+     * @param list<array{id: int, nom: string, prixCentimes: int, parPersonneCentimes: int, participants: int}> $options
+     */
+    public function setOptions(array $options): static
+    {
+        $this->options = $options;
+
+        return $this;
+    }
+
+    public function getOptionsChoisiesLe(): ?\DateTimeImmutable
+    {
+        return $this->optionsChoisiesLe;
+    }
+
+    public function setOptionsChoisiesLe(?\DateTimeImmutable $optionsChoisiesLe): static
+    {
+        $this->optionsChoisiesLe = $optionsChoisiesLe;
 
         return $this;
     }

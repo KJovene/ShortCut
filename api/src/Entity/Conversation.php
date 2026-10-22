@@ -27,7 +27,10 @@ class Conversation
     private string $jeton;
 
     /**
-     * @var list<array{role: string, contenu: string, le: string}>
+     * Messages lisibles. Une carte (piste ou récapitulatif) accompagne certains messages de l'assistant : le site
+     * l'affiche à la place du texte, qui reste la version lisible partout ailleurs.
+     *
+     * @var list<array{role: string, contenu: string, le: string, carte?: array<string, mixed>}>
      */
     #[ORM\Column(type: Types::JSON)]
     private array $messages = [];
@@ -85,7 +88,7 @@ class Conversation
     }
 
     /**
-     * @return list<array{role: string, contenu: string, le: string}>
+     * @return list<array{role: string, contenu: string, le: string, carte?: array<string, mixed>}>
      */
     public function getMessages(): array
     {
@@ -93,7 +96,7 @@ class Conversation
     }
 
     /**
-     * @param list<array{role: string, contenu: string, le: string}> $messages
+     * @param list<array{role: string, contenu: string, le: string, carte?: array<string, mixed>}> $messages
      */
     public function setMessages(array $messages): static
     {
@@ -103,9 +106,13 @@ class Conversation
     }
 
     /** Ajoute un message à la conversation lisible (backoffice, reprise par un conseiller). */
-    public function ajouterMessage(string $role, string $contenu): static
+    /**
+     * @param array<string, mixed>|null $carte {type: piste|recapitulatif, …}, affichée par le site à la place du texte
+     */
+    public function ajouterMessage(string $role, string $contenu, ?array $carte = null): static
     {
-        $this->messages[] = ['role' => $role, 'contenu' => $contenu, 'le' => (new \DateTimeImmutable())->format(\DATE_ATOM)];
+        $this->messages[] = ['role' => $role, 'contenu' => $contenu, 'le' => (new \DateTimeImmutable())->format(\DATE_ATOM)]
+            + (null === $carte ? [] : ['carte' => $carte]);
 
         return $this;
     }

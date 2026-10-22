@@ -156,6 +156,7 @@ function Page({
   const mois = p.demande.dateDebut ? new Date(p.demande.dateDebut).getMonth() : null
   const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
   const confirmee = p.etat === 'confirmee'
+  const preparee = p.etat === 'preparee'
   const logements = p.prestations.filter((x) => x.type === 'logement')
   const activites = p.prestations.filter((x) => x.type === 'activite')
 
@@ -175,7 +176,7 @@ function Page({
           )}
         >
           {p.mention}
-          {!confirmee && t.confirmationAnnoncee}
+          {p.etat === 'estimee' && t.confirmationAnnoncee}
         </p>
       </div>
 
@@ -209,8 +210,14 @@ function Page({
       <section className="mx-auto flex max-w-[1376px] flex-wrap gap-8 px-4 pt-8 pb-6 sm:px-8 sm:pt-10 lg:gap-10">
         <div className="flex min-w-0 flex-[1_1_560px] flex-col gap-4">
           <span className="text-[13px] font-extrabold text-rouille">
-            Version {p.version} ·{' '}
-            {dateLongue(confirmee && p.confirmeeLe ? p.confirmeeLe : p.creeLe, langue)}
+            {preparee ? (
+              t.recapitulatifDu(dateLongue(p.creeLe, langue))
+            ) : (
+              <>
+                Version {p.version} ·{' '}
+                {dateLongue(confirmee && p.confirmeeLe ? p.confirmeeLe : p.creeLe, langue)}
+              </>
+            )}
             {p.demande.typeDeVoyage && ` · ${typeDeVoyage(p.demande.typeDeVoyage, langue)}`}
           </span>
           <h1 className="m-0 font-display text-[40px] leading-[1.05] font-semibold tracking-[-1.5px] sm:text-[52px]">
@@ -333,6 +340,28 @@ function Page({
             etats={comparaison?.prestations}
             t={t}
           />
+
+          {p.options.length > 0 && p.statut !== 'acceptee' && (
+            <section aria-labelledby="titre-options" className="flex flex-col gap-3">
+              <h2 id="titre-options" className="m-0 mt-4 font-display text-[30px] font-semibold">
+                {t.optionsTitre}
+              </h2>
+              <p className="m-0 text-sm text-taupe">{t.optionsDetail}</p>
+              <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                {p.options.map((o) => (
+                  <li
+                    key={o.nom}
+                    className="flex items-center justify-between gap-3 rounded-[18px] bg-white px-5 py-3.5"
+                  >
+                    <strong>{o.nom}</strong>
+                    <span className="font-display text-lg font-semibold whitespace-nowrap">
+                      {t.pourLeGroupe(euros(o.prixCentimes))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         <Budget
@@ -763,5 +792,6 @@ function etatSuivi(p: Proposition) {
   if (p.statut === 'acceptee') return t.acceptee
   if (p.demande.statut === 'a_confirmer') return t.confirmationTransmise
   if (p.etat === 'confirmee') return t.prixVerifies
+  if (p.etat === 'preparee') return t.enRelecture
   return t.rienReserve
 }

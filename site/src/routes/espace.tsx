@@ -219,7 +219,9 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
             {demande.proposition ? (
               <>
                 <span className="text-xs font-extrabold text-rouille">
-                  Proposition actuelle · v{demande.proposition.version}
+                  {demande.proposition.etat === 'preparee'
+                    ? 'Votre récapitulatif · en relecture'
+                    : `Proposition actuelle · v${demande.proposition.version}`}
                 </span>
                 <span className="font-display text-[30px] font-semibold">
                   {formatEuros(demande.proposition.totalCentimes / 100)}
@@ -229,14 +231,18 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
                   {formatEuros(demande.proposition.totalParPersonneCentimes / 100)} par personne ·{' '}
                   {demande.proposition.etat === 'confirmee'
                     ? 'prix confirmé par votre conseiller'
-                    : 'prix estimé'}
+                    : demande.proposition.etat === 'preparee'
+                      ? 'prix estimé, que votre conseiller vérifie avant de vous l’envoyer'
+                      : 'prix estimé'}
                 </span>
                 <Link
                   to="/proposition/$id"
                   params={{ id: demande.proposition.jeton }}
                   className="mt-1.5 flex min-h-10 items-center self-start rounded-full bg-encre px-4 text-[13px] font-extrabold text-creme hover:bg-rouille"
                 >
-                  Voir ma proposition
+                  {demande.proposition.etat === 'preparee'
+                    ? 'Voir mon récapitulatif'
+                    : 'Voir ma proposition'}
                 </Link>
               </>
             ) : (
@@ -369,7 +375,7 @@ function ModifierVoyage({ demande }: { demande: DemandeClient }) {
           ) : (
             <p className="m-0 rounded-2xl bg-creme p-4 text-[13px] text-taupe">
               {conseiller
-                ? `${conseiller} suit désormais votre dossier : les changements import passent par votre conseiller`
+                ? `${conseiller} suit désormais votre dossier : les changements importants passent par votre conseiller`
                 : 'Les changements de ce dossier passent par un conseiller de l’agence'}
               {rendezVous ? ', sur rendez-vous.' : '.'}
             </p>
@@ -583,7 +589,7 @@ function Fil({ demande }: { demande: DemandeClient }) {
           <p
             key={i}
             className={cn(
-              'm-0 max-w-[78%] px-3.5 py-2.5',
+              'm-0 max-w-[78%] px-3.5 py-2.5 whitespace-pre-line',
               STYLE_MESSAGE[auteurMessage(message.role)],
             )}
           >

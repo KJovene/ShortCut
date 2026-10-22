@@ -3,12 +3,16 @@
 namespace App\Chatbot;
 
 use App\Chatbot\Outil\ChercherDestinations;
+use App\Chatbot\Outil\ChoisirOptions;
 use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\TransmettreAuConseiller;
+use App\Chiffrage\Montant;
+use App\Confirmation\PropositionClient;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
+use App\Enum\NiveauBudget;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -18,8 +22,11 @@ use Symfony\Component\HttpFoundation\ServerEvent;
 /**
  * Agent Conversation : répond au client en streaming et recueille ses exigences (prompts/conversation.md).
  * Quand le client confirme son récapitulatif, l'agent Recherche prend le relais dans la même réponse : il choisit
- * la combinaison et l'explique au client. Les événements envoyés au site sont décrits dans Agent ; la réponse se
- * termine par « fin » {}.
+ * la combinaison et l'explique au client, puis la rédaction en fait son récapitulatif détaillé. Le client répond
+ * ensuite aux options proposées (choisir_options) : le voyage reste tel quel ou se met à jour.
+ *
+ * Les événements envoyés au site sont décrits dans Agent ; la réponse se termine par « fin » {terminee}, vrai quand
+ * la conversation n'attend plus rien du client (récapitulatif complet, demande passée à un conseiller).
  */
 final class AgentConversation extends Agent
 {
@@ -61,7 +68,7 @@ final class AgentConversation extends Agent
             $this->em->flush();
 
             yield self::evenement('texte', ['texte' => $reprise]);
-            yield self::evenement('fin', new \stdClass());
+            yield self::evenement('fin', ['terminee' => true]);
 
             return;
         }
@@ -74,6 +81,7 @@ final class AgentConversation extends Agent
             // Ce que la fiche contient vraiment : le modèle voit ce qu'il a oublié d'enregistrer (#193).
             ['type' => 'text', 'text' => self::etatDeLaFiche($demande)],
             ...self::dossierSuivi($demande),
+            ...self::propositionPreparee($demande),
         ]];
         $conversation->ajouterMessage('client', $message);
         $this->enregistrer($conversation, $tour->historique);
@@ -87,20 +95,31 @@ final class AgentConversation extends Agent
             }
         }
 
-        // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a déjà
-        // une proposition, c'est une modification : la version suivante se recalcule à partir d'elle, en brouillon pour
-        // son conseiller (#211). Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare
-        // la première.
-        if (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
-            $reference = $this->nouvelleVersion->reference($demande);
+        // Le client répond aux options de sa proposition : elle reste telle quelle ou se met à jour.
+        $attendUneReponse = null === $tour->sortie('transmettre_au_conseiller');
+        $options = $tour->sortie('choisir_options');
+        $reference = NouvelleVersion::reference($demande);
+        if (null !== $options && null !== $reference) {
+            $attendUneReponse = yield from $this->nouvelleVersion->appliquerLesOptions(
+                $conversation,
+                $reference,
+                $options['activitesAjoutees'],
+                NiveauBudget::tryFrom((string) $options['niveau']),
+            );
+        } elseif (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
+            // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a
+            // déjà une proposition, c'est une modification : la version suivante se recalcule à partir d'elle (#211).
+            // Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare la première.
             if (null !== $reference) {
-                yield from $this->nouvelleVersion->recalculer($conversation, $reference);
+                $attendUneReponse = yield from $this->nouvelleVersion->recalculer($conversation, $reference);
             } elseif (null === $demande->getConseiller()) {
-                yield from $this->recherche->proposer($conversation);
+                $attendUneReponse = yield from $this->recherche->proposer($conversation);
+            } else {
+                $attendUneReponse = false;
             }
         }
 
-        yield self::evenement('fin', new \stdClass());
+        yield self::evenement('fin', ['terminee' => !$attendUneReponse]);
     }
 
     protected function agent(): AgentIA
@@ -120,7 +139,7 @@ final class AgentConversation extends Agent
 
     protected function outils(): array
     {
-        return [EnregistrerExigences::class, ChercherDestinations::class, TransmettreAuConseiller::class];
+        return [EnregistrerExigences::class, ChercherDestinations::class, TransmettreAuConseiller::class, ChoisirOptions::class];
     }
 
     protected function appelsMax(): int
@@ -166,6 +185,44 @@ final class AgentConversation extends Agent
         return [['type' => 'text', 'text' => \sprintf(
             '<dossier_suivi>Ce dossier est suivi par %s, conseiller de l\'agence.</dossier_suivi>',
             trim(($conseiller->getPrenom() ?? '').' '.$conseiller->getNom()),
+        )]];
+    }
+
+    /**
+     * La proposition que le client a sous les yeux et ses options (prompts/conversation.md, « Les options ») : il
+     * peut les ajouter, choisir un autre niveau ou garder le voyage tel quel.
+     *
+     * @return list<array{type: string, text: string}>
+     */
+    private static function propositionPreparee(Demande $demande): array
+    {
+        $proposition = NouvelleVersion::reference($demande);
+        if (null === $proposition) {
+            return [];
+        }
+
+        $niveaux = [];
+        foreach (NiveauBudget::cases() as $niveau) {
+            $budget = $proposition->getBudgetsParNiveau()[$niveau->value] ?? null;
+            if (null !== $budget) {
+                $niveaux[] = \sprintf('%s %s', $niveau->value, Montant::euros($budget['totalCentimes']));
+            }
+        }
+        $options = null !== $proposition->getOptionsChoisiesLe()
+            ? 'le client a déjà répondu aux options : ne les repropose pas'
+            : ([] === $proposition->getOptions() ? 'aucune' : implode(' ; ', array_map(
+                static fn (array $o): string => \sprintf('%d = %s, +%s pour le groupe', $o['id'], $o['nom'], Montant::euros($o['prixCentimes'])),
+                $proposition->getOptions(),
+            )));
+
+        return [['type' => 'text', 'text' => \sprintf(
+            '<proposition_preparee>Version %d, %s. Niveau détaillé : %s (%s). Totaux : %s. Options : %s.</proposition_preparee>',
+            $proposition->getVersion(),
+            $proposition === PropositionClient::apercu($demande) ? 'récapitulatif pas encore relu par le conseiller' : 'envoyée par le conseiller',
+            $proposition->getNiveauBudget()->value,
+            Montant::euros($proposition->getTotalCentimes()),
+            implode(', ', $niveaux),
+            $options,
         )]];
     }
 

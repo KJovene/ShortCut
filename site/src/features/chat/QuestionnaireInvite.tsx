@@ -76,7 +76,9 @@ export function QuestionnaireInvite() {
         <p className="m-0 text-xs font-extrabold tracking-[1.5px] text-rouille uppercase">
           Question {questionnaire.reponses.length + 1} sur 3
         </p>
-        <h2 className="m-0 font-display text-[30px] leading-tight font-semibold">{question.question}</h2>
+        <h2 className="m-0 font-display text-[30px] leading-tight font-semibold">
+          {question.question}
+        </h2>
         <div className="grid gap-2 text-left sm:grid-cols-2">
           {question.choix.map((choix) => (
             <button

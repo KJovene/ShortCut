@@ -108,31 +108,9 @@ final class CalculerBudget implements Outil
     public function executer(ContexteAgent $contexte, array $entree): array
     {
         $demande = $contexte->demande;
-        $type = $demande->getTypeDeVoyage()
-            ?? throw new OutilException('Le type de voyage n\'est pas encore connu : enregistre-le avec enregistrer_exigences avant de chiffrer.');
-        if ($demande->isTransportInclus() && null === $demande->getVilleDepart()) {
-            throw new OutilException('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
-        }
-        $destination = $this->destination($entree['destination'] ?? null);
-        $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
-
+        $aChiffrer = $this->demandeDeChiffrage($demande, $entree);
         try {
-            $resultat = $this->calculateur->calculer($aChiffrer = new DemandeDeChiffrage(
-                typeDeVoyage: $type,
-                destination: $destination,
-                adultes: $demande->getAdultes(),
-                agesEnfants: $demande->agesDesEnfants(),
-                villeDepart: $demande->getVilleDepart(),
-                transportInclus: $demande->isTransportInclus(),
-                budgetCentimes: $demande->getBudgetCentimes(),
-                budgetParPersonne: $demande->isBudgetParPersonne(),
-                etapes: $this->etapes($entree['etapes'] ?? null, $destination),
-                activitesDemandees: $this->prestations($entree['activitesDemandees'] ?? [], TypePrestation::Activite, $destination),
-                activitesSuggerees: $this->prestations($entree['activitesSuggerees'] ?? [], TypePrestation::Activite, $destination),
-                transporteurs: $this->prestataires->findBy(['type' => TypePrestataire::Transporteur]),
-                margePourcentage: $regle->getMargePourcentage(),
-                fraisDeDossierCentimes: $regle->getFraisDeDossierCentimes($type),
-            ));
+            $resultat = $this->calculateur->calculer($aChiffrer);
         } catch (\InvalidArgumentException $e) {
             // Trop de combinaisons, étape vide… : un message que le modèle peut corriger.
             throw new OutilException($e->getMessage(), previous: $e);
@@ -150,6 +128,59 @@ final class CalculerBudget implements Outil
         }
 
         return $sortie;
+    }
+
+    /**
+     * Les activités en option d'une combinaison (même entrée que l'outil), chacune à son prix de vente pour le groupe.
+     *
+     * @param array<string, mixed> $entree    destination et étapes, comme pour calculer_budget
+     * @param list<int>            $activites identifiants des activités à proposer
+     *
+     * @return list<array{activite: Prestation, participants: int, centimes: int, parPersonneCentimes: int}>
+     */
+    public function options(Demande $demande, array $entree, array $activites): array
+    {
+        $aChiffrer = $this->demandeDeChiffrage($demande, ['activitesDemandees' => [], 'activitesSuggerees' => []] + $entree);
+        $destination = $aChiffrer->destination;
+
+        return $this->calculateur->options($aChiffrer, $this->prestations($activites, TypePrestation::Activite, $destination));
+    }
+
+    /**
+     * La demande du client et les candidats de l'entrée, prêts à chiffrer.
+     *
+     * @param array<string, mixed> $entree
+     */
+    private function demandeDeChiffrage(Demande $demande, array $entree): DemandeDeChiffrage
+    {
+        $type = $demande->getTypeDeVoyage()
+            ?? throw new OutilException('Le type de voyage n\'est pas encore connu : enregistre-le avec enregistrer_exigences avant de chiffrer.');
+        if ($demande->isTransportInclus() && null === $demande->getVilleDepart()) {
+            throw new OutilException('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
+        }
+        $destination = $this->destination($entree['destination'] ?? null);
+        $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
+
+        try {
+            return new DemandeDeChiffrage(
+                typeDeVoyage: $type,
+                destination: $destination,
+                adultes: $demande->getAdultes(),
+                agesEnfants: $demande->agesDesEnfants(),
+                villeDepart: $demande->getVilleDepart(),
+                transportInclus: $demande->isTransportInclus(),
+                budgetCentimes: $demande->getBudgetCentimes(),
+                budgetParPersonne: $demande->isBudgetParPersonne(),
+                etapes: $this->etapes($entree['etapes'] ?? null, $destination),
+                activitesDemandees: $this->prestations($entree['activitesDemandees'] ?? [], TypePrestation::Activite, $destination),
+                activitesSuggerees: $this->prestations($entree['activitesSuggerees'] ?? [], TypePrestation::Activite, $destination),
+                transporteurs: $this->prestataires->findBy(['type' => TypePrestataire::Transporteur]),
+                margePourcentage: $regle->getMargePourcentage(),
+                fraisDeDossierCentimes: $regle->getFraisDeDossierCentimes($type),
+            );
+        } catch (\InvalidArgumentException $e) {
+            throw new OutilException($e->getMessage(), previous: $e);
+        }
     }
 
     /**

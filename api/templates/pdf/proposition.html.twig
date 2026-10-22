@@ -94,7 +94,7 @@
     {% if client %}<p class="discret">{{ en ? 'Prepared for' : 'Préparée pour' }} {{ client }}</p>{% endif %}
 
     <div class="statut statut--{{ p.etat }}">
-        <span class="etiquette">{{ confirmee ? (en ? 'Confirmed proposal' : 'Proposition confirmée') : (en ? 'Estimated proposal' : 'Proposition estimée') }}</span>
+        <span class="etiquette">{{ confirmee ? (en ? 'Confirmed proposal' : 'Proposition confirmée') : (p.etat == 'preparee' ? (en ? 'Summary under review' : 'Récapitulatif en relecture') : (en ? 'Estimated proposal' : 'Proposition estimée')) }}</span>
         {% if confirmee %}
             {% if en %}
                 Confirmed by your advisor on {{ p.confirmeeLe|date_longue(p.langue) }}: prices checked with the providers.

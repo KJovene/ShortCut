@@ -85,7 +85,7 @@ final class ChatEnvoiTest extends WebTestCase
         $premiere = $this->claude->requetes[0]['corps'];
         self::assertSame(AgentConversation::MODELE, $premiere['model']);
         self::assertTrue($premiere['stream']);
-        self::assertSame(['enregistrer_exigences', 'chercher_destinations', 'transmettre_au_conseiller'], array_column($premiere['tools'], 'name'));
+        self::assertSame(['enregistrer_exigences', 'chercher_destinations', 'transmettre_au_conseiller', 'choisir_options'], array_column($premiere['tools'], 'name'));
         self::assertStringNotContainsString('{{date_du_jour}}', $premiere['system'][0]['text']);
         self::assertStringNotContainsString('<!--', $premiere['system'][0]['text']);
 

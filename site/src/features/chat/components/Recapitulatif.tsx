@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { useChat } from '../chatContext'
@@ -13,7 +14,7 @@ export function Recapitulatif({
   onModifier: (texte: string) => void
   titreId?: string
 }) {
-  const { conversation, reflexion, terminee, langue } = useChat()
+  const { conversation, reflexion, terminee, langue, recapitulatif, fermer } = useChat()
   const t = TEXTES[langue]
   const d = conversation.demande
   // Photo et climat de la destination reconnue, lus dans le catalogue de l'API.
@@ -34,7 +35,7 @@ export function Recapitulatif({
               className="block size-full object-cover"
             />
             <span className="absolute bottom-3.5 left-4 rounded-full bg-white px-3 py-1.5 text-[13px] font-extrabold">
-              {t.piste}
+              {t.pisteRetenue}
               {langue === 'en' ? ': ' : ' : '}
               {destination.ville}
               {temperature !== null && ` · ${temperature} °C`}
@@ -110,7 +111,19 @@ export function Recapitulatif({
             )
           })}
         </dl>
-        {terminee ? (
+        {recapitulatif ? (
+          <>
+            <p className="m-0 text-xs leading-normal text-taupe-clair">{t.recapitulatifPret}</p>
+            <Link
+              to="/proposition/$id"
+              params={{ id: recapitulatif }}
+              onClick={fermer}
+              className="flex min-h-[50px] items-center justify-center rounded-full bg-encre text-[15px] font-extrabold text-creme hover:bg-rouille"
+            >
+              {t.voirRecapitulatif}
+            </Link>
+          </>
+        ) : terminee ? (
           <>
             <p className="m-0 text-xs leading-normal text-taupe-clair">{t.rappelTerminee}</p>
             <p

@@ -91,7 +91,7 @@ final class PropositionService
     {
         $chiffrage = $this->cache->retrouver($demande, $redigee->chiffrageId)
             ?? throw new PropositionRefusee([\sprintf('Le chiffrage « %s » est inconnu ou a expiré : reprends le chiffrageId du premier message.', $redigee->chiffrageId)]);
-        /** @var array{destination: array{slug: string}, etapes: list<array{dateDebut: string, nombreDeNuits: int, logements: list<array{id: int, nom: string}>}>, niveaux: array<string, array{logements: list<array{id: int, nom: string}>, activites: list<array{id: int, nom: string}>}>} $combinaison */
+        /** @var array{destination: array{slug: string}, etapes: list<array{dateDebut: string, nombreDeNuits: int, logements: list<array{id: int, nom: string}>}>, niveaux: array<string, array{logements: list<array{id: int, nom: string}>, activites: list<array{id: int, nom: string}>}>, options?: list<array{id: int, nom: string, prixEuros: int|float, parPersonneEuros: int|float, participants: int}>} $combinaison */
         $combinaison = $chiffrage['combinaison'] ?? throw new PropositionRefusee(['Ce chiffrage n\'a pas de combinaison retenue.']);
         /** @var array<string, array{postes: list<array{type: string, libelle: string, calcul: string, montantEuros: int|float}>, fraisDeDossierEuros: int|float, totalEuros: int|float, parPersonneEuros: int|float, hypotheses: list<string>}> $niveaux */
         $niveaux = $chiffrage['niveaux'];
@@ -126,6 +126,7 @@ final class PropositionService
             ->setTotalParPersonneCentimes(self::centimes($niveau['parPersonneEuros']))
             ->setFraisDeDossierCentimes(self::centimes($niveau['fraisDeDossierEuros']))
             ->setHypotheses($niveau['hypotheses'])
+            ->setOptions(self::options($combinaison['options'] ?? [], $activitesDetaillees))
             ->setChoix(\is_array($chiffrage['choix'] ?? null) ? $chiffrage['choix'] : [])
             ->setExigences(\is_array($chiffrage['exigences'] ?? null) ? $chiffrage['exigences'] : [])
             ->setCreeLe($this->horloge->now());
@@ -219,6 +220,27 @@ final class PropositionService
         if ([] !== $raisons) {
             throw new PropositionRefusee($raisons);
         }
+    }
+
+    /**
+     * Les options de la combinaison que le niveau détaillé ne contient pas, en centimes.
+     *
+     * @param list<array{id: int, nom: string, prixEuros: int|float, parPersonneEuros: int|float, participants: int}> $options
+     * @param list<array{id: int, nom: string}>                                                                       $activitesDetaillees
+     *
+     * @return list<array{id: int, nom: string, prixCentimes: int, parPersonneCentimes: int, participants: int}>
+     */
+    private static function options(array $options, array $activitesDetaillees): array
+    {
+        $incluses = array_column($activitesDetaillees, 'id');
+
+        return array_values(array_map(static fn (array $o): array => [
+            'id' => $o['id'],
+            'nom' => $o['nom'],
+            'prixCentimes' => self::centimes($o['prixEuros']),
+            'parPersonneCentimes' => self::centimes($o['parPersonneEuros']),
+            'participants' => $o['participants'],
+        ], array_filter($options, static fn (array $o): bool => !\in_array($o['id'], $incluses, true))));
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Chatbot\Outil\EnregistrerExigences;
+use App\Confirmation\PropositionClient;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
@@ -16,7 +17,8 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
  * « Mon espace » sur le site : le client connecté suit ses demandes, leur proposition et ses conversations.
- * Il ne voit que ses propres demandes ; les brouillons de proposition restent côté conseiller.
+ * Il ne voit que ses propres demandes. Avant la première version envoyée par son conseiller, il retrouve le
+ * récapitulatif préparé avec l'assistant ; ensuite, les brouillons restent côté conseiller.
  */
 #[Route('/api/moi')]
 final class EspaceClientController extends AbstractController
@@ -51,7 +53,11 @@ final class EspaceClientController extends AbstractController
                 // Lien de la page « Ma proposition ».
                 'jeton' => $proposition->getJetonPublic(),
                 'version' => $proposition->getVersion(),
-                'etat' => TypeProposition::Confirmee === $proposition->getType() ? 'confirmee' : 'estimee',
+                'etat' => match (true) {
+                    TypeProposition::Confirmee === $proposition->getType() => 'confirmee',
+                    StatutProposition::Brouillon === $proposition->getStatut() => 'preparee',
+                    default => 'estimee',
+                },
                 'statut' => $proposition->getStatut()->value,
                 'niveauBudget' => $proposition->getNiveauBudget()->label(),
                 'totalCentimes' => $proposition->getTotalCentimes(),
@@ -71,9 +77,14 @@ final class EspaceClientController extends AbstractController
         ];
     }
 
-    /** Dernière version montrée au client : ni brouillon, ni remplacée. */
+    /** Dernière version montrée au client (ni brouillon, ni remplacée), sinon son récapitulatif préparé. */
     private static function propositionVisible(Demande $demande): ?Proposition
     {
+        $apercu = PropositionClient::apercu($demande);
+        if (null !== $apercu) {
+            return $apercu;
+        }
+
         $visible = null;
         foreach ($demande->getPropositions() as $proposition) {
             if (\in_array($proposition->getStatut(), [StatutProposition::Brouillon, StatutProposition::Remplacee], true)) {

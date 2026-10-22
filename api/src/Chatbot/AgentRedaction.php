@@ -5,11 +5,12 @@ namespace App\Chatbot;
 use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\EnregistrerProposition;
 use App\Chatbot\Outil\Outil;
+use App\Chatbot\Outil\RetenirCombinaison;
 use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Chiffrage\ChiffrageCache;
 use App\Chiffrage\Periode;
+use App\Confirmation\PropositionClient;
 use App\Entity\Conversation;
-use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Enum\AgentIA;
 use App\Enum\NiveauBudget;
@@ -26,21 +27,29 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * Recherche, il rédige la première proposition (programme jour par jour, points forts, argumentaire) et l'enregistre
  * avec enregistrer_proposition, qui la valide et l'enregistre en brouillon.
  *
- * Le conseiller relit le brouillon et l'envoie au client depuis la fiche demande du backoffice. Le client lit
- * seulement un message du serveur qui le lui annonce. Si la rédaction échoue, le serveur transmet la demande au
- * conseiller et prévient le client.
+ * Le conseiller relit le brouillon et l'envoie au client depuis la fiche demande du backoffice. D'ici là, le client
+ * consulte ce récapitulatif depuis le chat (carte « recapitulatif ») et son espace, dans le format de « Ma
+ * proposition » ; s'il reste des options auxquelles il n'a pas répondu, le message du serveur les lui propose. Si la
+ * rédaction échoue, le serveur transmet la demande au conseiller et prévient le client.
  *
  * Après une modification du client (ticket #211), il écrit la version suivante en reprenant le programme précédent ;
- * elle aussi reste en brouillon jusqu'à ce que le conseiller l'envoie, et le client garde la précédente d'ici là.
+ * si une version a déjà été envoyée, elle aussi reste en brouillon jusqu'à ce que le conseiller l'envoie, et le client
+ * garde la précédente d'ici là.
  */
 final class AgentRedaction extends Agent
 {
     /** Décision D22 : Sonnet 5.5 pour la recherche, le chiffrage et la rédaction. */
     public const MODELE = 'claude-sonnet-5-5';
 
-    public const MESSAGE_BROUILLON = 'Votre conseiller relit maintenant votre proposition détaillée, avec le programme jour par jour : il vérifie chaque prix et chaque place, puis vous l\'envoie.';
+    public const MESSAGE_PRET = 'Votre récapitulatif est prêt : programme jour par jour, hébergements et budget.';
+    public const MESSAGE_A_JOUR = 'Votre récapitulatif est à jour%s.';
+    public const MESSAGE_QUESTION_OPTIONS = 'Avant que votre conseiller le relise, une option vous tente-t-elle, ou gardez-vous le voyage tel quel ?';
+    public const MESSAGE_SUITE = 'Votre conseiller le relit, vérifie chaque prix et chaque place, puis vous l\'envoie sous 2 jours ouvrés. Vous le retrouvez à tout moment dans votre espace.';
     public const MESSAGE_NOUVELLE_VERSION = 'Votre conseiller relit maintenant la version %d de votre proposition, avec votre changement : il vérifie chaque prix et chaque place, puis vous l\'envoie. D\'ici là, la version %d reste sur votre page « Ma proposition ».';
-    public const MESSAGE_BROUILLON_EN = 'Your advisor is now reviewing your detailed proposal, with the day-by-day itinerary: they check every price and every place, then send it to you.';
+    public const MESSAGE_PRET_EN = 'Your summary is ready: day-by-day itinerary, accommodation and budget.';
+    public const MESSAGE_A_JOUR_EN = 'Your summary is up to date%s.';
+    public const MESSAGE_QUESTION_OPTIONS_EN = 'Before your advisor reviews it, would you like to add one of the options, or keep the trip as it is?';
+    public const MESSAGE_SUITE_EN = 'Your advisor reviews it, checks every price and every place, then sends it to you within 2 business days. You can find it at any time in your account.';
     public const MESSAGE_NOUVELLE_VERSION_EN = 'Your advisor is now reviewing version %d of your proposal, with your change: they check every price and every place, then send it to you. Until then, version %d stays on your “My proposal” page.';
 
     /**
@@ -62,9 +71,12 @@ final class AgentRedaction extends Agent
     }
 
     /**
-     * @return \Generator<int, ServerEvent>
+     * @param list<string> $optionsAjoutees options que le client vient d'ajouter (« Cérémonie du thé en kimono »)
+     * @param bool         $optionsChoisies le client a déjà répondu aux options : elles ne lui sont plus proposées
+     *
+     * @return \Generator<int, ServerEvent, mixed, bool> vrai si la conversation attend la réponse du client aux options
      */
-    public function rediger(Conversation $conversation, string $chiffrageId, ?Modification $modification = null): \Generator
+    public function rediger(Conversation $conversation, string $chiffrageId, ?Modification $modification = null, array $optionsAjoutees = [], bool $optionsChoisies = false): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
         $contexte = new ContexteAgent($demande, $conversation, AgentIA::Chiffrage);
@@ -72,7 +84,7 @@ final class AgentRedaction extends Agent
         $tour = null;
 
         if (null !== $chiffrage && isset($chiffrage['combinaison'])) {
-            $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => $this->premierMessage($conversation, $chiffrageId, $chiffrage, $modification)]]]]);
+            $tour = new Tour([['role' => 'user', 'content' => [['type' => 'text', 'text' => $this->premierMessage($conversation, $chiffrageId, $chiffrage, $modification, $optionsAjoutees)]]]]);
             foreach ($this->boucle($contexte, $tour, static function (): void {}) as $evenement) {
                 // Rien de ce que l'agent écrit ne va au client ; ses erreurs sont traitées ci-dessous.
                 if ('outil' === $evenement->getType()) {
@@ -80,15 +92,13 @@ final class AgentRedaction extends Agent
                 }
             }
             $enregistree = $tour->sortie('enregistrer_proposition');
-            if (null !== $enregistree) {
-                $langue = $demande->getLangue();
-                $message = null === $modification
-                    ? $langue->choisir(self::MESSAGE_BROUILLON, self::MESSAGE_BROUILLON_EN)
-                    : \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), (int) $enregistree['version'], $modification->reference->getVersion());
-                $this->ajouterALaConversation($conversation, $message);
-                yield self::evenement('texte', ['texte' => "\n\n".$message]);
+            $proposition = null === $enregistree ? null : $demande->getPropositions()->findFirst(static fn (int $i, Proposition $p): bool => $p->getVersion() === (int) $enregistree['version']);
+            if (null !== $proposition) {
+                if ($optionsChoisies) {
+                    $proposition->setOptionsChoisiesLe(new \DateTimeImmutable());
+                }
 
-                return;
+                return yield from $this->annoncer($conversation, $proposition, null !== $modification || $optionsChoisies, $optionsAjoutees);
             }
         }
 
@@ -103,6 +113,74 @@ final class AgentRedaction extends Agent
         $conversation->ajouterMessage('assistant', $message);
         $this->em->flush();
         yield self::evenement('texte', ['texte' => "\n\n".$message]);
+
+        return false;
+    }
+
+    /**
+     * Le message du serveur une fois la version enregistrée. Avant toute version envoyée, c'est le récapitulatif du
+     * client : une carte avec son lien, et la question des options s'il n'y a pas encore répondu. Après, c'est un
+     * brouillon pour le conseiller : le client garde la version qu'il a reçue.
+     *
+     * @param list<string> $optionsAjoutees
+     *
+     * @return \Generator<int, ServerEvent, mixed, bool> vrai si la conversation attend la réponse du client aux options
+     */
+    private function annoncer(Conversation $conversation, Proposition $proposition, bool $miseAJour, array $optionsAjoutees): \Generator
+    {
+        $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
+        $langue = $demande->getLangue();
+
+        if ($proposition !== PropositionClient::apercu($demande)) {
+            $recue = max(0, ...array_map(
+                static fn (Proposition $p): int => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe() ? $p->getVersion() : 0,
+                $demande->getPropositions()->toArray(),
+            ));
+            $message = \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), $proposition->getVersion(), $recue);
+            $this->ajouterALaConversation($conversation, $message);
+            yield self::evenement('texte', ['texte' => "\n\n".$message]);
+
+            return false;
+        }
+
+        $question = [] !== $proposition->getOptions() && null === $proposition->getOptionsChoisiesLe();
+        $avec = [] === $optionsAjoutees ? '' : $langue->choisir(', avec ', ', with ').implode($langue->choisir(' et ', ' and '), $optionsAjoutees);
+        $message = ($miseAJour ? \sprintf($langue->choisir(self::MESSAGE_A_JOUR, self::MESSAGE_A_JOUR_EN), $avec) : $langue->choisir(self::MESSAGE_PRET, self::MESSAGE_PRET_EN))
+            .' '.($question ? $langue->choisir(self::MESSAGE_QUESTION_OPTIONS, self::MESSAGE_QUESTION_OPTIONS_EN) : $langue->choisir(self::MESSAGE_SUITE, self::MESSAGE_SUITE_EN));
+        $carte = self::carte($proposition, $message, $question);
+        $this->ajouterALaConversation($conversation, $message, $carte);
+        yield self::evenement('recapitulatif', $carte);
+
+        return $question;
+    }
+
+    /**
+     * La carte « recapitulatif » du chat : le lien de la page, le total du niveau détaillé et, si la question est
+     * posée, les options que le client peut ajouter d'un clic.
+     *
+     * @return array<string, mixed>
+     */
+    public static function carte(Proposition $proposition, string $message, bool $question): array
+    {
+        $demande = $proposition->getDemande();
+
+        return [
+            'type' => 'recapitulatif',
+            'texte' => $message,
+            'jeton' => $proposition->getJetonPublic(),
+            'version' => $proposition->getVersion(),
+            'ville' => $proposition->getDestination()?->getVille() ?? $demande?->getLieuOuZone(),
+            'jours' => \count($proposition->getProgramme()),
+            'niveau' => $proposition->getNiveauBudget()->value,
+            'totalCentimes' => $proposition->getTotalCentimes(),
+            'parPersonneCentimes' => $proposition->getTotalParPersonneCentimes(),
+            'voyageurs' => (int) $demande?->getAdultes() + (int) $demande?->getEnfants(),
+            'options' => $question ? array_map(static fn (array $o): array => [
+                'id' => $o['id'],
+                'nom' => $o['nom'],
+                'prixCentimes' => $o['prixCentimes'],
+            ], $proposition->getOptions()) : [],
+        ];
     }
 
     /**
@@ -110,13 +188,14 @@ final class AgentRedaction extends Agent
      * du client, les faits qui justifient le choix, les niveaux et la fiche de chaque prestation retenue.
      *
      * @param array<string, mixed> $chiffrage
+     * @param list<string>         $optionsAjoutees
      */
-    private function premierMessage(Conversation $conversation, string $chiffrageId, array $chiffrage, ?Modification $modification): string
+    private function premierMessage(Conversation $conversation, string $chiffrageId, array $chiffrage, ?Modification $modification, array $optionsAjoutees = []): string
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
-        /** @var array{destination: array{slug: string}, etapes: list<array{dateDebut: string, nombreDeNuits: int, logements: list<array{id: int, nom: string}>}>, justification: array<string, mixed>, niveaux: array<string, array{logements: list<array{id: int, nom: string}>, activites: list<array{id: int, nom: string}>, transport: string, totalEuros: int|float, parPersonneEuros: int|float}>} $combinaison */
+        /** @var array{destination: array{slug: string}, etapes: list<array{dateDebut: string, nombreDeNuits: int, logements: list<array{id: int, nom: string}>}>, justification: array<string, mixed>, niveaux: array<string, array{logements: list<array{id: int, nom: string}>, activites: list<array{id: int, nom: string}>, transport: string, totalEuros: int|float, parPersonneEuros: int|float}>, niveauConseille?: string} $combinaison */
         $combinaison = $chiffrage['combinaison'];
-        $niveau = self::niveauConseille($demande, $combinaison['niveaux']);
+        $niveau = NiveauBudget::tryFrom((string) ($combinaison['niveauConseille'] ?? '')) ?? RetenirCombinaison::niveauConseille($demande, $combinaison['niveaux']);
         $destination = $this->destinations->findOneBy(['slug' => $combinaison['destination']['slug']]);
 
         $sections = [
@@ -146,25 +225,11 @@ final class AgentRedaction extends Agent
         if (null !== $modification) {
             $sections[] = $modification->pourLaRedaction();
         }
+        if ([] !== $optionsAjoutees) {
+            $sections[] = 'Le client vient d\'ajouter ces options, déjà comprises dans la combinaison : '.implode(', ', $optionsAjoutees).'. Place-les dans le programme et dis-le en une phrase dans pourquoi.';
+        }
 
         return implode("\n\n", $sections).AgentRecherche::langue($demande);
-    }
-
-    /**
-     * Équilibré, sauf si son total dépasse le budget du client : l'essentiel, le plus proche de ce qu'il peut payer.
-     *
-     * @param array<string, array{totalEuros: int|float, parPersonneEuros: int|float}> $niveaux
-     */
-    public static function niveauConseille(Demande $demande, array $niveaux): NiveauBudget
-    {
-        $budget = $demande->getBudgetCentimes();
-        if (null === $budget) {
-            return NiveauBudget::Equilibre;
-        }
-        $equilibre = $niveaux[NiveauBudget::Equilibre->value];
-        $prix = $demande->isBudgetParPersonne() ? $equilibre['parPersonneEuros'] : $equilibre['totalEuros'];
-
-        return $prix * 100 <= $budget ? NiveauBudget::Equilibre : NiveauBudget::Essentiel;
     }
 
     /**
