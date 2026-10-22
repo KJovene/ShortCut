@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { demandeVide, nombreRenseignes, valeurCritere } from './demande'
+import {
+  demandeDepuisQuestionnaire,
+  demandeVide,
+  nombreRenseignes,
+  valeurCritere,
+} from './demande'
 
 describe('récapitulatif de la demande', () => {
   it('formate les critères renseignés', () => {
@@ -55,5 +60,23 @@ describe('récapitulatif de la demande', () => {
     const d = { ...demandeVide(), type: 'sejour' as const, adultes: 2, enfants: 0 }
     expect(valeurCritere(d, 'type')).toBe('Séjour à deux')
     expect(valeurCritere(d, 'voyageurs')).toBe('2 adultes · 1 chambre double')
+  })
+
+  it('convertit les réponses du questionnaire en critères du voyage', () => {
+    const d = demandeDepuisQuestionnaire(
+      ['Noces', 'À deux', 'Plus de 3 000 €'],
+      demandeVide(),
+    )
+
+    expect(d).toMatchObject({
+      type: 'noces',
+      adultes: 2,
+      budget: 3000,
+      budgetIndicatif: 'Plus de 3 000 €',
+      budgetParPersonne: false,
+    })
+    expect(valeurCritere(d, 'type')).toBe('Voyage de noces')
+    expect(valeurCritere(d, 'voyageurs')).toBe('2 adultes · 1 chambre double')
+    expect(valeurCritere(d, 'budget')).toBe('Plus de 3 000 € au total')
   })
 })

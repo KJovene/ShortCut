@@ -31,6 +31,8 @@ export interface Demande {
   adultes?: number
   enfants?: number
   budget?: number
+  /** Formulation conservée pour les budgets par tranche du questionnaire. */
+  budgetIndicatif?: string
   budgetParPersonne?: boolean
   depart?: string
   envies: string[]
@@ -44,6 +46,39 @@ export const demandeVide = (): Demande => ({
   contraintes: [],
   contraintesSignalees: [],
 })
+
+/** Convertit les trois réponses de l'accueil en critères immédiatement visibles dans le récapitulatif. */
+export function demandeDepuisQuestionnaire(reponses: string[], precedente: Demande): Demande {
+  const type = {
+    Séjours: 'sejour',
+    Circuits: 'circuit',
+    Groupes: 'groupe',
+    Noces: 'noces',
+    Entreprise: 'entreprise',
+    // Compatibilité avec les réponses enregistrées avant le changement des catégories.
+    'Séjour détente': 'sejour',
+    'Circuit découverte': 'circuit',
+    'Voyage de noces': 'noces',
+  }[reponses[0] ?? ''] as TypeDeVoyage | undefined
+  const adultes = reponses[1] === 'À deux' ? 2 : reponses[1] === 'Seul(e)' ? 1 : undefined
+  const budget =
+    reponses[2] === 'Moins de 1 500 €'
+      ? 1500
+      : reponses[2] === 'De 1 500 à 3 000 €'
+        ? 3000
+        : reponses[2] === 'Plus de 3 000 €'
+          ? 3000
+          : undefined
+
+  return {
+    ...precedente,
+    ...(type ? { type } : {}),
+    ...(adultes !== undefined ? { adultes } : {}),
+    ...(budget !== undefined
+      ? { budget, budgetIndicatif: reponses[2], budgetParPersonne: false }
+      : {}),
+  }
+}
 
 /** Vrai si le critère a une valeur. */
 export function estRenseigne(d: Demande, critere: Critere): boolean {
@@ -107,7 +142,7 @@ export function valeurCritere(
     }
     case 'budget': {
       if (d.budget === undefined) return undefined
-      const base = `${formatEuros(d.budget)} ${d.budgetParPersonne ? t.parPersonne : t.auTotal}`
+      const base = `${d.budgetIndicatif ?? formatEuros(d.budget)} ${d.budgetParPersonne ? t.parPersonne : t.auTotal}`
       return d.depart ? `${base} · ${t.departDe(d.depart)}` : base
     }
     case 'envies':

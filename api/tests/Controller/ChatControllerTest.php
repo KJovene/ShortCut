@@ -63,6 +63,28 @@ final class ChatControllerTest extends WebTestCase
         self::assertSame($client, $this->em->find(Demande::class, $demande)?->getClient());
     }
 
+    public function testLesPreferencesDuQuestionnaireSontEnregistreesDansLaDemandeDuClient(): void
+    {
+        $client = $this->creerCompte('zoe.fontaine@exemple.test', Role::Client);
+        $this->client->loginUser($client);
+
+        $this->client->request(
+            'POST',
+            '/api/chat/conversations',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: json_encode([
+                'preferences' => ['Voyage de noces', 'À deux', 'Plus de 3 000 €'],
+            ], \JSON_THROW_ON_ERROR),
+        );
+        self::assertResponseStatusCodeSame(201);
+        $demande = $this->em->find(Demande::class, $this->reponse()['demande']);
+
+        self::assertNotNull($demande);
+        self::assertSame('noces', $demande->getTypeDeVoyage()?->value);
+        self::assertSame(2, $demande->getAdultes());
+        self::assertSame(300000, $demande->getBudgetCentimes());
+    }
+
     /** 3 voyages en cours au plus par client : le 4e attend qu'un autre soit accepté ou perdu. */
     public function testUnClientNOuvrePasUnQuatriemeVoyageEnCours(): void
     {

@@ -19,7 +19,18 @@ function renderAt(path: string) {
 
 describe('routeur', () => {
   beforeEach(() => {
-    simulerApi({})
+    simulerApi({
+      'GET /api/moi': {
+        status: 200,
+        body: {
+          email: 'client@example.com',
+          prenom: 'Camille',
+          nom: 'Client',
+          telephone: null,
+          role: 'ROLE_CLIENT',
+        },
+      },
+    })
   })
 
   afterEach(() => {
@@ -43,6 +54,40 @@ describe('routeur', () => {
     expect(screen.getByText('10 jours en mai à deux')).toBeInTheDocument()
     // Le récapitulatif existe en deux exemplaires : repliable sur mobile, en colonne sur ordinateur.
     expect(screen.getAllByRole('heading', { name: 'Votre voyage' })).toHaveLength(2)
+  })
+
+  it('permet à un visiteur de rejoindre la connexion après les trois questions', async () => {
+    simulerApi({})
+    sessionStorage.setItem(
+      'chat',
+      JSON.stringify({
+        statut: 'accueil',
+        messages: [],
+        conversation: { demande: {} },
+        questionnaire: {
+          reponses: ['Circuit découverte', 'À deux', 'De 1 500 à 3 000 €'],
+          termine: true,
+        },
+      }),
+    )
+    renderAt('/types-de-voyages')
+
+    await userEvent.click(await screen.findByRole('button', { name: "Parler à l'assistant" }))
+    await userEvent.click(await screen.findByRole('link', { name: 'Se connecter' }))
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Assistant voyage' })).not.toBeInTheDocument()
+  })
+
+  it('navigue depuis le questionnaire affiché sur l’accueil', async () => {
+    simulerApi({})
+    sessionStorage.clear()
+    renderAt('/')
+    await userEvent.click(await screen.findByRole('button', { name: 'Séjours' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'À deux' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Moins de 1 500 €' }))
+    await userEvent.click(await screen.findByRole('link', { name: 'Se connecter' }))
+    expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { name: 'Assistant voyage' })).not.toBeInTheDocument()
   })
 
   it('affiche la fiche d’une destination', async () => {

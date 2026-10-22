@@ -19,6 +19,15 @@ export interface EtatChat {
   brouillon: string
   /** Langue du client, reconnue par l'assistant (US15) : celle des textes du chatbot. */
   langue: Langue
+  questionnaire: QuestionnaireEtat
+  /** Réponses du visiteur à transmettre au premier message après connexion. */
+  contexteInvite?: string
+}
+
+export interface QuestionnaireEtat {
+  reponses: string[]
+  termine: boolean
+  transmis: boolean
 }
 
 /** Conversation déjà commencée, reprise depuis l'espace client (« Modifier le voyage »). */
@@ -36,9 +45,12 @@ export interface ActionsChat {
   recommencer: () => void
   /** Recharge une conversation existante et ouvre le chat pour la continuer. */
   reprendre: (reprise: Reprise) => void
+  repondreQuestion: (reponse: string) => void
 }
 
-export const ChatContext = createContext<(EtatChat & ActionsChat) | null>(null)
+export const ChatContext = createContext<(EtatChat & ActionsChat & { estConnecte: boolean }) | null>(
+  null,
+)
 
 export function useChat() {
   const chat = useContext(ChatContext)
