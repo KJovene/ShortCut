@@ -257,3 +257,35 @@ export type DestinationSurCarte = DestinationPublique & { lon: number; lat: numb
  */
 export const estSurCarte = (d: DestinationPublique): d is DestinationSurCarte =>
   d.miseEnAvant && d.lon !== null && d.lat !== null
+
+const sansAccents = (texte: string) =>
+  texte
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim()
+
+/**
+ * Destination du catalogue qui correspond au lieu saisi par le client (« Nairobi », « Kenya », « Maroc ») :
+ * sa photo illustre le récapitulatif du chat et le voyage dans l'espace client.
+ */
+export function destinationDuLieu(
+  lieu: string | null | undefined,
+  destinations: DestinationPublique[],
+) {
+  const cherche = lieu ? sansAccents(lieu) : ''
+  if (!cherche) return undefined
+  return (
+    destinations.find(
+      (d) =>
+        d.slug === cherche ||
+        sansAccents(d.ville) === cherche ||
+        sansAccents(d.nom).startsWith(cherche),
+    ) ??
+    destinations.find(
+      (d) =>
+        sansAccents(d.pays) === cherche ||
+        (cherche.length >= 4 && sansAccents(d.nom).includes(cherche)),
+    )
+  )
+}

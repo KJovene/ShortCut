@@ -269,6 +269,70 @@ describe('mon espace', () => {
       )
     })
 
+    it('démarre un nouveau voyage vierge après avoir modifié un voyage existant', async () => {
+      sessionStorage.clear()
+      afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: /Continuer avec l’assistant/ }))
+      const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(fenetre).getByText('Une villa à Bali en mai.')).toBeInTheDocument()
+
+      // Fin de la modification : la fenêtre se ferme, le chat repart à zéro.
+      await user.click(within(fenetre).getByRole('button', { name: "Fermer l'assistant" }))
+      await user.click(screen.getByRole('button', { name: /Nouveau voyage/ }))
+
+      const nouvelle = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+      expect(within(nouvelle).queryByText('Une villa à Bali en mai.')).toBeNull()
+      expect(within(nouvelle).queryByText('Pour combien de personnes ?')).toBeNull()
+    })
+
+    it('supprime le voyage après confirmation', async () => {
+      const api = simulerApi({
+        'GET /api/moi': { status: 200, body: CAMILLE },
+        'GET /api/moi/demandes': [
+          { status: 200, body: [BALI] },
+          { status: 200, body: [] },
+        ],
+        'DELETE /api/moi/demandes/240': { status: 204 },
+      })
+      afficher('/espace')
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Supprimer ce voyage' }))
+
+      // Rien ne part avant la confirmation ; « Annuler » a le focus.
+      const confirmation = screen.getByRole('alertdialog', { name: /Supprimer « Bali/ })
+      expect(within(confirmation).getByRole('button', { name: 'Annuler' })).toHaveFocus()
+      expect(api.fetch).not.toHaveBeenCalledWith('/api/moi/demandes/240', expect.anything())
+
+      await user.click(within(confirmation).getByRole('button', { name: 'Oui, supprimer' }))
+      expect(api.fetch).toHaveBeenCalledWith(
+        '/api/moi/demandes/240',
+        expect.objectContaining({ method: 'DELETE' }),
+      )
+      expect(await screen.findByRole('button', { name: /Construire mon voyage/ })).toBeVisible()
+      expect(screen.queryByRole('button', { name: 'Modifier le voyage' })).toBeNull()
+    })
+
+    it('n’efface rien quand le client annule la suppression', async () => {
+      const api = afficherEspace([BALI])
+      const user = userEvent.setup()
+
+      await user.click(await screen.findByRole('button', { name: 'Modifier le voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Supprimer ce voyage' }))
+      await user.click(screen.getByRole('button', { name: 'Annuler' }))
+
+      expect(screen.queryByRole('alertdialog')).toBeNull()
+      expect(screen.getByRole('button', { name: 'Supprimer ce voyage' })).toBeVisible()
+      expect(api.fetch).not.toHaveBeenCalledWith(
+        '/api/moi/demandes/240',
+        expect.objectContaining({ method: 'DELETE' }),
+      )
+    })
+
     it('garde l’assistant pour les détails quand le dossier est simplement pris en charge', async () => {
       afficherEspace([
         {

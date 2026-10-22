@@ -18,6 +18,11 @@ export interface EtatChat {
   jeton?: string
   /** Le client a confirmé son récapitulatif : la demande est transmise, la saisie est fermée. */
   terminee?: boolean
+  /**
+   * Conversation d'un voyage existant, rouverte depuis l'espace client (« Modifier le voyage ») : à la fermeture
+   * de la fenêtre, le chat repart à zéro pour qu'un nouveau voyage ne reprenne pas ses informations.
+   */
+  reprise?: boolean
   /** Fenêtre du chatbot ouverte (pages autres que l'accueil). */
   ouvert: boolean
   brouillon: string

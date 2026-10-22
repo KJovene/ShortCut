@@ -136,7 +136,13 @@ function CarteVoyage({
           )}
           <button
             type="button"
+<<<<<<< HEAD
             onClick={() => ouvrirAssistant(t.brouillon(d.ville, mois))}
+=======
+            onClick={() =>
+              ouvrirAssistant(`Un voyage à ${d.ville} en ${mois}, `, { nouveauVoyage: true })
+            }
+>>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
             className="flex min-h-11 items-center rounded-full bg-terre px-[18px] text-sm font-extrabold text-white hover:bg-rouille"
           >
             {t.construireCeVoyage}
@@ -297,7 +303,15 @@ function CarteVoyageMobile({ d }: { d: DestinationPublique }) {
           )}
           <button
             type="button"
+<<<<<<< HEAD
             onClick={() => ouvrirAssistant(t.brouillon(d.ville, mois))}
+=======
+            onClick={() =>
+              ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `, {
+                nouveauVoyage: true,
+              })
+            }
+>>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
             className="flex min-h-10 items-center rounded-full bg-terre px-3.5 text-[13px] font-extrabold text-white"
           >
             {t.construire}

@@ -129,6 +129,39 @@ describe('fenêtre du chatbot, hors de l’accueil', () => {
     expect(suite).toHaveFocus()
     expect(suite).toHaveValue('Budget 4 000 €')
   })
+
+  it('repart d’une discussion vierge quand le client construit un autre voyage', async () => {
+    sessionStorage.clear()
+    simulerApi({
+      'GET /api/moi': {
+        status: 200,
+        body: {
+          email: 'client@example.com',
+          prenom: 'Camille',
+          nom: 'Client',
+          telephone: null,
+          role: 'ROLE_CLIENT',
+        },
+      },
+    })
+    afficher('/types-de-voyages')
+    const user = userEvent.setup()
+
+    await user.click((await screen.findAllByRole('button', { name: /Construire mon voyage/ }))[0])
+    const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+    await user.type(within(fenetre).getByRole('textbox'), '10 jours en mai{Enter}')
+    expect(
+      await within(fenetre).findByText('Un séjour pour deux, 10 jours en mai'),
+    ).toBeInTheDocument()
+    await user.click(within(fenetre).getByRole('button', { name: /Fermer/ }))
+
+    await user.click(screen.getAllByRole('button', { name: /Construire mon voyage/ })[1])
+    const nouvelle = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+    expect(
+      within(nouvelle).queryByText('Un séjour pour deux, 10 jours en mai'),
+    ).not.toBeInTheDocument()
+    expect(within(nouvelle).getByRole('textbox')).toHaveValue('Un circuit en plusieurs étapes, ')
+  })
 })
 
 describe('proposition dans le chat', () => {

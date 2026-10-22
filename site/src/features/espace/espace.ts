@@ -1,7 +1,12 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
+<<<<<<< HEAD
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
+=======
+import { labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { destinationDuLieu, type DestinationPublique } from '@/features/catalogue/catalogue'
+>>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
 import { ficheSchema } from '@/features/chat/api'
 import { ApiError } from '@/lib/api'
 import { type Langue, LOCALE, nomDuMois, typeDeVoyage } from '@/lib/langue'
@@ -74,6 +79,17 @@ export async function chargerMesDemandes(): Promise<DemandeClient[]> {
     throw new ApiError(response.status, 'Impossible de charger vos voyages.')
   }
   return z.array(DemandeClient).parse(await response.json())
+}
+
+/** « Supprimer le voyage » : la demande disparaît avec sa conversation. Un voyage réservé ne se supprime pas (409). */
+export async function supprimerDemande(id: number): Promise<void> {
+  const response = await fetch(`/api/moi/demandes/${id}`, {
+    method: 'DELETE',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, 'Impossible de supprimer ce voyage.')
+  }
 }
 
 export const mesDemandesQuery = queryOptions({
@@ -191,12 +207,7 @@ export function initiales(prenom: string | null, nom: string) {
 
 /** Destination du catalogue de l'API citée par la demande, pour sa photo et son climat. */
 export function destinationDe(demande: DemandeClient, destinations: DestinationPublique[]) {
-  const lieu = demande.lieuOuZone?.toLowerCase().trim()
-  if (!lieu) return undefined
-  return destinations.find(
-    (d) =>
-      d.ville.toLowerCase() === lieu || d.slug === lieu || d.nom.toLowerCase().startsWith(lieu),
-  )
+  return destinationDuLieu(demande.lieuOuZone, destinations)
 }
 
 /** Mois du départ (0 à 11), si la date est connue. */
