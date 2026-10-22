@@ -1,12 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-<<<<<<< HEAD
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
-import type { DestinationPublique } from '@/features/catalogue/catalogue'
-=======
-import { labelType, MOIS, TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationDuLieu, type DestinationPublique } from '@/features/catalogue/catalogue'
->>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
 import { ficheSchema } from '@/features/chat/api'
 import { ApiError } from '@/lib/api'
 import { type Langue, LOCALE, nomDuMois, typeDeVoyage } from '@/lib/langue'

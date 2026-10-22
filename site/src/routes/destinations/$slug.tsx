@@ -45,12 +45,10 @@ function DestinationPage() {
   const t = TEXTES[langue].destination
   const { data: d } = useSuspenseQuery(destinationQuery(slug, langue))
   const ouvrirAssistant = useOuvrirAssistant()
-<<<<<<< HEAD
   const construire = () =>
-    ouvrirAssistant(TEXTES[langue].accueil.brouillon(d.ville, nomDuMois(d.moisIdeal, langue)))
-=======
-  const construire = () => ouvrirAssistant(`Un voyage à ${d.ville} en ${MOIS[d.moisIdeal]}, `, { nouveauVoyage: true })
->>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
+    ouvrirAssistant(TEXTES[langue].accueil.brouillon(d.ville, nomDuMois(d.moisIdeal, langue)), {
+      nouveauVoyage: true,
+    })
 
   return (
     <>

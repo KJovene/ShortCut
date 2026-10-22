@@ -94,11 +94,7 @@ function TypesPage() {
                 <div className="mt-2 flex flex-wrap gap-2.5">
                   <button
                     type="button"
-<<<<<<< HEAD
-                    onClick={() => ouvrirAssistant(textes.types.brouillons[t.valeur])}
-=======
-                    onClick={() => ouvrirAssistant(BROUILLONS[t.valeur], { nouveauVoyage: true })}
->>>>>>> 4e281a34a0168cfe59600fe4720fe3be027b3261
+                    onClick={() => ouvrirAssistant(textes.types.brouillons[t.valeur], { nouveauVoyage: true })}
                     className="flex min-h-11 items-center gap-2 rounded-full bg-terre px-5 text-sm font-extrabold text-white hover:bg-rouille"
                   >
                     {textes.construireMonVoyage}
