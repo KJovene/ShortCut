@@ -9,7 +9,7 @@ export const ID_SECTION_ASSISTANT = 'assistant'
  * Le brouillon éventuel pré-remplit le champ de saisie.
  */
 export function useOuvrirAssistant() {
-  const { ouvrir, setBrouillon } = useChat()
+  const { ouvrir, setBrouillon, setDestinationInvite } = useChat()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
 
   return useCallback(
@@ -18,11 +18,15 @@ export function useOuvrirAssistant() {
         ouvrir(brouillon)
         return
       }
-      if (brouillon !== undefined) setBrouillon(brouillon)
+      if (brouillon !== undefined) {
+        setBrouillon(brouillon)
+        const destination = /^Un voyage à (.+?) en .+?, $/.exec(brouillon)?.[1]
+        if (destination) setDestinationInvite(destination)
+      }
       const section = document.getElementById(ID_SECTION_ASSISTANT)
       section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       window.setTimeout(() => section?.querySelector<HTMLElement>('textarea, input')?.focus(), 400)
     },
-    [estAccueil, ouvrir, setBrouillon],
+    [estAccueil, ouvrir, setBrouillon, setDestinationInvite],
   )
 }

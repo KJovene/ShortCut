@@ -90,6 +90,22 @@ describe('routeur', () => {
     expect(screen.queryByRole('dialog', { name: 'Assistant voyage' })).not.toBeInTheDocument()
   })
 
+  it('ferme le chatbot lorsqu’une nouvelle page est ouverte', async () => {
+    simulerApi({})
+    renderAt('/types-de-voyages')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: "Parler à l'assistant" }))
+    expect(await screen.findByRole('dialog', { name: 'Assistant voyage' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Destinations' }))
+    expect(await screen.findByRole('link', { name: 'Destinations' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.queryByRole('dialog', { name: 'Assistant voyage' })).not.toBeInTheDocument()
+  })
+
   it('affiche la fiche d’une destination', async () => {
     renderAt('/destinations/islande')
     expect(await screen.findByRole('heading', { level: 1, name: 'Islande' })).toBeInTheDocument()

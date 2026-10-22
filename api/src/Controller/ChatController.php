@@ -126,6 +126,9 @@ final class ChatController extends AbstractController
         if (null !== $budget) {
             $demande->setBudgetCentimes($budget)->setBudgetParPersonne(false);
         }
+        if (\is_string($request->toArray()['destination'] ?? null)) {
+            $demande->setLieuOuZone(trim($request->toArray()['destination']));
+        }
     }
 
     /** Récapitulatif de la demande en cours, affiché par le widget. */
