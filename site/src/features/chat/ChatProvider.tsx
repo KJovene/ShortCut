@@ -12,6 +12,9 @@ import { TEXTES } from './textes'
 
 const CLE = 'chat'
 
+/** Pages quittées dès la session ouverte : le questionnaire n'est transmis qu'après elles. */
+const PAGES_AUTHENTIFICATION = ['/connexion', '/inscription']
+
 /** Ce que l'assistant est en train de faire, d'après l'outil qui s'exécute : affiché pendant l'attente. */
 function etapeDe(outil: string): EtapeReflexion | undefined {
   if (outil === 'enregistrer_proposition') return 'redaction'
@@ -395,6 +398,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (
       !estConnecte ||
+      PAGES_AUTHENTIFICATION.includes(chemin) ||
       !etat.questionnaire.termine ||
       etat.questionnaire.transmis ||
       !etat.contexteInvite
@@ -402,14 +406,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    // Le contexte est envoyé dès que la session devient disponible : l'agent peut ainsi remplir
-    // la demande côté serveur avant même que le client ne saisisse une précision supplémentaire.
+    // Le contexte est envoyé dès que la session devient disponible, une fois sorti de la connexion ou de
+    // l'inscription (changer de page annulerait la réponse) : l'agent remplit la demande côté serveur avant
+    // même que le client ne saisisse une précision. Le chatbot s'ouvre aussitôt pour construire le voyage.
+    actions.ouvrir()
     envoyer('Je souhaite commencer mon voyage avec ces premières préférences.')
   }, [
     estConnecte,
+    chemin,
     etat.questionnaire.termine,
     etat.questionnaire.transmis,
     etat.contexteInvite,
+    actions,
     envoyer,
   ])
 
