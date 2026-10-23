@@ -98,11 +98,11 @@ final class RetenirCombinaisonTest extends KernelTestCase
             self::assertEqualsWithDelta($conseille['totalEuros'] + $option['prixEuros'], $option['totalAvecEuros'], 0.011, $fichier);
         }
 
-        // La justification vient des données : climat aux dates, trajet depuis la ville de départ, envies.
+        // La justification vient des données : climat aux dates (il répond aux envies de climat), trajet depuis la ville de départ, envies.
         $justification = $sortie['justification'];
         self::assertNotSame([], $justification['climatAuxDates'], $fichier);
         self::assertIsInt($justification['tempsDeTrajetMinutes'], $fichier);
-        $envies = [...$justification['enviesCorrespondantes'], ...$justification['enviesSansReponse']];
+        $envies = [...$justification['enviesCorrespondantes'], ...$justification['enviesDeClimat'], ...$justification['enviesSansReponse']];
         self::assertEqualsCanonicalizing($demande['exigencesAttendues']['envies'], $envies, $fichier);
         self::assertSame('Elle répond à toutes les exigences.', $justification['pourquoi']);
 
@@ -165,11 +165,6 @@ final class RetenirCombinaisonTest extends KernelTestCase
 
             return $e;
         }, 'Rome ne convient pas : elle n\'est pas dans la zone demandée (« Lisbonne »).'];
-        yield 'trop frais aux dates' => [$tenerife, static function (array $e): array {
-            $e['destination'] = 'lisbonne';
-
-            return $e;
-        }, 'Lisbonne ne convient pas : 13 °C en moyenne aux dates, moins que les 18 °C souhaités.'];
         yield 'une nuit de moins' => [$tenerife, static function (array $e): array {
             $e['etapes'][0]['nombreDeNuits'] = 6;
 

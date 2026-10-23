@@ -1,18 +1,19 @@
 # Outils des agents
 
-Les agents IA n'accèdent aux données de l'agence qu'à travers ces neuf outils (ticket #178, `retenir_combinaison` ajouté par le ticket #203, `consulter_catalogue` pour les recommandations du chatbot). Chaque outil correspond à un service Symfony : le modèle choisit l'outil et ses paramètres, le serveur vérifie, exécute et renvoie le résultat. C'est ce qui empêche l'IA d'inventer des prestations ou des prix.
+Les agents IA n'accèdent aux données de l'agence qu'à travers ces dix outils (ticket #178, `retenir_combinaison` ajouté par le ticket #203, `consulter_catalogue` pour les recommandations du chatbot, `choisir_options` pour les options de la proposition). Neuf sont donnés aux trois agents IA (Conversation, Recherche, Chiffrage et rédaction) ; `calculer_budget` n'est appelé que par `retenir_combinaison`. Chaque outil correspond à un service Symfony : le modèle choisit l'outil et ses paramètres, le serveur vérifie, exécute et renvoie le résultat. C'est ce qui empêche l'IA d'inventer des prestations ou des prix.
 
 | Outil | Rôle | Agents | Service Symfony | Lit | Écrit |
 | --- | --- | --- | --- | --- | --- |
-| `enregistrer_exigences` | Remplir la fiche demande au fil de la conversation | Conversation, Modification | `DemandeService::enregistrerExigences()` | Demande courante | Demande courante, client |
+| `enregistrer_exigences` | Remplir la fiche demande au fil de la conversation | Conversation | `App\Chatbot\Outil\EnregistrerExigences` | Demande courante | Demande courante, client |
 | `chercher_destinations` | Trouver les destinations compatibles (zone, climat, dates, envies) | Conversation, Recherche | `App\Chatbot\Outil\ChercherDestinations` | Catalogue publié | — |
-| `chercher_logements` | Lister les logements compatibles d'une destination, avec leurs tarifs aux dates | Recherche, Modification | `App\Chatbot\Outil\ChercherLogements` | Catalogue publié | — |
-| `chercher_activites` | Lister les activités compatibles d'une destination, selon les âges | Recherche, Modification | `App\Chatbot\Outil\ChercherActivites` | Catalogue publié | — |
+| `chercher_logements` | Lister les logements compatibles d'une destination, avec leurs tarifs aux dates | Recherche | `App\Chatbot\Outil\ChercherLogements` | Catalogue publié | — |
+| `chercher_activites` | Lister les activités compatibles d'une destination, selon les âges | Recherche | `App\Chatbot\Outil\ChercherActivites` | Catalogue publié | — |
 | `consulter_catalogue` | Recommander au client des logements ou des activités d'une destination, sans dates ni prix | Conversation | `App\Chatbot\Outil\ConsulterCatalogue` | Catalogue publié | — |
-| `retenir_combinaison` | Retenir la destination, les logements et les activités choisis, vérifiés contre la fiche, et chiffrer les trois niveaux | Recherche | `App\Chatbot\Outil\RetenirCombinaison` | Catalogue, demande courante | Chiffrage et combinaison en cache (demande courante) |
-| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `BudgetCalculator::calculer()` (outil `App\Chatbot\Outil\CalculerBudget`) | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
-| `enregistrer_proposition` | Enregistrer une version de proposition à partir d'un chiffrage | Chiffrage et rédaction, Modification | `PropositionService::enregistrer()` | Chiffrage de la demande courante | Proposition et lignes de la demande courante |
-| `transmettre_au_conseiller` | Passer la main à un conseiller | Tous | `DemandeService::transmettreAuConseiller()` | — | Demande et conversation courantes |
+| `retenir_combinaison` | Retenir la destination, les logements et les activités choisis, vérifiés contre la fiche, et chiffrer les trois niveaux | Recherche (et `NouvelleVersion`, sans modèle) | `App\Chatbot\Outil\RetenirCombinaison` | Catalogue, demande courante | Chiffrage et combinaison en cache (demande courante) |
+| `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Aucun : appelé par `retenir_combinaison` | `BudgetCalculator::calculer()` (outil `App\Chatbot\Outil\CalculerBudget`) | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
+| `enregistrer_proposition` | Enregistrer une version de proposition à partir d'un chiffrage | Chiffrage et rédaction | `PropositionService::enregistrer()` (outil `App\Chatbot\Outil\EnregistrerProposition`) | Chiffrage de la demande courante | Proposition et lignes de la demande courante |
+| `transmettre_au_conseiller` | Passer la main à un conseiller | Tous | `App\Chatbot\Outil\TransmettreAuConseiller` (`Demande::transmettre()`) | — | Demande et conversation courantes |
+| `choisir_options` | Noter la réponse du client aux options de sa proposition (activités ajoutées, niveau) | Conversation | `App\Chatbot\Outil\ChoisirOptions`, puis `NouvelleVersion::appliquerLesOptions()` | Proposition de la demande courante | — |
 
 ## Règles communes
 
@@ -40,13 +41,13 @@ interface Outil
 }
 ```
 
-Code : `api/src/Chatbot/ContexteAgent.php` et `api/src/Chatbot/Outil/`. Un outil est un service Symfony qui implémente `Outil` (tag ajouté automatiquement) ; chaque agent liste ses outils dans un ordre fixe (méthode `outils()` de `AgentConversation` et `AgentRecherche`), pour que le début de la requête reste identique d'un appel à l'autre et profite du cache. Le ticket #192 livre une version simple des trois outils de l'agent Conversation : `enregistrer_exigences` (fiche et compte client), `chercher_destinations` (zone et températures, sans tarifs ni envies) et `transmettre_au_conseiller` (demande prioritaire, conversation reprise). Les tickets #194 et #197 complètent les deux autres ; le ticket #202 complète `chercher_destinations` (tarifs aux dates, envies) et ajoute `chercher_logements` et `chercher_activites`, appuyés sur des requêtes Doctrine (`DestinationRepository::publiees()`, `PrestationRepository::duCatalogue()`). Les entrées des outils de recherche sont lues par `App\Chatbot\Outil\Entree`. Le ticket #203 ajoute `retenir_combinaison` et range `calculer_budget` avec les autres outils (`App\Chatbot\Outil`) ; la boucle commune aux agents (appel en streaming, exécution des outils, journal) est dans `App\Chatbot\Agent`.
+Code : `api/src/Chatbot/ContexteAgent.php` et `api/src/Chatbot/Outil/`. Un outil est un service Symfony qui implémente `Outil` (tag ajouté automatiquement) ; chaque agent liste ses outils dans un ordre fixe (méthode `outils()` de `AgentConversation`, `AgentRecherche` et `AgentRedaction`), pour que le début de la requête reste identique d'un appel à l'autre et profite du cache. Le ticket #192 livre une version simple des trois outils de l'agent Conversation : `enregistrer_exigences` (fiche et compte client), `chercher_destinations` (zone et températures, sans tarifs ni envies) et `transmettre_au_conseiller` (demande prioritaire, conversation reprise). Les tickets #194 et #197 complètent les deux autres ; le ticket #202 complète `chercher_destinations` (tarifs aux dates, envies) et ajoute `chercher_logements` et `chercher_activites`, appuyés sur des requêtes Doctrine (`DestinationRepository::publiees()`, `PrestationRepository::duCatalogue()`). Les entrées des outils de recherche sont lues par `App\Chatbot\Outil\Entree`. Le ticket #203 ajoute `retenir_combinaison` et range `calculer_budget` avec les autres outils (`App\Chatbot\Outil`) ; la boucle commune aux agents (appel en streaming, exécution des outils, journal) est dans `App\Chatbot\Agent`.
 
 Pas d'`eager_input_streaming` sur ces outils : leurs entrées sont courtes, et ce mode désactiverait la validation par l'API dont dépend le mode strict.
 
 ### Aucun outil ne lit les données d'un autre client
 
-- Les outils qui **lisent ou écrivent une demande** (`enregistrer_exigences`, `retenir_combinaison`, `calculer_budget`, `enregistrer_proposition`, `transmettre_au_conseiller`) n'agissent que sur `$contexte->demande`. Leur schéma n'a aucun champ pour en désigner une autre.
+- Les outils qui **lisent ou écrivent une demande** (`enregistrer_exigences`, `retenir_combinaison`, `calculer_budget`, `enregistrer_proposition`, `transmettre_au_conseiller`, `choisir_options`) n'agissent que sur `$contexte->demande`. Leur schéma n'a aucun champ pour en désigner une autre.
 - Les outils de **recherche** ne lisent que le catalogue : destinations publiées, logements, activités, tarifs et climat. Ces données sont publiques et ne contiennent aucune information de client.
 - Les seuls identifiants que le modèle manipule sont ceux des **prestations du catalogue** (`logementId`, `activiteId`), renvoyés par les outils de recherche, et l'identifiant d'un **chiffrage** (`chiffrageId`). Un chiffrage est rangé en cache sous la demande courante : un `chiffrageId` d'une autre demande est refusé comme inconnu.
 - Les résultats renvoyés au modèle ne contiennent jamais de nom, d'e-mail ou de téléphone, même ceux du client courant.
@@ -56,11 +57,11 @@ Les tests de sécurité du ticket #181 vérifient ces règles service par servic
 
 ### Schémas
 
-- Les outils qui **écrivent** (`retenir_combinaison`, `calculer_budget`, `enregistrer_proposition`, `transmettre_au_conseiller`) sont en mode strict de l'API Claude (`"strict": true`) : le modèle respecte exactement leur schéma. Les trois outils de **recherche** sont en mode normal (`"strict": false`) : le serveur valide leur entrée et renvoie une erreur lisible si besoin.
+- Les outils qui **écrivent** (`retenir_combinaison`, `calculer_budget`, `enregistrer_proposition`, `transmettre_au_conseiller`) et `choisir_options` sont en mode strict de l'API Claude (`"strict": true`) : le modèle respecte exactement leur schéma. Les quatre outils de **lecture** (`chercher_destinations`, `chercher_logements`, `chercher_activites`, `consulter_catalogue`) sont en mode normal (`"strict": false`) : le serveur valide leur entrée (`App\Chatbot\Outil\Entree`) et renvoie une erreur lisible si besoin.
 - Exception : `enregistrer_exigences` est en mode normal depuis le 23/10/2026. En strict, l'API impose l'ordre des champs du schéma : Haiku commençait par `recapitulatifConfirme` et `langue`, les deux derniers, et ne pouvait plus rien écrire d'autre (4 appels vides sur 6 en rejouant un même message, 0 sur 9 sans strict ; les mettre en tête du schéma dégradait toujours les appels). Le service vérifie lui-même les champs et leurs types, et refuse un appel qui n'apporte rien à la fiche.
-- Pourquoi ce partage : l'API limite les schémas stricts d'une même requête à 24 paramètres facultatifs et à 16 paramètres nullables. `enregistrer_exigences` en compte 22 à lui seul (dont `langue`, US15), et les agents Conversation et Modification reçoivent tous les outils qui écrivent (23 paramètres facultatifs au total).
+- Pourquoi ce partage : l'API limite les schémas stricts d'une même requête à 24 paramètres facultatifs et à 16 paramètres nullables. `enregistrer_exigences` et les outils de lecture ont presque tous leurs champs facultatifs ; les outils stricts n'en ont qu'un (`resumeDesChangements` de `enregistrer_proposition`).
 - Chaque objet a `"additionalProperties": false`. Un champ facultatif est simplement **absent de `required`** (le modèle l'omet), sans type `null`.
-- Vérifié le 16/10/2026 : l'API Claude accepte les outils de chacun des quatre agents (Haiku 5.5 pour Conversation, Sonnet 5.5 pour les autres), et les modèles les appellent avec des entrées conformes.
+- Vérifié le 16/10/2026 : l'API Claude accepte les outils de chacun des trois agents (Haiku 5.5 pour Conversation, Sonnet 5.5 pour Recherche et pour Chiffrage et rédaction), et les modèles les appellent avec des entrées conformes.
 - Les bornes (nombres positifs, dates cohérentes, mois de 1 à 12) sont vérifiées par le service avec le composant Validator de Symfony, pas par le schéma.
 - Dates au format `AAAA-MM-JJ`. Montants en **euros** dans les entrées et sorties, pour que le modèle les lise et les recopie sans erreur. Les services calculent et stockent en **centimes** ; les montants renvoyés ont au plus deux décimales.
 - Le choix d'outil reste `auto` : Claude Sonnet 5.5 refuse le choix forcé d'un outil, et le prompt de chaque agent dit quand appeler lequel.
@@ -71,13 +72,13 @@ Les services acceptent un slug de destination sans tenir compte des majuscules n
 
 ### Journal
 
-Chaque appel est tracé dans `JournalIA` : agent, demande, nom de l'outil, entrée, sortie, modèle et tokens consommés.
+Chaque appel à Claude est tracé dans `JournalIA`, une ligne par appel : agent, demande, modèle, entrée (le message du tour), sortie (réponse du modèle, avec les outils appelés et leurs résultats), tokens d'entrée et de sortie, durée (`dureeMs`). Un appel qui échoue garde l'erreur dans la sortie. Les appels de `retenir_combinaison` par `NouvelleVersion`, sans modèle, n'y figurent pas.
 
 ## Les outils
 
 ### `enregistrer_exigences`
 
-Met à jour la fiche demande avec ce que le client vient de dire. Seuls les champs envoyés sont modifiés ; une liste envoyée remplace la liste enregistrée. Appelé par l'agent Conversation après chaque information nouvelle, et par l'agent Modification quand le client change une exigence.
+Met à jour la fiche demande avec ce que le client vient de dire. Seuls les champs envoyés sont modifiés ; une liste envoyée remplace la liste enregistrée. Appelé par l'agent Conversation après chaque information nouvelle, y compris quand le client change une exigence après sa proposition (`NouvelleVersion` recalcule ensuite la version suivante).
 
 Entrée :
 
@@ -85,7 +86,7 @@ Entrée :
 {
   "name": "enregistrer_exigences",
   "description": "Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif. Les textes de la fiche (lieu, ville de départ, envies, contraintes) s'écrivent toujours en français, même si le client écrit en anglais : « Lisbonne », « plage ».",
-  "strict": true,
+  "strict": false,
   "input_schema": {
     "type": "object",
     "properties": {
@@ -102,7 +103,7 @@ Entrée :
       "budgetEuros": {"type": "integer", "description": "Le montant tel que le client le donne, sans calcul : « 900 € par personne » donne 900 avec budgetParPersonne à true."},
       "budgetParPersonne": {"type": "boolean", "description": "true : le budget est par personne ; false : c'est un total."},
       "transportInclus": {"type": "boolean"},
-      "envies": {"type": "array", "items": {"type": "string"}, "description": "Activités, ambiance, rythme (« plage », « gastronomie »), y compris l'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Pas la destination : elle va dans lieuOuZone."},
+      "envies": {"type": "array", "items": {"type": "string"}, "description": "Activités, ambiance, rythme (« plage », « gastronomie »), y compris l'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Une préférence de climat y va aussi, avec les mots du client : « de la chaleur », « au moins 25 °C », « pas trop chaud ». Pas la destination : elle va dans lieuOuZone."},
       "contraintes": {"type": "array", "items": {"type": "string"}, "description": "Mobilité réduite (avec le type de besoin), régime, allergie (avec sa gravité), santé, animaux."},
       "client": {"type": "object", "properties": {"prenom": {"type": "string"}, "email": {"type": "string"}, "telephone": {"type": "string"}}, "required": [], "additionalProperties": false},
       "recapitulatifConfirme": {"type": "boolean"},
@@ -122,10 +123,10 @@ Sortie : la fiche telle qu'enregistrée et ce qui manque encore.
     "typeDeVoyage": "noces", "lieuOuZone": "Santorin", "villeDepart": "Paris",
     "dateDebut": "2027-06-12", "dateFin": "2027-06-19", "datesFlexibles": false, "nombreDeJours": 7,
     "adultes": 2, "enfants": 0, "agesEnfants": [],
-    "budgetEuros": 5000, "budgetParPersonne": false, "transportInclus": true,
+    "budgetEuros": null, "budgetParPersonne": false, "transportInclus": true,
     "envies": ["romantique", "piscine privée", "bateau"], "contraintes": ["allergie sévère aux fruits de mer"]
   },
-  "exigencesManquantes": ["températures"],
+  "exigencesManquantes": ["budget"],
   "recapitulatifConfirme": false,
   "langue": "fr"
 }
@@ -133,7 +134,9 @@ Sortie : la fiche telle qu'enregistrée et ce qui manque encore.
 
 La langue (US15) n'est pas dans la fiche : elle règle la langue des réponses, de la proposition (page « Ma proposition » et PDF) et des textes fixes du site, mais la fiche reste en français pour les outils de recherche et le backoffice.
 
-Service : `DemandeService::enregistrerExigences(ContexteAgent, ExigencesDto)` convertit le budget en centimes, valide la fiche (`Demande` et ses contraintes), crée ou met à jour le `Client` lié à la demande, met à jour `modifieLe`. Quand `recapitulatifConfirme` passe à `true`, l'orchestrateur enchaîne sur l'agent Recherche. La confirmation est refusée (erreur renvoyée au modèle, exigences du message gardées) tant que la fiche n'a pas de type de voyage, de lieu ou de dates (#193).
+`exigencesManquantes` reprend `FicheDemande::manquantes()` : type de voyage, lieu ou zone, dates, nombre de jours, ville de départ, budget, envies.
+
+Code : `EnregistrerExigences::executer()` vérifie les champs et leurs types (mode normal), refuse un appel qui n'apporte rien à la fiche, convertit le budget en centimes, valide la fiche (`Demande` et ses contraintes ; rien n'est gardé si elle est refusée), rattache la demande au compte client de l'e-mail donné (créé au besoin, jamais modifié depuis le chatbot) et met à jour `modifieLe`. La confirmation est refusée (erreur renvoyée au modèle, exigences du message gardées) tant que la fiche n'a pas de type de voyage, de lieu, ni de date de début ou de nombre de jours (#193). Quand `recapitulatifConfirme` passe à `true`, `AgentConversation` enchaîne sur l'agent Recherche, ou sur `NouvelleVersion` si le client a déjà une proposition.
 
 ### `chercher_destinations`
 
@@ -261,14 +264,14 @@ Une `categorie` filtre sans écarter : les autres catégories ne sont pas demand
 
 ### `chercher_activites`
 
-Liste les activités d'une destination ouvertes à tout le groupe, avec le nombre de sessions si la capacité ne suffit pas.
+Liste les activités d'une destination avec les voyageurs qui ont l'âge d'y participer, et le nombre de sessions si la capacité ne suffit pas. Un enfant trop jeune n'écarte pas l'activité : elle n'est proposée qu'aux autres voyageurs.
 
 Entrée :
 
 ```json
 {
   "name": "chercher_activites",
-  "description": "Liste les activités compatibles d'une destination du catalogue, ouvertes à tous les voyageurs selon leur âge, avec le prix par personne aux dates. Utilise l'identifiant renvoyé (activiteId) pour calculer le budget. Les prix sont des prix d'achat, hors marge : ne les annonce jamais au client, seuls les montants de calculer_budget le sont.",
+  "description": "Liste les activités compatibles d'une destination du catalogue, avec les voyageurs qui ont l'âge d'y participer et le prix par personne aux dates. Une activité qui exclut un enfant ne se propose qu'aux autres voyageurs, en le disant. Utilise l'identifiant renvoyé (activiteId) pour calculer le budget. Les prix sont des prix d'achat, hors marge : ne les annonce jamais au client, seuls les montants de calculer_budget le sont.",
   "strict": false,
   "input_schema": {
     "type": "object",
@@ -301,7 +304,7 @@ Sortie :
     }
   ],
   "ecartees": [
-    { "nom": "Randonnée guidée au Teide", "raison": "Dure 6 h, plus que les 2 h 30 souhaitées." }
+    { "nom": "Hammam traditionnel et massage", "raison": "Non accessible : un voyageur a besoin d'une activité accessible." }
   ]
 }
 ```
@@ -342,8 +345,8 @@ Sortie :
   "type": "logement",
   "prestations": [
     {
-      "id": 12, "nom": "Riad Dar Zitoun", "categorie": "Riad", "description": "…", "capacite": 12, "accessible": false,
-      "equipements": ["piscine", "hammam"], "envies": ["détente"], "enviesCorrespondantes": ["piscine"], "chambres": 6
+      "id": 12, "nom": "Riad Dar Yasmine, riad entier", "categorie": "Riad privatisé", "description": "Six chambres autour d'un patio avec piscine…", "capacite": 12, "accessible": false,
+      "equipements": ["wifi", "piscine", "terrasse", "cuisinière sur place", "petit-déjeuner"], "envies": ["culture", "détente", "famille"], "enviesCorrespondantes": ["piscine"], "chambres": 6
     }
   ],
   "ecartees": 1
@@ -382,10 +385,10 @@ Entrée :
 Contrôles, avec les critères de la fiche demande et jamais ceux du modèle :
 
 1. **Séjour** : les étapes se suivent sans trou, totalisent le nombre de nuits de la fiche et commencent à sa date de début, sauf dates flexibles.
-2. **Destination** : `chercher_destinations` avec la zone, les dates, les températures, les envies et la ville de départ de la fiche. Une destination hors de la zone, trop fraîche ou trop chaude, ou sans tarif aux dates est refusée.
+2. **Destination** : `chercher_destinations` avec la zone, les dates, les envies, la ville de départ, les voyageurs et l'accessibilité de la fiche, sans température. Une destination hors de la zone, sans logement pour le groupe ou sans tarif aux dates est refusée. Les envies de climat (« au moins 18 °C ») ne filtrent pas : elles sont rappelées dans `justification.enviesDeClimat`, face au `climatAuxDates`.
 3. **Logements** : `chercher_logements` pour chaque étape, avec tous les voyageurs et l'accessibilité déduite des contraintes (`Demande::aBesoinDAccessibilite()` : fauteuil, mobilité réduite, PMR, plain-pied…).
 4. **Activités** : `chercher_activites` avec les âges de la fiche (`Demande::agesDesEnfants()`, 0 an pour un âge inconnu) et la même accessibilité.
-5. **Chiffrage** : `calculer_budget` choisit, pour chaque niveau, ses logements et ses activités parmi les candidats retenus.
+5. **Chiffrage** : `calculer_budget`, appelé par le serveur, choisit pour chaque niveau ses logements et ses activités parmi les candidats retenus.
 
 Un choix refusé renvoie toutes les raisons à la fois, celles des outils de recherche : `Combinaison refusée : - Étape 1 : Appartement Bairro Alto, non accessible : un voyageur a besoin d'un logement accessible.` L'agent corrige et rappelle l'outil.
 
@@ -404,12 +407,12 @@ Sortie (extrait) :
     "pourquoi": "…"
   },
   "niveaux": {
-    "essentiel": { "logements": [{ "id": 12, "nom": "Apartamentos Los Cristianos", "fiche": "/api/logements/12" }], "activites": [{ "id": 41, "nom": "Observation des baleines et dauphins", "fiche": "/api/activites/41" }], "totalEuros": 2622.4, "parPersonneEuros": 655.6 },
+    "essentiel": { "logements": [{ "id": 12, "nom": "Apartamentos Los Cristianos", "fiche": "/api/logements/12" }], "activites": [{ "id": 41, "nom": "Observation des baleines et dauphins", "fiche": "/api/activites/41" }], "transport": "minimum de la fourchette", "totalEuros": 2622.4, "parPersonneEuros": 655.6 },
     "equilibre": { "…": "même structure" },
     "confort": { "…": "même structure" }
   },
   "niveauConseille": "equilibre",
-  "options": [{ "id": 44, "nom": "Randonnée guidée au Teide", "prixEuros": 132, "parPersonneEuros": 33, "participants": 4, "totalAvecEuros": 3214.4 }],
+  "options": [{ "id": 44, "nom": "Randonnée guidée au Teide", "prixEuros": 187.2, "parPersonneEuros": 93.6, "participants": 2, "totalAvecEuros": 3553.6 }],
   "budgetClient": { "montantEuros": 3500, "parPersonne": false },
   "budgetInsuffisant": false,
   "arbitrages": [],
@@ -421,14 +424,13 @@ Sortie (extrait) :
 - La **justification** ne reprend que des données : climat aux dates, temps de trajet, envies satisfaites ou non. Seul `pourquoi` est écrit par le modèle.
 - La combinaison est gardée 24 heures avec le chiffrage, sous le même `chiffrageId` (clé `combinaison`) : l'agent de rédaction la retrouve pour écrire la proposition.
 - **`niveauConseille`** : l'équilibré, sauf s'il dépasse le budget du client (l'essentiel) ; c'est le niveau que la rédaction détaille.
-- **`options`** : jusqu'à trois activités compatibles que le niveau conseillé ne contient pas (les suggestions de l'agent d'abord, puis celles qui répondent aux envies), à leur prix de vente pour le groupe, marge comprise, et le total du niveau si le client l'ajoute. Aucune si `budgetInsuffisant`.
+- **`options`** : jusqu'à trois activités compatibles que le niveau conseillé ne contient pas (les suggestions de l'agent d'abord, puis celles qui répondent aux envies), à leur prix de vente pour leurs seuls participants, marge comprise, et le total du niveau si le client l'ajoute. La randonnée au Teide (12 ans minimum) n'est comptée que pour les deux parents. Aucune option si `budgetInsuffisant`.
+- **`arbitrages`** : ceux de `calculer_budget`, réduits à `libelle`, `totalEuros` et `tientDansLeBudget`, sans étapes : la carte de la piste les affiche. Si le client en accepte un, l'agent Conversation enregistre les nouvelles dates ou la nouvelle durée avec `enregistrer_exigences`, et la confirmation relance le calcul (`NouvelleVersion`).
 - Le site reçoit une carte de la piste (`Chatbot/Piste`) dans l'événement `piste` du chat, après le message de l'agent.
 
 ### `calculer_budget`
 
-Calcule les trois niveaux de budget avec la formule de `docs/chiffrage.md`, à partir des logements et activités compatibles. Le modèle ne fait **aucun calcul** : il fournit les candidats, le serveur choisit les combinaisons de chaque niveau et chiffre au centime près. Les voyageurs, la ville de départ, le budget du client et le type de voyage viennent de la demande courante.
-
-Pour tester un arbitrage (autres dates, moins de nuits), l'agent rappelle l'outil avec d'autres étapes : la demande n'est pas modifiée tant que le client n'a pas accepté.
+Calcule les trois niveaux de budget avec la formule de `docs/chiffrage.md`, à partir des logements et activités compatibles. Aucun agent ne reçoit cet outil : `retenir_combinaison` l'appelle avec les candidats qu'il a vérifiés, et `RetenirCombinaison` s'en sert aussi pour chiffrer les options. Le modèle ne fait **aucun calcul** : le serveur choisit les combinaisons de chaque niveau et chiffre au centime près. Les voyageurs, la ville de départ, le budget du client et le type de voyage viennent de la demande courante.
 
 Entrée :
 
@@ -467,11 +469,11 @@ Sortie (extrait, niveau essentiel seul) :
         { "type": "hebergement", "libelle": "Hôtel Fira Blue, chambre triple", "calcul": "7 nuits × 150 €", "montantEuros": 1050, "estime": false },
         { "type": "activite", "libelle": "Croisière en catamaran dans la caldeira", "calcul": "2 participants × 120 €", "montantEuros": 240, "estime": false },
         { "type": "transport", "libelle": "Vol aller-retour Paris – Santorin", "calcul": "2 voyageurs × 220 €", "montantEuros": 440, "estime": true },
-        { "type": "transport", "libelle": "Transferts aéroport – hébergement", "calcul": "2 voyageurs × 25 €", "montantEuros": 50, "estime": true }
+        { "type": "transport", "libelle": "Transferts aéroport – hébergement à Santorin", "calcul": "2 voyageurs × 25 €", "montantEuros": 50, "estime": true }
       ],
       "coutPrestationsEuros": 1780, "margeEuros": 356, "fraisDeDossierEuros": 150,
       "totalEuros": 2286, "parPersonneEuros": 1143,
-      "hypotheses": ["Saison d'avril à juin", "Hôtel 3 étoiles, 1 chambre", "Vols estimés au bas de la fourchette", "Frais de dossier voyage de noces : 150 €"]
+      "hypotheses": ["Hôtel Fira Blue, chambre triple : Hôtel 3 étoiles, 1 chambre, 7 nuits du 12/06/2027 au 19/06/2027, tarif d'avril à juin 2027", "Transport inclus : vols et transferts estimés au minimum de la fourchette, pour 2 voyageurs", "Frais de dossier voyage de noces : 150 €"]
     },
     "equilibre": { "…": "même structure" },
     "confort": { "…": "même structure" }
@@ -480,9 +482,9 @@ Sortie (extrait, niveau essentiel seul) :
 }
 ```
 
-La sortie contient aussi `avertissement`, la mention datée que l'agent recopie après les totaux (« Prix estimés le lundi 19 octobre 2026 à 15 h 30 d'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : l'agent doit donner moins de candidats.
+La sortie contient aussi `avertissement`, la mention datée que l'agent recopie après les totaux (« Prix estimés le lundi 19 octobre 2026 à 15 h 30 d'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer. ») et `exclusions` : les candidats écartés et pourquoi (pas de tarif à une des nuits, séjour minimum plus long que l'étape, suggestion sans tarif au premier jour). Si plus de 20 000 combinaisons sont à comparer pour l'équilibré, l'entrée est refusée : `retenir_combinaison` renvoie l'erreur, et l'agent Recherche doit retenir moins de candidats.
 
-Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contient aussi `arbitrages` (ticket #206, voir `docs/chiffrage.md`) : l'agent les présente au client et, s'il en accepte un, rappelle l'outil avec ses `etapes`.
+Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contient aussi `arbitrages` (ticket #206, voir `docs/chiffrage.md`), chacun avec ses `etapes` ; `retenir_combinaison` n'en transmet que le libellé, le total et s'il tient dans le budget.
 
 ```json
 "arbitrages": [
@@ -497,7 +499,7 @@ Si même l'essentiel dépasse le budget (`budgetInsuffisant`), la sortie contien
 ]
 ```
 
-Si un tarif manque, `niveaux` vaut `null` et `nonChiffrable` explique pourquoi : `{"prestation": "Guesthouse Reykjavik Centre", "date": "2027-01-16", "raison": "Aucun tarif saisi à cette date."}`. L'agent propose alors un autre logement ou d'autres dates, ou appelle `transmettre_au_conseiller`.
+Si un tarif manque, `niveaux` vaut `null` et `nonChiffrable` explique pourquoi : `{"prestation": "Guesthouse Reykjavik Centre", "date": "2027-01-16", "raison": "Aucun tarif saisi à cette date."}`. `retenir_combinaison` refuse alors la combinaison (« Combinaison non chiffrable : … ») ; l'agent Recherche propose un autre logement ou d'autres dates, ou appelle `transmettre_au_conseiller`.
 
 Le résultat est gardé en cache 24 heures sous la demande courante, avec son `chiffrageId`.
 
@@ -512,7 +514,7 @@ Entrée :
 ```json
 {
   "name": "enregistrer_proposition",
-  "description": "Enregistre et envoie au client la proposition de la demande en cours, à partir du chiffrage retenu : programme jour par jour, points forts de chaque logement et activité, argumentaire. Les prix viennent du chiffrage : n'en écris aucun. Si la proposition est refusée, corrige chaque point signalé et rappelle l'outil.",
+  "description": "Enregistre la proposition de la demande en cours, que le conseiller relira avant de l'envoyer au client, à partir du chiffrage retenu : programme jour par jour, points forts de chaque logement et activité, argumentaire. Les prix viennent du chiffrage : n'en écris aucun. Si la proposition est refusée, corrige chaque point signalé et rappelle l'outil.",
   "strict": true,
   "input_schema": {
     "type": "object",
@@ -628,17 +630,18 @@ Un identifiant qui n'est pas une option de la proposition est refusé, avec la l
 
 ## Quel agent voit quels outils
 
-| Outil | Conversation (Haiku 5.5) | Recherche (Sonnet 5.5) | Chiffrage et rédaction (Sonnet 5.5) | Modification (Sonnet 5.5) |
-| --- | --- | --- | --- | --- |
-| `enregistrer_exigences` | ✓ | | | ✓ |
-| `chercher_destinations` | ✓ | ✓ | | ✓ |
-| `chercher_logements` | | ✓ | | ✓ |
-| `chercher_activites` | | ✓ | | ✓ |
-| `consulter_catalogue` | ✓ | | | |
-| `retenir_combinaison` | | ✓ | | |
-| `calculer_budget` | | | | ✓ |
-| `enregistrer_proposition` | | | ✓ | ✓ |
-| `transmettre_au_conseiller` | ✓ | ✓ | ✓ | ✓ |
-| `choisir_options` | ✓ | | | |
+| Outil | Conversation (Haiku 5.5) | Recherche (Sonnet 5.5) | Chiffrage et rédaction (Sonnet 5.5) |
+| --- | --- | --- | --- |
+| `enregistrer_exigences` | ✓ | | |
+| `chercher_destinations` | ✓ | ✓ | |
+| `chercher_logements` | | ✓ | |
+| `chercher_activites` | | ✓ | |
+| `consulter_catalogue` | ✓ | | |
+| `retenir_combinaison` | | ✓ | |
+| `enregistrer_proposition` | | | ✓ |
+| `transmettre_au_conseiller` | ✓ | ✓ | ✓ |
+| `choisir_options` | ✓ | | |
 
-Chaque agent ne reçoit que ses outils dans sa requête : l'agent Conversation ne peut ni chiffrer ni enregistrer de proposition. L'agent Chiffrage et rédaction n'appelle pas `calculer_budget` : il reçoit le chiffrage déjà fait par `retenir_combinaison`.
+Chaque agent ne reçoit que ses outils dans sa requête : l'agent Conversation ne peut ni chiffrer ni enregistrer de proposition. `calculer_budget` n'est donné à aucun agent : `retenir_combinaison` l'appelle, et l'agent Chiffrage et rédaction reçoit le chiffrage déjà fait.
+
+Il n'y a pas d'agent Modification : `AgentIA::Modification` n'est que l'étiquette du contexte que `NouvelleVersion` passe à `retenir_combinaison` quand elle recalcule elle-même, sans modèle, une proposition après une modification ou un choix d'options. Quand le changement demande une nouvelle recherche, elle relance l'agent Recherche ; l'agent Chiffrage et rédaction écrit ensuite la version suivante.

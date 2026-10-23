@@ -138,7 +138,7 @@ final class AgentRechercheTest extends WebTestCase
         self::assertSame($recapitulatif['texte'], end($messagesAuClient)['contenu']);
         self::assertSame('recapitulatif', end($messagesAuClient)['carte']['type'] ?? null);
 
-        $demande = $conversation->getDemande() ?? throw new \LogicException();
+        $demande = $conversation->getDemande();
         self::assertSame(StatutDemande::Nouvelle, $demande->getStatut());
         $proposition = $demande->getPropositions()->first() ?: throw new \LogicException('Aucune proposition.');
         self::assertSame(1, $proposition->getVersion());

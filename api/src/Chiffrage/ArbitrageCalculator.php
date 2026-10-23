@@ -8,8 +8,8 @@ namespace App\Chiffrage;
  * 2. une autre période : les mêmes nuits aux dates les moins chères, à six mois au plus des dates demandées ;
  * 3. les deux à la fois, quand ni l'un ni l'autre ne suffit seul.
  * Chaque arbitrage est chiffré au niveau essentiel par BudgetCalculator : même formule, mêmes tarifs.
- * Changer de catégorie d'hébergement ou de destination demande d'autres candidats : c'est à l'agent de chercher,
- * puis de rappeler calculer_budget.
+ * Changer de catégorie d'hébergement ou de destination demande d'autres candidats : c'est à l'agent Recherche de
+ * chercher, puis de rappeler retenir_combinaison, qui chiffre à nouveau.
  */
 final class ArbitrageCalculator
 {

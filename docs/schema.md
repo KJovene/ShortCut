@@ -18,6 +18,7 @@ erDiagram
         integer id PK
         string type_de_voyage "enum TypeDeVoyage, nullable"
         string statut "enum StatutDemande"
+        string langue "enum Langue"
         boolean prioritaire
         string motif_transmission "enum MotifTransmission, nullable"
         text resume_transmission "nullable"
@@ -88,17 +89,6 @@ erDiagram
         integer prestation_id FK "nullable"
         integer prestataire_id FK "nullable"
     }
-    PAGE_DU_SITE {
-        integer id PK
-        string titre
-        string slug UK
-        text contenu "nullable"
-        json photos
-        string seo_titre "nullable"
-        string seo_description "nullable"
-        boolean publiee
-        integer ordre_menu "nullable"
-    }
     PERIODE_CLIMATIQUE {
         integer id PK
         date_immutable debut
@@ -146,6 +136,8 @@ erDiagram
         json argumentaire
         json prestations
         json choix
+        json options
+        datetime_immutable options_choisies_le "nullable"
         json exigences
         json programme
         string niveau_budget "enum NiveauBudget"

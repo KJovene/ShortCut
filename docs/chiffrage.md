@@ -29,7 +29,7 @@ par personne         = total ÷ nombre de voyageurs (adultes + enfants)
 | Groupe | 200 € |
 | Entreprise | 200 € |
 
-Le barème est modifiable par l'administrateur, dans les bornes de 100 à 200 €.
+Le barème est modifiable par l'administrateur (backoffice, règle de prix), entre des bornes minimum et maximum elles aussi modifiables (100 et 200 € par défaut). La marge (20 % par défaut) se règle au même endroit.
 
 ## Calcul par poste
 
@@ -112,7 +112,7 @@ Le service `ArbitrageCalculator` chiffre, au niveau essentiel et avec la même f
 2. **Une autre période** : les mêmes nuits aux dates les moins chères, à six mois au plus des dates demandées et jamais dans le passé ; à prix égal, les dates les plus proches.
 3. **Les deux à la fois**, seulement si ni l'un ni l'autre ne suffit seul.
 
-Chaque arbitrage donne ses dates, son total, son prix par personne, s'il tient dans le budget et l'écart restant. Changer de catégorie d'hébergement ou de destination demande d'autres candidats : l'agent les cherche, puis rappelle `calculer_budget`.
+Chaque arbitrage donne ses dates, son total, son prix par personne, s'il tient dans le budget et l'écart restant. Changer de catégorie d'hébergement ou de destination demande d'autres candidats : l'agent Recherche les cherche, puis rappelle `retenir_combinaison`, qui chiffre à nouveau.
 
 Pour l'exemple 2 (demande test 06), trois arbitrages, aucun ne suffisant : 3 nuits (448,67 € par personne), fin septembre en basse saison (422,67 €), 3 nuits fin septembre (370,67 €). Le chatbot le dit clairement au lieu de proposer un voyage hors budget.
 
@@ -195,7 +195,7 @@ Le chatbot présente les trois fourchettes (environ 2 300 €, 2 700 € et 5 50
 
 ## Implémentation
 
-Service `App\Chiffrage\BudgetCalculator` (ticket #205), sans état et sans accès à la base : il reçoit une `DemandeDeChiffrage` (voyageurs, budget, étapes et candidats, fourchettes, marge et frais) et rend les trois niveaux poste par poste, ou la raison pour laquelle la demande n'est pas chiffrable. L'outil `calculer_budget` (`App\Agent\Outil\CalculerBudget`) le met à la disposition des agents.
+Service `App\Chiffrage\BudgetCalculator` (ticket #205), sans état et sans accès à la base : il reçoit une `DemandeDeChiffrage` (voyageurs, budget, étapes et candidats, fourchettes, marge et frais) et rend les trois niveaux poste par poste, ou la raison pour laquelle la demande n'est pas chiffrable. L'outil `calculer_budget` (`App\Chatbot\Outil\CalculerBudget`) l'applique à la demande courante ; il n'est donné à aucun agent : `retenir_combinaison` l'appelle après avoir vérifié la combinaison.
 
 ## Tests
 

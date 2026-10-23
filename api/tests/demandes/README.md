@@ -20,7 +20,7 @@ Elles servent de référence pour mesurer les critères de US05 (recueil des exi
 
 Chaque fichier suit `demande.schema.json` :
 
-- `conversation` : les messages du client, dans l'ordre. `moment` indique quand les envoyer : `debut`, `reponse` (aux questions du chatbot), `apres_pistes` (après les trois pistes d'une envie floue), `apres_proposition` (changement demandé une fois la proposition reçue).
+- `conversation` : les messages du client, dans l'ordre. `moment` indique quand les envoyer : `debut`, `reponse` (aux questions du chatbot), `apres_pistes` (après les trois pistes d'une envie floue), `apres_proposition` (changement demandé dès que le chatbot présente un récapitulatif ou une proposition, avant de confirmer quoi que ce soit).
 - `exigencesAttendues` : la fiche demande que le chatbot doit remplir, avec les noms des champs de l'entité `Demande` (budget en euros ici, en centimes en base). Pour le cas 10, c'est l'état final après le changement.
 - `attendu` : destinations, logements compatibles, prestations à exclure et pourquoi, passage au conseiller, budget insuffisant, points de contrôle à vérifier à la lecture de la conversation, et budgets par niveau détaillés poste par poste.
 
@@ -37,3 +37,10 @@ total = (hébergements + transports + activités) + marge de 20 % + frais de dos
 - Cas 10 : `attendu.versionInitiale` donne aussi les budgets de la première version (55 personnes depuis Paris).
 
 `tests/DemandesTestTest.php` vérifie que les fichiers restent cohérents avec le catalogue de démo et avec la formule : types de voyage, cas difficiles, noms des prestations, ordre des niveaux, somme des postes, marge, frais de dossier et respect du budget.
+
+Les fichiers servent aussi à :
+
+- `make evaluer` (recueil des exigences par l'agent Conversation, #195) et `make evaluer-proposition` (recherche et rédaction de la proposition, voir `docs/outils.md`) ;
+- `tests/Chiffrage/ChiffrageDesDemandesTestTest.php` : `BudgetCalculator` retrouve les budgets attendus au centime près, poste par poste ;
+- `tests/Chatbot/Outil/OutilsDeRechercheTest.php` : les outils de recherche retrouvent destinations, logements et activités attendus sur le jeu de démo ;
+- `tests/Chatbot/Outil/RetenirCombinaisonTest.php` : `retenir_combinaison` retient la combinaison attendue, chaque niveau garde ses logements et activités, et tout choix hors contrainte est refusé.
