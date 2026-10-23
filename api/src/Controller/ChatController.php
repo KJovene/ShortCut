@@ -102,59 +102,42 @@ final class ChatController extends AbstractController
         return $this->json(['jeton' => $conversation->getJeton(), 'demande' => $demande->getId()], Response::HTTP_CREATED);
     }
 
+    /**
+     * Réponses du questionnaire d'accueil, envoyées en codes par le site (D26) et la destination choisie sur la carte.
+     * « Plus de 3 000 € » ne fixe pas de cible : l'assistant propose trois fourchettes, comme sans budget.
+     */
     private function appliquerPreferences(Demande $demande, Request $request): void
     {
         try {
-            $preferences = $request->toArray()['preferences'] ?? [];
+            $donnees = $request->toArray();
         } catch (JsonException) {
             return;
         }
-        if (!\is_array($preferences) || 3 !== \count($preferences) || !\is_string($preferences[0] ?? null)) {
-            return;
-        }
 
-        $demande->setTypeDeVoyage(match ($preferences[0]) {
-            'Séjours', 'Séjour détente' => TypeDeVoyage::Sejour,
-            'Circuits', 'Circuit découverte' => TypeDeVoyage::Circuit,
-            'Groupes' => TypeDeVoyage::Groupe,
-            'Noces', 'Voyage de noces' => TypeDeVoyage::Noces,
-            'Entreprise' => TypeDeVoyage::Entreprise,
-            default => null,
-        });
-        if ('À deux' === ($preferences[1] ?? null)) {
-            $demande->setAdultes(2);
-        } elseif ('Seul(e)' === ($preferences[1] ?? null)) {
-            $demande->setAdultes(1);
+        $questionnaire = \is_array($donnees['questionnaire'] ?? null) ? $donnees['questionnaire'] : [];
+        $type = TypeDeVoyage::tryFrom(\is_string($questionnaire['typeDeVoyage'] ?? null) ? $questionnaire['typeDeVoyage'] : '');
+        if (null !== $type) {
+            $demande->setTypeDeVoyage($type);
         }
-        $budget = match ($preferences[2] ?? null) {
-            'Moins de 1 500 €' => 150000,
-            'De 1 500 à 3 000 €' => 300000,
-            'Plus de 3 000 €' => 300000,
+        $adultes = match ($questionnaire['voyageurs'] ?? null) {
+            'seul' => 1,
+            'deux' => 2,
+            default => null,
+        };
+        if (null !== $adultes) {
+            $demande->setAdultes($adultes);
+        }
+        $budget = match ($questionnaire['budget'] ?? null) {
+            'moins_de_1500' => 150000,
+            'de_1500_a_3000' => 300000,
             default => null,
         };
         if (null !== $budget) {
             $demande->setBudgetCentimes($budget)->setBudgetParPersonne(false);
         }
-        if (\is_string($request->toArray()['destination'] ?? null)) {
-            $demande->setLieuOuZone(trim($request->toArray()['destination']));
+
+        if (\is_string($donnees['destination'] ?? null)) {
+            $demande->setLieuOuZone(trim($donnees['destination']));
         }
-    }
-
-    /** Récapitulatif de la demande en cours, affiché par le widget. */
-    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function demande(Demande $demande): JsonResponse
-    {
-        $this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande);
-
-        return $this->json([
-            'id' => $demande->getId(),
-            'statut' => $demande->getStatut()->value,
-            'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
-            'lieuOuZone' => $demande->getLieuOuZone(),
-            'nombreDeJours' => $demande->getNombreDeJours(),
-            'adultes' => $demande->getAdultes(),
-            'enfants' => $demande->getEnfants(),
-            'envies' => $demande->getEnvies(),
-        ]);
     }
 }

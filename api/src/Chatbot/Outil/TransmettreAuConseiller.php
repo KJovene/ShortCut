@@ -13,13 +13,15 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 final class TransmettreAuConseiller implements Outil
 {
+    public const NOM = 'transmettre_au_conseiller';
+
     public function __construct(private readonly EntityManagerInterface $em)
     {
     }
 
     public function nom(): string
     {
-        return 'transmettre_au_conseiller';
+        return self::NOM;
     }
 
     public function definition(): array

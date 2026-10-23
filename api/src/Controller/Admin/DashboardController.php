@@ -77,6 +77,7 @@ final class DashboardController extends AbstractDashboardController
         yield MenuItem::linkTo(PrestataireCrudController::class, 'Prestataires', 'fa fa-handshake');
 
         yield MenuItem::section('Administration')->setPermission('ROLE_ADMIN');
+        yield MenuItem::linkTo(RegleDePrixCrudController::class, 'Règles de prix', 'fa fa-percent')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(UtilisateurCrudController::class, 'Comptes', 'fa fa-users')->setPermission('ROLE_ADMIN');
         yield MenuItem::linkTo(JournalIACrudController::class, 'Journal IA', 'fa fa-list')->setPermission('ROLE_ADMIN');
 

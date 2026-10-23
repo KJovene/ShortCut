@@ -15,13 +15,15 @@ use App\Proposition\PropositionService;
  */
 final class EnregistrerProposition implements Outil
 {
+    public const NOM = 'enregistrer_proposition';
+
     public function __construct(private readonly PropositionService $propositions)
     {
     }
 
     public function nom(): string
     {
-        return 'enregistrer_proposition';
+        return self::NOM;
     }
 
     public function definition(): array

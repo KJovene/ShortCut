@@ -14,7 +14,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 /**
- * Profil chatbot de bout en bout : jeton de conversation, cloisonnement des demandes, limite de débit.
+ * Ouverture d'une conversation du chatbot et de sa demande. L'envoi des messages (jeton, limite de débit) est
+ * couvert par ChatEnvoiTest.
  * Nécessite la base de test : `make db-test`.
  */
 final class ChatControllerTest extends WebTestCase
@@ -43,15 +44,12 @@ final class ChatControllerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testLeChatbotOuvreUneConversationEtLitSaDemande(): void
+    public function testLeChatbotOuvreUneConversationEtSaDemande(): void
     {
         ['jeton' => $jeton, 'demande' => $demande] = $this->demarrer();
 
         self::assertSame(64, \strlen($jeton));
-
-        $this->client->request('GET', '/api/chat/demandes/'.$demande, server: ['HTTP_X_CONVERSATION_TOKEN' => $jeton]);
-        self::assertResponseIsSuccessful();
-        self::assertSame('nouvelle', $this->reponse()['statut']);
+        self::assertSame(StatutDemande::Nouvelle, $this->em->find(Demande::class, $demande)?->getStatut());
     }
 
     public function testLaDemandeDUnClientConnecteLuiEstRattachee(): void
@@ -74,7 +72,7 @@ final class ChatControllerTest extends WebTestCase
             '/api/chat/conversations',
             server: ['CONTENT_TYPE' => 'application/json'],
             content: json_encode([
-                'preferences' => ['Voyage de noces', 'À deux', 'Plus de 3 000 €'],
+                'questionnaire' => ['typeDeVoyage' => 'noces', 'voyageurs' => 'deux', 'budget' => 'de_1500_a_3000'],
             ], \JSON_THROW_ON_ERROR),
         );
         self::assertResponseStatusCodeSame(201);
@@ -84,6 +82,22 @@ final class ChatControllerTest extends WebTestCase
         self::assertSame('noces', $demande->getTypeDeVoyage()?->value);
         self::assertSame(2, $demande->getAdultes());
         self::assertSame(300000, $demande->getBudgetCentimes());
+    }
+
+    /** « Plus de 3 000 € » n'est pas une cible (D26) : l'assistant proposera trois fourchettes. */
+    public function testPlusDeTroisMilleEurosNeFixePasDeBudget(): void
+    {
+        $this->client->request(
+            'POST',
+            '/api/chat/conversations',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"questionnaire": {"typeDeVoyage": "sejour", "voyageurs": "famille", "budget": "plus_de_3000"}}',
+        );
+        self::assertResponseStatusCodeSame(201);
+        $demande = $this->em->find(Demande::class, $this->reponse()['demande']);
+
+        self::assertSame('sejour', $demande?->getTypeDeVoyage()?->value);
+        self::assertNull($demande->getBudgetCentimes());
     }
 
     /** 3 voyages en cours au plus par client : le 4e attend qu'un autre soit accepté ou perdu. */
@@ -127,42 +141,6 @@ final class ChatControllerTest extends WebTestCase
 
         self::assertNull($this->em->find(Demande::class, $anonyme)?->getClient());
         self::assertNull($this->em->find(Demande::class, $duConseiller)?->getClient());
-    }
-
-    public function testLeChatbotNePeutPasLireLaDemandeDUnAutreClient(): void
-    {
-        ['jeton' => $jeton] = $this->demarrer();
-        ['demande' => $demandeDUnAutre] = $this->demarrer();
-
-        $this->client->request('GET', '/api/chat/demandes/'.$demandeDUnAutre, server: ['HTTP_X_CONVERSATION_TOKEN' => $jeton]);
-        self::assertResponseStatusCodeSame(403);
-        self::assertArrayHasKey('erreur', $this->reponse());
-    }
-
-    public function testSansJetonValideLeChatbotEstRefuse(): void
-    {
-        ['demande' => $demande] = $this->demarrer();
-
-        $this->client->request('GET', '/api/chat/demandes/'.$demande);
-        self::assertResponseStatusCodeSame(401);
-
-        $this->client->request('GET', '/api/chat/demandes/'.$demande, server: ['HTTP_X_CONVERSATION_TOKEN' => 'jeton-invente']);
-        self::assertResponseStatusCodeSame(401);
-    }
-
-    public function testAuDelaDeLaLimiteLeChatbotRecoitUne429Claire(): void
-    {
-        ['jeton' => $jeton, 'demande' => $demande] = $this->demarrer();
-
-        for ($i = 0; $i < 20; ++$i) {
-            $this->client->request('GET', '/api/chat/demandes/'.$demande, server: ['HTTP_X_CONVERSATION_TOKEN' => $jeton]);
-            self::assertResponseIsSuccessful();
-        }
-
-        $this->client->request('GET', '/api/chat/demandes/'.$demande, server: ['HTTP_X_CONVERSATION_TOKEN' => $jeton]);
-        self::assertResponseStatusCodeSame(429);
-        self::assertResponseHasHeader('Retry-After');
-        self::assertStringStartsWith('Vous envoyez trop de messages.', $this->reponse()['erreur']);
     }
 
     private function creerCompte(string $email, Role $role): Utilisateur

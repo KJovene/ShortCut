@@ -17,6 +17,8 @@ use App\Texte\Correspondance;
  */
 final class ConsulterCatalogue implements Outil
 {
+    public const NOM = 'consulter_catalogue';
+
     private const LIMITE_PAR_DEFAUT = 3;
     private const LIMITE_MAX = 6;
 
@@ -28,7 +30,7 @@ final class ConsulterCatalogue implements Outil
 
     public function nom(): string
     {
-        return 'consulter_catalogue';
+        return self::NOM;
     }
 
     public function definition(): array

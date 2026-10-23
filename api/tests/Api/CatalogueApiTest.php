@@ -85,6 +85,11 @@ final class CatalogueApiTest extends WebTestCase
         sort($villes);
         self::assertSame($attendues, $villes);
 
+        // Le climat vaut pour toutes les années : mai de l'année suivante donne les mêmes destinations.
+        $villes = array_column($this->liste('/api/destinations?mois='.(Catalogue::ANNEE + 1).'-05&temperatureMin=25'), 'ville');
+        sort($villes);
+        self::assertSame($attendues, $villes);
+
         // Sans mois, la température porte sur n'importe quelle période : l'Islande n'atteint jamais 25 °C.
         self::assertNotContains('Reykjavik', array_column($this->liste('/api/destinations?temperatureMin=25'), 'ville'));
     }

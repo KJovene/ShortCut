@@ -180,6 +180,11 @@ final class CataloguePublicTest extends WebTestCase
         $villes = array_column($this->lire('/api/public/destinations?mois='.Catalogue::ANNEE.'-05&temperatureMin=25')['member'], 'ville');
         sort($villes);
         self::assertSame($attendues, $villes);
+
+        // Le climat vaut pour toutes les années : mai de l'année suivante donne les mêmes destinations.
+        $villes = array_column($this->lire('/api/public/destinations?mois='.(Catalogue::ANNEE + 1).'-05&temperatureMin=25')['member'], 'ville');
+        sort($villes);
+        self::assertSame($attendues, $villes);
     }
 
     public function testLeCatalogueCompletResteReserveAuxConseillers(): void

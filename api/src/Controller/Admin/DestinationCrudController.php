@@ -5,7 +5,6 @@ namespace App\Controller\Admin;
 use App\Admin\FiltreClimat;
 use App\Entity\Destination;
 use App\Entity\PeriodeClimatique;
-use App\Entity\Utilisateur;
 use App\Enum\TypeDeVoyage;
 use App\Form\ClimatMensuelType;
 use App\Form\LieuType;
@@ -268,7 +267,6 @@ final class DestinationCrudController extends AbstractCrudController
             }
         }
 
-        $utilisateur = $this->getUser();
         foreach ($this->temperaturesSoumises as $cle => $temperature) {
             if (null === $temperature || !str_starts_with($cle, 'mois')) {
                 continue;
@@ -279,11 +277,10 @@ final class DestinationCrudController extends AbstractCrudController
                 $debut = new \DateTimeImmutable(\sprintf('%d-%02d-01', (int) date('Y'), $mois));
                 $periode->setDebut($debut)->setFin($debut->modify('last day of this month'));
             }
+            // Qui a saisi le climat, et quand : TraceDeSaisieListener, pour les seuls mois modifiés.
             $periode
                 ->setDestination($destination)
-                ->setTemperatureMoyenne((float) $temperature)
-                ->setSaisiPar($utilisateur instanceof Utilisateur ? $utilisateur : null)
-                ->setModifieLe(new \DateTimeImmutable());
+                ->setTemperatureMoyenne((float) $temperature);
             $entityManager->persist($periode);
         }
     }

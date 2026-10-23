@@ -101,9 +101,10 @@ final class PropositionService
         $this->verifier($redigee, $combinaison, $activitesDetaillees);
 
         $premierJour = new \DateTimeImmutable($combinaison['etapes'][0]['dateDebut']);
+        $this->remplacerLesBrouillons($demande);
         $proposition = (new Proposition())
             ->setDemande($demande)
-            ->setVersion($this->remplacerLesBrouillons($demande) + 1)
+            ->setVersion($demande->prochainNumeroDeVersion())
             ->setType(TypeProposition::Premiere)
             ->setStatut(StatutProposition::Brouillon)
             ->setDestination($this->destinations->findOneBy(['slug' => $combinaison['destination']['slug']]))
@@ -246,20 +247,14 @@ final class PropositionService
     /**
      * Un brouillon pas encore envoyé passe à « remplacée » ; une version déjà envoyée reste visible du client jusqu'à
      * l'envoi de la nouvelle.
-     *
-     * @return int le numéro de la dernière version
      */
-    private function remplacerLesBrouillons(Demande $demande): int
+    private function remplacerLesBrouillons(Demande $demande): void
     {
-        $derniere = 0;
         foreach ($demande->getPropositions() as $precedente) {
-            $derniere = max($derniere, $precedente->getVersion());
             if (StatutProposition::Brouillon === $precedente->getStatut() && TypeProposition::Premiere === $precedente->getType()) {
                 $this->workflowProposition->apply($precedente, 'remplacer');
             }
         }
-
-        return $derniere;
     }
 
     /**

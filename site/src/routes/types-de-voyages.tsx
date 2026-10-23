@@ -4,7 +4,7 @@ import { EnTetePage } from '@/components/ui/EnTetePage'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconFleche } from '@/components/ui/icons'
 import { TYPES_DE_VOYAGE } from '@/data/catalogue'
-import { destinationsQuery } from '@/features/catalogue/catalogue'
+import { destinationsQuery, fraisDeDossierQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { metaPage } from '@/features/pages/meta'
 import { TEXTES } from '@/features/pages/textes'
@@ -28,6 +28,8 @@ function TypesPage() {
   const ouvrirAssistant = useOuvrirAssistant()
   // Le nombre de destinations par type s'affiche une fois le catalogue chargé.
   const { data: destinations } = useQuery(destinationsQuery())
+  // Le barème des frais de dossier, modifiable par l'administrateur dans le backoffice.
+  const { data: frais } = useQuery(fraisDeDossierQuery)
 
   return (
     <>
@@ -41,6 +43,7 @@ function TypesPage() {
       <section className="mx-auto flex max-w-[1376px] flex-col gap-6 px-4 pb-16 sm:px-8 sm:pb-24">
         {TYPES_DE_VOYAGE.map((t, i) => {
           const nb = destinations?.filter((d) => d.types.includes(t.valeur)).length
+          const fraisDuType = frais?.[t.valeur]
           return (
             <article
               key={t.valeur}
@@ -59,12 +62,16 @@ function TypesPage() {
                 <h2 className="m-0 font-display text-[32px] font-semibold sm:text-[40px]">
                   {titreType(t, langue)}
                 </h2>
-                <p className="m-0 text-lg leading-relaxed text-taupe">
-                  {textes.types.descriptions[t.valeur]}
-                </p>
-                <p className="m-0 text-sm text-taupe-clair">
-                  {textes.types.fraisDeDossier(t.fraisDossier)}
-                </p>
+                {section?.paragraphes.map((paragraphe) => (
+                  <p key={paragraphe} className="m-0 text-lg leading-relaxed text-taupe">
+                    {paragraphe}
+                  </p>
+                ))}
+                {fraisDuType !== undefined && (
+                  <p className="m-0 text-sm text-taupe-clair">
+                    {textes.types.fraisDeDossier(fraisDuType / 100)}
+                  </p>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2.5">
                   <button
                     type="button"

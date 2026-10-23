@@ -45,16 +45,7 @@ final class PropositionController extends AbstractController
         return $this->json($this->client->presenter($version));
     }
 
-    /** La proposition en PDF (#213) : la version qui fait foi. */
-    #[Route('/pdf', name: 'api_proposition_pdf', methods: ['GET'])]
-    public function telecharger(string $jeton, PropositionPdf $pdf): Response
-    {
-        [, $proposition] = $this->trouver($jeton);
-
-        return $this->pdf($pdf, $proposition);
-    }
-
-    /** Une version précise en PDF, celle que le client consulte. */
+    /** La proposition en PDF (#213) : la version que le client consulte, même remplacée. */
     #[Route('/versions/{numero}/pdf', name: 'api_proposition_version_pdf', methods: ['GET'], requirements: ['numero' => '\d+'])]
     public function telechargerUneVersion(string $jeton, int $numero, PropositionPdf $pdf): Response
     {

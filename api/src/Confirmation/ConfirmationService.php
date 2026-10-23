@@ -5,7 +5,7 @@ namespace App\Confirmation;
 use App\Chiffrage\BudgetCalculator;
 use App\Chiffrage\DemandeDeChiffrage;
 use App\Chiffrage\Etape;
-use App\Chiffrage\Montant;
+use App\Chiffrage\Hypothese;
 use App\Chiffrage\Poste;
 use App\Entity\Demande;
 use App\Entity\LigneDePrestation;
@@ -55,22 +55,19 @@ final class ConfirmationService
      */
     public function estimation(Demande $demande): ?Proposition
     {
-        $propositions = $demande->getPropositions()->toArray();
-        $envoyee = self::derniere(array_filter(
-            $propositions,
+        $envoyee = $demande->derniereProposition(
             static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType() && StatutProposition::Envoyee === $p->getStatut(),
-        ));
-        $confirmee = self::derniere(array_filter($propositions, static fn (Proposition $p): bool => self::confirmeLEstimation($p)));
+        );
+        $confirmee = $demande->derniereProposition(self::confirmeLEstimation(...));
         if (null !== $envoyee || null === $confirmee) {
             return $envoyee;
         }
 
-        return self::derniere(array_filter(
-            $propositions,
+        return $demande->derniereProposition(
             static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType()
                 && StatutProposition::Remplacee === $p->getStatut()
                 && $p->getVersion() < $confirmee->getVersion(),
-        ));
+        );
     }
 
     /**
@@ -102,7 +99,7 @@ final class ConfirmationService
         }
 
         $version = (new Proposition())
-            ->setVersion(1 + max(array_map(static fn (Proposition $p): int => $p->getVersion(), $demande->getPropositions()->toArray())))
+            ->setVersion($demande->prochainNumeroDeVersion())
             ->setType(TypeProposition::Confirmee)
             ->setStatut(StatutProposition::Brouillon)
             ->setDestination($estimation->getDestination())
@@ -335,6 +332,29 @@ final class ConfirmationService
         $this->em->flush();
     }
 
+    /**
+     * La demande est perdue (le client renonce, ne répond plus) : la proposition qu'il avait reçue, envoyée ou
+     * confirmée, passe « refusée » (D25). Un brouillon jamais envoyé reste tel quel. Faux si la demande ne peut plus
+     * être perdue (déjà acceptée ou perdue).
+     */
+    public function perdre(Demande $demande): bool
+    {
+        if (!$this->workflowDemande->can($demande, 'perdre')) {
+            return false;
+        }
+
+        foreach ($demande->getPropositions() as $proposition) {
+            if ($this->workflowProposition->can($proposition, 'refuser')) {
+                $this->workflowProposition->apply($proposition, 'refuser');
+            }
+        }
+        $this->workflowDemande->apply($demande, 'perdre');
+        $demande->setModifieLe($this->horloge->now());
+        $this->em->flush();
+
+        return true;
+    }
+
     /** @return array{int, int} bornes des frais de dossier fixées par l'administrateur, en centimes */
     public function bornesDesFrais(): array
     {
@@ -377,14 +397,14 @@ final class ConfirmationService
         $hypotheses = [];
         foreach ($version->getHypotheses() as $hypothese) {
             foreach ($parties as $libelle) {
-                if (str_starts_with($hypothese, $libelle.' :')) {
+                if (Hypothese::porteSur($hypothese, $libelle)) {
                     continue 2;
                 }
             }
-            if (str_starts_with($hypothese, 'Transport inclus')) {
-                $hypothese = \sprintf('Transport inclus : vols et transferts au prix confirmé, pour %s', Montant::quantite(self::voyageurs($version), 'voyageur'));
-            } elseif (str_starts_with($hypothese, 'Frais de dossier')) {
-                $hypothese = \sprintf('Frais de dossier : %s', Montant::euros($version->getFraisDeDossierCentimes()));
+            if (Hypothese::estTransportInclus($hypothese)) {
+                $hypothese = Hypothese::transportConfirme(self::voyageurs($version));
+            } elseif (Hypothese::estFraisDeDossier($hypothese)) {
+                $hypothese = Hypothese::fraisDeDossier(null, $version->getFraisDeDossierCentimes());
             }
             $hypotheses[] = $hypothese;
         }
@@ -394,10 +414,9 @@ final class ConfirmationService
 
     private function versionExistante(Demande $demande, Proposition $estimation): ?Proposition
     {
-        return self::derniere(array_filter(
-            $demande->getPropositions()->toArray(),
+        return $demande->derniereProposition(
             static fn (Proposition $p): bool => self::confirmeLEstimation($p) && $p->getVersion() > $estimation->getVersion(),
-        ));
+        );
     }
 
     /** Version de confirmation en cours ou aboutie ; une version remplacée par un nouvel envoi ne compte plus. */
@@ -431,18 +450,8 @@ final class ConfirmationService
         return max(1, (int) $demande?->getAdultes() + (int) $demande?->getEnfants());
     }
 
-    /**
-     * @param array<Proposition> $propositions
-     */
-    private static function derniere(array $propositions): ?Proposition
-    {
-        usort($propositions, static fn (Proposition $a, Proposition $b): int => $b->getVersion() <=> $a->getVersion());
-
-        return $propositions[0] ?? null;
-    }
-
     private function regle(): RegleDePrix
     {
-        return $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
+        return $this->reglesDePrix->courante();
     }
 }

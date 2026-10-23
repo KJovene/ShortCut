@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: 'periode_climatique')]
 #[ORM\Index(columns: ['destination_id', 'debut', 'fin'])]
 #[NoPeriodOverlap]
-class PeriodeClimatique
+class PeriodeClimatique implements SaisieTracee
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -152,5 +152,39 @@ class PeriodeClimatique
         $this->modifieLe = $modifieLe;
 
         return $this;
+    }
+
+    /**
+     * Le climat est une moyenne, valable chaque année (comme MOIS_COUVERT) : la période saisie pour mai 2027 vaut
+     * pour mai 2026 ou 2028. Renvoie la période reportée sur les années du voyage, quand elle touche ses dates.
+     *
+     * @return list<array{debut: \DateTimeImmutable, fin: \DateTimeImmutable}>
+     */
+    public function auxDates(\DateTimeImmutable $debut, \DateTimeImmutable $fin): array
+    {
+        if (null === $this->debut || null === $this->fin) {
+            return [];
+        }
+
+        $reportees = [];
+        $anneeSaisie = (int) $this->debut->format('Y');
+        // Une année plus tôt : une période à cheval sur deux années (novembre à février) touche aussi janvier.
+        for ($annee = (int) $debut->format('Y') - 1; $annee <= (int) $fin->format('Y'); ++$annee) {
+            $periode = ['debut' => self::decaler($this->debut, $annee - $anneeSaisie), 'fin' => self::decaler($this->fin, $annee - $anneeSaisie)];
+            if ($periode['debut'] <= $fin && $periode['fin'] >= $debut) {
+                $reportees[] = $periode;
+            }
+        }
+
+        return $reportees;
+    }
+
+    /** Même jour, $annees plus tard ; le dernier jour du mois le reste (29 février → 28 février). */
+    private static function decaler(\DateTimeImmutable $date, int $annees): \DateTimeImmutable
+    {
+        $mois = $date->setDate((int) $date->format('Y') + $annees, (int) $date->format('n'), 1);
+        $jour = $date->format('j') === $date->format('t') ? (int) $mois->format('t') : min((int) $date->format('j'), (int) $mois->format('t'));
+
+        return $mois->setDate((int) $mois->format('Y'), (int) $mois->format('n'), $jour);
     }
 }

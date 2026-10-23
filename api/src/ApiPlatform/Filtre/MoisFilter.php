@@ -62,7 +62,7 @@ final class MoisFilter implements FilterInterface, OpenApiParameterFilterInterfa
      *
      * @return array{\DateTimeImmutable, \DateTimeImmutable}
      */
-    public static function bornes(string $mois): array
+    private static function bornes(string $mois): array
     {
         $debut = new \DateTimeImmutable($mois.'-01');
 

@@ -4,6 +4,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MAX_VOYAGES_ACCUEIL } from './features/accueil/carte'
+import { changerLangue } from './lib/langue'
 import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
@@ -32,6 +33,7 @@ const MIS_EN_AVANT = 'GET /api/public/destinations?miseEnAvant=true'
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+  changerLangue('fr')
 })
 
 describe('accueil : carte et bandeau des voyages', () => {
@@ -181,6 +183,41 @@ describe('accueil : carte et bandeau des voyages', () => {
       expect(screen.getAllByRole('heading', { level: 2, name: 'Lisbonne, Portugal' })).toHaveLength(
         1,
       ),
+    )
+  })
+})
+
+describe('accueil : construire un voyage depuis la carte', () => {
+  it('transmet la destination choisie à l’assistant, en anglais aussi', async () => {
+    sessionStorage.clear()
+    const api = simulerApi({
+      'GET /api/moi': {
+        status: 200,
+        body: {
+          email: 'client@example.com',
+          prenom: 'Camille',
+          nom: 'Client',
+          telephone: null,
+          role: 'ROLE_CLIENT',
+        },
+      },
+      'POST /api/chat/conversations': { status: 201, body: { jeton: 'j'.repeat(64), demande: 1 } },
+      'POST /api/chat': { status: 200, body: 'event: fin\ndata: {"terminee":false}\n\n' },
+    })
+    changerLangue('en')
+    afficher()
+    const user = userEvent.setup()
+
+    // La fiche mobile montre Santorin, le voyage actif par défaut.
+    await user.click(await screen.findByRole('button', { name: 'Plan' }))
+    const champ = await screen.findByDisplayValue(/^A trip to Santorin in /)
+    await user.type(champ, 'for two{Enter}')
+
+    await waitFor(() =>
+      expect(api.envoisA('POST /api/chat/conversations')[0]).toMatchObject({
+        destination: 'Santorin',
+        langue: 'en',
+      }),
     )
   })
 })

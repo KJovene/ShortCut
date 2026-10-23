@@ -2,6 +2,7 @@
 
 namespace App\Chatbot;
 
+use App\Chatbot\Outil\ConsulterCatalogue;
 use App\Entity\Prestation;
 use App\Repository\PrestationRepository;
 
@@ -25,7 +26,7 @@ final class Suggestions
     {
         $ids = [];
         foreach ($tour->sorties as $sortie) {
-            if ('consulter_catalogue' === $sortie['nom']) {
+            if (ConsulterCatalogue::NOM === $sortie['nom']) {
                 array_push($ids, ...array_column($sortie['sortie']['prestations'] ?? [], 'id'));
             }
         }

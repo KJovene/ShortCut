@@ -1587,6 +1587,43 @@ paths:
             schema:
               $ref: '#/components/schemas/Logement-prestation.ecriture.jsonMergePatch'
         required: true
+  /api/pages:
+    get:
+      operationId: api_pages_get_collection
+      tags:
+        - PageDuSite
+      responses:
+        '200':
+          description: 'PageDuSite collection'
+          content:
+            application/ld+json:
+              schema:
+                type: object
+                description: 'PageDuSite.jsonld-menu.read collection.'
+                allOf:
+                  - { $ref: '#/components/schemas/HydraCollectionBaseSchemaNoPagination' }
+                  - { type: object, required: [member], properties: { member: { type: array, items: { $ref: '#/components/schemas/PageDuSite.jsonld-menu.read' } } } }
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageDuSite-menu.read'
+        '403':
+          description: Forbidden
+          content:
+            application/ld+json:
+              schema:
+                $ref: '#/components/schemas/Error.jsonld'
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          links: {  }
+      summary: 'Retrieves the collection of PageDuSite resources.'
+      description: 'Retrieves the collection of PageDuSite resources.'
+      parameters: []
   '/api/pages/{slug}':
     get:
       operationId: api_pages_slug_get
@@ -2759,6 +2796,8 @@ components:
         - pays
         - ville
         - slug
+        - latitude
+        - longitude
       properties:
         pays:
           maxLength: 100
@@ -3087,6 +3126,8 @@ components:
         - pays
         - ville
         - slug
+        - latitude
+        - longitude
     Destination-public.read:
       type: object
       description: |-
@@ -3097,6 +3138,8 @@ components:
         - pays
         - ville
         - slug
+        - latitude
+        - longitude
       properties:
         pays:
           maxLength: 100
@@ -3319,6 +3362,8 @@ components:
             - pays
             - ville
             - slug
+            - latitude
+            - longitude
       description: |-
         Destination du catalogue, avec son climat par période.
         Groupe `destination:public` : ce que le site peut montrer ; `destination:interne` : réservé au backoffice.
@@ -3333,6 +3378,8 @@ components:
             - pays
             - ville
             - slug
+            - latitude
+            - longitude
           properties:
             pays:
               maxLength: 100
@@ -3950,18 +3997,39 @@ components:
         Exposée sous deux adresses, /api/logements et /api/activites (voir TypePrestationExtension).
         Groupe `prestation:public` : ce que le site peut montrer ; `prestation:interne` : prestataire et tarifs d'achat.
         Groupe `public:read` : exemples d'une destination sur le site public (sans destination, prestataire ni tarifs).
+    PageDuSite-menu.read:
+      type: object
+      description: |-
+        Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+        Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+        répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
+      required:
+        - slug
+      properties:
+        slug:
+          type: string
+        ordreMenu:
+          description: "Vide : la page n'apparaît pas dans le menu."
+          type:
+            - integer
+            - 'null'
     PageDuSite-public.read:
       type: object
       description: |-
         Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
         Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
-        répond 404 comme une page inconnue.
+        répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
       required:
         - titre
         - slug
       properties:
         titre:
           type: string
+        titreFroid:
+          description: 'Accueil seulement : titre du thème « voyages froids » ; le titre ci-dessus est celui des voyages chauds.'
+          type:
+            - string
+            - 'null'
         slug:
           type: string
         seoTitre:
@@ -3982,6 +4050,26 @@ components:
           type: array
           items:
             type: string
+    PageDuSite.jsonld-menu.read:
+      allOf:
+        -
+          $ref: '#/components/schemas/HydraItemBaseSchema'
+        -
+          type: object
+          required:
+            - slug
+          properties:
+            slug:
+              type: string
+            ordreMenu:
+              description: "Vide : la page n'apparaît pas dans le menu."
+              type:
+                - integer
+                - 'null'
+      description: |-
+        Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
+        Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
+        répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
     PageDuSite.jsonld-public.read:
       allOf:
         -
@@ -3994,6 +4082,11 @@ components:
           properties:
             titre:
               type: string
+            titreFroid:
+              description: 'Accueil seulement : titre du thème « voyages froids » ; le titre ci-dessus est celui des voyages chauds.'
+              type:
+                - string
+                - 'null'
             slug:
               type: string
             seoTitre:
@@ -4017,7 +4110,7 @@ components:
       description: |-
         Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
         Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
-        répond 404 comme une page inconnue.
+        répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
     PeriodeClimatique-destination.public_destination.interne:
       type: object
       required:
@@ -4585,7 +4678,7 @@ tags:
     description: |-
       Contenu modifiable d'une page du site (textes, photos, référencement), saisi dans le backoffice.
       Lecture publique par slug : seules les pages publiées sont servies (PublieeExtension), une page masquée
-      répond 404 comme une page inconnue.
+      répond 404 comme une page inconnue. La liste (GET /pages) donne au site l'ordre de son menu.
   -
     name: Prestataire
     description: |-

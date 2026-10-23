@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
-import { ApiError } from '@/lib/api'
+import { ApiError, requete } from '@/lib/api'
 import { type Langue, typeDeVoyage } from '@/lib/langue'
 
 /**
@@ -169,13 +169,9 @@ export function versDestination(d: DestinationApi): DestinationPublique {
 
 async function lire(chemin: string, parametres: Record<string, string> = {}) {
   const query = new URLSearchParams(parametres)
-  const response = await fetch(`/api/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, {
-    headers: { Accept: 'application/json' },
+  return requete(`/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, z.unknown(), {
+    messageErreur: 'Impossible de charger les destinations.',
   })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de charger les destinations.')
-  }
-  return (await response.json()) as unknown
 }
 
 /**
@@ -229,6 +225,14 @@ export const destinationQuery = (slug: string) =>
     // Une destination masquée ou inconnue ne reviendra pas en redemandant : 404 tout de suite.
     retry: (essais, erreur) => !(erreur instanceof ApiError && erreur.status === 404) && essais < 1,
   })
+
+/** Frais de dossier par type de voyage, en centimes : le barème fixé par l'administrateur (règles de prix). */
+export const fraisDeDossierQuery = queryOptions({
+  queryKey: ['catalogue', 'frais-de-dossier'],
+  queryFn: async () =>
+    z.record(z.string(), z.number()).parse(await lire('frais-de-dossier')),
+  staleTime: 5 * 60_000,
+})
 
 /** Type de voyage principal, pour les cartes ; « Sur mesure » si le conseiller n'en a choisi aucun. */
 export function libelleTypePrincipal(d: DestinationPublique, langue: Langue = 'fr') {

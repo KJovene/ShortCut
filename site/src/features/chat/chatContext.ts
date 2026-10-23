@@ -59,14 +59,26 @@ export interface ActionsChat {
   /** Recharge une conversation existante et ouvre le chat pour la continuer. */
   reprendre: (reprise: Reprise) => void
   repondreQuestion: (reponse: string) => void
+  /** « Construire un voyage » : une conversation déjà engagée laisse place à une discussion vierge. */
+  nouveauVoyage: () => void
 }
 
+/** L'état du chat et ses actions : tout composant qui l'utilise se redessine à chaque morceau de réponse. */
 export const ChatContext = createContext<
   (EtatChat & ActionsChat & { estConnecte: boolean }) | null
 >(null)
+
+/** Les actions seules, stables d'un rendu à l'autre : pour les boutons qui ouvrent ou relancent l'assistant. */
+export const ChatActionsContext = createContext<ActionsChat | null>(null)
 
 export function useChat() {
   const chat = useContext(ChatContext)
   if (!chat) throw new Error('useChat doit être utilisé sous <ChatProvider>')
   return chat
+}
+
+export function useChatActions() {
+  const actions = useContext(ChatActionsContext)
+  if (!actions) throw new Error('useChatActions doit être utilisé sous <ChatProvider>')
+  return actions
 }

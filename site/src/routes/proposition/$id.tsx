@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
-import { useChat } from '@/features/chat/chatContext'
+import { useChatActions } from '@/features/chat/chatContext'
 import {
   estJetonProposition,
   propositionQuery,
@@ -56,7 +56,7 @@ function PropositionDuLien({ jeton }: { jeton: string }) {
 }
 
 function PropositionIntrouvable() {
-  const { ouvrir } = useChat()
+  const { ouvrir } = useChatActions()
   const textes = TEXTES[useLangue()]
   const t = textes.proposition
   return (
