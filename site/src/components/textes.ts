@@ -19,6 +19,7 @@ export const TEXTES = {
     choixLangue: 'Langue du site',
     francais: 'Français',
     anglais: 'English',
+    themeSombre: 'Thème sombre',
     // Pied de page
     typesDeVoyage: 'Séjours · Circuits · Groupes · Voyages de noces · Entreprise',
     liensLegaux: 'Liens légaux',
@@ -82,6 +83,7 @@ export const TEXTES = {
     choixLangue: 'Site language',
     francais: 'Français',
     anglais: 'English',
+    themeSombre: 'Dark theme',
     typesDeVoyage: 'Stays · Tours · Groups · Honeymoons · Corporate',
     liensLegaux: 'Legal links',
     mentionsLegales: 'Legal notice',

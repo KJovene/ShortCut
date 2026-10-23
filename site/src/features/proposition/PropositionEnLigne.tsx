@@ -166,15 +166,10 @@ function Page({
       <div
         className={cn(
           'border-b',
-          confirmee ? 'border-[#A9C3DE] bg-[#BCD3EA]' : 'border-[#C9C0AD] bg-[#EAE2D2]',
+          confirmee ? 'border-ciel-trait bg-ciel-fond' : 'border-beige bg-sable',
         )}
       >
-        <p
-          className={cn(
-            'mx-auto m-0 max-w-[1376px] px-4 py-3 text-sm font-semibold sm:px-8',
-            confirmee ? 'text-[#16233F]' : 'text-[#16233F]',
-          )}
-        >
+        <p className="mx-auto m-0 max-w-[1376px] px-4 py-3 text-sm font-semibold text-encre sm:px-8">
           {p.mention}
           {p.etat === 'estimee' && t.confirmationAnnoncee}
         </p>
@@ -467,7 +462,7 @@ function Budget({
   })
 
   return (
-    <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-4 rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
+    <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-4 rounded-[28px] aplat-encre bg-brun p-6 text-creme lg:sticky lg:top-6">
       <h2 className="m-0 font-display text-2xl font-semibold">
         {confirmee ? t.budgetConfirme : t.budgetEstime}
       </h2>
@@ -596,21 +591,21 @@ function Budget({
 
 /** Fond d'un élément ajouté, modifié ou retiré par rapport à la version comparée. */
 const SURLIGNAGE: Record<Changement, string> = {
-  ajoute: 'bg-[#EAF1F8]',
-  modifie: 'bg-[#FBF0EC]',
+  ajoute: 'bg-ciel-pale',
+  modifie: 'bg-brique-pale',
   retire: 'bg-creme',
 }
 
 const CONTOUR: Record<Changement, string> = {
-  ajoute: 'ring-2 ring-[#A9C3DE]',
-  modifie: 'ring-2 ring-[#C9C0AD]',
+  ajoute: 'ring-2 ring-ciel-trait',
+  modifie: 'ring-2 ring-beige',
   retire: 'ring-1 ring-lin',
 }
 
 const MARQUES: Record<Changement, string> = {
-  ajoute: 'bg-[#BCD3EA] text-[#16233F]',
-  modifie: 'bg-[#F7E3DD] text-[#16233F]',
-  retire: 'bg-[#F7E3DD] text-[#A8432C]',
+  ajoute: 'bg-ciel-fond text-encre',
+  modifie: 'bg-brique-fond text-encre',
+  retire: 'bg-brique-fond text-brique-texte',
 }
 
 /** Étiquette du changement : le texte le dit, la couleur ne fait que le souligner. */
@@ -646,10 +641,10 @@ function EcartDeBudget({
         sombre
           ? hausse
             ? 'text-[#F2C2B3]'
-            : 'text-[#BCD3EA]'
+            : 'text-ciel'
           : hausse
-            ? 'text-[#A8432C]'
-            : 'text-[#16233F]',
+            ? 'text-brique-texte'
+            : 'text-encre',
       )}
     >
       {formatEcart(ecart.centimes)}
@@ -674,7 +669,7 @@ function CeQuiAChange({
   return (
     <section
       aria-label={titre}
-      className="flex flex-col gap-2 rounded-[18px] border-[1.5px] border-[#C9C0AD] bg-[#FBF0EC] px-5 py-4"
+      className="flex flex-col gap-2 rounded-[18px] border-[1.5px] border-beige bg-brique-pale px-5 py-4"
     >
       <h2 className="m-0 text-base font-bold">{titre}</h2>
       {c.nombre === 0 ? (

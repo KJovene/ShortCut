@@ -22,13 +22,15 @@ export function BandeauVoyages({ destinations, active, onActiver }: Props) {
     liste.current?.scrollBy({ left: sens * 504, behavior: 'smooth' })
 
   return (
-    <section id="voyages" aria-labelledby="bandeau-titre" className="bg-brun text-creme">
+    <section
+      id="voyages"
+      aria-labelledby="bandeau-titre"
+      className="aplat-encre bg-brun text-creme"
+    >
       <div className="mx-auto flex max-w-[1376px] flex-col gap-4 py-8 pl-4 sm:gap-[22px] sm:px-8 sm:pt-12 sm:pb-[52px]">
         <div className="flex flex-wrap items-end justify-between gap-4 pr-4 sm:pr-0">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-extrabold text-ocre">
-              {t.bandeauSurtitre}
-            </span>
+            <span className="text-[13px] font-extrabold text-ocre">{t.bandeauSurtitre}</span>
             <h2
               id="bandeau-titre"
               className="m-0 font-display text-[28px] font-semibold tracking-[-1px] sm:text-[40px]"
@@ -41,7 +43,7 @@ export function BandeauVoyages({ destinations, active, onActiver }: Props) {
               type="button"
               aria-label={t.precedents}
               onClick={() => defiler(-1)}
-              className="flex size-12 items-center justify-center rounded-full border-[1.5px] border-[#6B7385] hover:bg-white/10"
+              className="flex size-12 items-center justify-center rounded-full border-[1.5px] border-ballast hover:bg-white/10"
             >
               <IconChevronGauche />
             </button>

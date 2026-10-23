@@ -93,11 +93,11 @@ export const mesDemandesQuery = queryOptions({
 })
 
 const CLASSE_STATUT = {
-  info: 'bg-[#BCD3EA] text-[#16233F]',
-  attente: 'bg-[#E2D9C6] text-[#16233F]',
-  succes: 'bg-[#BCD3EA] text-[#16233F]',
+  info: 'bg-ciel-fond text-encre',
+  attente: 'bg-lin text-encre',
+  succes: 'bg-ciel-fond text-encre',
   fini: 'bg-vert-fonce text-white',
-  clos: 'bg-[#EAE2D2] text-[#3B4762]',
+  clos: 'bg-sable text-taupe',
 } as const
 
 /**

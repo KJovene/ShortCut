@@ -44,11 +44,7 @@ export function Recapitulatif({
             </span>
           </>
         ) : (
-          <img
-            src="/images/carte-du-monde.svg"
-            alt=""
-            className="block size-full object-cover opacity-80"
-          />
+          <div aria-hidden="true" className="points-carte size-full opacity-80 [mask-size:cover]" />
         )}
       </div>
       <div className="flex flex-col gap-3.5 px-[22px] pt-[18px] pb-[22px]">
