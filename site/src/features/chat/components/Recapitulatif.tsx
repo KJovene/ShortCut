@@ -6,7 +6,7 @@ import { useChat } from '../chatContext'
 import { CRITERES, nombreRenseignes, valeurCritere } from '../demande'
 import { TEXTES } from '../textes'
 
-/** Récapitulatif des neuf critères, à côté de la conversation. */
+/** Récapitulatif des huit critères, à côté de la conversation. */
 export function Recapitulatif({
   onModifier,
   titreId,
@@ -75,7 +75,7 @@ export function Recapitulatif({
         >
           <div
             className="h-1.5 rounded-full bg-vert transition-[width]"
-            style={{ width: `${(renseignes / 9) * 100}%` }}
+            style={{ width: `${(renseignes / CRITERES.length) * 100}%` }}
           />
         </div>
         <dl className="m-0 flex flex-col">

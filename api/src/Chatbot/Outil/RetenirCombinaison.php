@@ -18,10 +18,10 @@ use App\Repository\PrestationRepository;
  * chaque étape et les activités que l'agent a choisis pour la demande courante.
  *
  * Le serveur ne fait pas confiance au modèle : il refait les trois recherches avec les critères de la fiche demande
- * (zone, dates, températures, voyageurs, âges, accessibilité) et refuse tout choix qu'elles n'auraient pas renvoyé,
+ * (zone, dates, voyageurs, âges, accessibilité) et refuse tout choix qu'elles n'auraient pas renvoyé,
  * avec la raison. Il chiffre ensuite les trois niveaux (calculer_budget) : chaque niveau retient sa combinaison de
  * logements et d'activités. La sortie relie chaque prestation à sa fiche et donne les faits qui justifient le choix :
- * températures aux dates, temps de trajet, envies satisfaites.
+ * climat aux dates, temps de trajet, envies satisfaites.
  *
  * Elle donne aussi le niveau conseillé au client et, en option, jusqu'à trois activités compatibles que ce niveau ne
  * contient pas, à leur prix de vente pour le groupe : le chatbot les lui propose comme le ferait un conseiller (sauf
@@ -31,6 +31,9 @@ final class RetenirCombinaison implements Outil
 {
     /** Activités proposées en option au plus : au-delà, le client ne lit plus. */
     public const OPTIONS_MAX = 3;
+
+    /** Envie qui porte sur le climat (« au moins 25 °C », « de la chaleur ») : climatAuxDates y répond. */
+    private const ENVIE_DE_CLIMAT = '/°|degr|temp[ée]rat|chaleur|chaud|soleil|ensoleill|froid|frais|fra[iî]cheur|doux|douceur|climat|warm|hot|sun|cold|cool|mild|climate/iu';
 
     public function __construct(
         private readonly ChercherDestinations $chercherDestinations,
@@ -98,13 +101,11 @@ final class RetenirCombinaison implements Outil
         $slug = (string) $destination->getSlug();
         $accessible = $demande->aBesoinDAccessibilite();
 
-        // 1. La destination, avec les critères de la fiche : zone, groupe, températures et tarifs aux dates.
+        // 1. La destination, avec les critères de la fiche : zone, groupe et tarifs aux dates.
         $recherche = $this->chercherDestinations->rechercher(array_filter([
             'zone' => $demande->getLieuOuZone(),
             'dateDebut' => $premiereNuit->format('Y-m-d'),
             'dateFin' => $premiereNuit->modify(\sprintf('+%d days', $nuits))->format('Y-m-d'),
-            'temperatureMin' => $demande->getTemperatureMin(),
-            'temperatureMax' => $demande->getTemperatureMax(),
             'envies' => $demande->getEnvies(),
             'villeDepart' => $demande->getVilleDepart(),
             'voyageurs' => $demande->getAdultes() + $demande->getEnfants(),
@@ -379,14 +380,19 @@ final class RetenirCombinaison implements Outil
     private static function justification(Demande $demande, array $destination, string $pourquoi): array
     {
         $correspondantes = $destination['enviesCorrespondantes'];
+        // Une envie de climat trouve sa réponse dans climatAuxDates, pas dans une prestation.
+        $climat = array_values(array_filter(
+            array_diff($demande->getEnvies(), $correspondantes),
+            static fn (string $envie): bool => 1 === preg_match(self::ENVIE_DE_CLIMAT, $envie),
+        ));
 
         return [
             'climatAuxDates' => $destination['climatAuxDates'],
-            'temperatureSouhaitee' => ['min' => $demande->getTemperatureMin(), 'max' => $demande->getTemperatureMax()],
+            'enviesDeClimat' => $climat,
             'villeDepart' => $demande->getVilleDepart(),
             'tempsDeTrajetMinutes' => $destination['tempsDeTrajetMinutes'],
             'enviesCorrespondantes' => $correspondantes,
-            'enviesSansReponse' => array_values(array_diff($demande->getEnvies(), $correspondantes)),
+            'enviesSansReponse' => array_values(array_diff($demande->getEnvies(), $correspondantes, $climat)),
             'pourquoi' => $pourquoi,
         ];
     }

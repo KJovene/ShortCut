@@ -18,7 +18,7 @@ final class ComparateurFiche
 
     /** Champs comparés à l'identique (les listes d'âges sans tenir compte de l'ordre). */
     private const EXACTS = [
-        'typeDeVoyage', 'dateDebut', 'dateFin', 'datesFlexibles', 'nombreDeJours', 'temperatureMin', 'temperatureMax',
+        'typeDeVoyage', 'dateDebut', 'dateFin', 'datesFlexibles', 'nombreDeJours',
         'adultes', 'enfants', 'agesEnfants', 'budgetEuros', 'budgetParPersonne', 'transportInclus',
     ];
 

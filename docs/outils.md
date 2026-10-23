@@ -94,8 +94,6 @@ Entrée :
       "dateFin": {"type": "string", "description": "AAAA-MM-JJ"},
       "datesFlexibles": {"type": "boolean"},
       "nombreDeJours": {"type": "integer", "description": "Nombre de nuits sur place."},
-      "temperatureMin": {"type": "integer", "description": "Température moyenne minimale souhaitée, en °C, seulement si le client donne un chiffre ou accepte celui que tu proposes. « De la chaleur » va dans envies, sans chiffre."},
-      "temperatureMax": {"type": "integer"},
       "adultes": {"type": "integer"},
       "enfants": {"type": "integer"},
       "agesEnfants": {"type": "array", "items": {"type": "integer"}},
@@ -121,7 +119,7 @@ Sortie : la fiche telle qu'enregistrée et ce qui manque encore.
   "fiche": {
     "typeDeVoyage": "noces", "lieuOuZone": "Santorin", "villeDepart": "Paris",
     "dateDebut": "2027-06-12", "dateFin": "2027-06-19", "datesFlexibles": false, "nombreDeJours": 7,
-    "temperatureMin": null, "temperatureMax": null, "adultes": 2, "enfants": 0, "agesEnfants": [],
+    "adultes": 2, "enfants": 0, "agesEnfants": [],
     "budgetEuros": 5000, "budgetParPersonne": false, "transportInclus": true,
     "envies": ["romantique", "piscine privée", "bateau"], "contraintes": ["allergie sévère aux fruits de mer"]
   },
@@ -352,7 +350,7 @@ Sortie (extrait) :
   "etapes": [{ "dateDebut": "2027-02-13", "nombreDeNuits": 7, "logements": [{ "id": 12, "nom": "Apartamentos Los Cristianos", "fiche": "/api/logements/12" }] }],
   "justification": {
     "climatAuxDates": [{ "debut": "2027-02-01", "fin": "2027-02-28", "temperatureMoyenne": 19.0, "pluieMm": 30 }],
-    "temperatureSouhaitee": { "min": 18, "max": null },
+    "enviesDeClimat": ["au moins 18 °C"],
     "villeDepart": "Bordeaux", "tempsDeTrajetMinutes": 270,
     "enviesCorrespondantes": ["plage", "famille"], "enviesSansReponse": ["animaux"],
     "pourquoi": "…"

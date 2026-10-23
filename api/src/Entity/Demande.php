@@ -88,13 +88,6 @@ class Demande
     #[Assert\Positive]
     private ?int $nombreDeJours = null;
 
-    /** Température moyenne souhaitée, en °C. */
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    private ?int $temperatureMin = null;
-
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    private ?int $temperatureMax = null;
-
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\PositiveOrZero]
     private int $adultes = 1;
@@ -347,30 +340,6 @@ class Demande
     public function setNombreDeJours(?int $nombreDeJours): static
     {
         $this->nombreDeJours = $nombreDeJours;
-
-        return $this;
-    }
-
-    public function getTemperatureMin(): ?int
-    {
-        return $this->temperatureMin;
-    }
-
-    public function setTemperatureMin(?int $temperatureMin): static
-    {
-        $this->temperatureMin = $temperatureMin;
-
-        return $this;
-    }
-
-    public function getTemperatureMax(): ?int
-    {
-        return $this->temperatureMax;
-    }
-
-    public function setTemperatureMax(?int $temperatureMax): static
-    {
-        $this->temperatureMax = $temperatureMax;
 
         return $this;
     }
