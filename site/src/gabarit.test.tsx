@@ -71,6 +71,13 @@ describe('gabarit du site', () => {
     expect(await screen.findByRole('button', { name: "Parler à l'assistant" })).toBeInTheDocument()
   })
 
+  it('ne propose pas le bouton flottant du chatbot sur l’accueil', async () => {
+    afficher('/')
+
+    expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: "Parler à l'assistant" })).not.toBeInTheDocument()
+  })
+
   it('range le menu selon « Ordre dans le menu » du backoffice', async () => {
     simulerApi({
       'GET /api/pages': {

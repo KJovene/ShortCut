@@ -71,7 +71,7 @@ function DestinationsPage() {
         surtitre={t.surtitre}
         titre={
           <TitreMisEnValeur
-            texte={page?.titre ?? `${t.titreDebut}*${t.titreAccent}*${t.titreFin}`}
+            texte={page?.titre ?? `*${t.titreDebut}${t.titreAccent}${t.titreFin}*`}
           />
         }
         photo={page?.photos[0] ? { src: page.photos[0], alt: t.surtitre } : undefined}

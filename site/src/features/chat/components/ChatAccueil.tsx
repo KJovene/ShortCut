@@ -9,7 +9,6 @@ import { QuestionnaireInvite } from '../QuestionnaireInvite'
  * Invitation à décrire son voyage (maquette E · section assistant). Le premier envoi lance la conversation.
  */
 export function ChatAccueil({
-  suggestion,
   compact = false,
 }: {
   suggestion?: string
@@ -19,9 +18,6 @@ export function ChatAccueil({
   const t = TEXTES[langue].accueil
 
   if (!estConnecte) return <QuestionnaireInvite />
-
-  const ajouterSuggestion = (texte: string) =>
-    setBrouillon(brouillon.trim() ? `${brouillon.trim()}, ${texte.toLowerCase()}` : texte)
 
   return (
     <div className="flex w-full max-w-[820px] flex-col items-center gap-4 text-center sm:gap-5">
@@ -68,28 +64,7 @@ export function ChatAccueil({
             className="resize-none bg-transparent px-2.5 py-2 text-base leading-snug outline-none sm:px-3.5 sm:py-3 sm:text-[19px]"
           />
         </label>
-        <div className="flex flex-wrap items-center justify-between gap-2.5 px-1 pb-1">
-          <div className="flex flex-wrap gap-1.5">
-            {suggestion && (
-              <button
-                type="button"
-                onClick={() => ajouterSuggestion(suggestion)}
-                className="min-h-10 rounded-full border-[1.5px] border-terre bg-terre-pale px-3.5 text-sm font-bold text-rouille"
-              >
-                {suggestion}
-              </button>
-            )}
-            {t.suggestions.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => ajouterSuggestion(s)}
-                className="min-h-10 rounded-full border-[1.5px] border-beige px-3.5 text-sm font-semibold hover:border-encre"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-end justify-between gap-2.5 px-1 pb-1">
           <button
             type="submit"
             disabled={!brouillon.trim()}

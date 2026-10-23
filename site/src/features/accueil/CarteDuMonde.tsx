@@ -271,7 +271,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
 /**
  * Bulle de l'assistant, en bas à gauche de la carte (maquette G3) : pour un voyage qui n'est pas sur la carte.
  * Les épingles et la fiche passent au-dessus d’elle. À partir de 1280 px seulement : plus étroite, la carte
- * serait en grande partie masquée (le bouton « Parler à l’assistant » reste là).
+ * serait en grande partie masquée (la section de l'assistant, plus bas sur l'accueil, reste là).
  */
 function BulleAssistant() {
   const ouvrirAssistant = useOuvrirAssistant()

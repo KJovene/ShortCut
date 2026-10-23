@@ -107,7 +107,7 @@ export const TEXTES = {
       },
       surtitre: 'Destinations',
       titreDebut: 'Où partir, ',
-      titreAccent: 'et quand',
+      titreAccent: 'et *comment*',
       titreFin: ' ?',
       intro:
         "Choisissez un mois et une température : nous vous montrons les destinations dont le climat convient, d'après les relevés saisis par nos conseillers.",
@@ -337,7 +337,7 @@ export const TEXTES = {
           'All our destinations, filtered by month, average temperature and type of trip.',
       },
       surtitre: 'Destinations',
-      titreDebut: 'Where to go, ',
+      titreDebut: '*Where to go*, ',
       titreAccent: 'and when',
       titreFin: '?',
       intro:
