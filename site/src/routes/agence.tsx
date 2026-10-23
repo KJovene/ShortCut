@@ -63,7 +63,7 @@ function AgencePage() {
       </EnTetePage>
 
       {engagements && engagements.elements.length > 0 && (
-        <section aria-labelledby="engagements-titre" className="bg-brun text-creme">
+        <section aria-labelledby="engagements-titre" className="aplat-encre bg-brun text-creme">
           <div className="mx-auto max-w-[1376px] px-4 py-12 sm:px-8 sm:py-16">
             <h2
               id="engagements-titre"

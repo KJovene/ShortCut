@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
+import { ChoixApparence } from '@/components/ChoixApparence'
 import { ChoixLangue } from '@/components/ChoixLangue'
 import { MenuCompte } from '@/components/MenuCompte'
 import { TEXTES } from '@/components/textes'
@@ -72,6 +73,7 @@ export function SiteHeader({ className }: { className?: string }) {
 
         <div className="flex items-center gap-2">
           <ChoixLangue />
+          <ChoixApparence />
           {/* Connexion et inscription, ou « Mon espace » une fois connecté. */}
           <div className="hidden sm:flex">
             <MenuCompte />
