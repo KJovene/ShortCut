@@ -33,6 +33,100 @@
   --color-ocre: #bcd3ea; /* accents sur fond encre : ciel */
   --color-vert: #16233f; /* étapes faites, coches : encre */
   --color-vert-fonce: #16233f;
+
+  /* Fonds teintés : bandeaux, messages et marques de changement */
+  --color-ciel-fond: #bcd3ea; /* confirmation, élément ajouté */
+  --color-ciel-pale: #eaf1f8; /* surlignage d'un élément ajouté */
+  --color-ciel-trait: #a9c3de; /* contour d'un élément ajouté */
+  --color-brique-fond: #f7e3dd; /* erreur, élément modifié ou retiré */
+  --color-brique-pale: #fbf0ec; /* surlignage d'un élément modifié */
+
+  /* Carte du monde */
+  --color-carte-fond: #efe8da;
+  --color-carte-points: #bccbdd;
+
+  /* Aplats encre en thème sombre : un cran sous le fond de page */
+  --color-nuit: #0e1729;
+}
+
+/*
+ * Thème sombre : même charte, rôles inversés. L'encre devient le fond, la craie le texte, le ciel les accents ; les
+ * surfaces montent d'un cran par niveau (page, cartes, surfaces secondaires). Contrastes vérifiés (WCAG AA) :
+ * craie 13,9:1 sur la page, taupe 8,7:1 et taupe clair 6,4:1 sur les cartes, brique texte 6,8:1, jaune 8,6:1.
+ * Choix gardé dans le navigateur, sinon celui du système (lib/apparence.ts, script de index.html).
+ */
+:root[data-apparence='sombre'] {
+  color-scheme: dark;
+
+  --color-white: #1f2e4f; /* cartes */
+  --color-creme: #16233f; /* encre, fond principal */
+  --color-sable: #283a5f; /* surfaces secondaires */
+  --color-lin: #34476d; /* bordures */
+  --color-beige: #6f80a3; /* bordures marquées : 3,9:1 sur la page */
+  --color-encre: #f6f1e7; /* texte et actions principales : craie */
+  --color-brun: #f6f1e7;
+  --color-taupe: #c8d0de;
+  --color-taupe-clair: #a9b3c6;
+  --color-terre: #f6f1e7;
+  --color-terre-pale: #2c4470;
+  --color-rouille: #bcd3ea; /* survol des actions, intitulés : ciel */
+  --color-ocre: #bcd3ea;
+  --color-vert: #f6f1e7;
+  --color-vert-fonce: #f6f1e7;
+  --color-brique-texte: #f2a690;
+  --color-ballast: #8b94a7;
+
+  --color-ciel-fond: #2b4470;
+  --color-ciel-pale: #1f3253;
+  --color-ciel-trait: #5b7aa3;
+  --color-brique-fond: #4a2e38;
+  --color-brique-pale: #2c2a40;
+
+  /* Le hero de l'accueil : fond encre, points ballast. */
+  --color-carte-fond: #16233f;
+  --color-carte-points: #6b7385;
+}
+
+/*
+ * Aplat encre (bandeau des voyages, encadrés de prix, pied de page, voile sur les photos) : il garde son rendu du
+ * thème clair, craie sur encre. En thème sombre, il passe en nuit, sous le fond de page, cerné d'un filet.
+ */
+@utility aplat-encre {
+  & :focus-visible {
+    outline-color: var(--color-craie);
+  }
+
+  :root[data-apparence='sombre'] & {
+    --color-white: #fffdf8;
+    --color-creme: #f6f1e7;
+    --color-sable: #eae2d2;
+    --color-lin: #e2d9c6;
+    --color-beige: #c9c0ad;
+    --color-encre: var(--color-nuit);
+    --color-brun: var(--color-nuit);
+    --color-taupe: #3b4762;
+    --color-taupe-clair: #5b6376;
+    --color-terre: var(--color-nuit);
+    --color-terre-pale: #bcd3ea;
+    --color-rouille: #2a3a63;
+    --color-ocre: #bcd3ea;
+    --color-vert: var(--color-nuit);
+    --color-vert-fonce: var(--color-nuit);
+    --color-brique-texte: #a8432c;
+    --color-ballast: #6b7385;
+    --color-ciel-fond: #bcd3ea;
+    --color-ciel-pale: #eaf1f8;
+    --color-ciel-trait: #a9c3de;
+    --color-brique-fond: #f7e3dd;
+    --color-brique-pale: #fbf0ec;
+    box-shadow: inset 0 0 0 1px #34476d;
+  }
+}
+
+/* Points de la carte du monde : le SVG sert de masque, la couleur vient du thème. */
+@utility points-carte {
+  background-color: var(--color-carte-points);
+  mask: url('/images/carte-du-monde.svg') center / 100% 100% no-repeat;
 }
 
 @layer base {

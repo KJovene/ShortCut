@@ -24,7 +24,7 @@ export function EcranAuthentification({
   const langue = useLangue()
   const t = TEXTES[langue]
   // Une destination mise en avant dans le backoffice ; sans catalogue, l'encadré reste sans photo.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const photo = destinations.find((d) => d.miseEnAvant && d.photo)
 
   return (

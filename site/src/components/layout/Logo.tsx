@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { TEXTES } from '@/components/textes'
+import { useApparence } from '@/lib/apparence'
 import { cn } from '@/lib/cn'
 import { useLangue } from '@/lib/langue'
 
@@ -7,8 +8,8 @@ export const NOM_AGENCE = 'Détour'
 
 /**
  * Logo DÉTOUR : les fichiers SVG fournis par l'agence (public/new-logos), jamais un texte tapé. Version négative sur
- * fond encre. La charte demande le monogramme sous 96 px de large : le logo garde ici au moins 34 px de haut, soit
- * environ 100 px de large.
+ * fond encre (pied de page, thème sombre). La charte demande le monogramme sous 96 px de large : le logo garde ici
+ * au moins 34 px de haut, soit environ 100 px de large.
  */
 export function Logo({
   className,
@@ -21,6 +22,7 @@ export function Logo({
   petit?: boolean
 }) {
   const t = TEXTES[useLangue()]
+  const sombre = useApparence() === 'sombre'
   return (
     <Link
       to="/"
@@ -28,7 +30,13 @@ export function Logo({
       className={cn('flex shrink-0 items-center', className)}
     >
       <img
-        src={clair ? '/new-logos/detour-logo-mono-blanc.svg' : '/new-logos/detour-logo-anime.svg'}
+        src={
+          clair
+            ? '/new-logos/detour-logo-mono-blanc.svg'
+            : sombre
+              ? '/new-logos/detour-logo-anime-negatif.svg'
+              : '/new-logos/detour-logo-anime.svg'
+        }
         alt=""
         className={cn('block w-auto', petit ? 'h-8' : 'h-[34px] sm:h-10')}
       />

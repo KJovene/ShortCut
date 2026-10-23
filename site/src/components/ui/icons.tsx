@@ -108,3 +108,9 @@ export const IconRecommencer = (p: IconProps) => (
     <path d="M3 3v5h5" />
   </Icon>
 )
+
+export const IconLune = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+  </Icon>
+)

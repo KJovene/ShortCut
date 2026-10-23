@@ -7,7 +7,7 @@ import { useLangue } from '@/lib/langue'
 /** Gabarit des pages légales, lues depuis les contenus du site (module Contenus du backoffice). */
 export function PageLegale({ slug }: { slug: string }) {
   const langue = useLangue()
-  const { data: page } = useSuspenseQuery(pageQuery(slug, langue))
+  const { data: page } = useSuspenseQuery(pageQuery(slug))
   const contenu = decouperContenu(page.contenu)
   const aValider = contenu.intro.some(estMentionAValider)
   const intro = contenu.intro.filter((p) => !estMentionAValider(p))
@@ -18,10 +18,7 @@ export function PageLegale({ slug }: { slug: string }) {
         <TitreMisEnValeur texte={page.titre} />
       </h1>
       {aValider && (
-        <p
-          role="note"
-          className="m-0 mb-8 rounded-2xl bg-[#EAE2D2] px-4 py-3 font-semibold text-[#16233F]"
-        >
+        <p role="note" className="m-0 mb-8 rounded-2xl bg-sable px-4 py-3 font-semibold text-encre">
           {TEXTES[langue].modeleAValider}
         </p>
       )}

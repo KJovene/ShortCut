@@ -75,9 +75,7 @@ function PageEspace() {
     <div className="mx-auto flex max-w-[1376px] flex-col gap-8 px-4 pt-9 pb-16 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-extrabold text-rouille">
-            {t.monEspace}
-          </span>
+          <span className="text-[13px] font-extrabold text-rouille">{t.monEspace}</span>
           <h1 className="m-0 font-display text-[34px] leading-[1.05] font-semibold tracking-[-1px] sm:text-[46px]">
             {t.bonjour(prenom)}{' '}
             <SautDuO texte={suivi && estEnCours(suivi) ? t.voyageAvance : t.ouPartons} />
@@ -161,7 +159,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
   const langue = useLangue()
   const t = TEXTES[langue]
   // Photo et climat lus dans le catalogue de l'API ; sans lui, le voyage s'affiche sans photo.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
   const mois = moisDeDepart(demande)
   const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
@@ -244,9 +242,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
               </>
             ) : (
               <>
-                <span className="text-xs font-extrabold text-rouille">
-                  {t.proposition}
-                </span>
+                <span className="text-xs font-extrabold text-rouille">{t.proposition}</span>
                 <span className="text-[15px] font-bold">{t.enPreparation}</span>
                 <span className="text-[13px] text-taupe">{t.apparaitra}</span>
               </>
@@ -254,9 +250,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
           </div>
 
           <div className="flex flex-col gap-2 rounded-[18px] bg-creme px-[18px] py-4">
-            <span className="text-xs font-extrabold text-rouille">
-              {t.votreConseiller}
-            </span>
+            <span className="text-xs font-extrabold text-rouille">{t.votreConseiller}</span>
             {demande.conseiller ? (
               <>
                 <div className="flex items-center gap-3">
@@ -568,7 +562,7 @@ function CarteConversation({
 }) {
   const langue = useLangue()
   const t = TEXTES[langue]
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
   const statut = statutClient(demande, langue)
   const dernierMessage = demande.conversation?.messages.at(-1)?.contenu ?? t.sansMessage
@@ -652,7 +646,7 @@ function Fil({ demande }: { demande: DemandeClient }) {
         </strong>
         <span className="text-xs text-taupe">{meta}</span>
       </div>
-      <div className="flex max-h-[420px] flex-1 flex-col gap-3 overflow-y-auto bg-[#FFFDF8] px-[22px] py-[18px] text-sm leading-normal">
+      <div className="flex max-h-[420px] flex-1 flex-col gap-3 overflow-y-auto bg-white px-[22px] py-[18px] text-sm leading-normal">
         {messages.length === 0 && <p className="m-0 self-center text-taupe">{t.aucunMessage}</p>}
         {messages.map((message, i) => (
           <p

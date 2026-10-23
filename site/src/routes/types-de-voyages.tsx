@@ -40,10 +40,10 @@ function TypesPage() {
   const ouvrirAssistant = useOuvrirAssistant()
   // Une section par type (intertitre « Séjours », « Circuits »…) et une photo nommée d'après le type :
   // contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  const { data: page } = useSuspenseQuery(pageQuery('types-de-voyages', langue))
+  const { data: page } = useSuspenseQuery(pageQuery('types-de-voyages'))
   const contenu = decouperContenu(page.contenu)
   // Le nombre de destinations par type s'affiche une fois le catalogue chargé.
-  const { data: destinations } = useQuery(destinationsQuery(langue))
+  const { data: destinations } = useQuery(destinationsQuery())
 
   return (
     <>

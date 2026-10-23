@@ -213,11 +213,7 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
     <>
       {/* Ordinateur : carte entière, fiche à côté de l'épingle. */}
       <div className="relative hidden aspect-[360/142] w-[min(100%,calc((clamp(720px,100vh,960px)-250px)*2.535))] md:block">
-        <img
-          src="/images/carte-du-monde.svg"
-          alt=""
-          className="pointer-events-none absolute inset-0 block size-full"
-        />
+        <div aria-hidden="true" className="points-carte pointer-events-none absolute inset-0" />
         {epingles}
         <BulleAssistant />
         {fiche && (
@@ -248,14 +244,10 @@ export function CarteDuMonde({ destinations, active, onActiver }: Props) {
         <div
           ref={defilement}
           aria-label={t.carte}
-          className="scrollbar-none relative flex-1 overflow-x-auto bg-[#EFE8DA]"
+          className="scrollbar-none relative flex-1 overflow-x-auto bg-carte-fond"
         >
           <div className="relative aspect-[360/142] h-full min-h-[300px]">
-            <img
-              src="/images/carte-du-monde.svg"
-              alt=""
-              className="pointer-events-none absolute inset-0 block size-full"
-            />
+            <div aria-hidden="true" className="points-carte pointer-events-none absolute inset-0" />
             {epingles}
           </div>
         </div>
@@ -278,7 +270,7 @@ function BulleAssistant() {
   return (
     <aside
       aria-labelledby="bulle-assistant-titre"
-      className="absolute top-[64%] left-[1.5%] z-[6] hidden w-[316px] flex-col gap-3 xl:flex rounded-[24px_24px_24px_6px] bg-encre p-[18px] text-creme shadow-[0_22px_50px_rgba(22,35,63,0.3)]"
+      className="absolute top-[64%] left-[1.5%] z-[6] hidden w-[316px] flex-col gap-3 xl:flex rounded-[24px_24px_24px_6px] aplat-encre bg-encre p-[18px] text-creme shadow-[0_22px_50px_rgba(22,35,63,0.3)]"
     >
       <div className="flex items-center gap-3">
         <img src="/new-logos/detour-avatar.svg" alt="" className="size-11 shrink-0" />

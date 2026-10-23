@@ -43,7 +43,7 @@ function DestinationPage() {
   const { slug } = Route.useParams()
   const langue = useLangue()
   const t = TEXTES[langue].destination
-  const { data: d } = useSuspenseQuery(destinationQuery(slug, langue))
+  const { data: d } = useSuspenseQuery(destinationQuery(slug))
   const ouvrirAssistant = useOuvrirAssistant()
   const construire = () =>
     ouvrirAssistant(TEXTES[langue].accueil.brouillon(d.ville, nomDuMois(d.moisIdeal, langue)), {
@@ -52,7 +52,7 @@ function DestinationPage() {
 
   return (
     <>
-      <section className="relative">
+      <section className="aplat-encre relative">
         <img
           src={d.photo}
           alt={d.alt}
@@ -117,12 +117,10 @@ function DestinationPage() {
           />
         </div>
 
-        <aside className="flex min-w-0 flex-[1_1_340px] flex-col gap-4 self-start rounded-[28px] bg-brun p-6 text-creme lg:sticky lg:top-6">
+        <aside className="flex min-w-0 flex-[1_1_340px] flex-col gap-4 self-start rounded-[28px] aplat-encre bg-brun p-6 text-creme lg:sticky lg:top-6">
           {d.prixAPartirDe !== null && (
             <>
-              <span className="text-[13px] font-extrabold text-ocre">
-                {t.aPartirDe}
-              </span>
+              <span className="text-[13px] font-extrabold text-ocre">{t.aPartirDe}</span>
               <div>
                 <span className="font-display text-5xl font-semibold tracking-[-1px]">
                   {euros(d.prixAPartirDe, langue)}

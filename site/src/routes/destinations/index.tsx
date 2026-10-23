@@ -44,10 +44,10 @@ function DestinationsPage() {
   const { mois, temperature, type } = Route.useSearch()
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
-  const { data: destinations } = useSuspenseQuery(destinationsQuery(langue))
+  const { data: destinations } = useSuspenseQuery(destinationsQuery())
   // Titre, introduction et photo : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
   // Contenu masqué ou API indisponible : les textes par défaut prennent le relais, le catalogue reste affiché.
-  const { data: page } = useQuery(pageQuery('destinations', langue))
+  const { data: page } = useQuery(pageQuery('destinations'))
   const intro = page ? decouperContenu(page.contenu).intro : [t.intro]
 
   const resultats = destinations.filter(
