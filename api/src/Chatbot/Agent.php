@@ -22,6 +22,8 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * - « outil » {nom} : un outil s'exécute ;
  * - « demande » {fiche, recapitulatifConfirme} : la fiche demande vient d'être enregistrée ;
  * - « piste » {…} : la combinaison retenue, à afficher en carte après le message de l'agent Recherche (Piste) ;
+ * - « suggestions » {elements} : logements et activités recommandés, en cartes après le message de l'agent
+ *   Conversation (Suggestions) ;
  * - « recapitulatif » {jeton, …} : le récapitulatif détaillé est enregistré, consultable par son lien ;
  * - « erreur » {erreur} : message à afficher au client ;
  * - « fin » {terminee} : la réponse est complète ; terminee si la conversation n'attend plus rien du client.

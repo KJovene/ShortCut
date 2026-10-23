@@ -1,6 +1,6 @@
 # Outils des agents
 
-Les agents IA n'accèdent aux données de l'agence qu'à travers ces huit outils (ticket #178, `retenir_combinaison` ajouté par le ticket #203). Chaque outil correspond à un service Symfony : le modèle choisit l'outil et ses paramètres, le serveur vérifie, exécute et renvoie le résultat. C'est ce qui empêche l'IA d'inventer des prestations ou des prix.
+Les agents IA n'accèdent aux données de l'agence qu'à travers ces neuf outils (ticket #178, `retenir_combinaison` ajouté par le ticket #203, `consulter_catalogue` pour les recommandations du chatbot). Chaque outil correspond à un service Symfony : le modèle choisit l'outil et ses paramètres, le serveur vérifie, exécute et renvoie le résultat. C'est ce qui empêche l'IA d'inventer des prestations ou des prix.
 
 | Outil | Rôle | Agents | Service Symfony | Lit | Écrit |
 | --- | --- | --- | --- | --- | --- |
@@ -8,6 +8,7 @@ Les agents IA n'accèdent aux données de l'agence qu'à travers ces huit outils
 | `chercher_destinations` | Trouver les destinations compatibles (zone, climat, dates, envies) | Conversation, Recherche | `App\Chatbot\Outil\ChercherDestinations` | Catalogue publié | — |
 | `chercher_logements` | Lister les logements compatibles d'une destination, avec leurs tarifs aux dates | Recherche, Modification | `App\Chatbot\Outil\ChercherLogements` | Catalogue publié | — |
 | `chercher_activites` | Lister les activités compatibles d'une destination, selon les âges | Recherche, Modification | `App\Chatbot\Outil\ChercherActivites` | Catalogue publié | — |
+| `consulter_catalogue` | Recommander au client des logements ou des activités d'une destination, sans dates ni prix | Conversation | `App\Chatbot\Outil\ConsulterCatalogue` | Catalogue publié | — |
 | `retenir_combinaison` | Retenir la destination, les logements et les activités choisis, vérifiés contre la fiche, et chiffrer les trois niveaux | Recherche | `App\Chatbot\Outil\RetenirCombinaison` | Catalogue, demande courante | Chiffrage et combinaison en cache (demande courante) |
 | `calculer_budget` | Calculer les trois niveaux de budget selon `docs/chiffrage.md` | Chiffrage et rédaction, Modification | `BudgetCalculator::calculer()` (outil `App\Chatbot\Outil\CalculerBudget`) | Catalogue, règle de prix, demande courante | Chiffrage en cache (demande courante) |
 | `enregistrer_proposition` | Enregistrer une version de proposition à partir d'un chiffrage | Chiffrage et rédaction, Modification | `PropositionService::enregistrer()` | Chiffrage de la demande courante | Proposition et lignes de la demande courante |
@@ -306,6 +307,52 @@ Sortie :
 
 Règles, dans l'ordre où elles écartent une activité : accessibilité, durée maximale, puis tarif au premier jour du voyage (celui que retient le chiffrage). L'âge minimum n'écarte pas l'activité : elle est proposée aux seuls voyageurs qui ont l'âge (`participants`), les enfants trop jeunes sont listés dans `exclus`, et le chiffrage ne compte que les participants. C'est le cas de la randonnée au Teide dans la demande test de Tenerife : exclue pour les enfants de 6 et 9 ans, retenue pour les parents au niveau confort. Une capacité trop petite n'écarte pas l'activité : `sessions = ⌈ participants ÷ capacité ⌉`. Les activités que toute la famille peut faire viennent en premier, puis elles sont classées par nombre d'envies correspondantes et par nom.
 
+### `consulter_catalogue`
+
+Outil de l'agent Conversation : le client demande des recommandations (où dormir, que faire sur place) avant sa proposition. Mêmes fiches du backoffice que `chercher_logements` et `chercher_activites`, mais sans dates ni prix, car le chatbot ne donne ni disponibilité ni prix avant la proposition.
+
+Entrée :
+
+```json
+{
+  "name": "consulter_catalogue",
+  "strict": false,
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "destination": {"type": "string", "description": "Slug ou ville renvoyé par chercher_destinations (ex. « santorin »)."},
+      "type": {"type": "string", "enum": ["logement", "activite"]},
+      "envies": {"type": "array", "items": {"type": "string"}},
+      "voyageurs": {"type": "integer", "description": "Logements : écarte ceux qui ne peuvent pas accueillir le groupe."},
+      "accessibleObligatoire": {"type": "boolean"},
+      "limite": {"type": "integer", "description": "Nombre de fiches (3 par défaut, 6 au plus)."}
+    },
+    "required": ["destination", "type"],
+    "additionalProperties": false
+  }
+}
+```
+
+Sortie :
+
+```json
+{
+  "destination": {"slug": "marrakech", "ville": "Marrakech", "pays": "Maroc"},
+  "type": "logement",
+  "prestations": [
+    {
+      "id": 12, "nom": "Riad Dar Zitoun", "categorie": "Riad", "description": "…", "capacite": 12, "accessible": false,
+      "equipements": ["piscine", "hammam"], "envies": ["détente"], "enviesCorrespondantes": ["piscine"], "chambres": 6
+    }
+  ],
+  "ecartees": 1
+}
+```
+
+Un logement est écarté par les mêmes règles d'accueil que `chercher_logements` (accessibilité, capacité) ; une activité, par l'accessibilité seule. Les fiches sont classées par nombre d'envies correspondantes, puis par nom ; une activité donne `dureeMinutes` et `ageMinimum` au lieu de `chambres`.
+
+Après la réponse du modèle, `AgentConversation` envoie au site l'événement `suggestions` (`App\Chatbot\Suggestions`) : les fiches renvoyées pendant le tour, relues en base (8 au plus), avec leurs photos, leur destination, leurs équipements, leur durée et leur âge minimum, sans prix. Le site les affiche en cartes sous le message ; chaque carte ouvre une fenêtre avec la fiche complète. La carte est gardée avec le message de l'agent (`Conversation::messages`) et réaffichée quand la conversation est reprise.
+
 ### `retenir_combinaison`
 
 Outil de l'agent Recherche (ticket #203) : il retient la combinaison choisie pour la demande courante. Le modèle donne la destination, les logements de chaque étape et les activités, pris dans les résultats des trois outils de recherche. Le serveur ne lui fait pas confiance : il refait les recherches avec les critères de la fiche demande, refuse tout choix qu'elles n'auraient pas renvoyé, puis chiffre les trois niveaux.
@@ -506,7 +553,7 @@ Service : `App\Proposition\PropositionService`.
 
 ### `transmettre_au_conseiller`
 
-Passe la main à un conseiller : à la demande du client, quand une donnée manque (période sans tarif ni climat), ou pour une demande hors de ce que l'agent sait faire.
+Passe la main à un conseiller : à la demande du client, quand une donnée manque (période sans tarif ni climat), pour une demande hors de ce que l'agent sait faire, ou pour une destination absente du catalogue sur laquelle le client insiste.
 
 Entrée :
 
@@ -518,7 +565,7 @@ Entrée :
   "input_schema": {
     "type": "object",
     "properties": {
-      "motif": {"type": "string", "enum": ["demande_du_client", "donnees_manquantes", "hors_perimetre", "autre"]},
+      "motif": {"type": "string", "enum": ["demande_du_client", "donnees_manquantes", "hors_perimetre", "hors_catalogue", "autre"]},
       "resume": {"type": "string", "description": "Pour le conseiller : où en est la demande et ce qui bloque."}
     },
     "required": ["motif", "resume"],
@@ -538,6 +585,8 @@ Sortie :
 ```
 
 Code : `TransmettreAuConseiller` passe `Conversation::repriseParConseiller` à `true` et appelle `Demande::transmettre(motif, resume)` : la demande devient prioritaire, arrive dans l'onglet « À aiguiller » du backoffice et sa fiche affiche le motif, le résumé et la conversation (US06). Ensuite, le chatbot ne répond plus au client : chaque nouveau message est gardé pour le conseiller et reçoit une réponse fixe (`AgentConversation::MESSAGE_REPRISE`). Un conseiller peut aussi reprendre lui-même une conversation depuis la fiche (« Reprendre la conversation »).
+
+Destination absente du catalogue (motif `hors_catalogue`) : `chercher_destinations` répond par une `remarque` et la liste complète du catalogue (`catalogue`), l'agent Conversation propose des destinations qui ressemblent au lieu demandé. Si le client insiste, il enregistre ce lieu, recueille le reste des exigences et, au récapitulatif confirmé, transmet la demande : dans ce tour, `AgentConversation` ne lance pas l'agent Recherche.
 
 `chercher_destinations` transmet aussi la demande, sans intervention du modèle, quand des dates sont données et qu'aucune destination cherchée n'a de climat saisi sur tout le séjour : motif `donnees_manquantes`, résumé généré, et la sortie contient `donneesManquantes` (`destinations`, `consigne`). La conversation n'est pas reprise : le client peut continuer avec d'autres dates.
 
@@ -584,6 +633,7 @@ Un identifiant qui n'est pas une option de la proposition est refusé, avec la l
 | `chercher_destinations` | ✓ | ✓ | | ✓ |
 | `chercher_logements` | | ✓ | | ✓ |
 | `chercher_activites` | | ✓ | | ✓ |
+| `consulter_catalogue` | ✓ | | | |
 | `retenir_combinaison` | | ✓ | | |
 | `calculer_budget` | | | | ✓ |
 | `enregistrer_proposition` | | | ✓ | ✓ |

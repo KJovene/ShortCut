@@ -8,10 +8,14 @@ use App\Entity\Conversation;
 use App\Entity\Destination;
 use App\Entity\JournalIA;
 use App\Entity\PeriodeClimatique;
+use App\Entity\Prestataire;
+use App\Entity\Prestation;
 use App\Entity\Utilisateur;
 use App\Enum\AgentIA;
 use App\Enum\MotifTransmission;
 use App\Enum\Role;
+use App\Enum\TypePrestataire;
+use App\Enum\TypePrestation;
 use App\Tests\Chatbot\FausseApiClaude;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -85,7 +89,7 @@ final class ChatEnvoiTest extends WebTestCase
         $premiere = $this->claude->requetes[0]['corps'];
         self::assertSame(AgentConversation::MODELE, $premiere['model']);
         self::assertTrue($premiere['stream']);
-        self::assertSame(['enregistrer_exigences', 'chercher_destinations', 'transmettre_au_conseiller', 'choisir_options'], array_column($premiere['tools'], 'name'));
+        self::assertSame(['enregistrer_exigences', 'chercher_destinations', 'transmettre_au_conseiller', 'choisir_options', 'consulter_catalogue'], array_column($premiere['tools'], 'name'));
         self::assertStringNotContainsString('{{date_du_jour}}', $premiere['system'][0]['text']);
         self::assertStringNotContainsString('<!--', $premiere['system'][0]['text']);
 
@@ -168,6 +172,64 @@ final class ChatEnvoiTest extends WebTestCase
         // Chaque appel garde sa durée et les outils que Claude a appelés.
         self::assertSame(['enregistrer_exigences'], $journal[0]->getOutils());
         self::assertNotContains(null, array_map(static fn (JournalIA $j) => $j->getDureeMs(), $journal));
+    }
+
+    public function testLesLogementsRecommandesSAffichentEnCartesSousLeMessage(): void
+    {
+        $this->creerDestinationAvecClimat('2027-11-01', '2028-02-29');
+        $destination = $this->em->getRepository(Destination::class)->findOneBy(['slug' => 'cairns']);
+        $hebergeur = (new Prestataire())->setNom('Hôtels du Queensland')->setType(TypePrestataire::Hebergeur);
+        $villa = (new Prestation())->setType(TypePrestation::Logement)->setNom('Villa Palm Cove')->setCategorie('Villa')
+            ->setCapacite(6)->setChambres(3)->setEquipements(['piscine privée'])->setEnvies(['famille'])->setPhotos(['villa.jpg'])
+            ->setDestination($destination)->setPrestataire($hebergeur);
+        $this->em->persist($hebergeur);
+        $this->em->persist($villa);
+        $this->em->flush();
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('consulter_catalogue', ['destination' => 'cairns', 'type' => 'logement', 'envies' => ['famille'], 'voyageurs' => 4]),
+            FausseApiClaude::texte('La villa Palm Cove a de la place pour toute la famille : cliquez sur sa carte pour la découvrir.'),
+        );
+
+        $evenements = $this->envoyer($jeton, 'Où dormir à Cairns avec nos deux enfants ?');
+
+        // Les cartes arrivent après le message qui les présente.
+        self::assertSame(['outil', 'texte', 'suggestions', 'fin'], array_keys($this->parType($evenements)));
+        $suggestions = $this->parType($evenements)['suggestions'];
+        self::assertSame('suggestions', $suggestions['type']);
+        self::assertCount(1, $suggestions['elements']);
+        $villa = $suggestions['elements'][0];
+        self::assertSame('Villa Palm Cove', $villa['nom']);
+        self::assertSame('logement', $villa['type']);
+        self::assertSame(['slug' => 'cairns', 'ville' => 'Cairns', 'pays' => 'Australie'], $villa['destination']);
+        self::assertSame(['/uploads/prestations/villa.jpg'], $villa['photos']);
+        self::assertContains('piscine privée', $villa['equipements']);
+        self::assertArrayNotHasKey('prix', $villa);
+        self::assertFalse($this->parType($evenements)['fin']['terminee']);
+
+        // La carte est gardée avec le message : elle se réaffiche quand la conversation est reprise.
+        $messages = $this->conversation($jeton)->getMessages();
+        self::assertSame($suggestions, end($messages)['carte']);
+    }
+
+    public function testUnLieuHorsCatalogueConfirmeEstTransmisSansRecherche(): void
+    {
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['typeDeVoyage' => 'sejour', 'lieuOuZone' => 'Bora Bora', 'dateDebut' => '2027-05-14', 'recapitulatifConfirme' => true]),
+            FausseApiClaude::appelOutil('transmettre_au_conseiller', ['motif' => 'hors_catalogue', 'resume' => 'Bora Bora demandé, les Maldives proposées à la place, le client tient à Bora Bora.']),
+            FausseApiClaude::texte('Un conseiller reprend votre demande pour Bora Bora et vous recontacte sous 2 jours ouvrés.'),
+        );
+
+        $evenements = $this->envoyer($jeton, 'Oui, c’est bon');
+
+        self::assertCount(3, $this->claude->requetes, 'L\'agent Recherche n\'est pas appelé.');
+        self::assertArrayNotHasKey('piste', $this->parType($evenements));
+        self::assertTrue($this->parType($evenements)['fin']['terminee']);
+        $demande = $this->conversation($jeton)->getDemande();
+        self::assertSame('Bora Bora', $demande?->getLieuOuZone());
+        self::assertSame(MotifTransmission::HorsCatalogue, $demande->getMotifTransmission());
+        self::assertTrue($demande->isPrioritaire());
     }
 
     public function testUnDossierSuiviParUnConseillerEstMisAJourSansNouvelleRecherche(): void

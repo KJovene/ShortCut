@@ -1,6 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ouvrirBackoffice, type Profil } from '@/lib/auth'
@@ -136,6 +136,33 @@ describe('inscription', () => {
         email: 'camille@example.com',
         motDePasse: 'motdepasse-solide',
       },
+    ])
+  })
+
+  it('ouvre directement le chatbot après les trois questions', async () => {
+    sessionStorage.clear()
+    const api = simulerApi({
+      'POST /api/inscription': { status: 201, body: CAMILLE },
+      'GET /api/moi/demandes': { status: 200, body: [] },
+      'POST /api/chat/conversations': { status: 201, body: { jeton: 'j'.repeat(64), demande: 1 } },
+      'POST /api/chat': {
+        status: 200,
+        body: 'event: texte\ndata: {"texte":"Parlons de vos dates."}\n\nevent: fin\ndata: {"terminee":false}\n\n',
+      },
+    })
+    afficher('/')
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Séjours' }))
+    await user.click(await screen.findByRole('button', { name: 'À deux' }))
+    await user.click(await screen.findByRole('button', { name: 'Moins de 1 500 €' }))
+    await user.click(await screen.findByRole('link', { name: 'Créer un compte' }))
+
+    await sInscrire()
+
+    const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+    expect(await within(fenetre).findByText('Parlons de vos dates.')).toBeInTheDocument()
+    expect(api.envoisA('POST /api/chat/conversations')).toEqual([
+      { preferences: ['Séjours', 'À deux', 'Moins de 1 500 €'], langue: 'fr' },
     ])
   })
 

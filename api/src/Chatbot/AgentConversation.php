@@ -4,6 +4,7 @@ namespace App\Chatbot;
 
 use App\Chatbot\Outil\ChercherDestinations;
 use App\Chatbot\Outil\ChoisirOptions;
+use App\Chatbot\Outil\ConsulterCatalogue;
 use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\TransmettreAuConseiller;
@@ -13,6 +14,7 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
 use App\Enum\NiveauBudget;
+use App\Repository\PrestationRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -24,6 +26,9 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * Quand le client confirme son récapitulatif, l'agent Recherche prend le relais dans la même réponse : il choisit
  * la combinaison et l'explique au client, puis la rédaction en fait son récapitulatif détaillé. Le client répond
  * ensuite aux options proposées (choisir_options) : le voyage reste tel quel ou se met à jour.
+ *
+ * Avant sa proposition, le client peut demander des logements ou des activités : l'agent les lit dans le catalogue
+ * (consulter_catalogue) et ils s'affichent en cartes cliquables sous son message (Suggestions).
  *
  * Les événements envoyés au site sont décrits dans Agent ; la réponse se termine par « fin » {terminee}, vrai quand
  * la conversation n'attend plus rien du client (récapitulatif complet, demande passée à un conseiller).
@@ -49,6 +54,7 @@ final class AgentConversation extends Agent
         string $fichierPrompt,
         private readonly AgentRecherche $recherche,
         private readonly NouvelleVersion $nouvelleVersion,
+        private readonly PrestationRepository $prestations,
     ) {
         parent::__construct($claude, $em, $logger, $outils, $fichierPrompt);
     }
@@ -86,17 +92,24 @@ final class AgentConversation extends Agent
         $conversation->ajouterMessage('client', $message);
         $this->enregistrer($conversation, $tour->historique);
 
+        $suggestions = null;
         try {
             yield from $this->boucle($contexte, $tour, fn (array $historique) => $this->enregistrer($conversation, $historique));
+            // Les logements et activités recommandés, en cartes sous le message qui les présente.
+            $suggestions = Suggestions::depuis($tour, $this->prestations);
+            if (null !== $suggestions) {
+                yield self::evenement('suggestions', $suggestions);
+            }
         } finally {
             if ('' !== $tour->reponse) {
-                $conversation->ajouterMessage('assistant', $tour->reponse);
+                $conversation->ajouterMessage('assistant', $tour->reponse, $suggestions);
                 $this->em->flush();
             }
         }
 
         // Le client répond aux options de sa proposition : elle reste telle quelle ou se met à jour.
-        $attendUneReponse = null === $tour->sortie('transmettre_au_conseiller');
+        $transmise = null !== $tour->sortie('transmettre_au_conseiller');
+        $attendUneReponse = !$transmise;
         $options = $tour->sortie('choisir_options');
         $reference = NouvelleVersion::reference($demande);
         if (null !== $options && null !== $reference) {
@@ -106,10 +119,11 @@ final class AgentConversation extends Agent
                 $options['activitesAjoutees'],
                 NiveauBudget::tryFrom((string) $options['niveau']),
             );
-        } elseif (true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
+        } elseif (!$transmise && true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
             // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a
             // déjà une proposition, c'est une modification : la version suivante se recalcule à partir d'elle (#211).
-            // Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare la première.
+            // Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare la première. Une
+            // demande transmise dans le même tour (destination absente du catalogue) attend son conseiller.
             if (null !== $reference) {
                 $attendUneReponse = yield from $this->nouvelleVersion->recalculer($conversation, $reference);
             } elseif (null === $demande->getConseiller()) {
@@ -139,7 +153,7 @@ final class AgentConversation extends Agent
 
     protected function outils(): array
     {
-        return [EnregistrerExigences::class, ChercherDestinations::class, TransmettreAuConseiller::class, ChoisirOptions::class];
+        return [EnregistrerExigences::class, ChercherDestinations::class, TransmettreAuConseiller::class, ChoisirOptions::class, ConsulterCatalogue::class];
     }
 
     protected function appelsMax(): int

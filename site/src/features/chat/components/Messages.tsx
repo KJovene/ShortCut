@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { IconCoche } from '@/components/ui/icons'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { IconCoche, IconFermer } from '@/components/ui/icons'
 import { formatDuree, formatEuros } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { cn } from '@/lib/cn'
 import { LOCALE } from '@/lib/langue'
-import type { Piste, RecapitulatifChat } from '../api'
+import type { Piste, RecapitulatifChat, Suggestion } from '../api'
 import { useChat } from '../chatContext'
 import type { Message } from '../conversation'
 import { TEXTES } from '../textes'
@@ -16,8 +18,8 @@ const BULLE_ASSISTANT =
 const NIVEAUX = ['essentiel', 'equilibre', 'confort'] as const
 
 /**
- * Un message du fil. Les réponses de l'assistant gardent leurs retours à la ligne (listes en « - ») ; la piste et le
- * récapitulatif s'affichent en cartes.
+ * Un message du fil. Les réponses de l'assistant gardent leurs retours à la ligne (listes en « - ») ; la piste, les
+ * suggestions et le récapitulatif s'affichent en cartes.
  *
  * @param actif dernier récapitulatif du fil, conversation ouverte : ses options s'ajoutent d'un clic
  */
@@ -32,8 +34,20 @@ export function Bulle({ message, actif = false }: { message: Message; actif?: bo
   if ('type' in message) {
     if (message.type === 'confirmation') return <Confirmation texte={message.texte} />
     if (message.type === 'piste') return <CartePiste piste={message.piste} />
+    if (message.type === 'suggestions') {
+      return (
+        <>
+          {message.texte.trim() && <TexteAssistant texte={message.texte} />}
+          <CartesSuggestions suggestions={message.suggestions} />
+        </>
+      )
+    }
     return <CarteRecapitulatif recapitulatif={message.recapitulatif} actif={actif} />
   }
+  return <TexteAssistant texte={message.texte} />
+}
+
+function TexteAssistant({ texte }: { texte: string }) {
   return (
     <div
       className={cn(
@@ -41,8 +55,181 @@ export function Bulle({ message, actif = false }: { message: Message; actif?: bo
         BULLE_ASSISTANT,
       )}
     >
-      {message.texte.trim()}
+      {texte.trim()}
     </div>
+  )
+}
+
+/** « 45 min », « 2 h 30 ». */
+function duree(minutes: number) {
+  return minutes < 60 ? `${minutes} min` : formatDuree(minutes)
+}
+
+/** Logements et activités recommandés par l'assistant : chaque carte ouvre sa fiche complète. */
+function CartesSuggestions({ suggestions }: { suggestions: Suggestion[] }) {
+  const { langue } = useChat()
+  const t = TEXTES[langue].suggestions
+  const [ouverte, setOuverte] = useState<Suggestion | null>(null)
+
+  return (
+    <section aria-label={t.titre} className="w-full max-w-[640px] self-start">
+      <ul className="m-0 grid list-none gap-2.5 p-0 sm:grid-cols-2">
+        {suggestions.map((s) => (
+          <li key={s.id}>
+            <button
+              type="button"
+              onClick={() => setOuverte(s)}
+              aria-label={t.voir(s.nom)}
+              aria-haspopup="dialog"
+              className="flex h-full w-full items-stretch overflow-hidden rounded-2xl border-[1.5px] border-lin bg-white text-left shadow-[0_2px_10px_rgba(22,35,63,0.06)] hover:border-encre"
+            >
+              {s.photos[0] && (
+                <img src={s.photos[0]} alt="" className="w-24 shrink-0 object-cover" />
+              )}
+              <span className="flex min-w-0 flex-col gap-0.5 px-3.5 py-3">
+                <span className="text-xs font-extrabold text-rouille">
+                  {t.types[s.type]}
+                  {s.categorie && ` · ${s.categorie}`}
+                </span>
+                <span className="text-[15px] leading-snug font-bold">{s.nom}</span>
+                {s.destination.ville && (
+                  <span className="text-[13px] text-taupe">{s.destination.ville}</span>
+                )}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {ouverte && <FicheSuggestion suggestion={ouverte} onFermer={() => setOuverte(null)} />}
+    </section>
+  )
+}
+
+/**
+ * Fiche d'un logement ou d'une activité, au centre de l'écran par-dessus le chat : photos, description, capacité,
+ * durée, équipements. Échap, le bouton ou un clic à côté la ferment, sans fermer la fenêtre du chatbot.
+ */
+function FicheSuggestion({
+  suggestion: s,
+  onFermer,
+}: {
+  suggestion: Suggestion
+  onFermer: () => void
+}) {
+  const { langue } = useChat()
+  const t = TEXTES[langue].suggestions
+  const fermer = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const precedent = document.activeElement as HTMLElement | null
+    const defilement = document.body.style.overflow
+    fermer.current?.focus()
+    document.body.style.overflow = 'hidden'
+    // En capture : Échap ferme la fiche avant que la fenêtre du chatbot ne la reçoive.
+    const surTouche = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      onFermer()
+    }
+    document.addEventListener('keydown', surTouche, true)
+    return () => {
+      document.removeEventListener('keydown', surTouche, true)
+      document.body.style.overflow = defilement
+      precedent?.focus()
+    }
+  }, [onFermer])
+
+  const faits = [
+    s.type === 'logement' ? t.capacite(s.capacite) : null,
+    s.chambres !== null && s.type === 'logement' ? t.chambres(s.chambres) : null,
+    s.dureeMinutes !== null ? t.duree(duree(s.dureeMinutes)) : null,
+    s.ageMinimum !== null ? t.ageMinimum(s.ageMinimum) : null,
+    s.accessible ? t.accessible : null,
+  ].filter((f) => f !== null)
+
+  return createPortal(
+    <div
+      lang={langue}
+      className="no-print fixed inset-0 z-[60] flex items-center justify-center bg-encre/60 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onFermer()
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fiche-suggestion-titre"
+        className="relative flex max-h-[90vh] w-full max-w-[560px] flex-col overflow-y-auto rounded-[24px] bg-white shadow-[0_24px_60px_rgba(22,35,63,0.3)]"
+      >
+        <button
+          ref={fermer}
+          type="button"
+          onClick={onFermer}
+          aria-label={t.fermer}
+          className="absolute top-3 right-3 z-10 flex size-11 items-center justify-center rounded-full bg-white/90 hover:bg-sable"
+        >
+          <IconFermer size={22} />
+        </button>
+        {s.photos.length > 0 && (
+          <div className="flex shrink-0 snap-x snap-mandatory gap-1 overflow-x-auto">
+            {s.photos.map((photo, i) => (
+              <img
+                key={photo}
+                src={photo}
+                alt={t.photo(s.nom, i + 1)}
+                className="h-56 w-full shrink-0 snap-center object-cover sm:h-64"
+              />
+            ))}
+          </div>
+        )}
+        <div className="flex flex-col gap-4 p-6">
+          <div className="flex flex-col gap-1 pr-10">
+            <span className="text-[13px] font-extrabold text-rouille">
+              {t.types[s.type]}
+              {s.categorie && ` · ${s.categorie}`}
+            </span>
+            <h2
+              id="fiche-suggestion-titre"
+              className="m-0 font-display text-[26px] leading-tight font-semibold"
+            >
+              {s.nom}
+            </h2>
+            {s.destination.ville && (
+              <span className="text-sm text-taupe">
+                {[s.destination.ville, s.destination.pays].filter(Boolean).join(', ')}
+              </span>
+            )}
+          </div>
+          {s.description && <p className="m-0 leading-relaxed">{s.description}</p>}
+          {faits.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[15px]">
+              {faits.map((f) => (
+                <li key={f} className="flex items-start gap-2">
+                  <span aria-hidden="true" className="mt-0.5 text-encre">
+                    <IconCoche size={14} />
+                  </span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          )}
+          {s.equipements.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <strong className="text-[13px]">{t.equipements}</strong>
+              <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
+                {s.equipements.map((e) => (
+                  <li key={e} className="rounded-full bg-sable px-3 py-1 text-[13px] font-semibold">
+                    {e}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="m-0 text-xs leading-normal text-taupe-clair">{t.prix}</p>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }
 

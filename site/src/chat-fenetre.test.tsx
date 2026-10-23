@@ -230,3 +230,67 @@ describe('proposition dans le chat', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+const VILLA = {
+  id: 12,
+  type: 'logement',
+  nom: 'Villa Imerovigli',
+  categorie: 'Villa',
+  description: 'Trois chambres face à la caldeira.',
+  destination: { slug: 'santorin', ville: 'Santorin', pays: 'Grèce' },
+  photos: ['/uploads/prestations/villa.jpg'],
+  capacite: 6,
+  chambres: 3,
+  equipements: ['piscine privée', 'vue mer'],
+  accessible: false,
+  dureeMinutes: null,
+  ageMinimum: null,
+}
+
+describe('recommandations dans le chat', () => {
+  it('affiche les logements recommandés en cartes qui ouvrent leur fiche', async () => {
+    sessionStorage.clear()
+    simulerApi({
+      'GET /api/moi': { status: 200, body: CLIENT },
+      'POST /api/chat/conversations': { status: 201, body: { jeton: 'j'.repeat(64), demande: 1 } },
+      'POST /api/chat': {
+        status: 200,
+        body: flux(
+          ['outil', { nom: 'consulter_catalogue' }],
+          ['texte', { texte: 'La villa Imerovigli loge toute la famille.' }],
+          ['suggestions', { type: 'suggestions', elements: [VILLA] }],
+          ['fin', { terminee: false }],
+        ),
+      },
+    })
+    afficher('/types-de-voyages')
+    const user = userEvent.setup()
+
+    await user.click((await screen.findAllByRole('button', { name: /Construire mon voyage/ }))[0])
+    const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
+    await user.type(within(fenetre).getByRole('textbox'), ' à Santorin, où dormir ?{Enter}')
+
+    expect(
+      await within(fenetre).findByText('La villa Imerovigli loge toute la famille.'),
+    ).toBeInTheDocument()
+    const carte = within(fenetre).getByRole('button', { name: 'Voir la fiche : Villa Imerovigli' })
+    await user.click(carte)
+
+    const fiche = await screen.findByRole('dialog', { name: 'Villa Imerovigli' })
+    expect(within(fiche).getByText('Trois chambres face à la caldeira.')).toBeInTheDocument()
+    expect(within(fiche).getByText('Jusqu’à 6 personnes')).toBeInTheDocument()
+    expect(within(fiche).getByText('3 chambres')).toBeInTheDocument()
+    expect(within(fiche).getByText('piscine privée')).toBeInTheDocument()
+    expect(within(fiche).getByRole('img', { name: 'Villa Imerovigli, photo 1' })).toHaveAttribute(
+      'src',
+      '/uploads/prestations/villa.jpg',
+    )
+    expect(within(fiche).getByRole('button', { name: 'Fermer la fiche' })).toHaveFocus()
+
+    // Échap ferme la fiche, pas la fenêtre du chatbot ; le focus revient sur la carte.
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Villa Imerovigli' })).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Assistant voyage' })).toBeInTheDocument()
+    expect(carte).toHaveFocus()
+  })
+})

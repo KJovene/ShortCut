@@ -88,10 +88,38 @@ export const recapitulatifSchema = z.object({
 })
 export type RecapitulatifChat = z.infer<typeof recapitulatifSchema>
 
+/**
+ * Logement ou activité recommandé par l'assistant (api/src/Chatbot/Suggestions.php) : une carte cliquable sous son
+ * message, qui ouvre la fiche du backoffice. Sans prix : ils viennent avec la proposition.
+ */
+export const suggestionSchema = z.object({
+  id: z.number(),
+  type: z.enum(['logement', 'activite']),
+  nom: z.string(),
+  categorie: z.string().nullable(),
+  description: z.string().nullable(),
+  destination: z.object({
+    slug: z.string().nullable(),
+    ville: z.string().nullable(),
+    pays: z.string().nullable(),
+  }),
+  photos: z.array(z.string()),
+  capacite: z.number(),
+  chambres: z.number().nullable(),
+  equipements: z.array(z.string()),
+  accessible: z.boolean(),
+  dureeMinutes: z.number().nullable(),
+  ageMinimum: z.number().nullable(),
+})
+export type Suggestion = z.infer<typeof suggestionSchema>
+
+const suggestionsSchema = z.object({ elements: z.array(suggestionSchema) })
+
 /** Carte gardée avec un message de la conversation (messages de l'API). */
 export const carteSchema = z.discriminatedUnion('type', [
   pisteSchema.extend({ type: z.literal('piste') }),
   recapitulatifSchema.extend({ type: z.literal('recapitulatif') }),
+  suggestionsSchema.extend({ type: z.literal('suggestions') }),
 ])
 
 const evenementSchema = z.discriminatedUnion('type', [
@@ -106,6 +134,7 @@ const evenementSchema = z.discriminatedUnion('type', [
   }),
   pisteSchema.extend({ type: z.literal('piste') }),
   recapitulatifSchema.extend({ type: z.literal('recapitulatif') }),
+  suggestionsSchema.extend({ type: z.literal('suggestions') }),
   z.object({ type: z.literal('erreur'), erreur: z.string() }),
   /** terminee : la conversation n'attend plus rien du client (récapitulatif complet, conseiller). */
   z.object({ type: z.literal('fin'), terminee: z.boolean().default(false) }),

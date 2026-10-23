@@ -118,6 +118,8 @@ final class OutilsDeRechercheTest extends KernelTestCase
         ]);
 
         self::assertStringContainsString('voici tout le catalogue publié', $resultat['remarque']);
+        // De quoi réorienter un lieu absent du catalogue vers une destination qui lui ressemble.
+        self::assertContains('santorin : Santorin (Grèce, Cyclades)', $resultat['catalogue']);
         // Plage et famille partout : à égalité d'envies, celles dont février est le meilleur mois d'abord, par ville
         // (Colombo, La Fortuna, La Havane, Tenerife), puis Dubaï (meilleur mois : janvier).
         self::assertSame(['sri-lanka', 'costa-rica', 'cuba', 'tenerife', 'dubai'], array_column($resultat['destinations'], 'slug'));
