@@ -12,7 +12,6 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use App\ApiPlatform\Filtre\MoisFilter;
-use App\ApiPlatform\SaisieTarifProcessor;
 use App\Enum\TypePrestation;
 use App\Enum\UniteTarif;
 use App\Repository\TarifParPeriodeRepository;
@@ -55,8 +54,8 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
             ),
         ]),
         new Get(uriTemplate: '/tarifs/{id}'),
-        new Post(uriTemplate: '/tarifs', processor: SaisieTarifProcessor::class),
-        new Patch(uriTemplate: '/tarifs/{id}', processor: SaisieTarifProcessor::class),
+        new Post(uriTemplate: '/tarifs'),
+        new Patch(uriTemplate: '/tarifs/{id}'),
         new Delete(uriTemplate: '/tarifs/{id}'),
     ],
     normalizationContext: ['groups' => ['tarif:lecture']],
@@ -68,7 +67,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 #[ORM\Table(name: 'tarif_par_periode')]
 #[ORM\Index(columns: ['prestation_id', 'debut', 'fin'])]
 #[NoPeriodOverlap]
-class TarifParPeriode
+class TarifParPeriode implements SaisieTracee
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

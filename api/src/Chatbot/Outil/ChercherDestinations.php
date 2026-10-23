@@ -5,7 +5,6 @@ namespace App\Chatbot\Outil;
 use App\Chatbot\ContexteAgent;
 use App\Chiffrage\Montant;
 use App\Entity\Destination;
-use App\Entity\PeriodeClimatique;
 use App\Entity\Prestation;
 use App\Entity\TarifParPeriode;
 use App\Enum\MotifTransmission;
@@ -384,16 +383,21 @@ final class ChercherDestinations implements Outil
      */
     private static function climatAuxDates(Destination $destination, \DateTimeImmutable $debut, \DateTimeImmutable $fin): array
     {
-        $periodes = $destination->getPeriodesClimatiques()->filter(
-            static fn (PeriodeClimatique $p) => null !== $p->getDebut() && null !== $p->getFin() && $p->getDebut() <= $fin && $p->getFin() >= $debut,
-        );
+        // Le climat saisi pour une année vaut pour les autres : chaque période est reportée sur les dates du voyage.
+        $climat = [];
+        foreach ($destination->getPeriodesClimatiques() as $periode) {
+            foreach ($periode->auxDates($debut, $fin) as $dates) {
+                $climat[$dates['debut']->format('Y-m-d')] ??= [
+                    'debut' => $dates['debut']->format('Y-m-d'),
+                    'fin' => $dates['fin']->format('Y-m-d'),
+                    'temperatureMoyenne' => $periode->getTemperatureMoyenne(),
+                    'pluieMm' => $periode->getPluieMm(),
+                ];
+            }
+        }
+        ksort($climat);
 
-        return array_values(array_map(static fn (PeriodeClimatique $p) => [
-            'debut' => $p->getDebut()?->format('Y-m-d') ?? '',
-            'fin' => $p->getFin()?->format('Y-m-d') ?? '',
-            'temperatureMoyenne' => $p->getTemperatureMoyenne(),
-            'pluieMm' => $p->getPluieMm(),
-        ], $periodes->toArray()));
+        return array_values($climat);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Controller\Admin;
 
+use App\Admin\TeleversementsMultiples;
 use App\Entity\PageDuSite;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
@@ -15,10 +16,6 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\SlugField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextareaField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextEditorField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Form\Type\FileUploadType;
-use EasyCorp\Bundle\EasyAdminBundle\Form\Type\Model\FileUploadState;
-use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Constraints\Image;
 
@@ -32,6 +29,8 @@ use Symfony\Component\Validator\Constraints\Image;
 #[IsGranted('ROLE_ADMIN')]
 final class PageDuSiteCrudController extends AbstractCrudController
 {
+    use TeleversementsMultiples;
+
     /**
      * Le site découpe le texte en paragraphes, intertitres et listes (features/pages/pageDuSite.ts) :
      * l'éditeur produit des <p> et des <h2> plutôt que les <div> et <h1> de Trix.
@@ -63,29 +62,6 @@ final class PageDuSiteCrudController extends AbstractCrudController
     public function configureActions(Actions $actions): Actions
     {
         return $actions->add(Crud::PAGE_INDEX, Action::DETAIL);
-    }
-
-    /**
-     * Contournement d'EasyAdmin 5.7 : supprimer une photo et en ajouter une dans le même enregistrement
-     * plantait (« Undefined array key »). Les nouvelles photos sont numérotées à la suite des photos
-     * d'avant la suppression ; on retire donc les photos supprimées avant l'enregistrement des fichiers.
-     *
-     * @param FormInterface<mixed> $form
-     */
-    protected function processUploadedFiles(FormInterface $form): void
-    {
-        foreach ($form as $champ) {
-            $state = $champ->getConfig()->getAttribute('state');
-            if (!$champ->getConfig()->getType()->getInnerType() instanceof FileUploadType || !$state instanceof FileUploadState || [] === $state->getDeletedFiles()) {
-                continue;
-            }
-            $state->setCurrentFiles(array_values(array_filter(
-                $state->getCurrentFiles(),
-                static fn (File $photo): bool => !\in_array($photo->getFilename(), $state->getDeletedFiles(), true),
-            )));
-        }
-
-        parent::processUploadedFiles($form);
     }
 
     /** La page modifiée ou consultée est l'accueil (le formulaire de création ne connaît pas encore son adresse). */
