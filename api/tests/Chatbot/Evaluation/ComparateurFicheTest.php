@@ -12,7 +12,7 @@ final class ComparateurFicheTest extends TestCase
         $fiche = self::ficheAttendue();
         $comparaison = ComparateurFiche::comparer($fiche, $fiche);
 
-        foreach (['typeDeVoyage', 'dateDebut', 'adultes', 'agesEnfants', 'budgetEuros', 'transportInclus', 'temperatureMax'] as $champ) {
+        foreach (['typeDeVoyage', 'dateDebut', 'adultes', 'agesEnfants', 'budgetEuros', 'transportInclus', 'nombreDeJours'] as $champ) {
             self::assertSame(ComparateurFiche::OK, $comparaison[$champ]['statut'], $champ);
         }
         // Le texte libre est laissé au juge.
@@ -27,17 +27,18 @@ final class ComparateurFicheTest extends TestCase
         $obtenue = [
             'budgetEuros' => null,
             'adultes' => 3,
-            'temperatureMax' => 30,
+            'nombreDeJours' => 9,
             'agesEnfants' => [9, 6],
             'villeDepart' => 'bordeaux (Mérignac)',
             'contraintes' => ['végétarien'],
         ] + self::ficheAttendue();
 
-        $comparaison = ComparateurFiche::comparer(self::ficheAttendue(), $obtenue);
+        // Durée non donnée par le client : la remplir est une invention.
+        $comparaison = ComparateurFiche::comparer(['nombreDeJours' => null] + self::ficheAttendue(), $obtenue);
 
         self::assertSame(ComparateurFiche::MANQUANT, $comparaison['budgetEuros']['statut']);
         self::assertSame(ComparateurFiche::FAUX, $comparaison['adultes']['statut']);
-        self::assertSame(ComparateurFiche::EN_TROP, $comparaison['temperatureMax']['statut']);
+        self::assertSame(ComparateurFiche::EN_TROP, $comparaison['nombreDeJours']['statut']);
         self::assertSame(ComparateurFiche::OK, $comparaison['agesEnfants']['statut'], 'L\'ordre des âges ne compte pas.');
         self::assertSame(ComparateurFiche::OK, $comparaison['villeDepart']['statut']);
         self::assertSame(ComparateurFiche::A_JUGER, $comparaison['contraintes']['statut']);

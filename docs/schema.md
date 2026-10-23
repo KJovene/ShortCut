@@ -28,8 +28,6 @@ erDiagram
         date_immutable date_fin "nullable"
         boolean dates_flexibles
         integer nombre_de_jours "nullable"
-        integer temperature_min "nullable"
-        integer temperature_max "nullable"
         integer adultes
         integer enfants
         json ages_enfants

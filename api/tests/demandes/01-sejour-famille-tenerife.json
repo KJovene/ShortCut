@@ -28,8 +28,6 @@
     "dateFin": "2027-02-20",
     "datesFlexibles": false,
     "nombreDeJours": 7,
-    "temperatureMin": 18,
-    "temperatureMax": null,
     "adultes": 2,
     "enfants": 2,
     "agesEnfants": [
@@ -42,7 +40,8 @@
     "envies": [
       "plage",
       "famille",
-      "animaux"
+      "animaux",
+      "au moins 18 °C"
     ],
     "contraintes": []
   },

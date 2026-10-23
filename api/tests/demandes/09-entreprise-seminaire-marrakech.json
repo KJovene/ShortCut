@@ -24,8 +24,6 @@
     "dateFin": "2027-03-12",
     "datesFlexibles": false,
     "nombreDeJours": 2,
-    "temperatureMin": null,
-    "temperatureMax": null,
     "adultes": 40,
     "enfants": 0,
     "agesEnfants": [],

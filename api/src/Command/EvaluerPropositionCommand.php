@@ -164,8 +164,6 @@ final class EvaluerPropositionCommand extends Command
             ->setDateFin($date($fiche['dateFin']))
             ->setDatesFlexibles((bool) $fiche['datesFlexibles'])
             ->setNombreDeJours($fiche['nombreDeJours'])
-            ->setTemperatureMin($fiche['temperatureMin'])
-            ->setTemperatureMax($fiche['temperatureMax'])
             ->setAdultes((int) $fiche['adultes'])
             ->setEnfants((int) $fiche['enfants'])
             ->setAgesEnfants($fiche['agesEnfants'])

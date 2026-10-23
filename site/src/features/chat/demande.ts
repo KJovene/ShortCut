@@ -2,13 +2,12 @@ import { formatEuros, MOIS, type TypeDeVoyage } from '@/data/catalogue'
 import { type Langue, nomDuMois, typeDeVoyage } from '@/lib/langue'
 import { TEXTES } from './textes'
 
-/** Les neuf critères du récapitulatif, dans l'ordre d'affichage. */
+/** Les huit critères du récapitulatif, dans l'ordre d'affichage. */
 export const CRITERES = [
   'type',
   'destination',
   'periode',
   'duree',
-  'temperature',
   'voyageurs',
   'budget',
   'envies',
@@ -27,7 +26,6 @@ export interface Demande {
   mois?: number
   datesFlexibles?: boolean
   jours?: number
-  temperatureMin?: number
   adultes?: number
   enfants?: number
   budget?: number
@@ -91,8 +89,6 @@ export function estRenseigne(d: Demande, critere: Critere): boolean {
       return d.mois !== undefined
     case 'duree':
       return d.jours !== undefined
-    case 'temperature':
-      return d.temperatureMin !== undefined
     case 'voyageurs':
       return d.adultes !== undefined
     case 'budget':
@@ -132,8 +128,6 @@ export function valeurCritere(
       return `${majuscule(langue === 'en' ? nomDuMois(d.mois, langue) : MOIS[d.mois])} 2027${d.datesFlexibles ? t.datesFlexibles : ''}`
     case 'duree':
       return d.jours ? t.jours(d.jours) : undefined
-    case 'temperature':
-      return d.temperatureMin !== undefined ? t.auMoins(d.temperatureMin) : undefined
     case 'voyageurs': {
       if (d.adultes === undefined) return undefined
       const enfants = d.enfants ? ` · ${t.enfants(d.enfants)}` : ''

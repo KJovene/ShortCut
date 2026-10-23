@@ -117,7 +117,7 @@ final class RetenirCombinaisonTest extends KernelTestCase
         $justification = $this->outil->executer($this->contexte($this->demande($demande['exigencesAttendues'])), $this->entree($demande))['justification'];
 
         self::assertSame([['debut' => '2027-02-01', 'fin' => '2027-02-28', 'temperatureMoyenne' => 19.0, 'pluieMm' => 30]], $justification['climatAuxDates']);
-        self::assertSame(['min' => 18, 'max' => null], $justification['temperatureSouhaitee']);
+        self::assertSame(['au moins 18 °C'], $justification['enviesDeClimat'], 'Le climat aux dates répond à l\'envie de chaleur.');
         self::assertSame(['Bordeaux', 270], [$justification['villeDepart'], $justification['tempsDeTrajetMinutes']]);
         self::assertSame(['plage', 'famille'], $justification['enviesCorrespondantes']);
         self::assertSame(['animaux'], $justification['enviesSansReponse']);
@@ -259,8 +259,6 @@ final class RetenirCombinaisonTest extends KernelTestCase
             ->setDateFin(new \DateTimeImmutable($exigences['dateFin']))
             ->setDatesFlexibles($exigences['datesFlexibles'])
             ->setNombreDeJours($exigences['nombreDeJours'])
-            ->setTemperatureMin($exigences['temperatureMin'])
-            ->setTemperatureMax($exigences['temperatureMax'])
             ->setAdultes($exigences['adultes'])
             ->setEnfants($exigences['enfants'])
             ->setAgesEnfants($exigences['agesEnfants'])

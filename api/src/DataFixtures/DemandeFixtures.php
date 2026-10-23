@@ -66,7 +66,7 @@ final class DemandeFixtures extends Fixture implements DependentFixtureInterface
         $demande->setConversation($conversation);
         $demande->transmettre(
             MotifTransmission::DemandeDuClient,
-            'Couple, une semaine de nature au Costa Rica en février, budget 3 000 €. Le client préfère échanger avec un conseiller ; dates et températures à préciser.',
+            'Couple, une semaine de nature au Costa Rica en février, budget 3 000 €. Le client préfère échanger avec un conseiller ; dates à préciser.',
         );
         $manager->persist($conversation);
     }

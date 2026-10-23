@@ -24,8 +24,6 @@
     "dateFin": "2027-10-25",
     "datesFlexibles": false,
     "nombreDeJours": 4,
-    "temperatureMin": null,
-    "temperatureMax": null,
     "adultes": 12,
     "enfants": 0,
     "agesEnfants": [],
