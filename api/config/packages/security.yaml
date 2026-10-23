@@ -1,0 +1,71 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    # L'administrateur a tous les droits du conseiller.
+    role_hierarchy:
+        ROLE_ADMIN: [ROLE_CONSEILLER]
+
+    providers:
+        utilisateurs:
+            entity:
+                class: App\Entity\Utilisateur
+                property: email
+        visiteurs_chatbot:
+            id: App\Security\VisiteurChatbotProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+
+        # Chatbot public : sans session, authentifié par le jeton de sa conversation.
+        # L'ouverture d'une conversation passe par « main » pour lire la session d'un client connecté.
+        chatbot:
+            pattern: ^/api/chat(?!/conversations$)
+            stateless: true
+            lazy: true
+            provider: visiteurs_chatbot
+            custom_authenticators:
+                - App\Security\JetonConversationAuthenticator
+            access_denied_handler: App\Security\AccesRefuseChatbotHandler
+
+        # Comptes du site : clients (inscription libre), conseillers et administrateur. Les formulaires
+        # sont sur le site React, qui poste en JSON ; la session Symfony sert ensuite au backoffice.
+        main:
+            lazy: true
+            provider: utilisateurs
+            json_login:
+                check_path: api_connexion
+                username_path: email
+                password_path: motDePasse
+                failure_handler: App\Security\EchecConnexionHandler
+            logout:
+                path: api_deconnexion
+            entry_point: App\Security\RedirectionConnexionEntryPoint
+            # Contre le brute force : 5 échecs par e-mail et adresse IP, 25 par adresse IP, toutes les 15 minutes.
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+    # Seule la première règle qui correspond s'applique.
+    access_control:
+        - { path: ^/api/chat/conversations$, methods: [POST], roles: PUBLIC_ACCESS }
+        - { path: ^/api/chat, roles: ROLE_CHATBOT }
+        - { path: ^/api/connexion$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/inscription$, roles: PUBLIC_ACCESS }
+        # Page « Ma proposition » : le lien unique (jeton) tient lieu d'accès.
+        - { path: ^/api/propositions/, roles: PUBLIC_ACCESS }
+        - { path: ^/api/moi(/|$), roles: ROLE_USER }
+        - { path: ^/admin, roles: ROLE_CONSEILLER }
+
+when@test:
+    security:
+        password_hashers:
+            # Password hashers are resource-intensive by design to ensure security.
+            # In tests, it's safe to reduce their cost to improve performance.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4 # Lowest possible value for bcrypt
+                time_cost: 3 # Lowest possible value for argon
+                memory_cost: 10 # Lowest possible value for argon

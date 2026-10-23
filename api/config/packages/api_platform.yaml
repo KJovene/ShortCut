@@ -1,0 +1,18 @@
+api_platform:
+    title: ShortCut API
+    version: 1.0.0
+    description: |
+        API de l'agence ShortCut. Le catalogue (destinations, prestataires, logements, activités, tarifs)
+        est réservé aux conseillers connectés : la session ouverte par /api/connexion sert ici aussi.
+        Le site public lit, sans connexion, les destinations publiées (/api/public/destinations), leur climat
+        et des exemples avec un prix « à partir de ».
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
+    defaults:
+        # Les conseillers s'authentifient par la session du backoffice : l'API ne peut pas être sans état.
+        stateless: false
+        # Une valeur du mauvais type (texte au lieu d'un nombre…) donne une erreur par champ, comme les contraintes.
+        collect_denormalization_errors: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']

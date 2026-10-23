@@ -1,0 +1,200 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "06",
+  "titre": "Douze amis dans un riad à Marrakech, budget serré",
+  "typeDeVoyage": "groupe",
+  "casParticuliers": [
+    "budget_insuffisant"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Salut ! On est 12 copains et on veut privatiser un riad à Marrakech pour fêter nos 30 ans."
+    },
+    {
+      "moment": "reponse",
+      "client": "Du jeudi 21 au lundi 25 octobre 2027, départ de Paris. On a 300 € chacun, vols compris."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "groupe",
+    "lieuOuZone": "Marrakech",
+    "villeDepart": "Paris",
+    "dateDebut": "2027-10-21",
+    "dateFin": "2027-10-25",
+    "datesFlexibles": false,
+    "nombreDeJours": 4,
+    "adultes": 12,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 300,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "fête",
+      "détente"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "marrakech"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": true,
+    "logementsCompatibles": [
+      "Riad Dar Yasmine, riad entier"
+    ],
+    "exclusions": [],
+    "arbitragesAttendus": [
+      "Partir hors saison (juin à septembre) : le riad coûte 20 % de moins au lieu de 20 % de plus.",
+      "Réduire à 3 nuits.",
+      "Même en combinant les deux (3 nuits du 16 au 19 septembre, niveau essentiel), il faut compter 370,67 € par personne : le chatbot le dit clairement au lieu de proposer un voyage hors budget."
+    ],
+    "pointsDeControle": [
+      "Le chatbot annonce que 300 € par personne ne suffisent pas, chiffres à l'appui.",
+      "Il propose des arbitrages chiffrés au lieu d'une proposition hors budget.",
+      "Il ne baisse pas les prix des prestataires pour tenir le budget."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 632000,
+        "parPersonneCentimes": 52667,
+        "logements": [
+          "Riad Dar Yasmine, riad entier"
+        ],
+        "activites": [],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Riad Dar Yasmine, riad entier",
+              "calcul": "4 nuits × 780 €",
+              "centimes": 312000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "12 voyageurs × 150 €",
+              "centimes": 180000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "12 voyageurs × 15 €",
+              "centimes": 18000
+            }
+          ],
+          "activites": [],
+          "coutPrestationsCentimes": 510000,
+          "margeCentimes": 102000,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 815600,
+        "parPersonneCentimes": 67967,
+        "logements": [
+          "Riad Dar Yasmine, riad entier"
+        ],
+        "activites": [],
+        "transportAu": "milieu de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Riad Dar Yasmine, riad entier",
+              "calcul": "4 nuits × 780 €",
+              "centimes": 312000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "12 voyageurs × 265 €",
+              "centimes": 318000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "12 voyageurs × 27,50 €",
+              "centimes": 33000
+            }
+          ],
+          "activites": [],
+          "coutPrestationsCentimes": 663000,
+          "margeCentimes": 132600,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "confort": {
+        "totalCentimes": 1128800,
+        "parPersonneCentimes": 94067,
+        "logements": [
+          "Riad Dar Yasmine, riad entier"
+        ],
+        "activites": [
+          "Visite guidée de la médina et des souks",
+          "Cours de cuisine marocaine et tajine"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Riad Dar Yasmine, riad entier",
+              "calcul": "4 nuits × 780 €",
+              "centimes": 312000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "12 voyageurs × 380 €",
+              "centimes": 456000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "12 voyageurs × 40 €",
+              "centimes": 48000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée de la médina et des souks",
+              "calcul": "12 participants × 36 €",
+              "centimes": 43200
+            },
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "12 participants × 54 €",
+              "centimes": 64800
+            }
+          ],
+          "coutPrestationsCentimes": 924000,
+          "margeCentimes": 184800,
+          "fraisDeDossierCentimes": 20000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 4,
+          "logements": [
+            "Riad Dar Yasmine, riad entier"
+          ]
+        }
+      ],
+      "activitesDemandees": [],
+      "activitesOptionnelles": [
+        "Visite guidée de la médina et des souks",
+        "Cours de cuisine marocaine et tajine"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 200,
+    "tolerance": 0
+  }
+}

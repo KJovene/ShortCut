@@ -1,0 +1,35 @@
+{# Fourchettes de prix d'un transporteur, par personne : une ligne par arrivée, une colonne par ville de départ des
+   vols, et le transfert sur place (GrilleTransport). #}
+{% set grille = grille_transport(entity.instance.fourchettesTransport) %}
+{% if grille.lignes is empty %}
+    <span class="bo-vide">{{ entity.instance.type and entity.instance.type.value == 'transporteur' ? 'Aucune fourchette : le chatbot ne peut pas estimer ces transports.' : 'Sans objet : seuls les transporteurs ont des fourchettes de prix.' }}</span>
+{% else %}
+    <div class="bo-tableau-defilant"><table class="bo-tableau bo-grille-transport">
+        <thead>
+            <tr>
+                <th scope="col">Arrivée</th>
+                {% for depart in grille.departs %}
+                    <th scope="col" class="bo-droite">Vol depuis {{ depart }}</th>
+                {% endfor %}
+                <th scope="col" class="bo-droite">Transfert sur place</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in grille.lignes %}
+                <tr>
+                    <th scope="row">{{ ligne.arrivee }}</th>
+                    {% for depart in grille.departs %}
+                        {% set prix = ligne.vols[depart] ?? null %}
+                        <td class="bo-droite bo-nowrap">
+                            {% if prix %}{{ prix.min|euros }} <span class="bo-discret">à</span> {{ prix.max|euros }}{% else %}<span class="bo-discret">—</span>{% endif %}
+                        </td>
+                    {% endfor %}
+                    <td class="bo-droite bo-nowrap">
+                        {% if ligne.transfert %}{{ ligne.transfert.min|euros }} <span class="bo-discret">à</span> {{ ligne.transfert.max|euros }}{% else %}<span class="bo-discret">—</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+    <p class="bo-discret m-0 mt-2"><small>Prix par personne, aller-retour pour les vols, du moins cher au plus cher.</small></p>
+{% endif %}

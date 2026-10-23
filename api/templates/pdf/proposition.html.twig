@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+{#
+ # La proposition en PDF (#213), rendue par Dompdf : CSS 2.1, tableaux plutôt que flexbox, polices DejaVu (accents
+ # et « € »). Charte DÉTOUR : encre #16233F (texte, aplats), craie #F6F1E7 (fonds), sable #EAE2D2, lin #E2D9C6
+ # (bordures), ciel #BCD3EA (sélection, confirmé), et le jaune #F2B705 réservé au O qui saute du grand titre.
+ # Titres en sans-serif gras, au plus près de Bricolage Grotesque (DejaVu n'a pas de grotesque de titrage).
+ # En anglais pour un client qui a dialogué en anglais avec le chatbot (US15, p.langue).
+ #}
+{% set en = p.langue == 'en' %}
+<html lang="{{ p.langue }}">
+<head>
+<meta charset="UTF-8">
+<title>{{ en ? 'Proposal' : 'Proposition' }} {{ p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'for your trip' : 'de voyage') }} · version {{ p.version }}</title>
+<style>
+    @page { margin: 22mm 16mm 20mm 16mm; }
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 10pt; line-height: 1.45; color: #16233F; }
+    h1, h2, h3 { font-family: 'DejaVu Sans', sans-serif; font-weight: bold; color: #16233F; margin: 0; }
+    h1 { font-size: 26pt; line-height: 1.1; letter-spacing: -0.5px; margin: 6mm 0 2mm; }
+    h2 { font-size: 15pt; letter-spacing: -0.2px; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 1.5px solid #E2D9C6; }
+    h3 { font-size: 11pt; margin: 0 0 1mm; }
+    p { margin: 0 0 2mm; }
+    .discret { color: #3B4762; }
+    .petit { font-size: 8.5pt; }
+    .surtitre { font-size: 8.5pt; font-weight: bold; letter-spacing: 1.2px; text-transform: uppercase; color: #2A3A63; }
+    .saut { page-break-before: always; }
+    .insecable { page-break-inside: avoid; }
+    /* Le O qui saute de la charte : premier « o » du grand titre, monté d'une demi-hauteur, en jaune. */
+    .saut-o { position: relative; top: -0.24em; color: #F2B705; }
+
+    /* En-tête et pied répétés sur chaque page */
+    #entete { position: fixed; top: -15mm; left: 0; right: 0; height: 10mm; border-bottom: 1px solid #E2D9C6; }
+    #entete img { height: 6mm; }
+    #entete .droite { position: absolute; right: 0; top: 2mm; font-size: 8pt; color: #3B4762; }
+    #pied { position: fixed; bottom: -13mm; left: 0; right: 0; height: 9mm; border-top: 1px solid #E2D9C6; padding-top: 2mm; font-size: 7pt; color: #3B4762; }
+
+    /* Statut, visible en première page : sable pour l'estimation, ciel une fois confirmé. */
+    .statut { margin: 4mm 0; padding: 3.5mm 4.5mm; border-radius: 3mm; font-weight: bold; color: #16233F; }
+    .statut--estimee { background: #EAE2D2; border: 1px solid #C9C0AD; }
+    .statut--confirmee { background: #BCD3EA; border: 1px solid #9DBBD9; }
+    .statut .etiquette { display: inline-block; padding: 0.8mm 2.5mm; border-radius: 2mm; font-size: 8pt; letter-spacing: 0.8px; text-transform: uppercase; color: #F6F1E7; margin-right: 2mm; }
+    .statut--estimee .etiquette { background: #3B4762; }
+    .statut--confirmee .etiquette { background: #16233F; }
+
+    .couverture-photo { width: 100%; height: 78mm; border-radius: 4mm; }
+    table.chiffres { width: 100%; border-collapse: separate; border-spacing: 2.5mm 0; margin: 4mm -2.5mm 0; }
+    table.chiffres td { background: #F6F1E7; border: 1px solid #E2D9C6; border-radius: 2.5mm; padding: 2.5mm 3.5mm; width: 25%; vertical-align: top; }
+    table.chiffres .valeur { font-size: 10.5pt; font-weight: bold; }
+    .total { margin-top: 5mm; padding: 4mm 5mm; background: #16233F; color: #F6F1E7; border-radius: 4mm; }
+    .total .montant { font-size: 22pt; font-weight: bold; letter-spacing: -0.4px; }
+    .total .discret { color: #BCD3EA; }
+
+    table.programme { width: 100%; border-collapse: collapse; }
+    table.programme td { padding: 2.5mm 2mm; border-bottom: 1px solid #EAE2D2; vertical-align: top; }
+    table.programme .jour { width: 24mm; color: #16233F; font-weight: bold; }
+    table.programme .jour span { display: block; font-weight: normal; font-size: 8pt; color: #5B6376; }
+
+    table.prestation { width: 100%; border-collapse: collapse; margin-bottom: 3mm; background: #F6F1E7; border-radius: 3mm; }
+    table.prestation td { padding: 3mm; vertical-align: top; }
+    table.prestation .photo { width: 42mm; padding-right: 0; }
+    table.prestation img { width: 42mm; height: 28mm; border-radius: 2mm; }
+    ul { margin: 0; padding-left: 4.5mm; }
+    li { margin-bottom: 0.8mm; }
+
+    table.niveaux { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+    table.niveaux th, table.niveaux td { padding: 2.5mm; border: 1px solid #E2D9C6; text-align: left; }
+    table.niveaux th { background: #EAE2D2; font-size: 8.5pt; }
+    table.niveaux .retenu { background: #BCD3EA; font-weight: bold; }
+    .droite { text-align: right; }
+</style>
+</head>
+<body>
+    <div id="entete">
+        <img src="{{ logo }}" alt="DÉTOUR">
+        <span class="droite">{{ en ? 'Proposal' : 'Proposition' }} · version {{ p.version }}{{ confirmee ? (en ? ' · confirmed' : ' · confirmée') : (en ? ' · estimated prices' : ' · prix estimés') }}</span>
+    </div>
+    <div id="pied">
+        {% if en %}
+            Détour, tailor-made travel agency · 12 rue des Voyageurs, 75000 Paris, France · advisors available Monday to Friday, 9 am to 6:30 pm (Paris time).<br>
+            {{ confirmee ? 'Prices checked by your advisor with the providers.' : p.mention }} Nothing is booked or paid before you agree.
+        {% else %}
+            Détour, agence de voyages sur mesure · 12 rue des Voyageurs, 75000 Paris · conseillers du lundi au vendredi de 9 h à 18 h 30.<br>
+            {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : p.mention }} Rien n’est réservé ni payé avant votre accord.
+        {% endif %}
+    </div>
+
+    {# Couverture #}
+    <p class="surtitre">
+        {{ type ?? (en ? 'Your trip' : 'Votre voyage') }} · version {{ p.version }} {{ en ? 'of' : 'du' }} {{ (confirmee and p.confirmeeLe ? p.confirmeeLe : p.creeLe)|date_longue(p.langue) }}
+    </p>
+    {% set titre = (p.destination.ville ?? p.demande.lieuOuZone ?? (en ? 'Your trip' : 'Votre voyage')) ~ (p.programme is not empty ? ', ' ~ p.programme|length ~ (en ? ' days' : ' jours') : '') %}
+    {# Le O qui saute : le premier « o » du titre. #}
+    {% set morceaux = titre|split('o', 2) %}
+    <h1>{% if morceaux|length == 2 %}{{ morceaux[0] }}<span class="saut-o">o</span>{{ morceaux[1] }}{% else %}{{ titre }}{% endif %}</h1>
+    {% if client %}<p class="discret">{{ en ? 'Prepared for' : 'Préparée pour' }} {{ client }}</p>{% endif %}
+
+    <div class="statut statut--{{ p.etat }}">
+        <span class="etiquette">{{ confirmee ? (en ? 'Confirmed proposal' : 'Proposition confirmée') : (p.etat == 'preparee' ? (en ? 'Summary under review' : 'Récapitulatif en relecture') : (en ? 'Estimated proposal' : 'Proposition estimée')) }}</span>
+        {% if confirmee %}
+            {% if en %}
+                Confirmed by your advisor on {{ p.confirmeeLe|date_longue(p.langue) }}: prices checked with the providers.
+            {% else %}
+                Confirmée par votre conseiller le {{ p.confirmeeLe|date_longue }} : prix vérifiés auprès des prestataires.
+            {% endif %}
+        {% else %}
+            {{ p.mention }} {{ en ? 'Confirmation expected within 2 business days.' : 'Confirmation annoncée sous 2 jours ouvrés.' }}
+        {% endif %}
+    </div>
+
+    {% if photoDestination %}
+        <img class="couverture-photo" src="{{ photoDestination }}" alt="">
+    {% endif %}
+
+    <table class="chiffres">
+        <tr>
+            <td><span class="petit discret">{{ en ? 'Departure' : 'Départ' }}</span><br><span class="valeur">{{ p.demande.dateDebut ? p.demande.dateDebut|date_longue(p.langue) : (en ? 'To be specified' : 'À préciser') }}</span></td>
+            <td><span class="petit discret">{{ en ? 'Return' : 'Retour' }}</span><br><span class="valeur">{{ p.demande.dateFin ? p.demande.dateFin|date_longue(p.langue) : (en ? 'To be specified' : 'À préciser') }}</span></td>
+            {% if en %}
+                <td><span class="petit discret">Travellers</span><br><span class="valeur">{{ p.demande.adultes }} adult{{ p.demande.adultes > 1 ? 's' }}{% if p.demande.enfants %}, {{ p.demande.enfants }} {{ p.demande.enfants > 1 ? 'children' : 'child' }}{% endif %}</span></td>
+            {% else %}
+                <td><span class="petit discret">Voyageurs</span><br><span class="valeur">{{ p.demande.adultes }} adulte{{ p.demande.adultes > 1 ? 's' }}{% if p.demande.enfants %}, {{ p.demande.enfants }} enfant{{ p.demande.enfants > 1 ? 's' }}{% endif %}</span></td>
+            {% endif %}
+            <td><span class="petit discret">{{ en ? 'Level' : 'Niveau' }}</span><br><span class="valeur">{{ niveaux[p.niveauBudget] }}</span></td>
+        </tr>
+    </table>
+
+    {% if p.pourquoi %}<p style="margin-top: 5mm; font-size: 11pt;">{{ p.pourquoi }}</p>{% endif %}
+
+    <div class="total insecable">
+        {% if en %}
+            <span class="petit discret">{{ confirmee ? 'Your confirmed budget' : 'Your estimated budget' }}, {{ niveaux[p.niveauBudget]|lower }} level</span><br>
+            <span class="montant">{{ p.totalCentimes|euros }}</span><br>
+            <span class="discret">that is {{ p.totalParPersonneCentimes|euros }} per person, including a booking fee of {{ p.fraisDeDossierCentimes|euros }}</span>
+        {% else %}
+            <span class="petit discret">{{ confirmee ? 'Votre budget confirmé' : 'Votre budget estimé' }}, niveau {{ niveaux[p.niveauBudget]|lower }}</span><br>
+            <span class="montant">{{ p.totalCentimes|euros }}</span><br>
+            <span class="discret">soit {{ p.totalParPersonneCentimes|euros }} par personne, frais de dossier de {{ p.fraisDeDossierCentimes|euros }} inclus</span>
+        {% endif %}
+    </div>
+
+    {# Programme #}
+    {% if p.programme is not empty %}
+        <h2 class="saut">{{ en ? 'Day-by-day itinerary' : 'Programme jour par jour' }}</h2>
+        <table class="programme">
+            {% for j in p.programme %}
+                <tr class="insecable">
+                    <td class="jour">{{ en ? 'D' : 'J' }}{{ j.jour }}<span>{{ j.date|date_jour(p.langue) }}</span></td>
+                    <td><h3>{{ j.titre }}</h3><span class="discret">{{ j.description }}</span></td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    {# Hébergements et activités #}
+    {% set sections = en ? {logement: 'Accommodation', activite: 'Included activities'} : {logement: 'Hébergement', activite: 'Activités incluses'} %}
+    {% for type, titre in sections %}
+        {% set liste = p.prestations|filter(x => x.type == type) %}
+        {% if liste is not empty %}
+            {% for x in liste %}
+                {# Le titre de la section reste avec sa première prestation, jamais seul en bas de page. #}
+                {% if loop.first %}<div class="insecable"><h2>{{ titre }}</h2>{% endif %}
+                <table class="prestation insecable">
+                    <tr>
+                        {% if photos[x.id] ?? null %}<td class="photo"><img src="{{ photos[x.id] }}" alt=""></td>{% endif %}
+                        <td>
+                            <h3>{{ x.nom }}</h3>
+                            {% if x.pointsForts is not empty %}
+                                <ul>{% for point in x.pointsForts %}<li>{{ point }}</li>{% endfor %}</ul>
+                            {% endif %}
+                            <p class="petit discret" style="margin-top: 1.5mm;">
+                                {% if en %}Level{{ x.niveaux|length > 1 ? 's' }}:{% else %}Niveau{{ x.niveaux|length > 1 ? 'x' }} :{% endif %} {{ x.niveaux|map(n => niveaux[n] ?? n)|join(', ') }}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                {% if loop.first %}</div>{% endif %}
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+
+    {% if p.argumentaire is not empty %}
+        <div class="insecable">
+        <h2>{{ en ? 'Why this trip suits you' : 'Pourquoi ce voyage vous correspond' }}</h2>
+        <ul>
+            {% for a in p.argumentaire %}<li><strong>{{ a.exigence }}</strong>{{ en ? ':' : ' :' }} {{ a.reponse }}</li>{% endfor %}
+        </ul>
+        </div>
+    {% endif %}
+
+    {# Budget #}
+    <h2 class="saut">{{ en ? 'Your budget' : 'Votre budget' }}</h2>
+    <div class="statut statut--{{ p.etat }}">
+        {% if en %}
+            <span class="etiquette">{{ confirmee ? 'Confirmed prices' : 'Estimated prices' }}</span>
+            {{ confirmee ? 'Prices checked by your advisor with the providers.' : 'Estimated from the agency’s rates, to be confirmed by your advisor.' }}
+        {% else %}
+            <span class="etiquette">{{ confirmee ? 'Prix confirmés' : 'Prix estimés' }}</span>
+            {{ confirmee ? 'Prix vérifiés par votre conseiller auprès des prestataires.' : 'Estimés à partir des tarifs de l’agence, à confirmer par votre conseiller.' }}
+        {% endif %}
+    </div>
+    <table class="niveaux">
+        <tr><th>{{ en ? 'Level' : 'Niveau' }}</th><th class="droite">Total</th><th class="droite">{{ en ? 'Per person' : 'Par personne' }}</th></tr>
+        {% for niveau, libelle in niveaux %}
+            {% if budgets[niveau] is defined %}
+                <tr{% if niveau == p.niveauBudget %} class="retenu"{% endif %}>
+                    <td>{{ libelle }}{% if niveau == p.niveauBudget %} {{ en ? '(detailed in this proposal)' : '(détaillé dans cette proposition)' }}{% endif %}</td>
+                    <td class="droite">{{ budgets[niveau].totalCentimes|euros }}</td>
+                    <td class="droite">{{ budgets[niveau].parPersonneCentimes|euros }}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+    <p class="petit discret">{{ en ? 'Totals including margin and booking fee' : 'Totaux marge et frais de dossier compris' }} ({{ p.fraisDeDossierCentimes|euros }}).</p>
+
+    {% if p.lignes is not empty %}
+        <h3 style="margin-top: 5mm;">{{ en ? 'Included in the ' ~ niveaux[p.niveauBudget]|lower ~ ' level' : 'Inclus dans le niveau ' ~ niveaux[p.niveauBudget]|lower }}</h3>
+        <ul>
+            {% for l in p.lignes %}<li>{{ l.libelle }}{% if l.quantite > 1 %} × {{ l.quantite }}{% endif %}</li>{% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if p.hypotheses is not empty %}
+        <h3 style="margin-top: 5mm;">{{ en ? 'Budget assumptions' : 'Hypothèses de budget' }}</h3>
+        <ul class="discret">
+            {% for h in p.hypotheses %}<li>{{ h }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+
+    <p style="margin-top: 8mm;">
+        {% if p.statut == 'acceptee' %}
+            {{ en ? 'You have accepted this proposal: your advisor is booking your trip.' : 'Vous avez accepté cette proposition : votre conseiller réserve votre voyage.' }}
+        {% elseif confirmee %}
+            {{ en ? 'To accept it, go to your “My proposal” page. Nothing is booked before you agree.' : 'Pour l’accepter, rendez-vous sur votre page « Ma proposition ». Rien n’est réservé avant votre accord.' }}
+        {% else %}
+            {{ en ? 'To have it confirmed, go to your “My proposal” page: your advisor checks prices and availability within 2 business days.' : 'Pour la faire confirmer, rendez-vous sur votre page « Ma proposition » : votre conseiller vérifie prix et disponibilités sous 2 jours ouvrés.' }}
+        {% endif %}
+    </p>
+</body>
+</html>

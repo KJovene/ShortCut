@@ -1,0 +1,200 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "02",
+  "titre": "Week-end gourmand à Lisbonne en fauteuil roulant",
+  "typeDeVoyage": "sejour",
+  "casParticuliers": [
+    "mobilite_reduite"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour ! Mon mari et moi voudrions passer un long week-end à Lisbonne pour bien manger. Je me déplace en fauteuil roulant."
+    },
+    {
+      "moment": "reponse",
+      "client": "Du vendredi 14 au lundi 17 mai 2027, au départ de Lyon. 1 300 € pour nous deux, vols compris."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "sejour",
+    "lieuOuZone": "Lisbonne",
+    "villeDepart": "Lyon",
+    "dateDebut": "2027-05-14",
+    "dateFin": "2027-05-17",
+    "datesFlexibles": false,
+    "nombreDeJours": 3,
+    "adultes": 2,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 1300,
+    "budgetParPersonne": false,
+    "transportInclus": true,
+    "envies": [
+      "gastronomie"
+    ],
+    "contraintes": [
+      "fauteuil roulant"
+    ]
+  },
+  "attendu": {
+    "destinations": [
+      "lisbonne"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Hôtel Alfama Vista, chambre double",
+      "Tejo Palace, suite vue fleuve"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Appartement Bairro Alto",
+        "raison": "non accessible"
+      },
+      {
+        "prestation": "Visite guidée de l'Alfama et du tram 28",
+        "raison": "non accessible (escaliers, tramway ancien)"
+      }
+    ],
+    "pointsDeControle": [
+      "Le chatbot demande le type de besoin (plain-pied, ascenseur, fauteuil).",
+      "Seuls des logements et activités marqués accessibles sont proposés.",
+      "L'atelier pastéis de nata est suggéré (niveau confort) : il ne tient pas dans le budget au niveau équilibré."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 88000,
+        "parPersonneCentimes": 44000,
+        "logements": [
+          "Hôtel Alfama Vista, chambre double"
+        ],
+        "activites": [],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Hôtel Alfama Vista, chambre double",
+              "calcul": "3 nuits × 110 €",
+              "centimes": 33000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 140 €",
+              "centimes": 28000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 20 €",
+              "centimes": 4000
+            }
+          ],
+          "activites": [],
+          "coutPrestationsCentimes": 65000,
+          "margeCentimes": 13000,
+          "fraisDeDossierCentimes": 10000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 117400,
+        "parPersonneCentimes": 58700,
+        "logements": [
+          "Hôtel Alfama Vista, chambre double"
+        ],
+        "activites": [],
+        "transportAu": "milieu de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Hôtel Alfama Vista, chambre double",
+              "calcul": "3 nuits × 110 €",
+              "centimes": 33000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 250 €",
+              "centimes": 50000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 32,50 €",
+              "centimes": 6500
+            }
+          ],
+          "activites": [],
+          "coutPrestationsCentimes": 89500,
+          "margeCentimes": 17900,
+          "fraisDeDossierCentimes": 10000
+        }
+      },
+      "confort": {
+        "totalCentimes": 224800,
+        "parPersonneCentimes": 112400,
+        "logements": [
+          "Tejo Palace, suite vue fleuve"
+        ],
+        "activites": [
+          "Atelier pastéis de nata"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Tejo Palace, suite vue fleuve",
+              "calcul": "3 nuits × 290 €",
+              "centimes": 87000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Lisbonne",
+              "calcul": "2 voyageurs × 360 €",
+              "centimes": 72000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Lisbonne",
+              "calcul": "2 voyageurs × 45 €",
+              "centimes": 9000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Atelier pastéis de nata",
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
+            }
+          ],
+          "coutPrestationsCentimes": 179000,
+          "margeCentimes": 35800,
+          "fraisDeDossierCentimes": 10000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 3,
+          "logements": [
+            "Hôtel Alfama Vista, chambre double",
+            "Tejo Palace, suite vue fleuve"
+          ]
+        }
+      ],
+      "activitesDemandees": [],
+      "activitesOptionnelles": [
+        "Atelier pastéis de nata"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 100,
+    "tolerance": 0
+  }
+}

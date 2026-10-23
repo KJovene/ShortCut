@@ -1,0 +1,3 @@
+{# Statut d'une demande, aux couleurs de la maquette du backoffice. #}
+{% set statut = entity.instance.statut %}
+<span class="bo-statut bo-statut--{{ statut.value }}">{{ statut.label }}</span>

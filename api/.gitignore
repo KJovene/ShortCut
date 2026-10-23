@@ -1,0 +1,30 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+###> photos téléversées (#188) : sur le disque local, hors dépôt ###
+# `make fixtures` y copie les photos de démo depuis fixtures/images. Les dossiers restent (EasyAdmin y téléverse).
+/public/uploads/*/*
+!/public/uploads/*/.gitkeep
+###< photos téléversées ###
+
+###> rapports d'évaluation du chatbot (#195) : make evaluer ###
+/evaluations/
+###< rapports d'évaluation du chatbot ###

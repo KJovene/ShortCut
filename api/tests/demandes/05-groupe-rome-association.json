@@ -1,0 +1,227 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "05",
+  "titre": "Voyage d'une association de 35 personnes à Rome",
+  "typeDeVoyage": "groupe",
+  "casParticuliers": [
+    "capacite_activite"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Je suis présidente d'une association culturelle : nous voulons emmener 35 adhérents à Rome au printemps."
+    },
+    {
+      "moment": "reponse",
+      "client": "Du jeudi 15 au lundi 19 avril 2027, au départ de Lyon. Que des adultes. Budget 450 € par personne, transport compris."
+    },
+    {
+      "moment": "reponse",
+      "client": "L'essentiel pour nous : le Colisée avec un guide. Un hébergement simple nous convient."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "groupe",
+    "lieuOuZone": "Rome",
+    "villeDepart": "Lyon",
+    "dateDebut": "2027-04-15",
+    "dateFin": "2027-04-19",
+    "datesFlexibles": false,
+    "nombreDeJours": 4,
+    "adultes": 35,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 450,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "culture"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "rome"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Auberge Termini, dortoirs groupes",
+      "Roma Congressi Hotel"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Hôtel Colosseo, chambre double",
+        "raison": "capacité 2 : il faudrait 18 chambres, sans tarif de groupe"
+      }
+    ],
+    "pointsDeControle": [
+      "La visite du Colisée (30 places) est prévue en deux groupes.",
+      "Le budget est raisonné par personne."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 1262000,
+        "parPersonneCentimes": 36057,
+        "logements": [
+          "Auberge Termini, dortoirs groupes"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum"
+        ],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Auberge Termini, dortoirs groupes",
+              "calcul": "4 nuits × 1 100 €",
+              "centimes": 440000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 90 €",
+              "centimes": 315000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 25 €",
+              "centimes": 87500
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
+            }
+          ],
+          "coutPrestationsCentimes": 1035000,
+          "margeCentimes": 207000,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 1556000,
+        "parPersonneCentimes": 44457,
+        "logements": [
+          "Auberge Termini, dortoirs groupes"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum",
+          "Cours de pâtes fraîches"
+        ],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Auberge Termini, dortoirs groupes",
+              "calcul": "4 nuits × 1 100 €",
+              "centimes": 440000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 90 €",
+              "centimes": 315000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 25 €",
+              "centimes": 87500
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
+            },
+            {
+              "prestation": "Cours de pâtes fraîches",
+              "calcul": "35 participants × 70 €",
+              "centimes": 245000
+            }
+          ],
+          "coutPrestationsCentimes": 1280000,
+          "margeCentimes": 256000,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "confort": {
+        "totalCentimes": 3452000,
+        "parPersonneCentimes": 98629,
+        "logements": [
+          "Roma Congressi Hotel"
+        ],
+        "activites": [
+          "Visite guidée du Colisée et du Forum",
+          "Cours de pâtes fraîches"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Roma Congressi Hotel",
+              "calcul": "4 nuits × 3 300 €",
+              "centimes": 1320000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Lyon – Rome",
+              "calcul": "35 voyageurs × 260 €",
+              "centimes": 910000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Rome",
+              "calcul": "35 voyageurs × 55 €",
+              "centimes": 192500
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Visite guidée du Colisée et du Forum",
+              "calcul": "35 participants × 55 €",
+              "centimes": 192500
+            },
+            {
+              "prestation": "Cours de pâtes fraîches",
+              "calcul": "35 participants × 70 €",
+              "centimes": 245000
+            }
+          ],
+          "coutPrestationsCentimes": 2860000,
+          "margeCentimes": 572000,
+          "fraisDeDossierCentimes": 20000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 4,
+          "logements": [
+            "Auberge Termini, dortoirs groupes",
+            "Roma Congressi Hotel"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Visite guidée du Colisée et du Forum"
+      ],
+      "activitesOptionnelles": [
+        "Cours de pâtes fraîches"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 200,
+    "tolerance": 0
+  }
+}

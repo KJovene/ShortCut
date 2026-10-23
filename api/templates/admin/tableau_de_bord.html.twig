@@ -1,0 +1,82 @@
+{% extends '@EasyAdmin/page/content.html.twig' %}
+
+{% block page_title 'Tableau de bord' %}
+
+{% block content_title %}Bonjour {{ app.user.prenom ?: app.user }}{% endblock %}
+
+{% block main %}
+    {# ea_url() est modifié par chaque set() : une URL neuve par lien. #}
+    {% set demandes = 'App\\Controller\\Admin\\DemandeCrudController' %}
+
+    <p class="bo-intro">Vous êtes connecté en tant que {{ app.user.role.label|lower }}.</p>
+
+    <div class="bo-indicateurs">
+        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('aiguiller', 1) }}">
+            <span class="bo-indicateur-libelle">Demandes à aiguiller</span>
+            <span class="bo-indicateur-valeur">{{ a_aiguiller }}</span>
+            <span class="bo-indicateur-note bo-note--info">Sans conseiller, à attribuer</span>
+        </a>
+        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('filters', {prioritaire: '1'}) }}">
+            <span class="bo-indicateur-libelle">Demandes prioritaires</span>
+            <span class="bo-indicateur-valeur">{{ prioritaires }}</span>
+            <span class="bo-indicateur-note bo-note--alerte">Conseiller demandé ou période sans données</span>
+        </a>
+        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('filters', {statut: {comparison: '=', value: 'a_confirmer'}}) }}">
+            <span class="bo-indicateur-libelle">Propositions à confirmer</span>
+            <span class="bo-indicateur-valeur">{{ compteurs.a_confirmer }}</span>
+            <span class="bo-indicateur-note bo-note--attente">Dans les 2 jours ouvrés</span>
+        </a>
+        <a class="bo-indicateur" href="{{ ea_url().setController(demandes).setAction('index').set('filters', {statut: {comparison: '=', value: 'proposition_envoyee'}}) }}">
+            <span class="bo-indicateur-libelle">Propositions envoyées</span>
+            <span class="bo-indicateur-valeur">{{ compteurs.proposition_envoyee }}</span>
+            <span class="bo-indicateur-note">En attente du client</span>
+        </a>
+    </div>
+
+    <section class="bo-carte">
+        <header class="bo-carte-entete">
+            <h2>Demandes à traiter</h2>
+            <a href="{{ ea_url().setController(demandes).setAction('index').unset('filters') }}">Toutes les demandes</a>
+        </header>
+        {% if a_traiter is empty %}
+            <p class="bo-carte-vide">Aucune demande en attente. Bonne journée !</p>
+        {% else %}
+            <div class="bo-tableau-defilant">
+                <table class="bo-tableau">
+                    <thead>
+                        <tr>
+                            <th scope="col">Client</th>
+                            <th scope="col">Voyage</th>
+                            <th scope="col">Statut</th>
+                            <th scope="col">Reçue</th>
+                            <th scope="col"><span class="visually-hidden">Action</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for demande in a_traiter %}
+                            <tr>
+                                <td class="bo-fort">{{ demande.client ?? 'Client inconnu' }}</td>
+                                <td class="bo-discret">
+                                    {{ [demande.typeDeVoyage ? demande.typeDeVoyage.label, demande.lieuOuZone, (demande.adultes + demande.enfants) ~ ' pers.']|filter(v => v)|join(', ') }}
+                                </td>
+                                <td>
+                                    {% if demande.prioritaire %}
+                                        <span class="bo-statut bo-statut--prioritaire">Prioritaire</span>
+                                    {% else %}
+                                        <span class="bo-statut bo-statut--{{ demande.statut.value }}">{{ demande.statut.label }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="bo-discret">{{ demande.creeLe|date('d/m H:i') }}</td>
+                                <td class="bo-droite">
+                                    <a class="bo-bouton-secondaire" href="{{ ea_url().setController(demandes).setAction('detail').setEntityId(demande.id) }}">
+                                        {{ demande.statut.value == 'a_confirmer' ? 'Confirmer' : 'Ouvrir' }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

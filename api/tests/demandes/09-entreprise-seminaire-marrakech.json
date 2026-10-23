@@ -1,0 +1,237 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "09",
+  "titre": "Séminaire de 40 collaborateurs à Marrakech",
+  "typeDeVoyage": "entreprise",
+  "casParticuliers": [
+    "capacite_activite"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, je prépare le séminaire annuel de notre entreprise : 40 collaborateurs, Marrakech, avec une salle plénière et une activité de cohésion."
+    },
+    {
+      "moment": "reponse",
+      "client": "Deux nuits, du 10 au 12 mars 2027, départ de Paris. Budget 900 € par personne, transport compris."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "entreprise",
+    "lieuOuZone": "Marrakech",
+    "villeDepart": "Paris",
+    "dateDebut": "2027-03-10",
+    "dateFin": "2027-03-12",
+    "datesFlexibles": false,
+    "nombreDeJours": 2,
+    "adultes": 40,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 900,
+    "budgetParPersonne": true,
+    "transportInclus": true,
+    "envies": [
+      "cohésion",
+      "salle de réunion"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "marrakech"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Palmeraie Resort & Séminaires"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Riad Dar Yasmine, riad entier",
+        "raison": "capacité 12, pas de salle de réunion"
+      }
+    ],
+    "pointsDeControle": [
+      "Le chatbot demande l'objectif du séminaire.",
+      "La salle de réunion de 80 places est mise en avant.",
+      "Le cours de cuisine (16 places) est organisé en trois sessions.",
+      "Le hammam (2 places par soin) est organisé en créneaux successifs."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 1820000,
+        "parPersonneCentimes": 45500,
+        "logements": [
+          "Palmeraie Resort & Séminaires"
+        ],
+        "activites": [
+          "Cours de cuisine marocaine et tajine"
+        ],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "2 nuits × 3 120 €",
+              "centimes": 624000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "40 voyageurs × 150 €",
+              "centimes": 600000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "40 voyageurs × 15 €",
+              "centimes": 60000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "40 participants × 54 €",
+              "centimes": 216000
+            }
+          ],
+          "coutPrestationsCentimes": 1500000,
+          "margeCentimes": 300000,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 3008000,
+        "parPersonneCentimes": 75200,
+        "logements": [
+          "Palmeraie Resort & Séminaires"
+        ],
+        "activites": [
+          "Cours de cuisine marocaine et tajine",
+          "Visite guidée de la médina et des souks",
+          "Hammam traditionnel et massage"
+        ],
+        "transportAu": "milieu de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "2 nuits × 3 120 €",
+              "centimes": 624000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "40 voyageurs × 265 €",
+              "centimes": 1060000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "40 voyageurs × 27,50 €",
+              "centimes": 110000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "40 participants × 54 €",
+              "centimes": 216000
+            },
+            {
+              "prestation": "Visite guidée de la médina et des souks",
+              "calcul": "40 participants × 36 €",
+              "centimes": 144000
+            },
+            {
+              "prestation": "Hammam traditionnel et massage",
+              "calcul": "40 participants × 84 €",
+              "centimes": 336000
+            }
+          ],
+          "coutPrestationsCentimes": 2490000,
+          "margeCentimes": 498000,
+          "fraisDeDossierCentimes": 20000
+        }
+      },
+      "confort": {
+        "totalCentimes": 3620000,
+        "parPersonneCentimes": 90500,
+        "logements": [
+          "Palmeraie Resort & Séminaires"
+        ],
+        "activites": [
+          "Cours de cuisine marocaine et tajine",
+          "Visite guidée de la médina et des souks",
+          "Hammam traditionnel et massage"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Palmeraie Resort & Séminaires",
+              "calcul": "2 nuits × 3 120 €",
+              "centimes": 624000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Paris – Marrakech",
+              "calcul": "40 voyageurs × 380 €",
+              "centimes": 1520000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Marrakech",
+              "calcul": "40 voyageurs × 40 €",
+              "centimes": 160000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Cours de cuisine marocaine et tajine",
+              "calcul": "40 participants × 54 €",
+              "centimes": 216000
+            },
+            {
+              "prestation": "Visite guidée de la médina et des souks",
+              "calcul": "40 participants × 36 €",
+              "centimes": 144000
+            },
+            {
+              "prestation": "Hammam traditionnel et massage",
+              "calcul": "40 participants × 84 €",
+              "centimes": 336000
+            }
+          ],
+          "coutPrestationsCentimes": 3000000,
+          "margeCentimes": 600000,
+          "fraisDeDossierCentimes": 20000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 2,
+          "logements": [
+            "Palmeraie Resort & Séminaires"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Cours de cuisine marocaine et tajine"
+      ],
+      "activitesOptionnelles": [
+        "Visite guidée de la médina et des souks",
+        "Hammam traditionnel et massage"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 200,
+    "tolerance": 0
+  }
+}

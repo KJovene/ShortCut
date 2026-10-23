@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Icône DÉTOUR (charte 2026) : favicon vectoriel, repli .ico pour les anciens navigateurs, icône d'écran d'accueil. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#16233F" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Apparence posée avant le premier rendu, sinon la page clignote en clair : le choix gardé, sinon celui du système (voir src/lib/apparence.ts). -->
+    <script>
+      ;(function () {
+        var choix = null
+        try {
+          choix = localStorage.getItem('apparence')
+        } catch (e) {}
+        if (choix !== 'clair' && choix !== 'sombre')
+          choix =
+            window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'sombre'
+              : 'clair'
+        document.documentElement.dataset.apparence = choix
+      })()
+    </script>
+    <!-- Titre et description propres à chaque page : posés par les routes (HeadContent). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,232 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "01",
+  "titre": "Séjour en famille au soleil d'hiver",
+  "typeDeVoyage": "sejour",
+  "casParticuliers": [
+    "age_minimum"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "Bonjour, on cherche un endroit au soleil pour les vacances de février avec nos deux enfants. Il faudrait au moins 18 degrés et une plage."
+    },
+    {
+      "moment": "reponse",
+      "client": "Nous sommes deux adultes, les enfants ont 6 et 9 ans. On partirait de Bordeaux du samedi 13 au samedi 20 février 2027."
+    },
+    {
+      "moment": "reponse",
+      "client": "Notre budget est de 3 500 € au total, avion compris. Les enfants adorent les animaux, on aimerait voir des dauphins."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "sejour",
+    "lieuOuZone": "soleil, plage",
+    "villeDepart": "Bordeaux",
+    "dateDebut": "2027-02-13",
+    "dateFin": "2027-02-20",
+    "datesFlexibles": false,
+    "nombreDeJours": 7,
+    "adultes": 2,
+    "enfants": 2,
+    "agesEnfants": [
+      6,
+      9
+    ],
+    "budgetEuros": 3500,
+    "budgetParPersonne": false,
+    "transportInclus": true,
+    "envies": [
+      "plage",
+      "famille",
+      "animaux",
+      "au moins 18 °C"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "tenerife"
+    ],
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Canaries Beach Resort, chambre familiale",
+      "Apartamentos Los Cristianos"
+    ],
+    "exclusions": [
+      {
+        "prestation": "Baptême de plongée",
+        "raison": "âge minimum 10 ans, l'un des enfants a 9 ans"
+      },
+      {
+        "prestation": "Randonnée guidée au Teide",
+        "raison": "âge minimum 12 ans pour les enfants"
+      }
+    ],
+    "pointsDeControle": [
+      "Tenerife est la seule destination à 18 °C ou plus en février avec une plage.",
+      "L'observation des baleines et dauphins est proposée.",
+      "Aucune activité interdite aux enfants n'est proposée pour toute la famille."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 262240,
+        "parPersonneCentimes": 65560,
+        "logements": [
+          "Apartamentos Los Cristianos"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins"
+        ],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Apartamentos Los Cristianos",
+              "calcul": "7 nuits × 138 €",
+              "centimes": 96600
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 210 €",
+              "centimes": 84000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 20 €",
+              "centimes": 8000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
+            }
+          ],
+          "coutPrestationsCentimes": 210200,
+          "margeCentimes": 42040,
+          "fraisDeDossierCentimes": 10000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 336640,
+        "parPersonneCentimes": 84160,
+        "logements": [
+          "Apartamentos Los Cristianos"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins"
+        ],
+        "transportAu": "milieu de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Apartamentos Los Cristianos",
+              "calcul": "7 nuits × 138 €",
+              "centimes": 96600
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 350 €",
+              "centimes": 140000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 35 €",
+              "centimes": 14000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
+            }
+          ],
+          "coutPrestationsCentimes": 272200,
+          "margeCentimes": 54440,
+          "fraisDeDossierCentimes": 10000
+        }
+      },
+      "confort": {
+        "totalCentimes": 505360,
+        "parPersonneCentimes": 126340,
+        "logements": [
+          "Canaries Beach Resort, chambre familiale"
+        ],
+        "activites": [
+          "Observation des baleines et dauphins",
+          "Randonnée guidée au Teide"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Canaries Beach Resort, chambre familiale",
+              "calcul": "7 nuits × 228 €",
+              "centimes": 159600
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Tenerife",
+              "calcul": "4 voyageurs × 490 €",
+              "centimes": 196000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Tenerife",
+              "calcul": "4 voyageurs × 50 €",
+              "centimes": 20000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Observation des baleines et dauphins",
+              "calcul": "4 participants × 54 €",
+              "centimes": 21600
+            },
+            {
+              "prestation": "Randonnée guidée au Teide",
+              "calcul": "2 participants × 78 €",
+              "centimes": 15600
+            }
+          ],
+          "coutPrestationsCentimes": 412800,
+          "margeCentimes": 82560,
+          "fraisDeDossierCentimes": 10000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 7,
+          "logements": [
+            "Apartamentos Los Cristianos",
+            "Canaries Beach Resort, chambre familiale"
+          ]
+        }
+      ],
+      "activitesDemandees": [
+        "Observation des baleines et dauphins"
+      ],
+      "activitesOptionnelles": [
+        "Randonnée guidée au Teide"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 100,
+    "tolerance": 0
+  }
+}

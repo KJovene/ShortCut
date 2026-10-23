@@ -1,0 +1,84 @@
+import { createContext, useContext } from 'react'
+import type { Langue } from '@/lib/langue'
+import type { Fiche } from './api'
+import type { Conversation, Message } from './conversation'
+
+export interface EtatChat {
+  /** « accueil » tant que le client n'a rien envoyé, puis « conversation ». */
+  statut: 'accueil' | 'conversation'
+  messages: Message[]
+  conversation: Conversation
+  /** L'assistant est en train d'écrire. */
+  reflexion: boolean
+  /** Ce qu'il prépare pendant l'attente : la recherche de la piste, puis la rédaction du récapitulatif. */
+  etape?: EtapeReflexion
+  /** Jeton du dernier récapitulatif détaillé reçu : sa page « Ma proposition ». */
+  recapitulatif?: string
+  /** Jeton de la conversation côté API, obtenu au premier message. */
+  jeton?: string
+  /** Le client a confirmé son récapitulatif : la demande est transmise, la saisie est fermée. */
+  terminee?: boolean
+  /**
+   * Conversation d'un voyage existant, rouverte depuis l'espace client (« Modifier le voyage ») : à la fermeture
+   * de la fenêtre, le chat repart à zéro pour qu'un nouveau voyage ne reprenne pas ses informations.
+   */
+  reprise?: boolean
+  /** Fenêtre du chatbot ouverte (pages autres que l'accueil). */
+  ouvert: boolean
+  brouillon: string
+  /** Langue du client, reconnue par l'assistant (US15) : celle des textes du chatbot. */
+  langue: Langue
+  questionnaire: QuestionnaireEtat
+  /** Réponses du visiteur à transmettre au premier message après connexion. */
+  contexteInvite?: string
+  destinationInvite?: string
+}
+
+export type EtapeReflexion = 'recherche' | 'redaction'
+
+export interface QuestionnaireEtat {
+  reponses: string[]
+  termine: boolean
+  transmis: boolean
+}
+
+/** Conversation déjà commencée, reprise depuis l'espace client (« Modifier le voyage »). */
+export interface Reprise {
+  jeton: string
+  messages: { role: string; contenu: string; carte?: unknown }[]
+  fiche: Fiche
+}
+
+export interface ActionsChat {
+  envoyer: (texte: string) => void
+  ouvrir: (brouillon?: string) => void
+  fermer: () => void
+  setBrouillon: (texte: string) => void
+  setDestinationInvite: (destination: string) => void
+  recommencer: () => void
+  /** Recharge une conversation existante et ouvre le chat pour la continuer. */
+  reprendre: (reprise: Reprise) => void
+  repondreQuestion: (reponse: string) => void
+  /** « Construire un voyage » : une conversation déjà engagée laisse place à une discussion vierge. */
+  nouveauVoyage: () => void
+}
+
+/** L'état du chat et ses actions : tout composant qui l'utilise se redessine à chaque morceau de réponse. */
+export const ChatContext = createContext<
+  (EtatChat & ActionsChat & { estConnecte: boolean }) | null
+>(null)
+
+/** Les actions seules, stables d'un rendu à l'autre : pour les boutons qui ouvrent ou relancent l'assistant. */
+export const ChatActionsContext = createContext<ActionsChat | null>(null)
+
+export function useChat() {
+  const chat = useContext(ChatContext)
+  if (!chat) throw new Error('useChat doit être utilisé sous <ChatProvider>')
+  return chat
+}
+
+export function useChatActions() {
+  const actions = useContext(ChatActionsContext)
+  if (!actions) throw new Error('useChatActions doit être utilisé sous <ChatProvider>')
+  return actions
+}

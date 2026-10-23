@@ -1,0 +1,56 @@
+{# Tarifs d'un logement ou d'une activité (prix d'achat avant marge), dans l'ordre des dates : la période en cours
+   ressort, les passées s'effacent, et les jours à venir sans tarif sont signalés (GrilleTarifs). #}
+{% set lignes = grille_tarifs(entity.instance.tarifs) %}
+{% if lignes is empty %}
+    <span class="bo-vide">Aucun tarif : cette fiche ne sera pas proposée par le chatbot.</span>
+{% else %}
+    <div class="bo-tableau-defilant"><table class="bo-tableau bo-tarifs">
+        <thead>
+            <tr>
+                <th scope="col">Période</th>
+                <th scope="col" class="bo-droite">Prix d'achat</th>
+                <th scope="col">Séjour minimum</th>
+                <th scope="col">Mis à jour</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in lignes %}
+                {% if ligne.trou and ligne.avant %}
+                    <tr class="bo-tarifs-avant">
+                        <td colspan="4">Pas encore de tarif : les prix saisis commencent le {{ ligne.fin|date_modify('+1 day')|date_longue }}.</td>
+                    </tr>
+                {% elseif ligne.trou %}
+                    <tr class="bo-tarifs-trou">
+                        <td colspan="4">
+                            {% if ligne.fin %}
+                                Aucun tarif du {{ ligne.debut|date_longue }} au {{ ligne.fin|date_longue }}
+                            {% else %}
+                                Aucun tarif à partir du {{ ligne.debut|date_longue }}
+                            {% endif %}
+                            <span class="bo-discret">· la fiche n'est pas proposée sur ces dates</span>
+                        </td>
+                    </tr>
+                {% else %}
+                    {% set tarif = ligne.tarif %}
+                    <tr class="bo-tarifs-{{ ligne.etat }}">
+                        <td>
+                            <span class="bo-nowrap">{{ tarif.debut|date_longue }}</span>
+                            <span class="bo-discret">→</span>
+                            <span class="bo-nowrap">{{ tarif.fin|date_longue }}</span>
+                            {% if ligne.etat == 'en_cours' %}<span class="bo-pastille">En cours</span>{% endif %}
+                            {% if ligne.etat == 'passe' %}<span class="bo-pastille bo-pastille--discrete">Passé</span>{% endif %}
+                        </td>
+                        <td class="bo-droite bo-nowrap">
+                            <span class="bo-fort">{{ tarif.prixCentimes|euros }}</span>
+                            <span class="bo-discret">{{ tarif.unite.label|lower }}</span>
+                        </td>
+                        <td>{{ tarif.sejourMinimumNuits ? tarif.sejourMinimumNuits ~ (tarif.sejourMinimumNuits > 1 ? ' nuits' : ' nuit') : '—' }}</td>
+                        <td class="bo-discret bo-nowrap">
+                            {{ tarif.modifieLe|date('d/m/Y') }}{% if tarif.saisiPar %} · {{ tarif.saisiPar.prenom ?? tarif.saisiPar.nom }}{% endif %}
+                        </td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table></div>
+{% endif %}

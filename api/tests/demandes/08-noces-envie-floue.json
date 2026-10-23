@@ -1,0 +1,225 @@
+{
+  "$schema": "./demande.schema.json",
+  "id": "08",
+  "titre": "Voyage de noces « dépaysement », sans destination",
+  "typeDeVoyage": "noces",
+  "casParticuliers": [
+    "envie_floue"
+  ],
+  "conversation": [
+    {
+      "moment": "debut",
+      "client": "On vient de se marier et on veut du dépaysement total, de la chaleur et la mer. On ne sait pas du tout où aller !"
+    },
+    {
+      "moment": "reponse",
+      "client": "En septembre 2027, 10 nuits à partir du 4, depuis Bordeaux. 6 000 € pour nous deux."
+    },
+    {
+      "moment": "apres_pistes",
+      "client": "Bali nous fait rêver, partons là-dessus."
+    }
+  ],
+  "exigencesAttendues": {
+    "typeDeVoyage": "noces",
+    "lieuOuZone": "Bali",
+    "villeDepart": "Bordeaux",
+    "dateDebut": "2027-09-04",
+    "dateFin": "2027-09-14",
+    "datesFlexibles": false,
+    "nombreDeJours": 10,
+    "adultes": 2,
+    "enfants": 0,
+    "agesEnfants": [],
+    "budgetEuros": 6000,
+    "budgetParPersonne": false,
+    "transportInclus": true,
+    "envies": [
+      "dépaysement",
+      "chaleur",
+      "mer",
+      "romantique"
+    ],
+    "contraintes": []
+  },
+  "attendu": {
+    "destinations": [
+      "bali"
+    ],
+    "pistesAttendues": {
+      "nombre": 3,
+      "parmi": [
+        "bali",
+        "santorin",
+        "tenerife",
+        "costa-rica"
+      ]
+    },
+    "passageAuConseiller": false,
+    "budgetInsuffisant": false,
+    "logementsCompatibles": [
+      "Villa Ubud Rizières, piscine privée",
+      "Seminyak Beach Resort"
+    ],
+    "exclusions": [],
+    "pointsDeControle": [
+      "Avant la proposition complète, le chatbot propose trois pistes d'ambiance différentes, chaudes en septembre et au bord de la mer.",
+      "Après le choix de Bali, la proposition complète arrive sans redemander les dates ni le budget."
+    ],
+    "budgetsParNiveau": {
+      "essentiel": {
+        "totalCentimes": 429000,
+        "parPersonneCentimes": 214500,
+        "logements": [
+          "Seminyak Beach Resort"
+        ],
+        "activites": [],
+        "transportAu": "minimum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Seminyak Beach Resort",
+              "calcul": "10 nuits × 170 €",
+              "centimes": 170000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 850 €",
+              "centimes": 170000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 25 €",
+              "centimes": 5000
+            }
+          ],
+          "activites": [],
+          "coutPrestationsCentimes": 345000,
+          "margeCentimes": 69000,
+          "fraisDeDossierCentimes": 15000
+        }
+      },
+      "equilibre": {
+        "totalCentimes": 538800,
+        "parPersonneCentimes": 269400,
+        "logements": [
+          "Seminyak Beach Resort"
+        ],
+        "activites": [
+          "Massage balinais en duo",
+          "Lever de soleil au mont Batur"
+        ],
+        "transportAu": "milieu de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Seminyak Beach Resort",
+              "calcul": "10 nuits × 170 €",
+              "centimes": 170000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 1 200 €",
+              "centimes": 240000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 42,50 €",
+              "centimes": 8500
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Massage balinais en duo",
+              "calcul": "2 participants × 35 €",
+              "centimes": 7000
+            },
+            {
+              "prestation": "Lever de soleil au mont Batur",
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
+            }
+          ],
+          "coutPrestationsCentimes": 436500,
+          "margeCentimes": 87300,
+          "fraisDeDossierCentimes": 15000
+        }
+      },
+      "confort": {
+        "totalCentimes": 735000,
+        "parPersonneCentimes": 367500,
+        "logements": [
+          "Villa Ubud Rizières, piscine privée"
+        ],
+        "activites": [
+          "Massage balinais en duo",
+          "Lever de soleil au mont Batur"
+        ],
+        "transportAu": "maximum de la fourchette",
+        "detail": {
+          "hebergements": [
+            {
+              "prestation": "Villa Ubud Rizières, piscine privée",
+              "calcul": "10 nuits × 260 €",
+              "centimes": 260000
+            }
+          ],
+          "transports": [
+            {
+              "prestation": "Vol aller-retour Bordeaux – Ubud",
+              "calcul": "2 voyageurs × 1 550 €",
+              "centimes": 310000
+            },
+            {
+              "prestation": "Transferts aéroport – hébergement à Ubud",
+              "calcul": "2 voyageurs × 60 €",
+              "centimes": 12000
+            }
+          ],
+          "activites": [
+            {
+              "prestation": "Massage balinais en duo",
+              "calcul": "2 participants × 35 €",
+              "centimes": 7000
+            },
+            {
+              "prestation": "Lever de soleil au mont Batur",
+              "calcul": "2 participants × 55 €",
+              "centimes": 11000
+            }
+          ],
+          "coutPrestationsCentimes": 600000,
+          "margeCentimes": 120000,
+          "fraisDeDossierCentimes": 15000
+        }
+      }
+    },
+    "candidats": {
+      "etapes": [
+        {
+          "nuits": 10,
+          "logements": [
+            "Seminyak Beach Resort",
+            "Villa Ubud Rizières, piscine privée"
+          ]
+        }
+      ],
+      "activitesDemandees": [],
+      "activitesOptionnelles": [
+        "Massage balinais en duo",
+        "Lever de soleil au mont Batur"
+      ]
+    }
+  },
+  "formule": {
+    "version": "définitive",
+    "reference": "docs/chiffrage.md",
+    "calcul": "(hébergements + transports + activités) + marge de 20 % + frais de dossier selon le type de voyage",
+    "fraisDeDossierEuros": 150,
+    "tolerance": 0
+  }
+}
