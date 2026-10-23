@@ -1,7 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { requete } from '@/lib/api'
-import { type Langue, langueDuSite } from '@/lib/langue'
 
 /** Contenu d'une page du site, modifiable dans le backoffice (« Contenus du site »). */
 export const PageDuSite = z.object({
@@ -17,17 +16,16 @@ export const PageDuSite = z.object({
 })
 export type PageDuSite = z.infer<typeof PageDuSite>
 
-/** En anglais, l'API traduit les textes saisis en français dans le backoffice. */
-export async function chargerPage(slug: string, langue: Langue = 'fr'): Promise<PageDuSite> {
-  return requete(`/pages/${slug}${langue === 'en' ? '?langue=en' : ''}`, PageDuSite, {
+export async function chargerPage(slug: string): Promise<PageDuSite> {
+  return requete(`/pages/${slug}`, PageDuSite, {
     messageErreur: 'Impossible de charger cette page.',
   })
 }
 
-export const pageQuery = (slug: string, langue: Langue = langueDuSite()) =>
+export const pageQuery = (slug: string) =>
   queryOptions({
-    queryKey: ['pages', slug, langue],
-    queryFn: () => chargerPage(slug, langue),
+    queryKey: ['pages', slug],
+    queryFn: () => chargerPage(slug),
     staleTime: 5 * 60_000,
   })
 

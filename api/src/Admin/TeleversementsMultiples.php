@@ -8,7 +8,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
- * Contournement d'EasyAdmin 5.7, pour les champs photos multiples (pages du site, logements, activités) :
+ * Contournement d'EasyAdmin 5.7, pour les champs photos multiples (logements, activités) :
  * supprimer une photo et en ajouter une dans le même enregistrement plantait. Les nouvelles photos sont
  * numérotées à la suite des photos d'avant la suppression ; on retire donc les photos supprimées avant
  * l'enregistrement des fichiers.

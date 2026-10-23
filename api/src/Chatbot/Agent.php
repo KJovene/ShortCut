@@ -106,6 +106,8 @@ abstract class Agent
         $nom = $this->agent()->label();
         $debutDuTour = 0;
         $chrono = 0;
+        /** @var array<string, true> $dejaFaits appels d'outils de ce tour, pour ne pas les refaire à l'identique */
+        $dejaFaits = [];
         try {
             for ($appel = 1; $appel <= $this->appelsMax(); ++$appel) {
                 $debutDuTour = \count($tour->historique) - 1;
@@ -150,6 +152,13 @@ abstract class Agent
                 $resultats = [];
                 foreach ($resultat->appelsOutils() as $appelOutil) {
                     yield self::evenement('outil', ['nom' => $appelOutil->name]);
+                    // Le modèle qui recopie son appel précédent tournerait jusqu'à appelsMax sans répondre.
+                    $signature = $appelOutil->name.json_encode($appelOutil->input, \JSON_THROW_ON_ERROR);
+                    if (isset($dejaFaits[$signature])) {
+                        $resultats[] = self::appelEnDouble((string) $appelOutil->id);
+                        continue;
+                    }
+                    $dejaFaits[$signature] = true;
                     $resultats[] = $resultatOutil = $this->executer($contexte, $appelOutil, $resultat);
                     if ($resultatOutil['is_error']) {
                         continue;
@@ -302,6 +311,21 @@ abstract class Agent
             'tool_use_id' => $id,
             'content' => json_encode($sortie, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_PRESERVE_ZERO_FRACTION),
             'is_error' => $erreur,
+        ];
+    }
+
+    /**
+     * Résultat d'un appel identique à un appel déjà fait dans ce tour : il n'est pas réexécuté.
+     *
+     * @return array<string, mixed> bloc tool_result
+     */
+    private static function appelEnDouble(string $id): array
+    {
+        return [
+            'type' => 'tool_result',
+            'tool_use_id' => $id,
+            'content' => json_encode(['erreur' => 'Appel identique à un appel déjà fait pour ce message : son résultat est plus haut, il ne changera pas. Ne le refais pas ; corrige ses paramètres ou réponds au client.'], \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE),
+            'is_error' => true,
         ];
     }
 

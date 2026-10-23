@@ -205,10 +205,6 @@ describe('accueil : construire un voyage depuis la carte', () => {
           role: 'ROLE_CLIENT',
         },
       },
-      'GET /api/public/destinations?miseEnAvant=true&langue=en': {
-        status: 200,
-        body: DESTINATIONS_DE_DEMO.filter((d) => d.miseEnAvant),
-      },
       'POST /api/chat/conversations': { status: 201, body: { jeton: 'j'.repeat(64), demande: 1 } },
       'POST /api/chat': { status: 200, body: 'event: fin\ndata: {"terminee":false}\n\n' },
     })

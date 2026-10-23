@@ -317,6 +317,24 @@ final class ChatEnvoiTest extends WebTestCase
         self::assertNull($this->conversation($jeton)->getDemande()?->getDateDebut());
     }
 
+    public function testUnAppelIdentiqueNEstPasRefaitDansLeMemeTour(): void
+    {
+        $jeton = $this->demarrer();
+        $this->claude->prevoir(
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['envies' => ['neige'], 'recapitulatifConfirme' => false]),
+            FausseApiClaude::appelOutil('enregistrer_exigences', ['envies' => ['neige'], 'recapitulatifConfirme' => false]),
+            FausseApiClaude::texte('De la neige, c’est noté.'),
+        );
+
+        $this->envoyer($jeton, 'Je veux de la neige');
+
+        $messages = $this->claude->requetes[2]['corps']['messages'];
+        $resultat = end($messages)['content'][0];
+        self::assertTrue($resultat['is_error']);
+        self::assertStringContainsString('Appel identique', json_decode($resultat['content'], true)['erreur']);
+        self::assertSame(['neige'], $this->conversation($jeton)->getDemande()?->getEnvies());
+    }
+
     public function testLeClientPeutDemanderUnConseiller(): void
     {
         $jeton = $this->demarrer();

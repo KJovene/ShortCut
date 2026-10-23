@@ -1,13 +1,12 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { changerLangue } from './lib/langue'
 import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
-import { PAGES_DE_DEMO } from './test/pages'
 
 function afficher(path: string) {
   const queryClient = createQueryClient()
@@ -17,17 +16,6 @@ function afficher(path: string) {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
-}
-
-/** La page de l'agence telle que l'API la traduit (TraductionSubscriber). */
-const AGENCE_EN = {
-  ...PAGES_DE_DEMO.agence,
-  titre: 'Advisors who *know the ground*',
-  seoTitre: 'Our agency and our advisors',
-  contenu:
-    '<p>For more than fifteen years, our advisors have been building tailor-made trips.</p>' +
-    '<h2>Our commitments</h2><ul><li>A first complete proposal in a few minutes.</li>' +
-    '<li>A dedicated advisor who confirms the prices.</li></ul>',
 }
 
 describe('bouton FR | EN', () => {
@@ -51,26 +39,25 @@ describe('bouton FR | EN', () => {
     expect(document.documentElement.lang).toBe('fr')
   })
 
-  it('passe tout le site en anglais, contenus du backoffice compris', async () => {
-    const api = simulerApi({ 'GET /api/pages/agence?langue=en': { status: 200, body: AGENCE_EN } })
+  it('passe les textes fixes en anglais, les contenus du backoffice restent en français', async () => {
+    const api = simulerApi({})
     afficher('/agence')
     await screen.findByRole('heading', { level: 1, name: /connaissent le terrain/ })
 
     await userEvent.click(screen.getByRole('button', { name: 'English' }))
 
-    // Contenu saisi dans le backoffice, traduit par l'API.
-    expect(
-      await screen.findByRole('heading', { level: 1, name: /know the ground/ }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Our commitments' })).toBeInTheDocument()
     // Textes fixes du site.
+    expect(await screen.findByRole('link', { name: 'Log in' })).toBeInTheDocument()
     const navigation = screen.getAllByRole('navigation', { name: 'Main navigation' })[0]!
     expect(within(navigation).getByRole('link', { name: 'The agency' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Sign up' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'The team' })).toBeInTheDocument()
-    expect(api.fetch).toHaveBeenCalledWith('/api/pages/agence?langue=en', expect.anything())
-    await waitFor(() => expect(document.title).toBe('Our agency and our advisors'))
+    // Contenu saisi dans le backoffice : plus traduit, l'API n'est plus appelée avec ?langue=en.
+    expect(
+      screen.getByRole('heading', { level: 1, name: /connaissent le terrain/ }),
+    ).toBeInTheDocument()
+    expect(api.fetch).not.toHaveBeenCalledWith('/api/pages/agence?langue=en', expect.anything())
     expect(document.documentElement.lang).toBe('en')
     // Le choix est gardé pour la prochaine visite.
     expect(localStorage.getItem('langue')).toBe('en')

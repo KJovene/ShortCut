@@ -159,7 +159,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
   const langue = useLangue()
   const t = TEXTES[langue]
   // Photo et climat lus dans le catalogue de l'API ; sans lui, le voyage s'affiche sans photo.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
   const mois = moisDeDepart(demande)
   const temperature = mois === null ? null : (destination?.temperatures[mois] ?? null)
@@ -562,7 +562,7 @@ function CarteConversation({
 }) {
   const langue = useLangue()
   const t = TEXTES[langue]
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const destination = destinationDe(demande, destinations)
   const statut = statutClient(demande, langue)
   const dernierMessage = demande.conversation?.messages.at(-1)?.contenu ?? t.sansMessage
