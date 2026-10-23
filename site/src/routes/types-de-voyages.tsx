@@ -62,11 +62,9 @@ function TypesPage() {
                 <h2 className="m-0 font-display text-[32px] font-semibold sm:text-[40px]">
                   {titreType(t, langue)}
                 </h2>
-                {section?.paragraphes.map((paragraphe) => (
-                  <p key={paragraphe} className="m-0 text-lg leading-relaxed text-taupe">
-                    {paragraphe}
-                  </p>
-                ))}
+                <p className="m-0 text-lg leading-relaxed text-taupe">
+                  {textes.types.descriptions[t.valeur]}
+                </p>
                 {fraisDuType !== undefined && (
                   <p className="m-0 text-sm text-taupe-clair">
                     {textes.types.fraisDeDossier(fraisDuType / 100)}
