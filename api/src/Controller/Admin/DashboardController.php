@@ -44,7 +44,8 @@ final class DashboardController extends AbstractDashboardController
         return Dashboard::new()
             // Logo et favicon DÉTOUR (charte 2026), copiés du site dans public/admin (servis aussi par le proxy Vite).
             ->setTitle('<img class="bo-logo-marque" src="/admin/logo-detour.svg" alt="Détour"><small class="bo-logo-texte">Backoffice</small>')
-            ->setFaviconPath('admin/favicon.svg')
+            // Date du fichier dans l'adresse : le navigateur ne garde pas l'ancienne icône en cache après un changement.
+            ->setFaviconPath('admin/favicon.svg?v='.(@filemtime($this->getParameter('kernel.project_dir').'/public/admin/favicon.svg') ?: 0))
             ->setLocales(['fr'])
             // La maquette n'a qu'un thème clair.
             ->disableDarkMode();

@@ -9,7 +9,6 @@ import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
 import { DESTINATIONS_DE_DEMO } from './test/destinations'
-import { PAGES_DE_DEMO } from './test/pages'
 
 function afficher() {
   const queryClient = createQueryClient()
@@ -90,26 +89,23 @@ describe('accueil : carte et bandeau des voyages', () => {
     expect(console.warn).toHaveBeenCalled()
   })
 
-  it('prend le titre de chaque thème dans les contenus du site', async () => {
-    simulerApi({
-      'GET /api/pages/accueil': {
-        status: 200,
-        body: {
-          ...PAGES_DE_DEMO.accueil,
-          titre: 'Cap sur *le soleil* !',
-          titreFroid: 'Cap sur *les aurores* !',
-        },
-      },
-    })
+  it('prend le titre de chaque thème dans les textes du site', async () => {
+    simulerApi({})
     afficher()
 
-    const titre = await screen.findByRole('heading', { level: 1, name: 'Cap sur le soleil !' })
-    // Les mots entre astérisques sont l'emphase du titre (le « o » y fait le saut du O).
-    expect(titre.querySelector('em')).toHaveTextContent('le soleil')
+    const titre = await screen.findByRole('heading', {
+      level: 1,
+      name: 'Où irez-vous chercher le soleil ?',
+    })
+    // Les mots entre astérisques sont l'emphase du titre, et leur « o » fait le saut du O.
+    expect(titre.querySelector('em')).toHaveTextContent('soleil')
+    expect(titre.querySelector('.saut-o')).toHaveTextContent('o')
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Voyages froids' }))
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Cap sur les aurores !' })).toBeVisible()
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Où irez-vous chercher le froid ?' }),
+    ).toBeVisible()
   })
 
   it('passe aux voyages froids, avec une autre accroche', async () => {
@@ -131,7 +127,7 @@ describe('accueil : carte et bandeau des voyages', () => {
 
     await userEvent.setup().click(screen.getByRole('button', { name: 'Voyages froids' }))
 
-    expect(screen.getByRole('heading', { level: 1, name: /chercher la fraîcheur/ })).toBeVisible()
+    expect(screen.getByRole('heading', { level: 1, name: /chercher le froid/ })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Voyages froids' })).toHaveAttribute(
       'aria-pressed',
       'true',

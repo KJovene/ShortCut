@@ -1,4 +1,4 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { z } from 'zod'
@@ -8,7 +8,7 @@ import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
-import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
+import { metaPage } from '@/features/pages/meta'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
 import { langueDuSite, nomDuMois, typesDeVoyage, useLangue } from '@/lib/langue'
@@ -23,16 +23,8 @@ const filtresSchema = z.object({
 
 export const Route = createFileRoute('/destinations/')({
   validateSearch: filtresSchema,
-  loader: async ({ context }) => {
-    const [, page] = await Promise.all([
-      context.queryClient.ensureQueryData(destinationsQuery()),
-      context.queryClient.ensureQueryData(pageQuery('destinations')).catch(() => null),
-    ])
-    return page
-  },
-  head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].destinations.meta),
-  }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(destinationsQuery()),
+  head: () => ({ meta: metaPage(TEXTES[langueDuSite()].destinations.meta) }),
   pendingComponent: PageEnChargement,
   errorComponent: PageIndisponible,
   component: DestinationsPage,
@@ -45,10 +37,6 @@ function DestinationsPage() {
   const navigate = Route.useNavigate()
   const ouvrirAssistant = useOuvrirAssistant()
   const { data: destinations } = useSuspenseQuery(destinationsQuery())
-  // Titre, introduction et photo : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  // Contenu masqué ou API indisponible : les textes par défaut prennent le relais, le catalogue reste affiché.
-  const { data: page } = useQuery(pageQuery('destinations'))
-  const intro = page ? decouperContenu(page.contenu).intro : [t.intro]
 
   const resultats = destinations.filter(
     (d) =>
@@ -67,44 +55,32 @@ function DestinationsPage() {
 
   return (
     <>
-      <EnTetePage
-        surtitre={t.surtitre}
-        titre={
-          <TitreMisEnValeur
-            texte={page?.titre ?? `${t.titreDebut}*${t.titreAccent}*${t.titreFin}`}
-          />
-        }
-        photo={page?.photos[0] ? { src: page.photos[0], alt: t.surtitre } : undefined}
-      >
-        {intro.map((paragraphe) => (
-          <p key={paragraphe} className="m-0 max-w-[640px]">
-            {paragraphe}
-          </p>
-        ))}
+      <EnTetePage surtitre={t.surtitre} titre={<TitreMisEnValeur texte={t.titre} />}>
+        <p className="m-0 max-w-[640px]">{t.intro}</p>
       </EnTetePage>
 
       <section aria-label={t.filtres} className="mx-auto max-w-[1376px] px-4 sm:px-8">
-          <div role="group" aria-label={t.typeDeVoyage} className="flex flex-wrap gap-1.5">
-            {filtresType.map((f) => {
-              const actif = f.valeur === type
-              return (
-                <button
-                  key={f.label}
-                  type="button"
-                  aria-pressed={actif}
-                  onClick={() => changer({ type: f.valeur })}
-                  className={cn(
-                    'min-h-11 rounded-full border-[1.5px] px-4 text-sm font-bold',
-                    actif
-                      ? 'border-encre bg-encre text-creme'
-                      : 'border-beige bg-white hover:border-encre',
-                  )}
-                >
-                  {f.label}
-                </button>
-              )
-            })}
-          </div>
+        <div role="group" aria-label={t.typeDeVoyage} className="flex flex-wrap gap-1.5">
+          {filtresType.map((f) => {
+            const actif = f.valeur === type
+            return (
+              <button
+                key={f.label}
+                type="button"
+                aria-pressed={actif}
+                onClick={() => changer({ type: f.valeur })}
+                className={cn(
+                  'min-h-11 rounded-full border-[1.5px] px-4 text-sm font-bold',
+                  actif
+                    ? 'border-encre bg-encre text-creme'
+                    : 'border-beige bg-white hover:border-encre',
+                )}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       <section aria-live="polite" className="mx-auto max-w-[1376px] px-4 py-10 sm:px-8 sm:pb-20">

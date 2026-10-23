@@ -1,44 +1,28 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
 import { TEXTES } from '@/components/textes'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
-import { decouperContenu, estMentionAValider, pageQuery } from '@/features/pages/pageDuSite'
+import { TEXTES as TEXTES_PAGES } from '@/features/pages/textes'
 import { useLangue } from '@/lib/langue'
 
-/** Gabarit des pages légales, lues depuis les contenus du site (module Contenus du backoffice). */
-export function PageLegale({ slug }: { slug: string }) {
+/** Gabarit des pages légales, dont le contenu est dans les textes du site (features/pages/textes.ts). */
+export function PageLegale({ slug }: { slug: keyof (typeof TEXTES_PAGES)['fr']['legales'] }) {
   const langue = useLangue()
-  const { data: page } = useSuspenseQuery(pageQuery(slug))
-  const contenu = decouperContenu(page.contenu)
-  const aValider = contenu.intro.some(estMentionAValider)
-  const intro = contenu.intro.filter((p) => !estMentionAValider(p))
+  const page = TEXTES_PAGES[langue].legales[slug]
 
   return (
     <article className="mx-auto max-w-[820px] px-4 py-10 sm:px-8 sm:py-16">
       <h1 className="m-0 mb-6 font-display text-[36px] leading-tight font-semibold sm:text-[48px]">
         <TitreMisEnValeur texte={page.titre} />
       </h1>
-      {aValider && (
+      {page.aValider && (
         <p role="note" className="m-0 mb-8 rounded-2xl bg-sable px-4 py-3 font-semibold text-encre">
           {TEXTES[langue].modeleAValider}
         </p>
       )}
       <div className="prose-agence">
-        {intro.map((paragraphe) => (
-          <p key={paragraphe}>{paragraphe}</p>
-        ))}
-        {contenu.sections.map((section) => (
+        {page.sections.map((section) => (
           <section key={section.titre}>
             <h2>{section.titre}</h2>
-            {section.paragraphes.map((paragraphe) => (
-              <p key={paragraphe}>{paragraphe}</p>
-            ))}
-            {section.elements.length > 0 && (
-              <ul>
-                {section.elements.map((element) => (
-                  <li key={element}>{element}</li>
-                ))}
-              </ul>
-            )}
+            <p>{section.texte}</p>
           </section>
         ))}
       </div>

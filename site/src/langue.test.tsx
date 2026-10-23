@@ -39,8 +39,8 @@ describe('bouton FR | EN', () => {
     expect(document.documentElement.lang).toBe('fr')
   })
 
-  it('passe les textes fixes en anglais, les contenus du backoffice restent en français', async () => {
-    const api = simulerApi({})
+  it('passe les textes fixes en anglais, titres des pages compris', async () => {
+    simulerApi({})
     afficher('/agence')
     await screen.findByRole('heading', { level: 1, name: /connaissent le terrain/ })
 
@@ -53,11 +53,11 @@ describe('bouton FR | EN', () => {
     expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Sign up' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'The team' })).toBeInTheDocument()
-    // Contenu saisi dans le backoffice : plus traduit, l'API n'est plus appelée avec ?langue=en.
+    // Contenus de la page, tirés des textes du site.
     expect(
-      screen.getByRole('heading', { level: 1, name: /connaissent le terrain/ }),
+      screen.getByRole('heading', { level: 1, name: 'Advisors who know their destinations' }),
     ).toBeInTheDocument()
-    expect(api.fetch).not.toHaveBeenCalledWith('/api/pages/agence?langue=en', expect.anything())
+    expect(screen.getByRole('region', { name: 'Our commitments' })).toBeInTheDocument()
     expect(document.documentElement.lang).toBe('en')
     // Le choix est gardé pour la prochaine visite.
     expect(localStorage.getItem('langue')).toBe('en')

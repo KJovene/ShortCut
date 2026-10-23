@@ -1,21 +1,15 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { SautDuO, TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconCoche } from '@/components/ui/icons'
 import { destinationsQuery } from '@/features/catalogue/catalogue'
-import { decouperContenu, metaPage, pageQuery, trouverSection } from '@/features/pages/pageDuSite'
+import { metaPage } from '@/features/pages/meta'
 import { TEXTES } from '@/features/pages/textes'
 import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/agence')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('agence')),
-  head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].agence.meta),
-  }),
-  pendingComponent: PageEnChargement,
-  errorComponent: PageIndisponible,
+  head: () => ({ meta: metaPage(TEXTES[langueDuSite()].agence.meta) }),
   component: AgencePage,
 })
 
@@ -42,54 +36,48 @@ const initiales = (nom: string) =>
 function AgencePage() {
   const langue = useLangue()
   const t = TEXTES[langue].agence
-  // Présentation et engagements : contenus du site, modifiables dans le backoffice (traduits par l'API en anglais).
-  const { data: page } = useSuspenseQuery(pageQuery('agence'))
-  const contenu = decouperContenu(page.contenu)
-  const engagements = trouverSection(contenu, 'Nos engagements', 'Our commitments')
   const { data: destinations = [] } = useQuery(destinationsQuery())
 
   return (
     <>
       <EnTetePage
         surtitre={t.surtitre}
-        titre={<TitreMisEnValeur texte={page.titre} />}
-        photo={page.photos[0] ? { src: page.photos[0], alt: t.photo } : undefined}
+        titre={<TitreMisEnValeur texte={t.titre} />}
+        photo={{ src: '/images/pages/agence.jpg', alt: t.photo }}
       >
-        {contenu.intro.map((paragraphe) => (
+        {t.intro.map((paragraphe) => (
           <p key={paragraphe} className="m-0">
             {paragraphe}
           </p>
         ))}
       </EnTetePage>
 
-      {engagements && engagements.elements.length > 0 && (
-        <section aria-labelledby="engagements-titre" className="aplat-encre bg-brun text-creme">
-          <div className="mx-auto max-w-[1376px] px-4 py-12 sm:px-8 sm:py-16">
-            <h2
-              id="engagements-titre"
-              className="m-0 mb-8 font-display text-[32px] font-semibold sm:text-[40px]"
-            >
-              <SautDuO texte={engagements.titre} />
-            </h2>
-            <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
-              {engagements.elements.map((e) => (
-                <li
-                  key={e}
-                  className="flex flex-col gap-3 rounded-[22px] bg-white/5 p-6 text-lg leading-relaxed"
+      <section aria-labelledby="engagements-titre" className="aplat-encre bg-brun text-creme">
+        <div className="mx-auto max-w-[1376px] px-4 py-12 sm:px-8 sm:py-16">
+          <h2
+            id="engagements-titre"
+            className="m-0 mb-8 font-display text-[32px] font-semibold sm:text-[40px]"
+          >
+            <SautDuO texte={t.engagements} />
+          </h2>
+          <ul className="m-0 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
+            {t.listeEngagements.map((e) => (
+              <li
+                key={e}
+                className="flex flex-col gap-3 rounded-[22px] bg-white/5 p-6 text-lg leading-relaxed"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 items-center justify-center rounded-full bg-ocre text-brun"
                 >
-                  <span
-                    aria-hidden="true"
-                    className="flex size-9 items-center justify-center rounded-full bg-ocre text-brun"
-                  >
-                    <IconCoche size={16} />
-                  </span>
-                  {e}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
+                  <IconCoche size={16} />
+                </span>
+                {e}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <section
         aria-labelledby="equipe-titre"

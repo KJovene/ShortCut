@@ -3,10 +3,10 @@ import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { changerLangue } from './lib/langue'
 import { createQueryClient } from './lib/queryClient'
 import { createAppRouter } from './router'
 import { simulerApi } from './test/api'
-import { PAGES_DE_DEMO } from './test/pages'
 
 function afficher(path: string) {
   const queryClient = createQueryClient()
@@ -20,6 +20,7 @@ function afficher(path: string) {
 }
 
 afterEach(() => {
+  changerLangue('fr')
   vi.unstubAllGlobals()
 })
 
@@ -28,7 +29,7 @@ describe('pages légales (#218)', () => {
     ['/mentions-legales', 'Mentions légales', 'Éditeur'],
     ['/cgv', 'Conditions générales de vente', 'Frais de dossier'],
     ['/confidentialite', 'Politique de confidentialité et cookies', 'Cookies'],
-  ])('%s affiche le texte du module Contenus', async (path, titre, section) => {
+  ])('%s affiche son texte', async (path, titre, section) => {
     simulerApi({})
     afficher(path)
 
@@ -45,20 +46,15 @@ describe('pages légales (#218)', () => {
     expect(screen.getAllByText(/à valider/)).toHaveLength(1)
   })
 
-  it('n’affiche plus la mention une fois le texte de l’agence saisi', async () => {
-    simulerApi({
-      'GET /api/pages/mentions-legales': {
-        status: 200,
-        body: {
-          ...PAGES_DE_DEMO['mentions-legales'],
-          contenu: '<h2>Éditeur</h2><p>Détour SAS, 12 rue des Voyageurs, Paris.</p>',
-        },
-      },
-    })
-    afficher('/mentions-legales')
+  it('passe en anglais avec le reste du site', async () => {
+    changerLangue('en')
+    simulerApi({})
+    afficher('/cgv')
 
-    expect(await screen.findByText('Détour SAS, 12 rue des Voyageurs, Paris.')).toBeInTheDocument()
-    expect(screen.queryByRole('note')).not.toBeInTheDocument()
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Terms and conditions of sale' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Booking fee' })).toBeInTheDocument()
   })
 
   it('mène aux trois pages depuis le pied de page', async () => {

@@ -13,28 +13,21 @@ import {
   destinationsQuery,
   estSurCarte,
 } from '@/features/catalogue/catalogue'
-import { metaPage, pageQuery } from '@/features/pages/pageDuSite'
+import { metaPage } from '@/features/pages/meta'
 import { TEXTES } from '@/features/pages/textes'
 import { cn } from '@/lib/cn'
 import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/')({
-  // Titre et description pour les moteurs : contenus du site. L'accueil ne dépend pas de leur chargement,
-  // ni de celui des destinations : sans elles, la carte reste vide mais l'assistant répond.
+  // L'accueil ne dépend pas du chargement des destinations : sans elles, la carte reste vide mais l'assistant répond.
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(destinationsMisesEnAvantQuery())
-    return context.queryClient.ensureQueryData(pageQuery('accueil')).catch(() => null)
   },
-  head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].accueil.meta),
-  }),
+  head: () => ({ meta: metaPage(TEXTES[langueDuSite()].accueil.meta) }),
   component: HomePage,
 })
 
-/**
- * Les deux thèmes de la carte. Leur titre vient des contenus du site (page « accueil » : « Titre » pour les voyages
- * chauds, « Titre des voyages froids ») ; sans l'API ou sans titre saisi, celui des maquettes.
- */
+/** Les deux thèmes de la carte, chacun avec son titre (textes de l'accueil). */
 const THEMES: Theme[] = ['chaud', 'froid']
 
 function HomePage() {
@@ -47,9 +40,6 @@ function HomePage() {
   const voyages = voyagesDuTheme(misesEnAvant, theme)
   const surCarte = voyages.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const { data: page } = useQuery(pageQuery('accueil'))
-  const titre =
-    (theme === 'chaud' ? page?.titre : page?.titreFroid) || t.themes[theme].titreParDefaut
 
   // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
   const { data: destinations = [] } = useQuery(destinationsQuery())
@@ -73,10 +63,10 @@ function HomePage() {
               aria-live="polite"
               className="m-0 font-display text-[34px] leading-[1.02] font-semibold tracking-[-0.8px] sm:text-[54px] sm:tracking-[-1.5px]"
             >
-              <TitreMisEnValeur texte={titre} />
+              <TitreMisEnValeur texte={t.themes[theme].titre} />
             </h1>
             <p className="m-0 font-display text-lg font-semibold text-taupe sm:text-[22px]">
-              {t.accroche}
+              <TitreMisEnValeur texte={t.accroche} />
             </p>
           </div>
           <div

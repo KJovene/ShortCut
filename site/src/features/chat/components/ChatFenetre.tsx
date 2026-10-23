@@ -1,10 +1,11 @@
 import { useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { Logo } from '@/components/layout/Logo'
+import { ID_PIED_DE_PAGE } from '@/components/layout/SiteFooter'
 import { IconBulle, IconFermer, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '../chatContext'
 import { TEXTES } from '../textes'
-import { ID_SECTION_ASSISTANT, useOuvrirAssistant } from '../useOuvrirAssistant'
+import { useOuvrirAssistant } from '../useOuvrirAssistant'
 import { ChatAccueil } from './ChatAccueil'
 import { ChatWorkspace } from './ChatWorkspace'
 
@@ -88,47 +89,31 @@ export function ChatFenetre() {
   )
 }
 
-/** Vrai tant que la section de l'assistant de l'accueil est visible à l'écran. */
-function useSectionAssistantVisible(estAccueil: boolean) {
+/** Vrai tant que le pied de page est à l'écran : le bouton flottant masquerait ses liens. */
+function usePiedDePageVisible() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     // Sans IntersectionObserver (tests, très vieux navigateurs), le bouton reste toujours affiché.
-    if (!estAccueil || typeof IntersectionObserver === 'undefined') return
-    let observateur: IntersectionObserver | undefined
-    const brancher = () => {
-      const section = document.getElementById(ID_SECTION_ASSISTANT)
-      if (!section) return false
-      observateur = new IntersectionObserver(([entree]) => setVisible(entree.isIntersecting), {
-        threshold: 0.25,
-      })
-      observateur.observe(section)
-      return true
-    }
-    // La page d'accueil est chargée à la demande : la section peut apparaître après ce composant.
-    const attente = new MutationObserver(() => {
-      if (brancher()) attente.disconnect()
-    })
-    if (!brancher()) attente.observe(document.body, { childList: true, subtree: true })
-    return () => {
-      attente.disconnect()
-      observateur?.disconnect()
-    }
-  }, [estAccueil])
+    const pied = document.getElementById(ID_PIED_DE_PAGE)
+    if (!pied || typeof IntersectionObserver === 'undefined') return
+    const observateur = new IntersectionObserver(([entree]) => setVisible(entree.isIntersecting))
+    observateur.observe(pied)
+    return () => observateur.disconnect()
+  }, [])
 
-  // Hors de l'accueil, la section n'existe pas : la dernière valeur observée ne compte plus.
-  return estAccueil && visible
+  return visible
 }
 
-/** Bouton flottant présent sur toutes les pages, masqué quand la section de l'assistant est déjà à l'écran. */
+/** Bouton flottant présent sur toutes les pages sauf l'accueil (qui a sa propre section), masqué devant le pied de page. */
 export function ChatLanceur() {
   const { ouvert, statut, langue } = useChat()
   const t = TEXTES[langue]
   const ouvrirAssistant = useOuvrirAssistant()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
   const estProposition = useLocation({ select: (l) => l.pathname.startsWith('/proposition') })
-  const sectionVisible = useSectionAssistantVisible(estAccueil)
-  if ((ouvert && !estAccueil) || sectionVisible) return null
+  const piedVisible = usePiedDePageVisible()
+  if (estAccueil || ouvert || piedVisible) return null
 
   return (
     <button

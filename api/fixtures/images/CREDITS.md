@@ -107,11 +107,3 @@ Redimensionnées à 1280 px de large. Copiées dans `public/uploads/` par `make 
 | `prestations/trek.jpg` | [Backpackers (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Backpackers_%28Unsplash%29.jpg) | Ashim D’Silva randomlies | CC0 |
 | `prestations/velo.jpg` | [Bicycles on the beach (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Bicycles_on_the_beach_%28Unsplash%29.jpg) | Bogdan Dada bogs | CC0 |
 | `prestations/vignoble.jpg` | [Vineyard and hills (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Vineyard_and_hills_%28Unsplash%29.jpg) | Tim Mossholder timmossholder | CC0 |
-| `pages/accueil.jpg` | [Endless Water (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Endless_Water_(Unsplash).jpg) | Alex Bertha alexbertha | CC0 |
-| `pages/agence.jpg` | [Planning a trip over coffee (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Planning_a_trip_over_coffee_(Unsplash).jpg) | rawpixel.com rawpixel | CC0 |
-| `pages/sejour.jpg` | [Surf Shack (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Surf_Shack_(Unsplash).jpg) | frank mckenna frankiefoto | CC0 |
-| `pages/circuit.jpg` | [Road along Alaska mountains (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Road_along_Alaska_mountains_(Unsplash).jpg) | alejandro gonzalez alejo10gonzalez | CC0 |
-| `pages/groupe.jpg` | [Sightseeing On The Beach (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Sightseeing_On_The_Beach_(Unsplash).jpg) | Masha Danilova mashaissomasha | CC0 |
-| `pages/noces.jpg` | [Couple sitting watching sunset (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Couple_sitting_watching_sunset_(Unsplash).jpg) | Gerrit Vermeulen gerritvermeulen | CC0 |
-| `pages/entreprise.jpg` | [Rawpixel.com 2017-06-02 (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Rawpixel.com_2017-06-02_(Unsplash).jpg) | rawpixel.com rawpixel | CC0 |
-| `pages/contact.jpg` | [Clean minimalist office (Unsplash).jpg](https://commons.wikimedia.org/wiki/File:Clean_minimalist_office_(Unsplash).jpg) | Roman Bozhko romanbozhko | CC0 |

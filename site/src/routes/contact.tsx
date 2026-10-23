@@ -1,22 +1,15 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { PageEnChargement, PageIndisponible } from '@/components/EtatPage'
 import { EnTetePage } from '@/components/ui/EnTetePage'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconBulle, IconPersonne } from '@/components/ui/icons'
 import { useChat } from '@/features/chat/chatContext'
 import { TEXTES as TEXTES_CHAT } from '@/features/chat/textes'
-import { decouperContenu, metaPage, pageQuery } from '@/features/pages/pageDuSite'
+import { metaPage } from '@/features/pages/meta'
 import { TEXTES } from '@/features/pages/textes'
 import { langueDuSite, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/contact')({
-  loader: ({ context }) => context.queryClient.ensureQueryData(pageQuery('contact')),
-  head: ({ loaderData }) => ({
-    meta: metaPage(loaderData, TEXTES[langueDuSite()].contact.meta),
-  }),
-  pendingComponent: PageEnChargement,
-  errorComponent: PageIndisponible,
+  head: () => ({ meta: metaPage(TEXTES[langueDuSite()].contact.meta) }),
   component: ContactPage,
 })
 
@@ -24,18 +17,15 @@ function ContactPage() {
   const { ouvrir, envoyer, langue: langueDuChat } = useChat()
   const langue = useLangue()
   const t = TEXTES[langue].contact
-  // Introduction, horaires et adresse : contenus du site, modifiables dans le backoffice.
-  const { data: page } = useSuspenseQuery(pageQuery('contact'))
-  const contenu = decouperContenu(page.contenu)
 
   return (
     <>
       <EnTetePage
         surtitre={t.surtitre}
-        titre={<TitreMisEnValeur texte={page.titre} />}
-        photo={page.photos[0] ? { src: page.photos[0], alt: t.photo } : undefined}
+        titre={<TitreMisEnValeur texte={t.titre} />}
+        photo={{ src: '/images/pages/contact.jpg', alt: t.photo }}
       >
-        {contenu.intro.map((paragraphe) => (
+        {t.intro.map((paragraphe) => (
           <p key={paragraphe} className="m-0">
             {paragraphe}
           </p>
@@ -68,20 +58,14 @@ function ContactPage() {
             <IconPersonne size={24} />
           </span>
           <h2 className="m-0 font-display text-[28px] font-semibold">{t.unConseiller}</h2>
-          {contenu.sections.length > 0 && (
-            <dl className="m-0 flex flex-col gap-3 text-lg">
-              {contenu.sections.map((section) => (
-                <div key={section.titre}>
-                  <dt className="text-sm font-bold text-taupe-clair">{section.titre}</dt>
-                  {[...section.paragraphes, ...section.elements].map((ligne) => (
-                    <dd key={ligne} className="m-0">
-                      {ligne}
-                    </dd>
-                  ))}
-                </div>
-              ))}
-            </dl>
-          )}
+          <dl className="m-0 flex flex-col gap-3 text-lg">
+            {t.infos.map((info) => (
+              <div key={info.titre}>
+                <dt className="text-sm font-bold text-taupe-clair">{info.titre}</dt>
+                <dd className="m-0">{info.texte}</dd>
+              </div>
+            ))}
+          </dl>
           <button
             type="button"
             onClick={() => {
