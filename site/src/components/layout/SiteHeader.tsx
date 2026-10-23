@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { ChoixApparence } from '@/components/ChoixApparence'
@@ -7,24 +6,21 @@ import { MenuCompte } from '@/components/MenuCompte'
 import { TEXTES } from '@/components/textes'
 import { IconFermer, IconMenu } from '@/components/ui/icons'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
-import { menuQuery, ordonnerMenu } from '@/features/pages/pageDuSite'
 import { cn } from '@/lib/cn'
 import { useLangue } from '@/lib/langue'
 import { Logo } from './Logo'
 
-/** Pages du backoffice, dans leur ordre par défaut : « Ordre dans le menu » les range ou les retire. */
-const PAGES = [
-  { slug: 'destinations', to: '/destinations', cle: 'destinations' },
-  { slug: 'types-de-voyages', to: '/types-de-voyages', cle: 'voyages' },
-  { slug: 'agence', to: '/agence', cle: 'agence' },
-  { slug: 'contact', to: '/contact', cle: 'contact' },
+/** Pages du menu principal, dans leur ordre d'affichage. */
+const LIENS = [
+  { to: '/destinations', cle: 'destinations' },
+  { to: '/types-de-voyages', cle: 'voyages' },
+  { to: '/agence', cle: 'agence' },
+  { to: '/contact', cle: 'contact' },
 ] as const
 
 export function SiteHeader({ className }: { className?: string }) {
   const t = TEXTES[useLangue()]
   const pathname = useLocation({ select: (l) => l.pathname })
-  const { data: menu } = useQuery(menuQuery)
-  const liens = ordonnerMenu(PAGES, menu)
   // Le menu mobile reste ouvert sur la page où il a été ouvert : changer de page le referme.
   const [ouvertSur, setOuvertSur] = useState<string | null>(null)
   const menuOuvert = ouvertSur === pathname
@@ -35,7 +31,7 @@ export function SiteHeader({ className }: { className?: string }) {
   /** Sur mobile, le logo est petit : l'accueil a aussi son entrée dans le menu. */
   const liensMobile = [
     { to: '/', label: t.accueil },
-    ...liens.map((lien) => ({ to: lien.to, label: t.liens[lien.cle] })),
+    ...LIENS.map((lien) => ({ to: lien.to, label: t.liens[lien.cle] })),
   ]
 
   // Échap referme le menu et rend le focus au bouton.
@@ -59,7 +55,7 @@ export function SiteHeader({ className }: { className?: string }) {
           aria-label={t.navigationPrincipale}
           className="hidden gap-[26px] text-[15px] font-bold md:flex"
         >
-          {liens.map((lien) => (
+          {LIENS.map((lien) => (
             <Link
               key={lien.to}
               to={lien.to}

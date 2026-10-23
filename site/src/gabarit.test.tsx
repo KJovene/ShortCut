@@ -78,33 +78,7 @@ describe('gabarit du site', () => {
     expect(screen.queryByRole('button', { name: "Parler à l'assistant" })).not.toBeInTheDocument()
   })
 
-  it('range le menu selon « Ordre dans le menu » du backoffice', async () => {
-    simulerApi({
-      'GET /api/pages': {
-        status: 200,
-        body: [
-          { slug: 'contact', ordreMenu: 1 },
-          { slug: 'types-de-voyages', ordreMenu: 2 },
-          { slug: 'destinations', ordreMenu: 3 },
-          // Sans position : la page sort du menu.
-          { slug: 'agence' },
-        ],
-      },
-    })
-    afficher('/contact')
-
-    const menu = await screen.findByRole('navigation', { name: 'Navigation principale' })
-    await waitFor(() =>
-      expect(
-        within(menu)
-          .getAllByRole('link')
-          .map((l) => l.textContent),
-      ).toEqual(['Contact', 'Nos voyages', 'Destinations']),
-    )
-  })
-
-  it('garde le menu par défaut si l’API ne répond pas', async () => {
-    simulerApi({ 'GET /api/pages': { status: 500 } })
+  it('affiche le menu principal dans son ordre', async () => {
     afficher('/contact')
 
     const menu = await screen.findByRole('navigation', { name: 'Navigation principale' })

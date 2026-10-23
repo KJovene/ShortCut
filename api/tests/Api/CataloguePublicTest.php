@@ -75,7 +75,7 @@ final class CataloguePublicTest extends WebTestCase
 
     public function testAucunChampInterneNApparait(): void
     {
-        foreach (['/api/public/destinations', '/api/public/destinations/lisbonne', '/api/pages/agence'] as $uri) {
+        foreach (['/api/public/destinations', '/api/public/destinations/lisbonne'] as $uri) {
             $cles = self::cles($this->lire($uri));
             foreach (self::CHAMPS_INTERNES as $champ) {
                 self::assertNotContains($champ, $cles, \sprintf('%s expose « %s »', $uri, $champ));

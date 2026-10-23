@@ -1,14 +1,13 @@
 import { vi } from 'vitest'
 import { DESTINATIONS_DE_DEMO } from './destinations'
-import { MENU_DE_DEMO, PAGES_DE_DEMO } from './pages'
 
 type Reponse = { status: number; body?: unknown }
 
 /**
  * Remplace fetch par une API simulée : « POST /api/connexion » → réponse. Un corps texte est servi tel quel (flux du
  * chat), un autre corps en JSON.
- * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages(/{slug}) et
- * GET /api/public/destinations(/{slug}) servent les données de démo et le reste répond 404.
+ * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/public/destinations(/{slug})
+ * sert les données de démo et le reste répond 404.
  */
 export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
   const restantes = new Map(Object.entries(routes).map(([cle, r]) => [cle, [r].flat()]))
@@ -43,13 +42,6 @@ export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
 function reponseParDefaut(cle: string): Reponse {
   if (cle === 'GET /api/moi') {
     return { status: 401, body: { erreur: 'Authentification requise.' } }
-  }
-  if (cle === 'GET /api/pages') {
-    return { status: 200, body: MENU_DE_DEMO }
-  }
-  const page = /^GET \/api\/pages\/(.+)$/.exec(cle)?.[1]
-  if (page && PAGES_DE_DEMO[page]) {
-    return { status: 200, body: PAGES_DE_DEMO[page] }
   }
   if (cle === 'GET /api/public/destinations') {
     return { status: 200, body: DESTINATIONS_DE_DEMO }

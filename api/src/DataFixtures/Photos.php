@@ -21,7 +21,7 @@ final class Photos
     }
 
     /**
-     * @param 'destinations'|'prestations'|'pages' $dossier
+     * @param 'destinations'|'prestations' $dossier
      *
      * @return string nom du fichier enregistré dans l'entité (ex. « lisbonne.jpg »)
      */
