@@ -132,7 +132,8 @@ final class AgentRechercheTest extends WebTestCase
         $recapitulatif = $evenements[\count($evenements) - 2][1];
         self::assertSame($proposition->getJetonPublic(), $recapitulatif['jeton']);
         self::assertSame(AgentRedaction::MESSAGE_PRET.' '.($question ? AgentRedaction::MESSAGE_QUESTION_OPTIONS : AgentRedaction::MESSAGE_SUITE), $recapitulatif['texte']);
-        self::assertSame(['terminee' => !$question], end($evenements)[1]);
+        // Avec ou sans options, le client peut encore modifier sa demande dans le chat.
+        self::assertSame(['terminee' => false], end($evenements)[1]);
         $messagesAuClient = $conversation->getMessages();
         self::assertSame($recapitulatif['texte'], end($messagesAuClient)['contenu']);
         self::assertSame('recapitulatif', end($messagesAuClient)['carte']['type'] ?? null);

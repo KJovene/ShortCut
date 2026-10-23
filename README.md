@@ -188,7 +188,7 @@ Les droits sont vérifiés par l'API, jamais par le navigateur (`api/config/pack
   | `suggestions` | `{"type": "suggestions", "elements": [{"id": 12, "type": "logement", "nom": "…", "photos": […], …}]}` | logements et activités recommandés par l'agent Conversation (`consulter_catalogue`, `Chatbot/Suggestions`), en cartes cliquables sous son message ; chaque carte ouvre la fiche complète, sans prix |
   | `recapitulatif` | `{"jeton": "…", "texte": "…", "totalCentimes": 574960, "options": […], …}` | carte du récapitulatif détaillé (`AgentRedaction::carte`) : lien vers « Ma proposition » ; s'il reste des options, boutons pour en ajouter une ou garder le voyage tel quel |
   | `erreur` | `{"erreur": "…"}` | affiche le message, déjà rédigé pour le client |
-  | `fin` | `{"terminee": true}` | la réponse est complète ; `terminee` : la conversation n'attend plus rien du client (récapitulatif complet, conseiller), le site ferme la saisie |
+  | `fin` | `{"terminee": true}` | la réponse est complète ; `terminee` : un conseiller a repris la conversation (transmission), le site ferme la saisie. Sinon le client peut continuer, même après sa proposition, pour la modifier |
 
   Les cartes sont gardées avec leur message (`Conversation::messages[].carte`), et leur texte (`contenu`) les remplace là où elles ne s'affichent pas : le chat les retrouve à la reprise depuis « Mon espace ».
 

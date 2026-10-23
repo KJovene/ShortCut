@@ -79,8 +79,8 @@ final class NouvelleVersionTest extends WebTestCase
             ['outil', 'demande', 'texte', 'texte', 'outil', 'texte', 'piste', 'outil', 'texte', 'fin'],
             array_column($evenements, 0),
         );
-        // Une version déjà envoyée : la suivante attend le conseiller, la conversation n'attend plus rien du client.
-        self::assertSame(['terminee' => true], end($evenements)[1]);
+        // Une version déjà envoyée : la suivante attend le conseiller, mais le client peut encore modifier sa demande.
+        self::assertSame(['terminee' => false], end($evenements)[1]);
         self::assertCount(3, $this->claude->requetes, 'Conversation (2 appels) puis rédaction, sans recherche.');
         $redaction = $this->claude->requetes[2]['corps']['messages'][0]['content'][0]['text'];
         self::assertStringContainsString('Rédige la version suivante', $redaction);
@@ -207,7 +207,7 @@ final class NouvelleVersionTest extends WebTestCase
         self::assertContains('Atelier pastéis de nata', $parType['piste']['niveaux']['essentiel']['activites']);
         self::assertSame(\sprintf(AgentRedaction::MESSAGE_A_JOUR, ', avec Atelier pastéis de nata').' '.AgentRedaction::MESSAGE_SUITE, $parType['recapitulatif']['texte']);
         self::assertSame([], $parType['recapitulatif']['options']);
-        self::assertSame(['terminee' => true], $parType['fin']);
+        self::assertSame(['terminee' => false], $parType['fin']);
 
         [$v1, $v2] = $this->versions($this->conversation()->getDemande() ?? throw new \LogicException());
         self::assertSame(StatutProposition::Remplacee, $v1->getStatut());
@@ -239,7 +239,7 @@ final class NouvelleVersionTest extends WebTestCase
         $parType = array_column($evenements, 1, 0);
         self::assertSame(AgentRedaction::MESSAGE_PRET.' '.AgentRedaction::MESSAGE_SUITE, $parType['recapitulatif']['texte']);
         self::assertSame($this->version1->getJetonPublic(), $parType['recapitulatif']['jeton']);
-        self::assertSame(['terminee' => true], $parType['fin']);
+        self::assertSame(['terminee' => false], $parType['fin']);
         $versions = $this->versions($this->conversation()->getDemande() ?? throw new \LogicException());
         self::assertCount(1, $versions);
         self::assertNotNull($versions[0]->getOptionsChoisiesLe());

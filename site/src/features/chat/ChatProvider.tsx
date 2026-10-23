@@ -13,7 +13,7 @@ import {
   type EtatChat,
   type Reprise,
 } from './chatContext'
-import { messageAccueil, nouvelId, type Message } from './conversation'
+import { nouvelId, type Message } from './conversation'
 import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
 
@@ -51,10 +51,14 @@ function messageDeLApi(m: Reprise['messages'][number]): Message {
   return { id: nouvelId(), auteur: 'assistant', type, texte: m.contenu, recapitulatif }
 }
 
-/** Une nouvelle conversation démarre dans la langue du site ; l'assistant suit ensuite celle du client. */
+/**
+ * Une nouvelle conversation démarre dans la langue du site ; l'assistant suit ensuite celle du client.
+ * Le fil commence par le premier message du client : l'en-tête de la discussion présente déjà l'assistant
+ * (une IA), et c'est lui qui dit bonjour, une seule fois, dans sa première réponse.
+ */
 const etatInitial = (langue = langueDuSite()): EtatChat => ({
   statut: 'accueil',
-  messages: [messageAccueil(langue)],
+  messages: [],
   conversation: { demande: demandeVide() },
   reflexion: false,
   ouvert: false,
@@ -66,7 +70,11 @@ const etatInitial = (langue = langueDuSite()): EtatChat => ({
 function restaurer(): EtatChat {
   try {
     const sauvegarde = sessionStorage.getItem(CLE)
-    if (sauvegarde) return { ...etatInitial(), ...(JSON.parse(sauvegarde) as Partial<EtatChat>) }
+    if (sauvegarde) {
+      const etat = { ...etatInitial(), ...(JSON.parse(sauvegarde) as Partial<EtatChat>) }
+      // Une conversation sauvegardée avant la suppression du message d'accueil du site le garde encore.
+      return { ...etat, messages: etat.messages.filter((m) => m.id !== 'accueil') }
+    }
   } catch {
     // Stockage indisponible : nouvelle conversation.
   }
@@ -141,16 +149,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => () => annulation.current?.abort(), [])
 
-  // Le visiteur change la langue du site avant d'écrire : l'accueil du chatbot la suit. Une conversation
-  // commencée garde la langue du client, reconnue par l'assistant.
+  // Le visiteur change la langue du site avant d'écrire : le chatbot la suit. Une conversation commencée
+  // garde la langue du client, reconnue par l'assistant.
   useEffect(
     () =>
       surChangementDeLangue(() => {
         const langue = langueDuSite()
         setEtat((e) =>
-          e.jeton || e.statut !== 'accueil' || e.langue === langue
-            ? e
-            : { ...e, langue, messages: [messageAccueil(langue)] },
+          e.jeton || e.statut !== 'accueil' || e.langue === langue ? e : { ...e, langue },
         )
       }),
     [],
