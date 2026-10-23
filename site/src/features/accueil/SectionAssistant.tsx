@@ -3,6 +3,7 @@ import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { useChat } from '@/features/chat/chatContext'
 import { ChatAccueil } from '@/features/chat/components/ChatAccueil'
 import { ChatWorkspace } from '@/features/chat/components/ChatWorkspace'
+import { TEXTES as TEXTES_CHAT } from '@/features/chat/textes'
 import { ID_SECTION_ASSISTANT } from '@/features/chat/useOuvrirAssistant'
 import { TEXTES } from '@/features/pages/textes'
 import { useLangue } from '@/lib/langue'
@@ -30,8 +31,9 @@ export function SectionAssistant({
   suggestion: DestinationPublique | undefined
   photos: DestinationPublique[]
 }) {
-  const { statut } = useChat()
+  const { statut, langue: langueDuChat } = useChat()
   const t = TEXTES[useLangue()].accueil
+  const tChat = TEXTES_CHAT[langueDuChat]
   const section = useRef<HTMLElement>(null)
   const precedent = useRef(statut)
 
@@ -88,9 +90,17 @@ export function SectionAssistant({
         </div>
       ) : (
         <div className="mx-auto flex max-w-[1376px] flex-col px-4 pt-6 pb-4 sm:px-8 lg:h-[clamp(720px,100vh,960px)]">
-          <h2 id="discussion-titre" className="sr-only">
-            {t.discussion}
-          </h2>
+          {/* Même en-tête que la fenêtre du chatbot : l'assistant se présente ici, pas dans le fil. */}
+          <div className="flex items-center gap-3 border-b border-lin pb-3">
+            {/* Avatar DÉTOUR de la charte : le seul accent jaune de l'écran de discussion. */}
+            <img src="/new-logos/detour-avatar.svg" alt="" className="size-10 shrink-0" />
+            <span className="flex min-w-0 flex-col">
+              <h2 id="discussion-titre" className="m-0 font-sans text-[15px] font-extrabold">
+                {tChat.titre}
+              </h2>
+              <span className="truncate text-xs text-taupe">{tChat.sousTitre}</span>
+            </span>
+          </div>
           <ChatWorkspace className="min-h-[70vh] flex-1 lg:min-h-0" />
         </div>
       )}

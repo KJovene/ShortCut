@@ -175,7 +175,7 @@ final class EvaluerChatbotCommand extends Command
                 $echanges[] = ['role' => 'chatbot', 'contenu' => $this->repondre($conversation, $message)];
                 $io->write('.');
 
-                if (null !== $conversation->getFinLe() || $conversation->isRepriseParConseiller()) {
+                if (null !== $conversation->getFinLe() || null !== $conversation->getDemande()?->getTransmiseLe()) {
                     $finie = true;
                     break;
                 }
@@ -230,7 +230,7 @@ final class EvaluerChatbotCommand extends Command
                 'finie' => $finie,
                 'recapitulatifConfirme' => null !== $conversation->getFinLe(),
                 'passageAttendu' => true === ($demandeTest['attendu']['passageAuConseiller'] ?? false),
-                'passageObtenu' => $conversation->isRepriseParConseiller(),
+                'passageObtenu' => null !== $conversation->getDemande()?->getTransmiseLe(),
                 'prixOuDisponibilite' => $jugement['prixOuDisponibiliteAnnonces'],
                 'questionsManquees' => $jugement['questionsManquees'],
                 'oublisDuRecapitulatif' => $jugement['oublisDuRecapitulatif'],

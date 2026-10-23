@@ -165,7 +165,7 @@ describe('fenêtre du chatbot, hors de l’accueil', () => {
 })
 
 describe('proposition dans le chat', () => {
-  it('montre la piste en carte, puis le récapitulatif et ses options, et ferme la saisie une fois répondu', async () => {
+  it('montre la piste en carte, puis le récapitulatif et ses options, et garde la saisie ouverte une fois répondu', async () => {
     sessionStorage.clear()
     const api = simulerApi({
       'GET /api/moi': { status: 200, body: CLIENT },
@@ -192,7 +192,7 @@ describe('proposition dans le chat', () => {
           body: flux(
             ['texte', { texte: 'Votre voyage reste tel quel.' }],
             ['recapitulatif', recapitulatif('Votre récapitulatif est prêt.', [])],
-            ['fin', { terminee: true }],
+            ['fin', { terminee: false }],
           ),
         },
       ],
@@ -224,10 +224,10 @@ describe('proposition dans le chat', () => {
         message: 'Je garde le voyage tel quel, sans option.',
       }),
     )
+    // Le récapitulatif final est transmis, mais le client garde la main : il peut encore modifier sa demande.
     expect(await within(fenetre).findByText('Transmis à votre conseiller')).toBeInTheDocument()
-    expect(
-      within(fenetre).queryByRole('textbox', { name: 'Votre message' }),
-    ).not.toBeInTheDocument()
+    expect(within(fenetre).getAllByRole('article', { name: 'Votre récapitulatif' })).toHaveLength(2)
+    expect(within(fenetre).getByRole('textbox', { name: 'Votre message' })).toBeInTheDocument()
   })
 })
 

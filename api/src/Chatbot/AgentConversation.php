@@ -32,7 +32,7 @@ use Symfony\Component\HttpFoundation\ServerEvent;
  * (consulter_catalogue) et ils s'affichent en cartes cliquables sous son message (Suggestions).
  *
  * Les événements envoyés au site sont décrits dans Agent ; la réponse se termine par « fin » {terminee}, vrai quand
- * la conversation n'attend plus rien du client (récapitulatif complet, demande passée à un conseiller).
+ * un conseiller a repris la conversation : le client peut sinon continuer, même après sa proposition, pour la modifier.
  */
 final class AgentConversation extends Agent
 {
@@ -110,11 +110,10 @@ final class AgentConversation extends Agent
 
         // Le client répond aux options de sa proposition : elle reste telle quelle ou se met à jour.
         $transmise = null !== $tour->sortie(TransmettreAuConseiller::NOM);
-        $attendUneReponse = !$transmise;
         $options = $tour->sortie(ChoisirOptions::NOM);
         $reference = NouvelleVersion::reference($demande);
         if (null !== $options && null !== $reference) {
-            $attendUneReponse = yield from $this->nouvelleVersion->appliquerLesOptions(
+            yield from $this->nouvelleVersion->appliquerLesOptions(
                 $conversation,
                 $reference,
                 $options['activitesAjoutees'],
@@ -126,15 +125,15 @@ final class AgentConversation extends Agent
             // Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare la première. Une
             // demande transmise dans le même tour (destination absente du catalogue) attend son conseiller.
             if (null !== $reference) {
-                $attendUneReponse = yield from $this->nouvelleVersion->recalculer($conversation, $reference);
+                yield from $this->nouvelleVersion->recalculer($conversation, $reference);
             } elseif (null === $demande->getConseiller()) {
-                $attendUneReponse = yield from $this->recherche->proposer($conversation);
-            } else {
-                $attendUneReponse = false;
+                yield from $this->recherche->proposer($conversation);
             }
         }
 
-        yield self::evenement('fin', ['terminee' => !$attendUneReponse]);
+        // Le client peut toujours revenir modifier sa demande, même après sa proposition : la conversation ne se
+        // termine que quand un conseiller l'a reprise (transmission demandée, ou automatique après un échec).
+        yield self::evenement('fin', ['terminee' => $conversation->isRepriseParConseiller()]);
     }
 
     protected function agent(): AgentIA
@@ -175,11 +174,14 @@ final class AgentConversation extends Agent
             \ARRAY_FILTER_USE_BOTH,
         );
         $manquantes = FicheDemande::manquantes($demande);
+        // Un client connecté est déjà rattaché à la demande : le modèle ne lui redemande ni prénom ni e-mail.
+        $client = $demande->getClient();
 
         return \sprintf(
-            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s. Langue du client : %s.</etat_de_la_fiche>',
+            '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s. Client : %s. Langue du client : %s.</etat_de_la_fiche>',
             json_encode((object) $remplis, \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR),
             [] === $manquantes ? 'rien' : implode(', ', $manquantes),
+            null === $client ? 'inconnu (prénom et e-mail à demander avec la confirmation)' : \sprintf('connu, %s, ne rien demander', $client->getPrenom() ?? $client->getEmail()),
             $demande->getLangue()->value,
         );
     }

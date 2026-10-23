@@ -50,7 +50,8 @@ final class TransmettreAuConseiller implements Outil
             throw new OutilException('resume ne doit pas être vide : le conseiller en a besoin.');
         }
 
-        $contexte->conversation->setRepriseParConseiller(true);
+        // La demande passe en priorité dans « À aiguiller » ; la conversation reste ouverte au client tant qu'un
+        // conseiller ne l'a pas reprise lui-même (Conversation::repriseParConseiller).
         $contexte->demande->transmettre($motif, $resume);
         $this->em->flush();
 
