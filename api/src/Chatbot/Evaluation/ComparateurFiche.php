@@ -2,6 +2,8 @@
 
 namespace App\Chatbot\Evaluation;
 
+use App\Demande\FicheDemande;
+
 /**
  * Compare, champ par champ, la fiche remplie par le chatbot à la fiche attendue d'une demande test (#195).
  * Les champs en texte libre (lieu, envies, contraintes) ne se comparent pas mot à mot : ils sont rendus
@@ -27,7 +29,7 @@ final class ComparateurFiche
 
     /**
      * @param array<string, mixed> $attendue fiche attendue (exigencesAttendues du fichier de test)
-     * @param array<string, mixed> $obtenue  fiche remplie (EnregistrerExigences::fiche)
+     * @param array<string, mixed> $obtenue  fiche remplie (FicheDemande::depuis)
      *
      * @return array<string, array{statut: string, attendu: mixed, obtenu: mixed}> par champ, dans l'ordre de la fiche attendue
      */

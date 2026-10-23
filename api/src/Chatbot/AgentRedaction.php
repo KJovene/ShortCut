@@ -2,7 +2,6 @@
 
 namespace App\Chatbot;
 
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\EnregistrerProposition;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\RetenirCombinaison;
@@ -10,6 +9,7 @@ use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Chiffrage\ChiffrageCache;
 use App\Chiffrage\Periode;
 use App\Confirmation\PropositionClient;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Proposition;
 use App\Enum\AgentIA;
@@ -91,7 +91,7 @@ final class AgentRedaction extends Agent
                     yield $evenement;
                 }
             }
-            $enregistree = $tour->sortie('enregistrer_proposition');
+            $enregistree = $tour->sortie(EnregistrerProposition::NOM);
             $proposition = null === $enregistree ? null : $demande->getPropositions()->findFirst(static fn (int $i, Proposition $p): bool => $p->getVersion() === (int) $enregistree['version']);
             if (null !== $proposition) {
                 if ($optionsChoisies) {
@@ -104,7 +104,7 @@ final class AgentRedaction extends Agent
 
         // Le client a déjà la combinaison dans le chat : un conseiller termine la proposition détaillée (l'agent a pu
         // la lui transmettre lui-même).
-        $transmission = $tour?->sortie('transmettre_au_conseiller') ?? $this->outil('transmettre_au_conseiller')->executer($contexte, [
+        $transmission = $tour?->sortie(TransmettreAuConseiller::NOM) ?? $this->outil(TransmettreAuConseiller::NOM)->executer($contexte, [
             'motif' => 'autre',
             'resume' => \sprintf('La rédaction automatique de la proposition n\'a pas abouti (chiffrage %s) : programme jour par jour à rédiger à partir de la combinaison présentée au client.', $chiffrageId),
         ]);
@@ -132,10 +132,7 @@ final class AgentRedaction extends Agent
         $langue = $demande->getLangue();
 
         if ($proposition !== PropositionClient::apercu($demande)) {
-            $recue = max(0, ...array_map(
-                static fn (Proposition $p): int => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe() ? $p->getVersion() : 0,
-                $demande->getPropositions()->toArray(),
-            ));
+            $recue = $demande->derniereProposition(static fn (Proposition $p): bool => $p->estRecueParLeClient())?->getVersion() ?? 0;
             $message = \sprintf($langue->choisir(self::MESSAGE_NOUVELLE_VERSION, self::MESSAGE_NOUVELLE_VERSION_EN), $proposition->getVersion(), $recue);
             $this->ajouterALaConversation($conversation, $message);
             yield self::evenement('texte', ['texte' => "\n\n".$message]);
@@ -205,7 +202,7 @@ final class AgentRedaction extends Agent
             'chiffrageId : '.$chiffrageId,
             \sprintf('Niveau à détailler (niveauDetaille) : %s.', $niveau->value),
             "Calendrier, un jour de programme par ligne :\n".self::calendrier($combinaison['etapes'], $combinaison['niveaux'][$niveau->value]['logements']),
-            'Fiche demande : '.self::json(EnregistrerExigences::fiche($demande)),
+            'Fiche demande : '.self::json(FicheDemande::depuis($demande)),
             "Messages du client, dans l'ordre :\n".self::messagesDuClient($conversation),
             'Destination : '.self::json([
                 'ville' => $destination?->getVille(),
@@ -322,7 +319,7 @@ final class AgentRedaction extends Agent
 
     protected function outilFinal(): string
     {
-        return 'enregistrer_proposition';
+        return EnregistrerProposition::NOM;
     }
 
     /** L'enregistrement, et deux corrections si la proposition est refusée. */

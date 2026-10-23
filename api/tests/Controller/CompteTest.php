@@ -26,6 +26,8 @@ final class CompteTest extends WebTestCase
         $this->client->disableReboot();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $this->em->getConnection()->beginTransaction();
+        // Les compteurs de la limite de connexion (security.yaml) survivent d'un test à l'autre.
+        static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
     protected function tearDown(): void

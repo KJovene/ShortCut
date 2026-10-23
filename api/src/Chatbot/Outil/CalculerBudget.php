@@ -17,7 +17,6 @@ use App\Chiffrage\ResultatChiffrage;
 use App\Entity\Demande;
 use App\Entity\Destination;
 use App\Entity\Prestation;
-use App\Entity\RegleDePrix;
 use App\Enum\Langue;
 use App\Enum\TypePrestataire;
 use App\Enum\TypePrestation;
@@ -35,6 +34,8 @@ use Psr\Clock\ClockInterface;
  */
 final class CalculerBudget implements Outil
 {
+    public const NOM = 'calculer_budget';
+
     /** Mention qui suit chaque présentation des totaux au client : l'estimation est datée (charte Détour). */
     public const AVERTISSEMENT = 'Prix estimés le %s à %s d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.';
     public const AVERTISSEMENT_EN = 'Prices estimated on %s at %s from our rates: your advisor checks every price and every place before confirming them.';
@@ -53,7 +54,7 @@ final class CalculerBudget implements Outil
 
     public function nom(): string
     {
-        return 'calculer_budget';
+        return self::NOM;
     }
 
     /**
@@ -159,7 +160,7 @@ final class CalculerBudget implements Outil
             throw new OutilException('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
         }
         $destination = $this->destination($entree['destination'] ?? null);
-        $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
+        $regle = $this->reglesDePrix->courante();
 
         try {
             return new DemandeDeChiffrage(

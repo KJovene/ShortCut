@@ -3,7 +3,7 @@
 namespace App\Tests\Chatbot;
 
 use App\Chatbot\AgentRedaction;
-use App\Chatbot\Outil\EnregistrerExigences;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Prestation;
@@ -301,7 +301,7 @@ final class NouvelleVersionTest extends WebTestCase
             ->setEnvoyeeLe(new \DateTimeImmutable('-1 hour'))
             ->setNiveauBudget(NiveauBudget::Equilibre)
             ->setChoix(['destination' => 'lisbonne', 'etapes' => [['dateDebut' => '2027-05-14', 'nombreDeNuits' => 3, 'logementIds' => $this->logements]], 'activitesDemandees' => [], 'activitesSuggerees' => [], 'pourquoi' => 'Lisbonne à deux, de plain-pied.'])
-            ->setExigences(EnregistrerExigences::fiche($demande))
+            ->setExigences(FicheDemande::depuis($demande))
             ->setProgramme(array_map(static fn (int $jour): array => ['jour' => $jour, 'date' => \sprintf('2027-05-%d', 13 + $jour), 'titre' => 'Jour '.$jour, 'description' => 'Lisbonne.', 'activiteIds' => []], range(1, 4)));
         $demande->addProposition($this->version1);
         $this->em->persist($this->version1);

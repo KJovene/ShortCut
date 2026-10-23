@@ -2,14 +2,12 @@
 
 namespace App\Controller;
 
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Confirmation\PropositionClient;
+use App\Demande\FicheDemande;
 use App\Entity\Demande;
 use App\Entity\Proposition;
 use App\Entity\Utilisateur;
 use App\Enum\StatutDemande;
-use App\Enum\StatutProposition;
-use App\Enum\TypeProposition;
 use App\Repository\DemandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -59,7 +57,7 @@ final class EspaceClientController extends AbstractController
     {
         $conseiller = $demande->getConseiller();
         $conversation = $demande->getConversation();
-        $proposition = self::propositionVisible($demande);
+        $proposition = PropositionClient::visible($demande);
 
         return [
             'id' => $demande->getId(),
@@ -78,11 +76,7 @@ final class EspaceClientController extends AbstractController
                 // Lien de la page « Ma proposition ».
                 'jeton' => $proposition->getJetonPublic(),
                 'version' => $proposition->getVersion(),
-                'etat' => match (true) {
-                    TypeProposition::Confirmee === $proposition->getType() => 'confirmee',
-                    StatutProposition::Brouillon === $proposition->getStatut() => 'preparee',
-                    default => 'estimee',
-                },
+                'etat' => PropositionClient::etat($proposition),
                 'statut' => $proposition->getStatut()->value,
                 'niveauBudget' => $proposition->getNiveauBudget()->label(),
                 'totalCentimes' => $proposition->getTotalCentimes(),
@@ -97,29 +91,8 @@ final class EspaceClientController extends AbstractController
                 'debutLe' => $conversation->getDebutLe()->format(\DATE_ATOM),
                 'messages' => $conversation->getMessages(),
                 // Fiche au format du chat (événement « demande »), pour son récapitulatif.
-                'fiche' => EnregistrerExigences::fiche($demande),
+                'fiche' => FicheDemande::depuis($demande),
             ],
         ];
-    }
-
-    /** Dernière version montrée au client (ni brouillon, ni remplacée), sinon son récapitulatif préparé. */
-    private static function propositionVisible(Demande $demande): ?Proposition
-    {
-        $apercu = PropositionClient::apercu($demande);
-        if (null !== $apercu) {
-            return $apercu;
-        }
-
-        $visible = null;
-        foreach ($demande->getPropositions() as $proposition) {
-            if (\in_array($proposition->getStatut(), [StatutProposition::Brouillon, StatutProposition::Remplacee], true)) {
-                continue;
-            }
-            if (null === $visible || $proposition->getVersion() > $visible->getVersion()) {
-                $visible = $proposition;
-            }
-        }
-
-        return $visible;
     }
 }

@@ -16,6 +16,7 @@ use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Field\FileFormField;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
@@ -145,6 +146,59 @@ final class PrestationCrudTest extends WebTestCase
         $apres = $this->em->getRepository(Prestation::class)->find($logement->getId())?->getPhotos() ?? [];
         self::assertCount(\count($avant) + 1, $apres);
         self::assertSame($avant, \array_slice($apres, 0, \count($avant)));
+    }
+
+    public function testOnRemplaceUnePhotoEnUnSeulEnregistrement(): void
+    {
+        // Deux photos à part, pour ne pas toucher aux photos du jeu de démo (tearDown les supprime).
+        foreach (['essai-a.jpg', 'essai-b.jpg'] as $fichier) {
+            copy((string) $this->photo('riad')->getRealPath(), $this->dossierPhotos.'/'.$fichier);
+        }
+        $logement = $this->em->getRepository(Prestation::class)->findOneBy(['nom' => 'Riad Dar Yasmine, riad entier']);
+        self::assertNotNull($logement);
+        $logement->setPhotos(['essai-a.jpg', 'essai-b.jpg']);
+        $this->em->flush();
+
+        $crawler = $this->client->request('GET', '/admin/logement/'.$logement->getId().'/edit');
+        $formulaire = $crawler->filter('form[name="Prestation"]')->form();
+        // Ce que fait la croix d'une photo dans le navigateur.
+        $formulaire['Prestation[photos][deleted_files]'] = '["essai-a.jpg"]';
+        $photos = $formulaire['Prestation[photos][file][0]'];
+        self::assertInstanceOf(FileFormField::class, $photos);
+        $photos->upload((string) $this->photo('appartement')->getRealPath());
+        $this->client->submit($formulaire);
+        self::assertResponseRedirects();
+
+        $this->em->clear();
+        $apres = $this->em->getRepository(Prestation::class)->find($logement->getId())?->getPhotos() ?? [];
+        self::assertCount(2, $apres);
+        self::assertSame('essai-b.jpg', $apres[0]);
+        self::assertFileExists($this->dossierPhotos.'/'.$apres[1]);
+    }
+
+    /** Seul le tarif modifié change d'auteur, comme avec l'API (TraceDeSaisieListener). */
+    public function testUnTarifModifieGardeQuiLaModifie(): void
+    {
+        $logement = $this->em->getRepository(Prestation::class)->findOneBy(['nom' => 'Riad Dar Yasmine, riad entier']);
+        self::assertNotNull($logement);
+        self::assertGreaterThanOrEqual(2, $logement->getTarifs()->count());
+        $auteurs = array_map(static fn ($t) => $t->getSaisiPar()?->getId(), $logement->getTarifs()->toArray());
+        $admin = $this->em->getRepository(Utilisateur::class)->findOneBy(['email' => 'admin@shortcut.test']);
+        self::assertNotNull($admin);
+        $this->client->loginUser($admin);
+
+        $uri = '/admin/logement/'.$logement->getId().'/edit';
+        $valeurs = $this->formulaire($uri);
+        $premier = array_key_first($valeurs['Prestation']['tarifs']);
+        $valeurs['Prestation']['tarifs'][$premier]['prixCentimes'] = '999';
+        $this->client->request('POST', $uri, $valeurs);
+        self::assertResponseRedirects();
+
+        $this->em->clear();
+        $tarifs = $this->em->getRepository(Prestation::class)->find($logement->getId())?->getTarifs()->toArray() ?? [];
+        self::assertSame(99900, $tarifs[0]->getPrixCentimes());
+        self::assertSame($admin->getId(), $tarifs[0]->getSaisiPar()?->getId());
+        self::assertSame(\array_slice($auteurs, 1), array_map(static fn ($t) => $t->getSaisiPar()?->getId(), \array_slice($tarifs, 1)));
     }
 
     public function testUneActiviteSeTarifeParPersonneEtExigeUneDuree(): void

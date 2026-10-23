@@ -2,6 +2,8 @@
 
 namespace App\Texte;
 
+use App\Chiffrage\Hypothese;
+
 /**
  * Les textes que le chiffrage écrit en français (hypothèses de budget, libellés de transport, arbitrages), traduits
  * pour un client qui dialogue en anglais (US15). Ils restent enregistrés en français, car le backoffice et la
@@ -17,19 +19,8 @@ final class Anglais
         'juillet' => 'July', 'août' => 'August', 'septembre' => 'September', 'octobre' => 'October', 'novembre' => 'November', 'décembre' => 'December',
     ];
 
-    /** Morceaux de phrase, dans l'ordre où ils sont remplacés. */
+    /** Morceaux de phrase, en plus des hypothèses de transport et de frais (Chiffrage\Hypothese::enAnglais). */
     private const MORCEAUX = [
-        'Transport inclus : vols et transferts estimés au minimum de la fourchette, pour' => 'Transport included: flights and transfers estimated at the low end of the range, for',
-        'Transport inclus : vols et transferts estimés au milieu de la fourchette, pour' => 'Transport included: flights and transfers estimated at the middle of the range, for',
-        'Transport inclus : vols et transferts estimés au maximum de la fourchette, pour' => 'Transport included: flights and transfers estimated at the high end of the range, for',
-        'Transport inclus : vols et transferts au prix confirmé, pour' => 'Transport included: flights and transfers at the confirmed price, for',
-        'Transport non inclus : vols et transferts à la charge du client' => 'Transport not included: flights and transfers paid by the client',
-        'Frais de dossier voyage de noces :' => 'Booking fee (honeymoon):',
-        'Frais de dossier séjour :' => 'Booking fee (stay):',
-        'Frais de dossier circuit :' => 'Booking fee (tour):',
-        'Frais de dossier groupe :' => 'Booking fee (group):',
-        'Frais de dossier entreprise :' => 'Booking fee (corporate):',
-        'Frais de dossier :' => 'Booking fee:',
         'Vol aller-retour ' => 'Return flight ',
         'Transferts aéroport – hébergement à ' => 'Airport – accommodation transfers in ',
         'Partir à une période moins chère, ' => 'Travel at a cheaper time, ',
@@ -46,7 +37,7 @@ final class Anglais
 
     public static function traduire(string $texte): string
     {
-        $texte = strtr($texte, self::MORCEAUX);
+        $texte = strtr($texte, Hypothese::enAnglais() + self::MORCEAUX);
 
         $texte = (string) preg_replace_callback(
             '/\b(\d+) ('.implode('|', array_keys(self::QUANTITES)).')s?\b/u',

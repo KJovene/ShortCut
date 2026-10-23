@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Demande\FicheDemande;
 use App\Enum\NiveauBudget;
 use App\Enum\StatutProposition;
 use App\Enum\TypeProposition;
@@ -97,7 +98,7 @@ class Proposition
     private ?\DateTimeImmutable $optionsChoisiesLe = null;
 
     /**
-     * La fiche demande au moment du chiffrage (EnregistrerExigences::fiche) : ce que le client a changé depuis.
+     * La fiche demande au moment du chiffrage (FicheDemande::depuis) : ce que le client a changé depuis.
      *
      * @var array<string, mixed>
      */
@@ -491,6 +492,18 @@ class Proposition
     public function getEnvoyeeLe(): ?\DateTimeImmutable
     {
         return $this->envoyeeLe;
+    }
+
+    /** Le client l'a reçue : envoyée par le conseiller, ou confirmée. */
+    public function estRecueParLeClient(): bool
+    {
+        return null !== $this->envoyeeLe || null !== $this->confirmeeLe;
+    }
+
+    /** Le client la voit encore : ni brouillon, ni remplacée par une version plus récente. */
+    public function estVisibleDuClient(): bool
+    {
+        return !\in_array($this->statut, [StatutProposition::Brouillon, StatutProposition::Remplacee], true);
     }
 
     public function setEnvoyeeLe(?\DateTimeImmutable $envoyeeLe): static

@@ -97,6 +97,21 @@ describe('pages vitrines (contenus de l’API)', () => {
     expect(within(circuits).getByRole('button', { name: /Construire mon voyage/ })).toBeVisible()
   })
 
+  it('affiche les frais de dossier fixés dans le backoffice', async () => {
+    simulerApi({
+      'GET /api/public/frais-de-dossier': {
+        status: 200,
+        body: { sejour: 10000, circuit: 18000, groupe: 20000, noces: 15000, entreprise: 20000 },
+      },
+    })
+    afficher('/types-de-voyages')
+
+    const circuits = (await screen.findByRole('heading', { name: 'Circuits' })).closest('article')!
+    expect(
+      await within(circuits).findByText('Frais de dossier : 180 € par dossier.'),
+    ).toBeInTheDocument()
+  })
+
   it('l’accueil prend son titre dans l’API, et s’affiche même sans elle', async () => {
     simulerApi({ 'GET /api/pages/accueil': { status: 500 } })
     afficher('/')

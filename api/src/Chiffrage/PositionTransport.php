@@ -18,6 +18,16 @@ enum PositionTransport: string
         };
     }
 
+    /** Pour un client qui écrit en anglais (US15) : « the middle of the range ». */
+    public function labelEnAnglais(): string
+    {
+        return match ($this) {
+            self::Minimum => 'the low end of the range',
+            self::Milieu => 'the middle of the range',
+            self::Maximum => 'the high end of the range',
+        };
+    }
+
     /** Prix retenu dans [min, max], au centime ; le milieu est arrondi au centime supérieur. */
     public function prix(int $minCentimes, int $maxCentimes): int
     {

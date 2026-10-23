@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { FRAIS_DE_DOSSIER } from './catalogue'
 import { DESTINATIONS_DE_DEMO } from './destinations'
 import { MENU_DE_DEMO, PAGES_DE_DEMO } from './pages'
 
@@ -8,7 +9,8 @@ type Reponse = { status: number; body?: unknown }
  * Remplace fetch par une API simulée : « POST /api/connexion » → réponse. Un corps texte est servi tel quel (flux du
  * chat), un autre corps en JSON.
  * Sans réponse prévue, GET /api/moi répond 401 (personne n'est connecté), GET /api/pages(/{slug}) et
- * GET /api/public/destinations(/{slug}) servent les données de démo et le reste répond 404.
+ * GET /api/public/destinations(/{slug}) et GET /api/public/frais-de-dossier servent les données de démo et le reste
+ * répond 404.
  */
 export function simulerApi(routes: Record<string, Reponse | Reponse[]>) {
   const restantes = new Map(Object.entries(routes).map(([cle, r]) => [cle, [r].flat()]))
@@ -50,6 +52,14 @@ function reponseParDefaut(cle: string): Reponse {
   const page = /^GET \/api\/pages\/(.+)$/.exec(cle)?.[1]
   if (page && PAGES_DE_DEMO[page]) {
     return { status: 200, body: PAGES_DE_DEMO[page] }
+  }
+  if (cle === 'GET /api/public/frais-de-dossier') {
+    return {
+      status: 200,
+      body: Object.fromEntries(
+        Object.entries(FRAIS_DE_DOSSIER).map(([type, euros]) => [type, euros * 100]),
+      ),
+    }
   }
   if (cle === 'GET /api/public/destinations') {
     return { status: 200, body: DESTINATIONS_DE_DEMO }

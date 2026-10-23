@@ -64,8 +64,31 @@ final class ClientCrudTest extends WebTestCase
         $this->client->request('GET', '/admin/client/'.$this->hugo->getId());
         self::assertResponseStatusCodeSame(404);
 
-        $this->client->request('GET', '/admin/client/'.$zoe->getId().'/edit');
-        self::assertResponseStatusCodeSame(403);
+        $this->client->request('GET', '/admin/client/'.$this->hugo->getId().'/edit');
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    /** Le conseiller tient les préférences du client (D27) ; ses coordonnées ne se modifient pas ici. */
+    public function testLeConseillerSaisitLesPreferencesDuClient(): void
+    {
+        $zoe = $this->creerCompte('zoe.fontaine@exemple.test', 'Fontaine', Role::Client);
+        $this->client->loginUser($this->lea);
+
+        $crawler = $this->client->request('GET', '/admin/client/'.$zoe->getId().'/edit');
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('[name="Utilisateur[email]"]'));
+        $valeurs = $crawler->filter('form[name="Utilisateur"]')->form()->getPhpValues();
+        $valeurs['Utilisateur']['preferences'] = ['plage', 'famille'];
+        $this->client->request('POST', '/admin/client/'.$zoe->getId().'/edit', $valeurs);
+        self::assertResponseRedirects();
+
+        $this->em->clear();
+        $client = $this->em->find(Utilisateur::class, $zoe->getId());
+        self::assertSame(['plage', 'famille'], $client?->getPreferences());
+        self::assertSame('zoe.fontaine@exemple.test', $client->getEmail());
+
+        $this->client->request('GET', '/admin/client/'.$zoe->getId());
+        self::assertSelectorTextContains('body', 'famille');
     }
 
     public function testLaFicheMontreLesDemandesEtLesConversations(): void

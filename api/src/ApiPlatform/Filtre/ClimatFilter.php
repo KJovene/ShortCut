@@ -14,7 +14,8 @@ use Doctrine\ORM\QueryBuilder;
 
 /**
  * `?mois=AAAA-MM&temperatureMin=25&temperatureMax=30` : destinations dont une même période climatique
- * touche le mois et a une température moyenne dans les bornes. Les trois paramètres forment une seule
+ * touche le mois et a une température moyenne dans les bornes. Le climat est une moyenne : le mois vaut pour
+ * toutes les années (MOIS_COUVERT), comme dans le filtre du backoffice. Les trois paramètres forment une seule
  * condition : elle est ajoutée une fois, au passage du premier paramètre renseigné.
  */
 final class ClimatFilter implements FilterInterface, OpenApiParameterFilterInterface
@@ -43,11 +44,9 @@ final class ClimatFilter implements FilterInterface, OpenApiParameterFilterInter
         $parametres = [];
 
         if (isset($valeurs['mois']) && \is_string($valeurs['mois']) && preg_match(MoisFilter::FORMAT, $valeurs['mois'])) {
-            [$debut, $fin] = MoisFilter::bornes($valeurs['mois']);
-            $parametres[$queryNameGenerator->generateParameterName('debut')] = $debut;
-            $parametres[$queryNameGenerator->generateParameterName('fin')] = $fin;
-            [$paramDebut, $paramFin] = array_keys($parametres);
-            $conditions[] = \sprintf('%1$s.debut <= :%2$s AND %1$s.fin >= :%3$s', $periode, $paramFin, $paramDebut);
+            $nom = $queryNameGenerator->generateParameterName('mois');
+            $parametres[$nom] = (int) substr($valeurs['mois'], 5, 2);
+            $conditions[] = \sprintf('MOIS_COUVERT(%1$s.debut, %1$s.fin, :%2$s) = 1', $periode, $nom);
         }
         foreach (['temperatureMin' => '>=', 'temperatureMax' => '<='] as $cle => $operateur) {
             if (isset($valeurs[$cle]) && is_numeric($valeurs[$cle])) {

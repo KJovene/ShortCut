@@ -24,7 +24,7 @@ import {
 } from '@/features/espace/espace'
 import { urlRendezVous } from '@/features/espace/rendezVous'
 import { TEXTES } from '@/features/espace/textes'
-import { useChat } from '@/features/chat/chatContext'
+import { useChat, useChatActions } from '@/features/chat/chatContext'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import { ApiError } from '@/lib/api'
 import { profilQuery } from '@/lib/auth'
@@ -287,7 +287,7 @@ function VoyageSuivi({ demande }: { demande: DemandeClient }) {
 function ModifierVoyage({ demande }: { demande: DemandeClient }) {
   const t = TEXTES[useLangue()]
   const [ouvert, setOuvert] = useState(false)
-  const { reprendre } = useChat()
+  const { reprendre } = useChatActions()
   const conseiller = prenomConseiller(demande)
   const conversation = demande.conversation
   const rendezVous = urlRendezVous()

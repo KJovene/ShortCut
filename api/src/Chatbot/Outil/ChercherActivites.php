@@ -19,6 +19,8 @@ use App\Texte\Correspondance;
  */
 final class ChercherActivites implements Outil
 {
+    public const NOM = 'chercher_activites';
+
     public function __construct(
         private readonly DestinationRepository $destinations,
         private readonly PrestationRepository $prestations,
@@ -27,7 +29,7 @@ final class ChercherActivites implements Outil
 
     public function nom(): string
     {
-        return 'chercher_activites';
+        return self::NOM;
     }
 
     public function definition(): array

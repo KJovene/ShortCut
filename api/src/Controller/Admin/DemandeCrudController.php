@@ -468,18 +468,15 @@ final class DemandeCrudController extends AbstractCrudController
         return $this->confirmations->versionDeConfirmation($demande, $estimation);
     }
 
-    /** La demande est perdue (le client renonce, ne répond plus) : transition « perdre » du workflow. */
+    /** La demande est perdue (le client renonce, ne répond plus) : sa proposition passe « refusée » (ConfirmationService). */
     #[AdminRoute('/{id}/perdre', name: 'perdre', options: ['methods' => ['POST']])]
-    public function perdre(#[MapEntity(id: 'id')] Demande $demande, Request $request, EntityManagerInterface $em): Response
+    public function perdre(#[MapEntity(id: 'id')] Demande $demande, Request $request): Response
     {
         $this->denyAccessUnlessGranted(DemandeVoter::MODIFIER, $demande);
         if (!$this->isCsrfTokenValid('perdre_'.$demande->getId(), $request->query->getString('_token'))) {
             throw $this->createAccessDeniedException('Jeton de sécurité invalide : rechargez la page.');
         }
-        if ($this->workflowDemande->can($demande, 'perdre')) {
-            $this->workflowDemande->apply($demande, 'perdre');
-            $demande->setModifieLe(new \DateTimeImmutable());
-            $em->flush();
+        if ($this->confirmations->perdre($demande)) {
             $this->addFlash('success', 'Demande marquée comme perdue.');
         } else {
             $this->addFlash('warning', \sprintf('La demande est « %s » : elle ne peut plus être perdue.', $demande->getStatut()->label()));

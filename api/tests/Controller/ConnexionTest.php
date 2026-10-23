@@ -26,6 +26,8 @@ final class ConnexionTest extends WebTestCase
         $this->client->disableReboot();
         $this->em = static::getContainer()->get(EntityManagerInterface::class);
         $this->em->getConnection()->beginTransaction();
+        // Les compteurs de la limite de connexion (security.yaml) survivent d'un test à l'autre.
+        static::getContainer()->get('cache.rate_limiter')->clear();
     }
 
     protected function tearDown(): void
@@ -67,10 +69,25 @@ final class ConnexionTest extends WebTestCase
         $this->seConnecter('lea.test@shortcut.test', 'pas-le-bon');
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame(['error' => 'Identifiants invalides.'], $this->reponse());
+        self::assertSame(['erreur' => 'Identifiants invalides.'], $this->reponse());
 
         $this->client->request('GET', '/admin');
         self::assertResponseRedirects('http://localhost:5173/connexion');
+    }
+
+    public function testApresCinqEchecsLaConnexionEstBloquee(): void
+    {
+        $this->creerCompte('lea.test@shortcut.test', Role::Conseiller);
+
+        for ($essai = 1; $essai <= 5; ++$essai) {
+            $this->seConnecter('lea.test@shortcut.test', 'pas-le-bon');
+            self::assertSame(['erreur' => 'Identifiants invalides.'], $this->reponse());
+        }
+
+        // Même le bon mot de passe est refusé tant que le délai n'est pas écoulé.
+        $this->seConnecter('lea.test@shortcut.test', self::MOT_DE_PASSE);
+        self::assertResponseStatusCodeSame(401);
+        self::assertStringContainsString('15 minutes', (string) $this->reponse()['erreur']);
     }
 
     public function testLeMotDePasseEstHacheEnBase(): void

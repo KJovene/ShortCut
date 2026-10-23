@@ -449,10 +449,8 @@ final class BudgetCalculator
                 $hypotheses[] = \sprintf('%s : organisée en %d sessions de %d personnes au plus', $a->activite->getNom(), $a->sessions, $a->activite->getCapacite());
             }
         }
-        $hypotheses[] = $transport
-            ? \sprintf('Transport inclus : vols et transferts estimés au %s, pour %s', $position->label(), Montant::quantite($demande->voyageurs(), 'voyageur'))
-            : 'Transport non inclus : vols et transferts à la charge du client';
-        $hypotheses[] = \sprintf('Frais de dossier %s : %s', mb_strtolower($demande->typeDeVoyage->label()), Montant::euros($demande->fraisDeDossierCentimes));
+        $hypotheses[] = Hypothese::transport($transport, $position, $demande->voyageurs());
+        $hypotheses[] = Hypothese::fraisDeDossier($demande->typeDeVoyage, $demande->fraisDeDossierCentimes);
 
         return $hypotheses;
     }

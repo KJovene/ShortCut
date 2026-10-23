@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { TYPES_DE_VOYAGE } from '@/data/catalogue'
-import { ApiError } from '@/lib/api'
+import { nullSi, requete } from '@/lib/api'
 import type { Langue } from '@/lib/langue'
 import { TEXTES } from './textes'
 
@@ -110,26 +110,9 @@ export const PropositionEnLigne = z.object({
 })
 export type PropositionEnLigne = z.infer<typeof PropositionEnLigne>
 
-async function lire(response: Response): Promise<PropositionEnLigne> {
-  if (!response.ok) {
-    // 409 : action refusée, avec le message à montrer au client (déjà acceptée, plus confirmable…).
-    const corps: unknown = await response.json().catch(() => null)
-    const erreur = z.object({ erreur: z.string() }).safeParse(corps)
-    throw new ApiError(
-      response.status,
-      erreur.success ? erreur.data.erreur : 'Une erreur est survenue, réessayez dans un instant.',
-    )
-  }
-  return PropositionEnLigne.parse(await response.json())
-}
-
 /** La proposition du lien, ou null si le lien ne mène à aucune proposition envoyée (404). */
 export async function chargerProposition(jeton: string): Promise<PropositionEnLigne | null> {
-  const response = await fetch(`/api/propositions/${jeton}`, {
-    headers: { Accept: 'application/json' },
-  })
-  if (response.status === 404) return null
-  return lire(response)
+  return nullSi(404, requete(`/propositions/${jeton}`, PropositionEnLigne))
 }
 
 export const propositionQuery = (jeton: string) =>
@@ -140,10 +123,7 @@ export const propositionQuery = (jeton: string) =>
 
 /** Une version précise de la même proposition, même remplacée : GET /api/propositions/{jeton}/versions/{numero}. */
 export async function chargerVersion(jeton: string, numero: number): Promise<PropositionEnLigne> {
-  const response = await fetch(`/api/propositions/${jeton}/versions/${numero}`, {
-    headers: { Accept: 'application/json' },
-  })
-  return lire(response)
+  return requete(`/propositions/${jeton}/versions/${numero}`, PropositionEnLigne)
 }
 
 export const versionQuery = (jeton: string, numero: number) =>
@@ -165,11 +145,8 @@ export async function agirSurProposition(
   jeton: string,
   action: ActionProposition,
 ): Promise<PropositionEnLigne> {
-  const response = await fetch(`/api/propositions/${jeton}/${action}`, {
-    method: 'POST',
-    headers: { Accept: 'application/json' },
-  })
-  return lire(response)
+  // 409 : action refusée, avec le message à montrer au client (déjà acceptée, plus confirmable…).
+  return requete(`/propositions/${jeton}/${action}`, PropositionEnLigne, { method: 'POST' })
 }
 
 /** Nombre de voyageurs, pour l'en-tête : « 2 adultes, 1 enfant ». */

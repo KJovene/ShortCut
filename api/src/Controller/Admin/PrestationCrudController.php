@@ -2,14 +2,13 @@
 
 namespace App\Controller\Admin;
 
+use App\Admin\TeleversementsMultiples;
 use App\Entity\Prestation;
-use App\Entity\Utilisateur;
 use App\Enum\TypePrestataire;
 use App\Enum\TypePrestation;
 use App\Enum\UniteTarif;
 use App\Form\TarifPrestationType;
 use App\Form\TexteSuggereType;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
@@ -43,6 +42,8 @@ use Symfony\Component\Validator\Constraints\Image;
  */
 abstract class PrestationCrudController extends AbstractCrudController
 {
+    use TeleversementsMultiples;
+
     abstract protected static function type(): TypePrestation;
 
     /**
@@ -121,18 +122,6 @@ abstract class PrestationCrudController extends AbstractCrudController
         return $responseParameters;
     }
 
-    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        $this->tracerLesNouveauxTarifs($entityInstance);
-        parent::persistEntity($entityManager, $entityInstance);
-    }
-
-    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        $this->tracerLesNouveauxTarifs($entityInstance);
-        parent::updateEntity($entityManager, $entityInstance);
-    }
-
     public function configureFields(string $pageName): iterable
     {
         $logement = TypePrestation::Logement === static::type();
@@ -201,17 +190,6 @@ abstract class PrestationCrudController extends AbstractCrudController
         yield Field::new('tarifs', 'Tarifs par période')
             ->setTemplatePath('admin/champ/tarifs.html.twig')
             ->onlyOnDetail();
-    }
-
-    /** Qui a saisi chaque nouveau tarif, comme dans l'API (SaisieTarifProcessor). */
-    private function tracerLesNouveauxTarifs(Prestation $prestation): void
-    {
-        $utilisateur = $this->getUser();
-        foreach ($prestation->getTarifs() as $tarif) {
-            if (null === $tarif->getId()) {
-                $tarif->setSaisiPar($utilisateur instanceof Utilisateur ? $utilisateur : null)->setModifieLe(new \DateTimeImmutable());
-            }
-        }
     }
 
     /**

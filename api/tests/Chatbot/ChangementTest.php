@@ -4,8 +4,8 @@ namespace App\Tests\Chatbot;
 
 use App\Chatbot\Changement;
 use App\Chatbot\NouvelleVersion;
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\OutilException;
+use App\Demande\FicheDemande;
 use App\Entity\Demande;
 use App\Enum\TypeDeVoyage;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +18,7 @@ final class ChangementTest extends TestCase
         $avant = $this->lisbonne();
         $apres = $this->lisbonne()->setDateDebut(new \DateTimeImmutable('2027-05-21'))->setDateFin(new \DateTimeImmutable('2027-05-24'));
 
-        $changement = Changement::entre(EnregistrerExigences::fiche($avant), EnregistrerExigences::fiche($apres));
+        $changement = Changement::entre(FicheDemande::depuis($avant), FicheDemande::depuis($apres));
 
         self::assertSame(['dateDebut', 'dateFin'], array_keys($changement->champs));
         self::assertSame('2027-05-14', $changement->champs['dateDebut']['avant']);
@@ -29,8 +29,8 @@ final class ChangementTest extends TestCase
     public function testDeNouvellesEnviesDemandentUneRecherche(): void
     {
         $changement = Changement::entre(
-            EnregistrerExigences::fiche($this->lisbonne()),
-            EnregistrerExigences::fiche($this->lisbonne()->setEnvies(['gastronomie', 'culture'])->setAdultes(3)->setBudgetCentimes(150000)),
+            FicheDemande::depuis($this->lisbonne()),
+            FicheDemande::depuis($this->lisbonne()->setEnvies(['gastronomie', 'culture'])->setAdultes(3)->setBudgetCentimes(150000)),
         );
 
         self::assertTrue($changement->rechercheNecessaire());
@@ -44,8 +44,8 @@ final class ChangementTest extends TestCase
     public function testLOrdreDUneListeNEstPasUnChangement(): void
     {
         $changement = Changement::entre(
-            EnregistrerExigences::fiche($this->lisbonne()->setEnvies(['gastronomie', 'culture'])),
-            EnregistrerExigences::fiche($this->lisbonne()->setEnvies(['culture', 'gastronomie'])),
+            FicheDemande::depuis($this->lisbonne()->setEnvies(['gastronomie', 'culture'])),
+            FicheDemande::depuis($this->lisbonne()->setEnvies(['culture', 'gastronomie'])),
         );
 
         self::assertTrue($changement->vide());

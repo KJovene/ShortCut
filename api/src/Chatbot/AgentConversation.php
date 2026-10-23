@@ -10,6 +10,7 @@ use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\TransmettreAuConseiller;
 use App\Chiffrage\Montant;
 use App\Confirmation\PropositionClient;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
@@ -108,9 +109,9 @@ final class AgentConversation extends Agent
         }
 
         // Le client répond aux options de sa proposition : elle reste telle quelle ou se met à jour.
-        $transmise = null !== $tour->sortie('transmettre_au_conseiller');
+        $transmise = null !== $tour->sortie(TransmettreAuConseiller::NOM);
         $attendUneReponse = !$transmise;
-        $options = $tour->sortie('choisir_options');
+        $options = $tour->sortie(ChoisirOptions::NOM);
         $reference = NouvelleVersion::reference($demande);
         if (null !== $options && null !== $reference) {
             $attendUneReponse = yield from $this->nouvelleVersion->appliquerLesOptions(
@@ -119,7 +120,7 @@ final class AgentConversation extends Agent
                 $options['activitesAjoutees'],
                 NiveauBudget::tryFrom((string) $options['niveau']),
             );
-        } elseif (!$transmise && true === ($tour->sortie('enregistrer_exigences')['recapitulatifConfirme'] ?? false)) {
+        } elseif (!$transmise && true === ($tour->sortie(EnregistrerExigences::NOM)['recapitulatifConfirme'] ?? false)) {
             // Le client vient de confirmer sa demande : la recherche commence sans attendre un autre message. S'il a
             // déjà une proposition, c'est une modification : la version suivante se recalcule à partir d'elle (#211).
             // Un dossier déjà suivi sans proposition n'est que mis à jour : son conseiller prépare la première. Une
@@ -167,13 +168,13 @@ final class AgentConversation extends Agent
      */
     private static function etatDeLaFiche(Demande $demande): string
     {
-        $parDefaut = EnregistrerExigences::fiche(new Demande());
+        $parDefaut = FicheDemande::depuis(new Demande());
         $remplis = array_filter(
-            EnregistrerExigences::fiche($demande),
+            FicheDemande::depuis($demande),
             static fn (mixed $valeur, string $champ) => null !== $valeur && [] !== $valeur && $valeur !== $parDefaut[$champ],
             \ARRAY_FILTER_USE_BOTH,
         );
-        $manquantes = EnregistrerExigences::manquantes($demande);
+        $manquantes = FicheDemande::manquantes($demande);
 
         return \sprintf(
             '<etat_de_la_fiche>Enregistré : %s. Encore inconnu : %s. Langue du client : %s.</etat_de_la_fiche>',

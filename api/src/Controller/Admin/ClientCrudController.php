@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Utilisateur;
 use App\Enum\Role;
 use App\Repository\DemandeRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FieldCollection;
 use EasyCorp\Bundle\EasyAdminBundle\Collection\FilterCollection;
@@ -23,7 +24,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 /**
  * Fiche client (#183, #184) : le conseiller retrouve un client par son nom ou son e-mail, puis consulte
  * ses demandes et ses conversations pour reprendre un dossier sans tout redemander.
- * Les clients naissent dans le chatbot ou à l'inscription : pas de création ni de modification ici.
+ * Les clients naissent dans le chatbot ou à l'inscription : pas de création ici. Le conseiller ne modifie que les
+ * préférences du client (étiquettes, D27) ; ses coordonnées restent les siennes, modifiées depuis son profil.
  * Une demande suivie par un autre conseiller apparaît dans l'historique sans son détail (DemandeVoter).
  *
  * @extends AbstractCrudController<Utilisateur>
@@ -46,6 +48,7 @@ final class ClientCrudController extends AbstractCrudController
             ->setEntityLabelInSingular('Client')
             ->setEntityLabelInPlural('Clients')
             ->setPageTitle(Crud::PAGE_DETAIL, static fn (Utilisateur $client) => (string) $client)
+            ->setPageTitle(Crud::PAGE_EDIT, static fn (Utilisateur $client) => \sprintf('Préférences de %s', $client))
             ->setDefaultSort(['nom' => 'ASC'])
             ->setSearchFields(['nom', 'prenom', 'email'])
             ->overrideTemplate('crud/detail', 'admin/client/detail.html.twig');
@@ -55,7 +58,9 @@ final class ClientCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->disable(Action::NEW, Action::EDIT, Action::DELETE, Action::BATCH_DELETE);
+            ->update(Crud::PAGE_INDEX, Action::EDIT, static fn (Action $action) => $action->setLabel('Préférences'))
+            ->update(Crud::PAGE_DETAIL, Action::EDIT, static fn (Action $action) => $action->setLabel('Modifier les préférences'))
+            ->disable(Action::NEW, Action::DELETE, Action::BATCH_DELETE);
     }
 
     /** Seuls les clients sont listés : les comptes du backoffice se gèrent dans « Comptes ». */
@@ -66,10 +71,10 @@ final class ClientCrudController extends AbstractCrudController
             ->setParameter('client', Role::Client);
     }
 
-    /** Ajoute l'historique du client à sa fiche ; un compte qui n'est pas client n'a pas de fiche. */
+    /** Ajoute l'historique du client à sa fiche ; un compte qui n'est pas client n'a ni fiche ni préférences. */
     public function configureResponseParameters(KeyValueStore $responseParameters): KeyValueStore
     {
-        if (Crud::PAGE_DETAIL !== $responseParameters->get('pageName')) {
+        if (!\in_array($responseParameters->get('pageName'), [Crud::PAGE_DETAIL, Crud::PAGE_EDIT], true)) {
             return $responseParameters;
         }
 
@@ -80,17 +85,29 @@ final class ClientCrudController extends AbstractCrudController
             throw $this->createNotFoundException('Ce compte n\'est pas un client.');
         }
 
-        $responseParameters->set('demandes', $this->demandes->findHistoriqueDuClient($client));
+        if (Crud::PAGE_DETAIL === $responseParameters->get('pageName')) {
+            $responseParameters->set('demandes', $this->demandes->findHistoriqueDuClient($client));
+        }
 
         return $responseParameters;
     }
 
+    public function updateEntity(EntityManagerInterface $entityManager, object $entityInstance): void
+    {
+        if (Role::Client !== $entityInstance->getRole()) {
+            throw $this->createNotFoundException('Ce compte n\'est pas un client.');
+        }
+        parent::updateEntity($entityManager, $entityInstance);
+    }
+
     public function configureFields(string $pageName): iterable
     {
-        yield TextField::new('prenom', 'Prénom');
-        yield TextField::new('nom', 'Nom');
-        yield EmailField::new('email', 'E-mail');
-        yield TextField::new('telephone', 'Téléphone');
-        yield ArrayField::new('preferences', 'Préférences')->onlyOnDetail();
+        yield TextField::new('prenom', 'Prénom')->hideOnForm();
+        yield TextField::new('nom', 'Nom')->hideOnForm();
+        yield EmailField::new('email', 'E-mail')->hideOnForm();
+        yield TextField::new('telephone', 'Téléphone')->hideOnForm();
+        yield ArrayField::new('preferences', 'Préférences')
+            ->hideOnIndex()
+            ->setHelp('Une étiquette par ligne : « plage », « famille », « gastronomie »… Elles aident à reprendre un dossier.');
     }
 }

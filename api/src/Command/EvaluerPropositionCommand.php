@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Chatbot\AgentRecherche;
 use App\Entity\Conversation;
 use App\Entity\Demande;
+use App\Enum\AgentIA;
 use App\Enum\TypeDeVoyage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -101,7 +102,8 @@ final class EvaluerPropositionCommand extends Command
             foreach ($this->recherche->proposer($conversation) as $evenement) {
                 $donnees = json_decode((string) $evenement->getData(), true);
                 match ($evenement->getType()) {
-                    'combinaison' => [$combinaisonA, $destination] = [(hrtime(true) - $debut) / 1e9, (string) ($donnees['destination']['ville'] ?? '?')],
+                    // Carte de la piste retenue par l'agent Recherche (Piste::depuis).
+                    'piste' => [$combinaisonA, $destination] = [(hrtime(true) - $debut) / 1e9, (string) ($donnees['destination']['ville'] ?? '?')],
                     'texte' => $texte .= (string) ($donnees['texte'] ?? ''),
                     'erreur' => $erreurs[] = (string) ($donnees['erreur'] ?? ''),
                     default => null,
@@ -112,7 +114,7 @@ final class EvaluerPropositionCommand extends Command
             $proposition = $demande->getPropositions()->last() ?: null;
             $nuits = (int) $demande->getNombreDeJours();
             $jours = null === $proposition ? null : \count($proposition->getProgramme());
-            $appels = (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM journal_ia WHERE demande_id = ? AND agent = ?', [$demande->getId(), 'chiffrage']);
+            $appels = (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM journal_ia WHERE demande_id = ? AND agent = ?', [$demande->getId(), AgentIA::Chiffrage->value]);
             // Une demande test qui doit passer au conseiller (période sans tarif) réussit sans proposition.
             $ok = ($test['attendu']['passageAuConseiller'] ?? false)
                 ? null === $proposition && $conversation->isRepriseParConseiller()

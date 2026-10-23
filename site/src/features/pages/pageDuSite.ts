@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { ApiError } from '@/lib/api'
+import { requete } from '@/lib/api'
 
 /** Contenu d'une page du site, modifiable dans le backoffice (« Contenus du site »). */
 export const PageDuSite = z.object({
@@ -17,13 +17,9 @@ export const PageDuSite = z.object({
 export type PageDuSite = z.infer<typeof PageDuSite>
 
 export async function chargerPage(slug: string): Promise<PageDuSite> {
-  const response = await fetch(`/api/pages/${slug}`, {
-    headers: { Accept: 'application/json' },
+  return requete(`/pages/${slug}`, PageDuSite, {
+    messageErreur: 'Impossible de charger cette page.',
   })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de charger cette page.')
-  }
-  return PageDuSite.parse(await response.json())
 }
 
 export const pageQuery = (slug: string) =>
@@ -38,11 +34,7 @@ const PageDuMenu = z.object({ slug: z.string(), ordreMenu: z.number().nullish() 
 export type PageDuMenu = z.infer<typeof PageDuMenu>
 
 export async function chargerMenu(): Promise<PageDuMenu[]> {
-  const response = await fetch('/api/pages', { headers: { Accept: 'application/json' } })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de charger le menu.')
-  }
-  return z.array(PageDuMenu).parse(await response.json())
+  return requete('/pages', z.array(PageDuMenu), { messageErreur: 'Impossible de charger le menu.' })
 }
 
 export const menuQuery = queryOptions({

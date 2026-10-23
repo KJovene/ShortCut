@@ -7,6 +7,7 @@ use App\Chatbot\Outil\ChercherActivites;
 use App\Chatbot\Outil\ChercherDestinations;
 use App\Chatbot\Outil\ChercherLogements;
 use App\Chatbot\Outil\OutilException;
+use App\DataFixtures\Donnees\Catalogue;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Destination;
@@ -140,6 +141,20 @@ final class OutilsDeRechercheTest extends KernelTestCase
             'climatAuxDates' => [['debut' => '2027-02-01', 'fin' => '2027-02-28', 'temperatureMoyenne' => 13.0, 'pluieMm' => 90]],
             'datesPossibles' => [['dateDebut' => '2027-05-01', 'dateFin' => '2027-05-08']],
         ], $resultat['ecartees'][0]);
+    }
+
+    /** Le climat est saisi pour une année (fixtures : Catalogue::ANNEE) : il vaut pour les mêmes mois des autres années. */
+    public function testLeClimatSaisiValaitPourLesAutresAnnees(): void
+    {
+        $resultat = $this->destinations->rechercher(['zone' => 'Lisbonne', 'dateDebut' => '2026-12-26', 'dateFin' => '2027-01-02'], null);
+
+        $lisbonne = [...$resultat['destinations'], ...$resultat['ecartees']][0];
+        $temperatures = Catalogue::destinations()['lisbonne']['temperatures'];
+        self::assertSame([
+            ['debut' => '2026-12-01', 'fin' => '2026-12-31', 'temperature' => (float) $temperatures[11]],
+            ['debut' => '2027-01-01', 'fin' => '2027-01-31', 'temperature' => (float) $temperatures[0]],
+        ], array_map(static fn (array $p): array => ['debut' => $p['debut'], 'fin' => $p['fin'], 'temperature' => $p['temperatureMoyenne']], $lisbonne['climatAuxDates']));
+        self::assertArrayNotHasKey('donneesManquantes', $resultat);
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Destination;
 use App\Entity\PeriodeClimatique;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -33,44 +32,5 @@ class PeriodeClimatiqueRepository extends ServiceEntityRepository
         }
 
         return $query->getQuery()->getOneOrNullResult();
-    }
-
-    /**
-     * @return list<array{debut: \DateTimeImmutable, fin: \DateTimeImmutable}>
-     */
-    public function findUncoveredMonths(Destination $destination, \DateTimeImmutable $from, int $months = 12): array
-    {
-        $cursor = $from->modify('first day of this month');
-        $end = $cursor->modify(sprintf('+%d months', $months - 1));
-        $to = $end->modify('last day of this month');
-        /** @var list<PeriodeClimatique> $covered */
-        $covered = $this->createQueryBuilder('periode')
-            ->andWhere('periode.destination = :destination')
-            ->andWhere('periode.debut <= :to')
-            ->andWhere('periode.fin >= :from')
-            ->setParameter('destination', $destination)
-            ->setParameter('from', $from)
-            ->setParameter('to', $to)
-            ->orderBy('periode.debut', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        $missing = [];
-        while ($cursor <= $end) {
-            $monthEnd = $cursor->modify('last day of this month');
-            $coveredByPeriod = false;
-            foreach ($covered as $periode) {
-                if ($periode->getDebut() <= $monthEnd && $periode->getFin() >= $cursor) {
-                    $coveredByPeriod = true;
-                    break;
-                }
-            }
-            if (!$coveredByPeriod) {
-                $missing[] = ['debut' => $cursor, 'fin' => $monthEnd];
-            }
-            $cursor = $cursor->modify('+1 month');
-        }
-
-        return $missing;
     }
 }
