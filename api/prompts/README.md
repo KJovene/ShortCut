@@ -8,6 +8,8 @@
 
 Les commentaires `<!-- … -->` en tête de fichier ne sont pas envoyés au modèle. Les variables `{{…}}` sont remplacées par l'API avant chaque appel.
 
+Les prompts en sont à conversation v15, recherche v10 et rédaction v8 (historique dans le commentaire de tête de chaque fichier). Les résultats consignés ci-dessous datent des versions qu'ils indiquent, au plus conversation v8, recherche v8 et rédaction v6 : les versions suivantes n'ont pas de résultats consignés ici.
+
 ## Tester le prompt de conversation
 
 Dans la [console Claude](https://platform.claude.com), ouvrir le Workbench (les essais consomment les crédits API de l'agence) :
@@ -65,7 +67,7 @@ Tests automatisés du 16/10/2026 : le client est joué par Claude Sonnet 5.5 à 
 | v2 | Sonnet 5.5 | Noces | 8 | 6 | Aucune | Non | 5 | |
 | v2 | Sonnet 5.5 | Entreprise | 8 | 6 | Aucune | Non | 5 | |
 
-Corrections de la v2 : les températures, la flexibilité des dates et le nombre d'adultes sont toujours demandés ; l'objectif d'un événement d'entreprise et le type de besoin d'accessibilité aussi ; récapitulatif limité à huit lignes ; aucune affirmation sur le calendrier ou les jours fériés.
+Corrections de la v2 : les températures (plus demandées depuis la v12 : une préférence de climat va dans les envies), la flexibilité des dates et le nombre d'adultes sont toujours demandés ; l'objectif d'un événement d'entreprise et le type de besoin d'accessibilité aussi ; récapitulatif limité à huit lignes ; aucune affirmation sur le calendrier ou les jours fériés.
 
 Coût d'une conversation de recueil (mesuré) : environ 0,004 $ avec Haiku 5.5 et 0,13 $ avec Sonnet 5.5.
 

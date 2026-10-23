@@ -271,7 +271,8 @@ export const TEXTES = {
       ia: 'Our assistant is an AI. Its prices are dated estimates: nothing is booked until your advisor signs off.',
     },
     questionnaire: {
-      presentation: 'Hello, I am your travel assistant. Answer these three questions to get started.',
+      presentation:
+        'Hello, I am your travel assistant. Answer these three questions to get started.',
       apresConnexion:
         'Once you are signed in, you will have access to a more advanced chatbot to plan your trip in detail.',
       numero: (n: number) => `Question ${n} of 3`,

@@ -139,12 +139,12 @@ export const TEXTES = {
       meta: {
         titre: 'Destinations · Où partir, et quand ?',
         description:
-          'Toutes nos destinations, filtrables par mois, température moyenne et type de voyage.',
+          'Toutes nos destinations, filtrables par type de voyage, avec le meilleur mois pour partir.',
       },
       surtitre: 'Destinations',
       titre: 'Où partir, et *à quel moment* ?',
       intro:
-        "Choisissez un mois et une température : nous vous montrons les destinations dont le climat convient, d'après les relevés saisis par nos conseillers.",
+        "Choisissez un type de voyage : chaque destination indique le meilleur mois pour partir, d'après les relevés climatiques saisis par nos conseillers.",
       filtres: 'Filtres',
       mois: 'Mois',
       meilleurMois: 'Le meilleur mois',
@@ -453,13 +453,12 @@ export const TEXTES = {
     destinations: {
       meta: {
         titre: 'Destinations · Where to go, and when?',
-        description:
-          'All our destinations, filtered by month, average temperature and type of trip.',
+        description: 'All our destinations, filtered by type of trip, with the best month to go.',
       },
       surtitre: 'Destinations',
       titre: '*Where to go*, and when?',
       intro:
-        'Choose a month and a temperature: we show you the destinations whose climate suits you, based on the records kept by our advisors.',
+        'Choose a type of trip: each destination shows the best month to go, based on the climate records kept by our advisors.',
       filtres: 'Filters',
       mois: 'Month',
       meilleurMois: 'The best month',

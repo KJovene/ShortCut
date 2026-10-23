@@ -17,9 +17,7 @@ export function QuestionnaireInvite() {
       <div className="mx-auto flex w-full max-w-[620px] flex-col items-stretch gap-4">
         <BullePresentation />
         <div className="flex flex-col gap-4 rounded-[24px] bg-white p-6 text-center shadow-[0_20px_50px_rgba(43,29,20,0.14)] sm:p-8">
-          <h2 className="m-0 font-display text-[30px] leading-tight font-semibold">
-            {t.titreFin}
-          </h2>
+          <h2 className="m-0 font-display text-[30px] leading-tight font-semibold">{t.titreFin}</h2>
           <p className="m-0 text-[15px] leading-relaxed text-taupe">{t.texteFin}</p>
           <div className="flex flex-col justify-center gap-2 sm:flex-row">
             <Link

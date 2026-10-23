@@ -229,8 +229,7 @@ export const destinationQuery = (slug: string) =>
 /** Frais de dossier par type de voyage, en centimes : le barème fixé par l'administrateur (règles de prix). */
 export const fraisDeDossierQuery = queryOptions({
   queryKey: ['catalogue', 'frais-de-dossier'],
-  queryFn: async () =>
-    z.record(z.string(), z.number()).parse(await lire('frais-de-dossier')),
+  queryFn: async () => z.record(z.string(), z.number()).parse(await lire('frais-de-dossier')),
   staleTime: 5 * 60_000,
 })
 

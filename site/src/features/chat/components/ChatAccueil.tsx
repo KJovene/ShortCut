@@ -8,12 +8,7 @@ import { QuestionnaireInvite } from '../QuestionnaireInvite'
 /**
  * Invitation à décrire son voyage (maquette E · section assistant). Le premier envoi lance la conversation.
  */
-export function ChatAccueil({
-  compact = false,
-}: {
-  suggestion?: string
-  compact?: boolean
-}) {
+export function ChatAccueil({ compact = false }: { suggestion?: string; compact?: boolean }) {
   const { brouillon, setBrouillon, envoyer, langue, estConnecte } = useChat()
   const t = TEXTES[langue].accueil
 
