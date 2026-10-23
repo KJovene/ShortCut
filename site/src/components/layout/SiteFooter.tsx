@@ -9,7 +9,7 @@ export const ID_PIED_DE_PAGE = 'pied-de-page'
 export function SiteFooter() {
   const t = TEXTES[useLangue()]
   return (
-    <footer id={ID_PIED_DE_PAGE} className="no-print bg-encre text-ciel">
+    <footer id={ID_PIED_DE_PAGE} className="no-print aplat-encre bg-encre text-ciel">
       <div className="mx-auto flex max-w-[1376px] flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm sm:px-8">
         <div className="flex items-center gap-[18px]">
           <Logo clair petit />
