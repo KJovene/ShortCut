@@ -176,9 +176,11 @@ final class AgentRechercheTest extends WebTestCase
 
         self::assertNotContains('recapitulatif', array_column($evenements, 0));
         self::assertNotContains('erreur', array_column($evenements, 0));
-        self::assertSame(['terminee' => true], end($evenements)[1]);
+        // Transmise au conseiller, mais la conversation reste ouverte tant qu'il ne l'a pas reprise.
+        self::assertSame(['terminee' => false], end($evenements)[1]);
         $conversation = $this->conversation($jeton);
-        self::assertTrue($conversation->isRepriseParConseiller());
+        self::assertFalse($conversation->isRepriseParConseiller());
+        self::assertNotNull($conversation->getDemande()?->getTransmiseLe());
         self::assertCount(0, $conversation->getDemande()?->getPropositions() ?? []);
         $messages = $conversation->getMessages();
         self::assertSame('Je vous propose Lisbonne en mai.', $messages[\count($messages) - 3]['contenu']);
@@ -200,8 +202,9 @@ final class AgentRechercheTest extends WebTestCase
         self::assertContains('erreur', array_column($evenements, 0));
         self::assertSame('fin', end($evenements)[0]);
         $conversation = $this->conversation($jeton);
-        self::assertTrue($conversation->isRepriseParConseiller());
+        self::assertFalse($conversation->isRepriseParConseiller());
         self::assertTrue($conversation->getDemande()?->isPrioritaire());
+        self::assertNotNull($conversation->getDemande()?->getTransmiseLe());
         $messages = $conversation->getMessages();
         self::assertSame('Je n\'ai pas pu terminer votre proposition. Un conseiller de l\'agence reprend votre demande et vous recontacte sous 2 jours ouvrés.', end($messages)['contenu']);
     }

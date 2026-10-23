@@ -225,7 +225,7 @@ final class ChatEnvoiTest extends WebTestCase
 
         self::assertCount(3, $this->claude->requetes, 'L\'agent Recherche n\'est pas appelé.');
         self::assertArrayNotHasKey('piste', $this->parType($evenements));
-        self::assertTrue($this->parType($evenements)['fin']['terminee']);
+        self::assertFalse($this->parType($evenements)['fin']['terminee'], 'Le client peut préciser sa demande en attendant le conseiller.');
         $demande = $this->conversation($jeton)->getDemande();
         self::assertSame('Bora Bora', $demande?->getLieuOuZone());
         self::assertSame(MotifTransmission::HorsCatalogue, $demande->getMotifTransmission());
@@ -346,14 +346,16 @@ final class ChatEnvoiTest extends WebTestCase
         $this->envoyer($jeton, 'Je veux parler à un conseiller');
 
         $conversation = $this->conversation($jeton);
-        self::assertTrue($conversation->isRepriseParConseiller());
+        self::assertFalse($conversation->isRepriseParConseiller(), 'La conversation reste ouverte tant qu\'un conseiller ne l\'a pas reprise.');
         $demande = $conversation->getDemande();
         self::assertTrue($demande?->isPrioritaire());
         self::assertSame(MotifTransmission::DemandeDuClient, $demande->getMotifTransmission());
         self::assertSame('Le client veut parler à quelqu’un.', $demande->getResumeTransmission());
         self::assertNotNull($demande->getTransmiseLe());
 
-        // Reprise par un conseiller : le chatbot ne répond plus, le message est gardé pour le conseiller.
+        // Un conseiller reprend la conversation : le chatbot ne répond plus, le message est gardé pour le conseiller.
+        $conversation->setRepriseParConseiller(true);
+        $this->em->flush();
         $requetes = \count($this->claude->requetes);
         $evenements = $this->envoyer($jeton, 'Finalement, je préfère partir en juillet.');
 

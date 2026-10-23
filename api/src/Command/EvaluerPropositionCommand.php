@@ -117,13 +117,13 @@ final class EvaluerPropositionCommand extends Command
             $appels = (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM journal_ia WHERE demande_id = ? AND agent = ?', [$demande->getId(), AgentIA::Chiffrage->value]);
             // Une demande test qui doit passer au conseiller (période sans tarif) réussit sans proposition.
             $ok = ($test['attendu']['passageAuConseiller'] ?? false)
-                ? null === $proposition && $conversation->isRepriseParConseiller()
+                ? null === $proposition && null !== $demande->getTransmiseLe()
                 : null !== $proposition && $jours === $nuits + 1 && $duree < self::DELAI_MAX_SECONDES;
 
             $ligne = [
                 $test['id'],
                 $destination,
-                null === $proposition ? ($conversation->isRepriseParConseiller() ? 'conseiller' : 'aucune') : \sprintf('v%d %s', $proposition->getVersion(), $proposition->getStatut()->value),
+                null === $proposition ? (null !== $demande->getTransmiseLe() ? 'conseiller' : 'aucune') : \sprintf('v%d %s', $proposition->getVersion(), $proposition->getStatut()->value),
                 \sprintf('combinaison %s s, brouillon %s s', null === $combinaisonA ? '—' : (int) $combinaisonA, null === $proposition ? '—' : (int) $duree),
                 \sprintf('%s (%d)', $jours ?? '—', $nuits + 1),
                 (string) $appels,
