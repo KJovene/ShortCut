@@ -1,5 +1,7 @@
 import { Link } from '@tanstack/react-router'
+import { TEXTES } from '@/components/textes'
 import { cn } from '@/lib/cn'
+import { useLangue } from '@/lib/langue'
 
 export const NOM_AGENCE = 'Détour'
 
@@ -18,10 +20,11 @@ export function Logo({
   /** Pied de page : 32 px de haut. */
   petit?: boolean
 }) {
+  const t = TEXTES[useLangue()]
   return (
     <Link
       to="/"
-      aria-label={`${NOM_AGENCE}, accueil`}
+      aria-label={t.logo(NOM_AGENCE)}
       className={cn('flex shrink-0 items-center', className)}
     >
       <img

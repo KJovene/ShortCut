@@ -26,8 +26,6 @@ const FICHE: NonNullable<DemandeClient['conversation']>['fiche'] = {
   dateFin: '2027-05-20',
   datesFlexibles: false,
   nombreDeJours: 10,
-  temperatureMin: 25,
-  temperatureMax: null,
   adultes: 2,
   enfants: 0,
   agesEnfants: [],

@@ -32,8 +32,6 @@ const ficheVide: Fiche = {
   dateFin: null,
   datesFlexibles: false,
   nombreDeJours: null,
-  temperatureMin: null,
-  temperatureMax: null,
   adultes: 1,
   enfants: 0,
   agesEnfants: [],

@@ -1,38 +1,52 @@
 /*
- * Thème du backoffice, d'après la maquette « Backoffice · aux couleurs de la version E ».
- * EasyAdmin dérive presque tout de --ea-primary et de l'échelle --gray-* : on les réchauffe,
+ * Thème du backoffice, charte DÉTOUR 2026 (comme le site, src/index.css) : encre et craie font le travail, le ciel
+ * marque la sélection, la brique les alertes ; le jaune reste réservé au O du logo.
+ * EasyAdmin dérive presque tout de --ea-primary et de l'échelle --gray-* : on les cale sur la charte,
  * puis on ajuste le menu latéral, les tableaux et les badges de statut.
  */
 :root {
-    --bo-fond: #F6F4F1;
-    --bo-surface: #FFFFFF;
-    --bo-bordure: #E7E2DC;
-    --bo-bordure-douce: #F0EBE5;
-    --bo-bordure-champ: #D6CEC4;
-    --bo-texte: #2B1D14;
-    --bo-texte-doux: #6E5A4B;
-    --bo-libelle: #8A7666;
-    --bo-accent: #C2471E;
-    --bo-accent-fonce: #9A3A18;
-    --bo-accent-fond: #FBEDE6;
-    --bo-creme: #F3E7D6;
+    /* Palette de la charte */
+    --bo-encre: #16233F;
+    --bo-craie: #F6F1E7;
+    --bo-sable: #EAE2D2;
+    --bo-lin: #E2D9C6;
+    --bo-ciel: #BCD3EA;
+    --bo-ciel-pale: #E4EDF6;
+    --bo-brique: #C4553A;
+    --bo-brique-texte: #A8432C; /* brique assombrie pour le texte : 4,5:1 sur craie */
+    --bo-brique-pale: #F5E0D8;
+
+    --bo-fond: var(--bo-craie);
+    --bo-surface: #FFFDF8;
+    --bo-bordure: var(--bo-lin);
+    --bo-bordure-douce: var(--bo-sable);
+    --bo-bordure-champ: #C9C0AD;
+    --bo-texte: var(--bo-encre);
+    --bo-texte-doux: #3B4762;
+    --bo-libelle: #5B6376;
+    --bo-accent: var(--bo-encre);
+    --bo-accent-fonce: #2A3A63;
+    --bo-accent-fond: var(--bo-ciel);
+
+    --bo-police-texte: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --bo-police-titre: "Bricolage Grotesque", system-ui, sans-serif;
 
     --ea-primary: var(--bo-accent);
     --ea-radius: 0.5rem;
-    --font-family-sans-serif: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-family-sans-serif: var(--bo-police-texte);
 
-    /* Échelle de gris d'EasyAdmin, en tons chauds. */
-    --gray-50: #FBFAF8;
-    --gray-100: #F6F4F1;
-    --gray-200: #E7E2DC;
-    --gray-300: #D6CEC4;
-    --gray-400: #B3A497;
-    --gray-500: #8A7666;
-    --gray-600: #6E5A4B;
-    --gray-700: #4F3E31;
-    --gray-800: #3D2C20;
-    --gray-900: #2B1D14;
-    --gray-950: #1E140D;
+    /* Échelle de gris d'EasyAdmin, de la craie à l'encre. */
+    --gray-50: #FBF8F2;
+    --gray-100: #F6F1E7;
+    --gray-200: #EAE2D2;
+    --gray-300: #E2D9C6;
+    --gray-400: #C9C0AD;
+    --gray-500: #6B7385;
+    --gray-600: #5B6376;
+    --gray-700: #3B4762;
+    --gray-800: #2A3A63;
+    --gray-900: #16233F;
+    --gray-950: #0E1729;
 
     --body-bg: var(--bo-fond);
     --content-bg: var(--bo-fond);
@@ -44,25 +58,73 @@
 
     --sidebar-bg: var(--bo-surface);
     --sidebar-border-color: var(--bo-bordure);
-    --sidebar-menu-color: var(--gray-800);
+    --sidebar-menu-color: var(--bo-texte);
     --sidebar-menu-icon-color: var(--bo-texte-doux);
     --sidebar-menu-header-color: var(--bo-libelle);
-    --sidebar-menu-hover-color: var(--bo-accent-fonce);
+    --sidebar-menu-hover-color: var(--bo-encre);
     --sidebar-item-hover-bg: var(--bo-fond);
     --sidebar-menu-active-item-bg: var(--bo-accent-fond);
-    --sidebar-menu-active-item-color: var(--bo-accent-fonce);
+    --sidebar-menu-active-item-color: var(--bo-encre);
+
+    /* Suppressions et erreurs en brique ; la charte n'a pas de vert : les succès passent en ciel et encre. */
+    --color-danger: var(--bo-brique-texte);
+    --color-danger-rgb: 168, 67, 44;
+    --button-danger-color: var(--bo-brique-texte);
+    --button-danger-hover-bg: var(--bo-brique-texte);
+    --button-danger-active-bg: var(--bo-brique-texte);
+    --button-invisible-danger-color: var(--bo-brique-texte);
+    --button-invisible-danger-hover-color: var(--bo-brique-texte);
+    --button-invisible-danger-active-color: var(--bo-brique-texte);
+    --button-invisible-danger-hover-hover-bg: var(--bo-brique-pale);
+    --button-invisible-danger-hover-active-bg: var(--bo-brique-pale);
+    --text-red-600: var(--bo-brique-texte);
+    --badge-danger-bg: var(--bo-brique-pale);
+    --badge-danger-color: var(--bo-brique-texte);
+    --alert-danger-bg: var(--bo-brique-pale);
+    --alert-danger-border-color: var(--bo-brique);
+    --alert-danger-color: var(--bo-brique-texte);
+    --color-success: var(--bo-encre);
+    --text-green-600: var(--bo-encre);
+    --badge-success-bg: var(--bo-ciel);
+    --badge-success-color: var(--bo-encre);
+    --alert-success-bg: var(--bo-ciel-pale);
+    --alert-success-border-color: var(--bo-ciel);
+    --alert-success-color: var(--bo-encre);
 }
 
 body {
     color: var(--bo-texte);
+    font-family: var(--bo-police-texte);
 }
 
 a:hover {
     color: var(--bo-texte);
 }
 
-/* Logo : symbole Détour et nom de l'agence. */
-.ea-sidebar-logo .logo {
+:focus-visible {
+    outline: 3px solid var(--bo-encre);
+    outline-offset: 2px;
+}
+
+/* Titres en Bricolage Grotesque, comme sur le site. */
+h1,
+h2,
+.content-header-title .title,
+.bo-indicateur-valeur,
+.bo-carte-entete h2 {
+    font-family: var(--bo-police-titre);
+    letter-spacing: -0.02em;
+}
+
+h1,
+h2,
+.content-header-title .title {
+    font-weight: 600;
+}
+
+/* Logo DÉTOUR et mention « Backoffice ». */
+.ea-sidebar-logo .logo,
+.ea-sidebar-logo .logo-custom {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -70,36 +132,25 @@ a:hover {
     text-decoration: none;
 }
 
-.ea-sidebar-logo .logo-custom {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
 .bo-logo-marque {
-    width: 34px;
-    height: 34px;
+    height: 30px;
+    width: auto;
     flex: none;
     display: block;
 }
 
 .bo-logo-texte {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-}
-
-.bo-logo-texte strong {
-    font-size: 15px;
-}
-
-.bo-logo-texte small {
-    font-size: 12px;
-    font-weight: 400;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--bo-sable);
     color: var(--bo-texte-doux);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
 }
 
-/* Menu latéral : intitulés de section en petites capitales, élément actif en terre cuite. */
+/* Menu latéral : intitulés de section en petites capitales, élément actif sur fond ciel. */
 .ea-sidebar-group-label-text {
     font-size: 11px;
     font-weight: 700;
@@ -120,11 +171,11 @@ a:hover {
 }
 
 .ea-sidebar-item.is-active .ea-sidebar-item-icon {
-    color: var(--bo-accent-fonce);
+    color: var(--bo-encre);
 }
 
 .ea-sidebar-badge.badge-danger {
-    background: var(--bo-accent);
+    background: var(--bo-brique);
     color: #FFFFFF;
     box-shadow: none;
     font-weight: 800;
@@ -191,13 +242,14 @@ fieldset.form-fieldset,
     line-height: 1.4;
 }
 
-.bo-statut--nouvelle { background: #E3EDF8; color: #1E4E8C; }
-.bo-statut--prioritaire { background: #F9DED6; color: #8F2A1C; }
-.bo-statut--proposition_envoyee { background: #EFEAE4; color: #5A4A3E; }
-.bo-statut--a_confirmer { background: #FFF1D0; color: #7A5200; }
-.bo-statut--confirmee { background: #DDF1E4; color: #1F6B3A; }
-.bo-statut--acceptee { background: #1F6B3A; color: #FFFFFF; }
-.bo-statut--perdue { background: #F1EEEA; color: var(--bo-libelle); }
+/* Mêmes teintes que les statuts de l'espace client sur le site. */
+.bo-statut--nouvelle { background: var(--bo-ciel); color: var(--bo-encre); }
+.bo-statut--prioritaire { background: var(--bo-brique-pale); color: var(--bo-brique-texte); }
+.bo-statut--proposition_envoyee { background: var(--bo-sable); color: var(--bo-texte-doux); }
+.bo-statut--a_confirmer { background: var(--bo-lin); color: var(--bo-encre); box-shadow: inset 0 0 0 1px var(--bo-bordure-champ); }
+.bo-statut--confirmee { background: var(--bo-accent-fonce); color: var(--bo-craie); }
+.bo-statut--acceptee { background: var(--bo-encre); color: var(--bo-craie); }
+.bo-statut--perdue { background: var(--bo-craie); color: var(--bo-libelle); box-shadow: inset 0 0 0 1px var(--bo-lin); }
 
 .bo-vide {
     color: var(--bo-libelle);
@@ -227,13 +279,13 @@ fieldset.form-fieldset,
 }
 
 .bo-onglet:hover {
-    color: var(--bo-accent-fonce);
+    color: var(--bo-encre);
 }
 
 .bo-onglet[aria-current="page"] {
-    border-bottom-color: var(--bo-accent);
+    border-bottom-color: var(--bo-encre);
     font-weight: 700;
-    color: var(--bo-accent-fonce);
+    color: var(--bo-encre);
 }
 
 .bo-onglet-nombre {
@@ -291,9 +343,9 @@ fieldset.form-fieldset,
     color: var(--bo-texte-doux);
 }
 
-.bo-note--info { color: #1E4E8C; }
-.bo-note--alerte { color: #8F2A1C; }
-.bo-note--attente { color: #7A5200; }
+.bo-note--info { color: var(--bo-accent-fonce); }
+.bo-note--alerte { color: var(--bo-brique-texte); }
+.bo-note--attente { color: var(--bo-texte-doux); }
 
 .bo-carte {
     background: var(--bo-surface);
@@ -383,8 +435,9 @@ fieldset.form-fieldset,
 }
 
 .bo-bouton-secondaire:hover {
-    border-color: var(--bo-accent);
-    color: var(--bo-accent-fonce);
+    border-color: var(--bo-encre);
+    background: var(--bo-fond);
+    color: var(--bo-encre);
 }
 
 /* Vignette d'une photo dans une liste (logements, activités). */
@@ -399,17 +452,17 @@ fieldset.form-fieldset,
 .bo-bandeau {
     margin-bottom: 16px;
     padding: 12px 16px;
-    border: 1px solid #F2D9A6;
+    border: 1px solid var(--bo-lin);
     border-radius: 12px;
-    background: #FFF8E8;
-    color: #5C4200;
+    background: var(--bo-sable);
+    color: var(--bo-encre);
     font-size: 14px;
 }
 
 .bo-bandeau--confirmee {
-    border-color: #BFE3CB;
-    background: #EFF8F2;
-    color: #1F6B3A;
+    border-color: var(--bo-ciel);
+    background: var(--bo-ciel-pale);
+    color: var(--bo-encre);
 }
 
 .bo-confirmation {
@@ -473,19 +526,19 @@ fieldset.form-fieldset,
     font-size: 12px;
 }
 
-.bo-ecart--hausse { color: #8F2A1C; }
-.bo-ecart--baisse { color: #1F6B3A; }
+.bo-ecart--hausse { color: var(--bo-brique-texte); }
+.bo-ecart--baisse { color: var(--bo-accent-fonce); }
 .bo-ecart--egal { color: var(--bo-texte-doux); }
 
 .bo-ecart--fort {
     padding: 2px 6px;
     border-radius: 6px;
-    background: #F9DED6;
+    background: var(--bo-brique-pale);
     font-weight: 800;
 }
 
 .bo-ecart--fort.bo-ecart--baisse {
-    background: #DDF1E4;
+    background: var(--bo-ciel-pale);
 }
 
 .bo-remplacer summary {
@@ -603,18 +656,18 @@ trix-toolbar [data-trix-action="increaseNestingLevel"] {
     white-space: nowrap;
 }
 
-.bo-pastille--discrete { background: #F1EEEA; color: var(--bo-libelle); }
-.bo-pastille--alerte { margin-left: 0; background: #F9DED6; color: #8F2A1C; }
+.bo-pastille--discrete { background: var(--bo-sable); color: var(--bo-libelle); }
+.bo-pastille--alerte { margin-left: 0; background: var(--bo-brique-pale); color: var(--bo-brique-texte); }
 
-.bo-tarifs-en_cours td { background: #FFF8F3; }
+.bo-tarifs-en_cours td { background: var(--bo-ciel-pale); }
 .bo-tarifs-passe td { color: var(--bo-libelle); }
 .bo-tarifs-passe .bo-fort { font-weight: 400; }
 
 .bo-tarifs-trou td {
     padding-top: 8px;
     padding-bottom: 8px;
-    background: #FDF3F0;
-    color: #8F2A1C;
+    background: var(--bo-brique-pale);
+    color: var(--bo-brique-texte);
     font-size: 13px;
 }
 

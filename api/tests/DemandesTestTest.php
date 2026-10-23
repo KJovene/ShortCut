@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class DemandesTestTest extends TestCase
 {
-    private const CHAMPS_EXIGENCES = ['typeDeVoyage', 'lieuOuZone', 'villeDepart', 'dateDebut', 'dateFin', 'datesFlexibles', 'nombreDeJours', 'temperatureMin', 'temperatureMax', 'adultes', 'enfants', 'agesEnfants', 'budgetEuros', 'budgetParPersonne', 'transportInclus', 'envies', 'contraintes'];
+    private const CHAMPS_EXIGENCES = ['typeDeVoyage', 'lieuOuZone', 'villeDepart', 'dateDebut', 'dateFin', 'datesFlexibles', 'nombreDeJours', 'adultes', 'enfants', 'agesEnfants', 'budgetEuros', 'budgetParPersonne', 'transportInclus', 'envies', 'contraintes'];
 
     public function testIlYADixDemandesEtChaqueTypeApparaitAuMoinsDeuxFois(): void
     {

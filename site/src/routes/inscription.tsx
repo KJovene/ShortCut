@@ -4,31 +4,34 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { Bandeau, Champ, classeBouton } from '@/components/Champ'
 import { EcranAuthentification } from '@/components/EcranAuthentification'
+import { TEXTES } from '@/features/pages/textes'
 import { ErreurFormulaire, type Inscription, profilQuery, sInscrire } from '@/lib/auth'
+import { type Langue, langueDuSite, messageApi, useLangue } from '@/lib/langue'
 
 export const Route = createFileRoute('/inscription')({
-  head: () => ({
-    meta: [
-      { title: 'Créer un compte' },
-      {
-        name: 'description',
-        content:
-          'Créez votre compte pour retrouver vos propositions de voyage et suivre leur confirmation.',
-      },
-    ],
-  }),
+  head: () => {
+    const t = TEXTES[langueDuSite()].inscription.meta
+    return {
+      meta: [{ title: t.titre }, { name: 'description', content: t.description }],
+    }
+  },
   component: PageInscription,
 })
 
-const SchemaInscription = z.object({
-  prenom: z.string(),
-  nom: z.string().trim().min(1, 'Saisissez votre nom.'),
-  email: z.email('Saisissez une adresse e-mail valide.'),
-  motDePasse: z.string().min(8, 'Le mot de passe doit faire au moins 8 caractères.'),
-})
+const schemaInscription = (langue: Langue) => {
+  const t = TEXTES[langue].champs
+  return z.object({
+    prenom: z.string(),
+    nom: z.string().trim().min(1, t.nomVide),
+    email: z.email(t.emailInvalide),
+    motDePasse: z.string().min(8, t.motDePasseCourt),
+  })
+}
 
 /** Inscription libre : le compte créé est un compte client, connecté d'office. */
 function PageInscription() {
+  const langue = useLangue()
+  const t = TEXTES[langue]
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
@@ -42,25 +45,27 @@ function PageInscription() {
 
   const form = useForm({
     defaultValues: { prenom: '', nom: '', email: '', motDePasse: '' },
-    validators: { onSubmit: SchemaInscription },
+    validators: { onSubmit: schemaInscription(langue) },
     onSubmit: ({ value }) => inscription.mutate(value),
   })
 
   const erreurServeur = (champ: string) =>
-    inscription.error instanceof ErreurFormulaire ? inscription.error.erreurs[champ] : undefined
+    inscription.error instanceof ErreurFormulaire
+      ? messageApi(inscription.error.erreurs[champ], langue)
+      : undefined
 
   return (
     <EcranAuthentification
-      titre="Créer un compte"
-      sousTitre="Suivez vos demandes de voyage et leurs propositions, du premier message à la réservation."
+      titre={t.inscription.titre}
+      sousTitre={t.inscription.sousTitre}
       pied={
         <>
-          Déjà un compte ?{' '}
+          {t.inscription.dejaUnCompte}{' '}
           <Link
             to="/connexion"
             className="font-bold text-rouille underline-offset-2 hover:underline"
           >
-            Se connecter
+            {t.inscription.seConnecter}
           </Link>
         </>
       }
@@ -73,14 +78,16 @@ function PageInscription() {
           void form.handleSubmit()
         }}
       >
-        {inscription.isError && <Bandeau ton="erreur">{inscription.error.message}</Bandeau>}
+        {inscription.isError && (
+          <Bandeau ton="erreur">{messageApi(inscription.error.message, langue)!}</Bandeau>
+        )}
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <form.Field name="prenom">
             {(field) => (
               <Champ
                 id="prenom"
-                label="Prénom"
+                label={t.champs.prenom}
                 autoComplete="given-name"
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -94,7 +101,7 @@ function PageInscription() {
             {(field) => (
               <Champ
                 id="nom"
-                label="Nom"
+                label={t.champs.nom}
                 autoComplete="family-name"
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -109,7 +116,7 @@ function PageInscription() {
           {(field) => (
             <Champ
               id="email"
-              label="E-mail"
+              label={t.champs.email}
               type="email"
               autoComplete="email"
               value={field.state.value}
@@ -124,10 +131,10 @@ function PageInscription() {
           {(field) => (
             <Champ
               id="motDePasse"
-              label="Mot de passe"
+              label={t.champs.motDePasse}
               type="password"
               autoComplete="new-password"
-              aide="Au moins 8 caractères."
+              aide={t.inscription.aideMotDePasse}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={field.handleChange}
@@ -137,7 +144,7 @@ function PageInscription() {
         </form.Field>
 
         <button type="submit" disabled={inscription.isPending} className={classeBouton}>
-          {inscription.isPending ? 'Création…' : 'Créer mon compte'}
+          {inscription.isPending ? t.inscription.enCours : t.inscription.creer}
         </button>
       </form>
     </EcranAuthentification>

@@ -162,7 +162,7 @@ describe('inscription', () => {
     const fenetre = await screen.findByRole('dialog', { name: 'Assistant voyage' })
     expect(await within(fenetre).findByText('Parlons de vos dates.')).toBeInTheDocument()
     expect(api.envoisA('POST /api/chat/conversations')).toEqual([
-      { preferences: ['Séjours', 'À deux', 'Moins de 1 500 €'] },
+      { preferences: ['Séjours', 'À deux', 'Moins de 1 500 €'], langue: 'fr' },
     ])
   })
 

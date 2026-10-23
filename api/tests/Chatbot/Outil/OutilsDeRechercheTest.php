@@ -90,8 +90,6 @@ final class OutilsDeRechercheTest extends KernelTestCase
             'zone' => $exigences['lieuOuZone'],
             'dateDebut' => $exigences['dateDebut'],
             'dateFin' => $exigences['dateFin'],
-            'temperatureMin' => $exigences['temperatureMin'],
-            'temperatureMax' => $exigences['temperatureMax'],
             'envies' => $exigences['envies'],
             'villeDepart' => $exigences['villeDepart'],
             'limite' => 10,
@@ -109,11 +107,6 @@ final class OutilsDeRechercheTest extends KernelTestCase
         self::assertContains($slug, array_column($resultat['destinations'], 'slug'), $fichier);
         foreach ($resultat['destinations'] as $destination) {
             self::assertNotNull($destination['aPartirDeParNuitEuros'], $fichier.' '.$destination['slug']);
-            foreach ($destination['climatAuxDates'] as $periode) {
-                if (null !== $exigences['temperatureMin']) {
-                    self::assertGreaterThanOrEqual($exigences['temperatureMin'], $periode['temperatureMoyenne'], $fichier.' '.$destination['slug']);
-                }
-            }
         }
     }
 

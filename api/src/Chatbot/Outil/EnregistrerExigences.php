@@ -47,15 +47,13 @@ final class EnregistrerExigences implements Outil
                     'dateFin' => ['type' => 'string', 'description' => 'AAAA-MM-JJ'],
                     'datesFlexibles' => ['type' => 'boolean'],
                     'nombreDeJours' => ['type' => 'integer', 'description' => 'Nombre de nuits sur place.'],
-                    'temperatureMin' => ['type' => 'integer', 'description' => 'Température moyenne minimale souhaitée, en °C, seulement si le client donne un chiffre ou accepte celui que tu proposes. « De la chaleur » va dans envies, sans chiffre.'],
-                    'temperatureMax' => ['type' => 'integer'],
                     'adultes' => ['type' => 'integer'],
                     'enfants' => ['type' => 'integer'],
                     'agesEnfants' => ['type' => 'array', 'items' => ['type' => 'integer']],
                     'budgetEuros' => ['type' => 'integer', 'description' => 'Le montant tel que le client le donne, sans calcul : « 900 € par personne » donne 900 avec budgetParPersonne à true.'],
                     'budgetParPersonne' => ['type' => 'boolean', 'description' => 'true : le budget est par personne ; false : c\'est un total.'],
                     'transportInclus' => ['type' => 'boolean'],
-                    'envies' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Activités, ambiance, rythme (« plage », « gastronomie »), y compris l\'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Pas la destination : elle va dans lieuOuZone.'],
+                    'envies' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Activités, ambiance, rythme (« plage », « gastronomie »), y compris l\'ambiance qui découle du projet : « romantique » pour un voyage de noces, « famille » avec des enfants, « nature » pour des paysages ou des aurores boréales, « détente » si le client veut se reposer. Une préférence de climat y va aussi, avec les mots du client : « de la chaleur », « au moins 25 °C », « pas trop chaud ». Pas la destination : elle va dans lieuOuZone.'],
                     'contraintes' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Mobilité réduite (avec le type de besoin), régime, allergie (avec sa gravité), santé, animaux.'],
                     'client' => [
                         'type' => 'object',
@@ -152,12 +150,6 @@ final class EnregistrerExigences implements Outil
         if (\array_key_exists('nombreDeJours', $entree)) {
             $demande->setNombreDeJours((int) $entree['nombreDeJours']);
         }
-        if (\array_key_exists('temperatureMin', $entree)) {
-            $demande->setTemperatureMin((int) $entree['temperatureMin']);
-        }
-        if (\array_key_exists('temperatureMax', $entree)) {
-            $demande->setTemperatureMax((int) $entree['temperatureMax']);
-        }
         if (\array_key_exists('adultes', $entree)) {
             $demande->setAdultes((int) $entree['adultes']);
         }
@@ -235,8 +227,6 @@ final class EnregistrerExigences implements Outil
             'dateFin' => $demande->getDateFin()?->format('Y-m-d'),
             'datesFlexibles' => $demande->isDatesFlexibles(),
             'nombreDeJours' => $demande->getNombreDeJours(),
-            'temperatureMin' => $demande->getTemperatureMin(),
-            'temperatureMax' => $demande->getTemperatureMax(),
             'adultes' => $demande->getAdultes(),
             'enfants' => $demande->getEnfants(),
             'agesEnfants' => $demande->getAgesEnfants(),
@@ -260,7 +250,6 @@ final class EnregistrerExigences implements Outil
             'lieu ou zone' => null === $demande->getLieuOuZone(),
             'dates' => null === $demande->getDateDebut(),
             'nombre de jours' => null === $demande->getNombreDeJours(),
-            'températures' => null === $demande->getTemperatureMin() && null === $demande->getTemperatureMax(),
             'ville de départ' => null === $demande->getVilleDepart(),
             'budget' => null === $demande->getBudgetCentimes(),
             'envies' => [] === $demande->getEnvies(),

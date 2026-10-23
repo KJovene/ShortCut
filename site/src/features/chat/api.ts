@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
+import type { Langue } from '@/lib/langue'
 import type { Demande } from './demande'
 
 /**
@@ -22,8 +23,6 @@ export const ficheSchema = z.object({
   dateFin: z.string().nullable(),
   datesFlexibles: z.boolean(),
   nombreDeJours: z.number().nullable(),
-  temperatureMin: z.number().nullable(),
-  temperatureMax: z.number().nullable(),
   adultes: z.number(),
   enfants: z.number(),
   agesEnfants: z.array(z.number()),
@@ -153,16 +152,20 @@ async function erreurApi(reponse: Response): Promise<ApiError> {
   return new ApiError(reponse.status, message)
 }
 
-/** Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. */
+/**
+ * Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. La langue du site est celle
+ * dans laquelle l'assistant commence ; il suit ensuite celle du client.
+ */
 export async function ouvrirConversation(
   preferences?: string[],
   destination?: string,
   signal?: AbortSignal,
+  langue: Langue = 'fr',
 ): Promise<string> {
   const reponse = await fetch('/api/chat/conversations', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: preferences || destination ? JSON.stringify({ preferences, destination }) : undefined,
+    body: JSON.stringify({ preferences, destination, langue }),
     signal,
   })
   if (!reponse.ok) throw await erreurApi(reponse)
@@ -272,7 +275,6 @@ export function ficheVersDemande(
     mois: fiche.dateDebut ? Number(fiche.dateDebut.slice(5, 7)) - 1 : undefined,
     datesFlexibles: fiche.datesFlexibles,
     jours: fiche.nombreDeJours ?? undefined,
-    temperatureMin: fiche.temperatureMin ?? undefined,
     adultes: fiche.adultes,
     enfants: fiche.enfants,
     budget: fiche.budgetEuros ?? undefined,
@@ -285,3 +287,4 @@ export function ficheVersDemande(
     contraintesSignalees: contraintes.filter((c) => A_SIGNALER.test(sansAccents(c))),
   }
 }
+ 

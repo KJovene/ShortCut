@@ -285,8 +285,6 @@ final class DemandeCrudController extends AbstractCrudController
         yield DateField::new('dateFin', 'Retour')->hideOnIndex();
         yield BooleanField::new('datesFlexibles', 'Dates flexibles')->renderAsSwitch(false)->hideOnIndex();
         yield IntegerField::new('nombreDeJours', 'Nombre de jours')->hideOnIndex();
-        yield IntegerField::new('temperatureMin', 'Température min. (°C)')->hideOnIndex();
-        yield IntegerField::new('temperatureMax', 'Température max. (°C)')->hideOnIndex();
 
         yield FormField::addFieldset('Voyageurs et budget');
         yield IntegerField::new('adultes', 'Adultes')->hideOnIndex();

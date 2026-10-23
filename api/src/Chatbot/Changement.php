@@ -10,7 +10,7 @@ use App\Enum\TypeDeVoyage;
  * Ce que le client a changé dans sa demande depuis une version de proposition (#211), champ par champ de la fiche
  * (EnregistrerExigences::fiche).
  *
- * Dates, durée, voyageurs, budget, ville de départ, températures et contraintes se recalculent sur la même
+ * Dates, durée, voyageurs, budget, ville de départ et contraintes se recalculent sur la même
  * combinaison : retenir_combinaison revérifie chaque prestation (tarifs, capacité, âges, accessibilité, climat). Un
  * autre type de voyage, une autre zone ou d'autres envies demandent une nouvelle recherche.
  */
@@ -27,7 +27,6 @@ final readonly class Changement
         'voyageurs' => ['adultes', 'enfants', 'agesEnfants'],
         'ville de départ' => ['villeDepart'],
         'budget' => ['budgetEuros', 'budgetParPersonne', 'transportInclus'],
-        'températures' => ['temperatureMin', 'temperatureMax'],
         'envies' => ['envies'],
         'contraintes' => ['contraintes'],
     ];
@@ -40,7 +39,6 @@ final readonly class Changement
         'voyageurs' => 'travellers',
         'ville de départ' => 'departure city',
         'budget' => 'budget',
-        'températures' => 'temperatures',
         'envies' => 'wishes',
         'contraintes' => 'constraints',
     ];
@@ -127,12 +125,6 @@ final readonly class Changement
                 $f['budgetParPersonne'] ? ' per person' : ' in total',
                 $f['transportInclus'] ? 'included' : 'not included',
             ),
-            'températures' => match (true) {
-                null !== $f['temperatureMin'] && null !== $f['temperatureMax'] => \sprintf('%d to %d °C', $f['temperatureMin'], $f['temperatureMax']),
-                null !== $f['temperatureMin'] => \sprintf('at least %d °C', $f['temperatureMin']),
-                null !== $f['temperatureMax'] => \sprintf('at most %d °C', $f['temperatureMax']),
-                default => 'no preference',
-            },
             'envies', 'contraintes' => [] === $f[$groupe] ? 'none' : implode(', ', (array) $f[$groupe]),
             default => $this->valeur($groupe),
         };
@@ -159,19 +151,8 @@ final readonly class Changement
                 $f['budgetParPersonne'] ? ' par personne' : ' au total',
                 $f['transportInclus'] ? 'inclus' : 'non inclus',
             ),
-            'températures' => self::temperatures($f['temperatureMin'], $f['temperatureMax']),
             'envies', 'contraintes' => [] === $f[$groupe] ? 'aucune' : implode(', ', (array) $f[$groupe]),
             default => '',
-        };
-    }
-
-    private static function temperatures(mixed $min, mixed $max): string
-    {
-        return match (true) {
-            null !== $min && null !== $max => \sprintf('de %d à %d °C', $min, $max),
-            null !== $min => \sprintf('au moins %d °C', $min),
-            null !== $max => \sprintf('au plus %d °C', $max),
-            default => 'peu importe',
         };
     }
 

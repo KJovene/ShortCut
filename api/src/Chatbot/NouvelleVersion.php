@@ -22,7 +22,7 @@ use Symfony\Component\HttpFoundation\ServerEvent;
 /**
  * Nouvelle version après une modification du client dans le chat (ticket #211, US11), en moins d'une minute :
  * - rien n'a changé dans la fiche : la proposition reste valable ;
- * - dates, durée, voyageurs, budget, ville de départ, températures ou contraintes : la même combinaison est
+ * - dates, durée, voyageurs, budget, ville de départ ou contraintes : la même combinaison est
  *   recalculée par retenir_combinaison, sans appel à Claude, et présentée au client ;
  * - autre type de voyage, autre zone, autres envies, ou combinaison refusée aux nouvelles exigences : l'agent
  *   Recherche repart de la combinaison précédente et ne cherche que ce que le changement touche.
