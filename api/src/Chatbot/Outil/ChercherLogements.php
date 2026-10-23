@@ -19,6 +19,8 @@ use App\Texte\Correspondance;
  */
 final class ChercherLogements implements Outil
 {
+    public const NOM = 'chercher_logements';
+
     /**
      * Au-delà de 4 chambres d'un même type, il faut un tarif de groupe : l'agent cherche un logement pour groupes
      * ou passe la main au conseiller. Un logement de plusieurs chambres (riad, villa, bloc) est loué entier, une
@@ -34,7 +36,7 @@ final class ChercherLogements implements Outil
 
     public function nom(): string
     {
-        return 'chercher_logements';
+        return self::NOM;
     }
 
     public function definition(): array

@@ -532,4 +532,27 @@ class Demande
 
         return $this;
     }
+
+    /**
+     * La proposition de plus haut numéro de version parmi celles que retient le filtre (toutes, sans filtre).
+     *
+     * @param (callable(Proposition): bool)|null $filtre
+     */
+    public function derniereProposition(?callable $filtre = null): ?Proposition
+    {
+        $derniere = null;
+        foreach ($this->propositions as $proposition) {
+            if ((null === $filtre || $filtre($proposition)) && (null === $derniere || $proposition->getVersion() > $derniere->getVersion())) {
+                $derniere = $proposition;
+            }
+        }
+
+        return $derniere;
+    }
+
+    /** Numéro de la prochaine version de proposition : 1 pour la première. */
+    public function prochainNumeroDeVersion(): int
+    {
+        return 1 + ($this->derniereProposition()?->getVersion() ?? 0);
+    }
 }

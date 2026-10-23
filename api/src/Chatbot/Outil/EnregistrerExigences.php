@@ -3,6 +3,7 @@
 namespace App\Chatbot\Outil;
 
 use App\Chatbot\ContexteAgent;
+use App\Demande\FicheDemande;
 use App\Entity\Demande;
 use App\Entity\Utilisateur;
 use App\Enum\Langue;
@@ -18,6 +19,8 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 final class EnregistrerExigences implements Outil
 {
+    public const NOM = 'enregistrer_exigences';
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
@@ -28,7 +31,7 @@ final class EnregistrerExigences implements Outil
 
     public function nom(): string
     {
-        return 'enregistrer_exigences';
+        return self::NOM;
     }
 
     public function definition(): array
@@ -110,8 +113,8 @@ final class EnregistrerExigences implements Outil
         $this->em->flush();
 
         return [
-            'fiche' => self::fiche($demande),
-            'exigencesManquantes' => self::manquantes($demande),
+            'fiche' => FicheDemande::depuis($demande),
+            'exigencesManquantes' => FicheDemande::manquantes($demande),
             'recapitulatifConfirme' => $confirme,
             'langue' => $demande->getLangue()->value,
         ];
@@ -210,52 +213,6 @@ final class EnregistrerExigences implements Outil
         }
 
         $demande->setClient($utilisateur);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public static function fiche(Demande $demande): array
-    {
-        $budget = $demande->getBudgetCentimes();
-
-        return [
-            'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
-            'lieuOuZone' => $demande->getLieuOuZone(),
-            'villeDepart' => $demande->getVilleDepart(),
-            'dateDebut' => $demande->getDateDebut()?->format('Y-m-d'),
-            'dateFin' => $demande->getDateFin()?->format('Y-m-d'),
-            'datesFlexibles' => $demande->isDatesFlexibles(),
-            'nombreDeJours' => $demande->getNombreDeJours(),
-            'adultes' => $demande->getAdultes(),
-            'enfants' => $demande->getEnfants(),
-            'agesEnfants' => $demande->getAgesEnfants(),
-            'budgetEuros' => null === $budget ? null : intdiv($budget, 100),
-            'budgetParPersonne' => $demande->isBudgetParPersonne(),
-            'transportInclus' => $demande->isTransportInclus(),
-            'envies' => $demande->getEnvies(),
-            'contraintes' => $demande->getContraintes(),
-        ];
-    }
-
-    /**
-     * Exigences encore inconnues, parmi celles que la fiche sait distinguer d'une valeur par défaut.
-     *
-     * @return list<string>
-     */
-    public static function manquantes(Demande $demande): array
-    {
-        $manquantes = [
-            'type de voyage' => null === $demande->getTypeDeVoyage(),
-            'lieu ou zone' => null === $demande->getLieuOuZone(),
-            'dates' => null === $demande->getDateDebut(),
-            'nombre de jours' => null === $demande->getNombreDeJours(),
-            'ville de départ' => null === $demande->getVilleDepart(),
-            'budget' => null === $demande->getBudgetCentimes(),
-            'envies' => [] === $demande->getEnvies(),
-        ];
-
-        return array_keys(array_filter($manquantes));
     }
 
     /**

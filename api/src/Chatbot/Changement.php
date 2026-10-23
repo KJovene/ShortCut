@@ -3,12 +3,13 @@
 namespace App\Chatbot;
 
 use App\Chiffrage\Montant;
+use App\Demande\FicheDemande;
 use App\Enum\Langue;
 use App\Enum\TypeDeVoyage;
 
 /**
  * Ce que le client a changé dans sa demande depuis une version de proposition (#211), champ par champ de la fiche
- * (EnregistrerExigences::fiche).
+ * (FicheDemande::depuis).
  *
  * Dates, durée, voyageurs, budget, ville de départ et contraintes se recalculent sur la même
  * combinaison : retenir_combinaison revérifie chaque prestation (tarifs, capacité, âges, accessibilité, climat). Un

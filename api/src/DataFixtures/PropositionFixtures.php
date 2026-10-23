@@ -3,8 +3,8 @@
 namespace App\DataFixtures;
 
 use App\Chatbot\Outil\CalculerBudget;
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chiffrage\Periode;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Destination;
@@ -114,7 +114,7 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
                 ['jour' => 5, 'date' => '2027-10-25', 'titre' => 'Retour', 'description' => 'Petit-déjeuner au riad, transfert à l\'aéroport et vol retour vers Paris.', 'activiteIds' => []],
             ])
             ->setChoix($choix)
-            ->setExigences(EnregistrerExigences::fiche($demande))
+            ->setExigences(FicheDemande::depuis($demande))
             ->setCreeLe(new \DateTimeImmutable('-1 day'))
             ->setEnvoyeeLe(new \DateTimeImmutable('-1 day'));
         $demande->addProposition($proposition);
@@ -217,7 +217,7 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
                 'activitesSuggerees' => $ids($vins),
                 'pourquoi' => 'Voyage de noces : couchers de soleil et croisière.',
             ])
-            ->setExigences(EnregistrerExigences::fiche($demande))
+            ->setExigences(FicheDemande::depuis($demande))
             ->setCreeLe(new \DateTimeImmutable('-3 days'))
             ->setEnvoyeeLe(new \DateTimeImmutable('-3 days'));
         $demande->addProposition($v1);
@@ -271,7 +271,7 @@ final class PropositionFixtures extends Fixture implements DependentFixtureInter
                 'activitesSuggerees' => [],
                 'pourquoi' => 'Voyage de noces : couchers de soleil, croisière et vins.',
             ])
-            ->setExigences(EnregistrerExigences::fiche($demande))
+            ->setExigences(FicheDemande::depuis($demande))
             ->setCreeLe(new \DateTimeImmutable('-2 days'))
             ->setEnvoyeeLe(new \DateTimeImmutable('-2 days'));
         $demande->addProposition($v2);

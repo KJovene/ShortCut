@@ -2,11 +2,11 @@
 
 namespace App\Chatbot;
 
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\OutilException;
 use App\Chatbot\Outil\RetenirCombinaison;
 use App\Chiffrage\Montant;
 use App\Confirmation\PropositionClient;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\Proposition;
@@ -51,18 +51,9 @@ final class NouvelleVersion
      */
     public static function reference(Demande $demande): ?Proposition
     {
-        $reference = null;
-        foreach ($demande->getPropositions() as $proposition) {
-            $enConfirmation = TypeProposition::Confirmee === $proposition->getType() && StatutProposition::Brouillon === $proposition->getStatut();
-            if ([] === $proposition->getChoix() || $enConfirmation || StatutProposition::Refusee === $proposition->getStatut()) {
-                continue;
-            }
-            if (null === $reference || $proposition->getVersion() > $reference->getVersion()) {
-                $reference = $proposition;
-            }
-        }
-
-        return $reference;
+        return $demande->derniereProposition(static fn (Proposition $p): bool => [] !== $p->getChoix()
+            && !(TypeProposition::Confirmee === $p->getType() && StatutProposition::Brouillon === $p->getStatut())
+            && StatutProposition::Refusee !== $p->getStatut());
     }
 
     /**
@@ -71,7 +62,7 @@ final class NouvelleVersion
     public function recalculer(Conversation $conversation, Proposition $reference): \Generator
     {
         $demande = $conversation->getDemande() ?? throw new \LogicException('Conversation sans demande.');
-        $changement = Changement::entre($reference->getExigences(), EnregistrerExigences::fiche($demande));
+        $changement = Changement::entre($reference->getExigences(), FicheDemande::depuis($demande));
         if ($changement->vide()) {
             $message = \sprintf($demande->getLangue()->choisir(
                 'Votre demande n\'a pas changé : votre proposition (version %d) reste valable.',
@@ -86,7 +77,7 @@ final class NouvelleVersion
         $optionsChoisies = null !== $reference->getOptionsChoisiesLe();
         $modification = new Modification($reference, $changement, $this->combinaison($reference));
         if (!$changement->rechercheNecessaire()) {
-            yield self::evenement('outil', ['nom' => 'retenir_combinaison']);
+            yield self::evenement('outil', ['nom' => RetenirCombinaison::NOM]);
             try {
                 $sortie = $this->retenirCombinaison->executer(
                     new ContexteAgent($demande, $conversation, AgentIA::Modification),
@@ -144,7 +135,7 @@ final class NouvelleVersion
 
         $choix = $reference->getChoix();
         $noms = array_column(array_filter($reference->getOptions(), static fn (array $o): bool => \in_array($o['id'], $ajouts, true)), 'nom');
-        yield self::evenement('outil', ['nom' => 'retenir_combinaison']);
+        yield self::evenement('outil', ['nom' => RetenirCombinaison::NOM]);
         try {
             $sortie = $this->retenirCombinaison->executer(new ContexteAgent($demande, $conversation, AgentIA::Modification), [
                 'destination' => $choix['destination'] ?? '',

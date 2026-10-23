@@ -1,6 +1,6 @@
 import { useLocation } from '@tanstack/react-router'
 import { useCallback } from 'react'
-import { useChat } from './chatContext'
+import { useChatActions } from './chatContext'
 
 export const ID_SECTION_ASSISTANT = 'assistant'
 
@@ -11,7 +11,13 @@ export const ID_SECTION_ASSISTANT = 'assistant'
  * La `destination` choisie sur la carte pré-remplit le lieu de la demande côté API, quelle que soit la langue.
  */
 export function useOuvrirAssistant() {
-  const { statut, ouvrir, recommencer, setBrouillon, setDestinationInvite } = useChat()
+  // Les actions seules : les nombreux boutons qui ouvrent l'assistant ne se redessinent pas pendant qu'il écrit.
+  const {
+    nouveauVoyage: repartirAZero,
+    ouvrir,
+    setBrouillon,
+    setDestinationInvite,
+  } = useChatActions()
   const estAccueil = useLocation({ select: (l) => l.pathname === '/' })
 
   return useCallback(
@@ -22,7 +28,7 @@ export function useOuvrirAssistant() {
         destination,
       }: { nouveauVoyage?: boolean; destination?: string } = {},
     ) => {
-      if (nouveauVoyage && statut === 'conversation') recommencer()
+      if (nouveauVoyage) repartirAZero()
       if (!estAccueil) {
         ouvrir(brouillon)
         return
@@ -33,6 +39,6 @@ export function useOuvrirAssistant() {
       section?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       window.setTimeout(() => section?.querySelector<HTMLElement>('textarea, input')?.focus(), 400)
     },
-    [estAccueil, statut, ouvrir, recommencer, setBrouillon, setDestinationInvite],
+    [estAccueil, repartirAZero, ouvrir, setBrouillon, setDestinationInvite],
   )
 }

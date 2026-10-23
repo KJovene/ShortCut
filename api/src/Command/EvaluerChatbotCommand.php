@@ -8,7 +8,7 @@ use App\Chatbot\Evaluation\ClientSimule;
 use App\Chatbot\Evaluation\ComparateurFiche;
 use App\Chatbot\Evaluation\Juge;
 use App\Chatbot\Evaluation\RequeteJson;
-use App\Chatbot\Outil\EnregistrerExigences;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Entity\JournalIA;
@@ -192,7 +192,7 @@ final class EvaluerChatbotCommand extends Command
             }
             $io->newLine();
 
-            $comparaison = ComparateurFiche::comparer($demandeTest['exigencesAttendues'], EnregistrerExigences::fiche($demande));
+            $comparaison = ComparateurFiche::comparer($demandeTest['exigencesAttendues'], FicheDemande::depuis($demande));
             $aJuger = array_filter($comparaison, static fn (array $c) => ComparateurFiche::A_JUGER === $c['statut']);
             $jugement = $this->juge->juger($aJuger, $echanges);
             foreach ($jugement['champs'] as $champ => $verdict) {

@@ -2,6 +2,7 @@
 
 namespace App\Chatbot;
 
+use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\OutilException;
 use App\Chiffrage\Periode;
@@ -157,7 +158,7 @@ abstract class Agent
                     $sortie = json_decode((string) $resultatOutil['content'], true, flags: \JSON_THROW_ON_ERROR);
                     $tour->sorties[] = ['nom' => (string) $appelOutil->name, 'sortie' => $sortie];
                     // La fiche vient d'être enregistrée : le site met à jour son récapitulatif.
-                    if ('enregistrer_exigences' === $appelOutil->name) {
+                    if (EnregistrerExigences::NOM === $appelOutil->name) {
                         yield self::evenement('demande', [
                             'fiche' => $sortie['fiche'] ?? null,
                             'recapitulatifConfirme' => $sortie['recapitulatifConfirme'] ?? false,

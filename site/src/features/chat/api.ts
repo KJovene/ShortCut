@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
-import { ApiError } from '@/lib/api'
+import { lireErreur, requete } from '@/lib/api'
 import type { Langue } from '@/lib/langue'
 import { codesDuQuestionnaire, type Demande } from './demande'
 
@@ -142,15 +142,9 @@ const evenementSchema = z.discriminatedUnion('type', [
 
 export type EvenementChat = z.infer<typeof evenementSchema>
 
-/** Message d'erreur de l'API ({"erreur": "…"}), déjà rédigé pour le client. */
-async function erreurApi(reponse: Response): Promise<ApiError> {
-  const corps: unknown = await reponse.json().catch(() => null)
-  const message =
-    corps && typeof corps === 'object' && 'erreur' in corps && typeof corps.erreur === 'string'
-      ? corps.erreur
-      : 'L’assistant est momentanément indisponible. Réessayez dans quelques instants.'
-  return new ApiError(reponse.status, message)
-}
+/** Quand l'API ne donne pas de message déjà rédigé pour le client. */
+const ASSISTANT_INDISPONIBLE =
+  'L’assistant est momentanément indisponible. Réessayez dans quelques instants.'
 
 /**
  * Ouvre une conversation : le jeton renvoyé authentifie les messages suivants. La langue du site est celle
@@ -162,18 +156,13 @@ export async function ouvrirConversation(
   signal?: AbortSignal,
   langue: Langue = 'fr',
 ): Promise<string> {
-  const reponse = await fetch('/api/chat/conversations', {
+  const conversation = await requete('/chat/conversations', conversationSchema, {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      questionnaire: preferences && codesDuQuestionnaire(preferences),
-      destination,
-      langue,
-    }),
+    corps: { questionnaire: preferences && codesDuQuestionnaire(preferences), destination, langue },
     signal,
+    messageErreur: ASSISTANT_INDISPONIBLE,
   })
-  if (!reponse.ok) throw await erreurApi(reponse)
-  return conversationSchema.parse(await reponse.json()).jeton
+  return conversation.jeton
 }
 
 /**
@@ -235,7 +224,7 @@ export async function* envoyerMessage(
     body: JSON.stringify({ message }),
     signal,
   })
-  if (!reponse.ok || !reponse.body) throw await erreurApi(reponse)
+  if (!reponse.ok || !reponse.body) throw await lireErreur(reponse, ASSISTANT_INDISPONIBLE)
   yield* lireEvenements(reponse.body)
 }
 

@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\IriConverterInterface;
 use App\Chatbot\ContexteAgent;
 use App\Chiffrage\ChiffrageCache;
 use App\Chiffrage\Montant;
+use App\Demande\FicheDemande;
 use App\Entity\Demande;
 use App\Entity\Destination;
 use App\Entity\Prestation;
@@ -29,6 +30,8 @@ use App\Repository\PrestationRepository;
  */
 final class RetenirCombinaison implements Outil
 {
+    public const NOM = 'retenir_combinaison';
+
     /** Activités proposées en option au plus : au-delà, le client ne lit plus. */
     public const OPTIONS_MAX = 3;
 
@@ -49,7 +52,7 @@ final class RetenirCombinaison implements Outil
 
     public function nom(): string
     {
-        return 'retenir_combinaison';
+        return self::NOM;
     }
 
     public function definition(): array
@@ -203,7 +206,7 @@ final class RetenirCombinaison implements Outil
                 'activitesSuggerees' => $suggerees,
                 'pourquoi' => $pourquoi,
             ],
-            'exigences' => EnregistrerExigences::fiche($demande),
+            'exigences' => FicheDemande::depuis($demande),
         ], $chiffrage['chiffrageId']);
 
         return [

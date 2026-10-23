@@ -1,7 +1,7 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
-import { ApiError } from '@/lib/api'
+import { ApiError, requete } from '@/lib/api'
 import { type Langue, langueDuSite, typeDeVoyage } from '@/lib/langue'
 
 /**
@@ -170,13 +170,9 @@ export function versDestination(d: DestinationApi): DestinationPublique {
 /** En anglais, l'API traduit les textes saisis en français dans le backoffice (nom, description, points forts…). */
 async function lire(chemin: string, parametres: Record<string, string>, langue: Langue) {
   const query = new URLSearchParams(langue === 'en' ? { ...parametres, langue } : parametres)
-  const response = await fetch(`/api/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, {
-    headers: { Accept: 'application/json' },
+  return requete(`/public/${chemin}${query.size > 0 ? `?${query}` : ''}`, z.unknown(), {
+    messageErreur: 'Impossible de charger les destinations.',
   })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de charger les destinations.')
-  }
-  return (await response.json()) as unknown
 }
 
 /**

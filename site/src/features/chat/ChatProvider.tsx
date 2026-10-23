@@ -6,7 +6,13 @@ import { profilQuery } from '@/lib/auth'
 import { ApiError } from '@/lib/api'
 import { langueDuSite, surChangementDeLangue } from '@/lib/langue'
 import { carteSchema, envoyerMessage, ficheVersDemande, ouvrirConversation } from './api'
-import { ChatContext, type EtapeReflexion, type EtatChat, type Reprise } from './chatContext'
+import {
+  ChatActionsContext,
+  ChatContext,
+  type EtapeReflexion,
+  type EtatChat,
+  type Reprise,
+} from './chatContext'
 import { messageAccueil, nouvelId, type Message } from './conversation'
 import { demandeDepuisQuestionnaire, type Demande, demandeVide } from './demande'
 import { TEXTES } from './textes'
@@ -83,6 +89,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const enCours = useRef(false)
   /** Annule la réponse en cours quand le client recommence. */
   const annulation = useRef<AbortController | null>(null)
+  /** Statut affiché (« conversation » dès que le questionnaire est transmis), lu par nouveauVoyage. */
+  const statutVisible = useRef<EtatChat['statut']>(etat.statut)
   const cheminPrecedent = useRef(chemin)
 
   useEffect(() => {
@@ -358,8 +366,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   // Actions stables d'un rendu à l'autre : la fenêtre du chatbot rejoue son effet de focus quand `fermer`
   // change, ce qui ferait perdre le focus au champ de saisie à chaque lettre tapée.
-  const actions = useMemo(
-    () => ({
+  const actions = useMemo(() => {
+    const recommencer = () => {
+      annulation.current?.abort()
+      enCours.current = false
+      // Sans jeton : le prochain message ouvre une nouvelle conversation côté API.
+      setEtat((e) => ({ ...etatInitial(), ouvert: e.ouvert }))
+    }
+    return {
       ouvrir: (brouillon?: string) =>
         setEtat((e) => ({ ...e, ouvert: true, brouillon: brouillon ?? e.brouillon })),
       // Fin d'une modification de voyage : ses changements sont enregistrés côté API, le chat repart à zéro.
@@ -377,11 +391,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           destinationInvite: destination,
           conversation: { demande: { ...e.conversation.demande, zone: destination } },
         })),
-      recommencer: () => {
-        annulation.current?.abort()
-        enCours.current = false
-        // Sans jeton : le prochain message ouvre une nouvelle conversation côté API.
-        setEtat((e) => ({ ...etatInitial(), ouvert: e.ouvert }))
+      recommencer,
+      nouveauVoyage: () => {
+        if (statutVisible.current === 'conversation') recommencer()
       },
       reprendre: ({ jeton, messages, fiche }: Reprise) => {
         annulation.current?.abort()
@@ -437,9 +449,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           }
         })
       },
-    }),
-    [queryClient, catalogue],
-  )
+    }
+  }, [queryClient, catalogue])
 
   useEffect(() => {
     if (
@@ -467,6 +478,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     envoyer,
   ])
 
+  const actionsCompletes = useMemo(() => ({ ...actions, envoyer }), [actions, envoyer])
+
   const valeur = useMemo(() => {
     const pretChat = estConnecte && etat.questionnaire.termine && etat.statut === 'accueil'
     const etatVisible = pretChat
@@ -488,5 +501,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return { ...etatVisible, ...actions, envoyer, estConnecte }
   }, [etat, actions, envoyer, estConnecte])
 
-  return <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
+  useEffect(() => {
+    statutVisible.current = valeur.statut
+  }, [valeur.statut])
+
+  return (
+    <ChatActionsContext.Provider value={actionsCompletes}>
+      <ChatContext.Provider value={valeur}>{children}</ChatContext.Provider>
+    </ChatActionsContext.Provider>
+  )
 }

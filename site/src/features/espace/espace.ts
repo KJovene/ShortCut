@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
 import { destinationDuLieu, type DestinationPublique } from '@/features/catalogue/catalogue'
 import { ficheSchema } from '@/features/chat/api'
-import { ApiError } from '@/lib/api'
+import { appelerApi, requete } from '@/lib/api'
 import { type Langue, LOCALE, nomDuMois, typeDeVoyage } from '@/lib/langue'
 import { TEXTES } from './textes'
 
@@ -69,22 +69,17 @@ export type DemandeClient = z.infer<typeof DemandeClient>
 
 /** Demandes du client connecté, les plus récentes d'abord. */
 export async function chargerMesDemandes(): Promise<DemandeClient[]> {
-  const response = await fetch('/api/moi/demandes', { headers: { Accept: 'application/json' } })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de charger vos voyages.')
-  }
-  return z.array(DemandeClient).parse(await response.json())
+  return requete('/moi/demandes', z.array(DemandeClient), {
+    messageErreur: 'Impossible de charger vos voyages.',
+  })
 }
 
 /** « Supprimer le voyage » : la demande disparaît avec sa conversation. Un voyage réservé ne se supprime pas (409). */
 export async function supprimerDemande(id: number): Promise<void> {
-  const response = await fetch(`/api/moi/demandes/${id}`, {
+  await appelerApi(`/moi/demandes/${id}`, {
     method: 'DELETE',
-    headers: { Accept: 'application/json' },
+    messageErreur: 'Impossible de supprimer ce voyage.',
   })
-  if (!response.ok) {
-    throw new ApiError(response.status, 'Impossible de supprimer ce voyage.')
-  }
 }
 
 export const mesDemandesQuery = queryOptions({

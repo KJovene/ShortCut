@@ -55,22 +55,19 @@ final class ConfirmationService
      */
     public function estimation(Demande $demande): ?Proposition
     {
-        $propositions = $demande->getPropositions()->toArray();
-        $envoyee = self::derniere(array_filter(
-            $propositions,
+        $envoyee = $demande->derniereProposition(
             static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType() && StatutProposition::Envoyee === $p->getStatut(),
-        ));
-        $confirmee = self::derniere(array_filter($propositions, static fn (Proposition $p): bool => self::confirmeLEstimation($p)));
+        );
+        $confirmee = $demande->derniereProposition(self::confirmeLEstimation(...));
         if (null !== $envoyee || null === $confirmee) {
             return $envoyee;
         }
 
-        return self::derniere(array_filter(
-            $propositions,
+        return $demande->derniereProposition(
             static fn (Proposition $p): bool => TypeProposition::Premiere === $p->getType()
                 && StatutProposition::Remplacee === $p->getStatut()
                 && $p->getVersion() < $confirmee->getVersion(),
-        ));
+        );
     }
 
     /**
@@ -102,7 +99,7 @@ final class ConfirmationService
         }
 
         $version = (new Proposition())
-            ->setVersion(1 + max(array_map(static fn (Proposition $p): int => $p->getVersion(), $demande->getPropositions()->toArray())))
+            ->setVersion($demande->prochainNumeroDeVersion())
             ->setType(TypeProposition::Confirmee)
             ->setStatut(StatutProposition::Brouillon)
             ->setDestination($estimation->getDestination())
@@ -417,10 +414,9 @@ final class ConfirmationService
 
     private function versionExistante(Demande $demande, Proposition $estimation): ?Proposition
     {
-        return self::derniere(array_filter(
-            $demande->getPropositions()->toArray(),
+        return $demande->derniereProposition(
             static fn (Proposition $p): bool => self::confirmeLEstimation($p) && $p->getVersion() > $estimation->getVersion(),
-        ));
+        );
     }
 
     /** Version de confirmation en cours ou aboutie ; une version remplacée par un nouvel envoi ne compte plus. */
@@ -452,16 +448,6 @@ final class ConfirmationService
         $demande = $sujet instanceof Demande ? $sujet : $sujet->getDemande();
 
         return max(1, (int) $demande?->getAdultes() + (int) $demande?->getEnfants());
-    }
-
-    /**
-     * @param array<Proposition> $propositions
-     */
-    private static function derniere(array $propositions): ?Proposition
-    {
-        usort($propositions, static fn (Proposition $a, Proposition $b): int => $b->getVersion() <=> $a->getVersion());
-
-        return $propositions[0] ?? null;
     }
 
     private function regle(): RegleDePrix

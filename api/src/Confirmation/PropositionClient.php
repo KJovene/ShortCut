@@ -56,13 +56,17 @@ final class PropositionClient
             return $proposition;
         }
 
-        $visibles = array_filter(
-            $demande->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => !\in_array($p->getStatut(), [StatutProposition::Brouillon, StatutProposition::Remplacee], true),
-        );
-        usort($visibles, static fn (Proposition $a, Proposition $b): int => $b->getVersion() <=> $a->getVersion());
+        return $demande->derniereProposition(static fn (Proposition $p): bool => $p->estVisibleDuClient())
+            ?? self::apercu($demande) ?? $proposition;
+    }
 
-        return $visibles[0] ?? self::apercu($demande) ?? $proposition;
+    /**
+     * Ce que le client voit de sa demande (espace client) : son récapitulatif préparé tant qu'aucune version ne lui a
+     * été envoyée, sinon la dernière version qu'il voit encore.
+     */
+    public static function visible(Demande $demande): ?Proposition
+    {
+        return self::apercu($demande) ?? $demande->derniereProposition(static fn (Proposition $p): bool => $p->estVisibleDuClient());
     }
 
     /**
@@ -73,7 +77,7 @@ final class PropositionClient
     {
         $apercu = null;
         foreach ($demande->getPropositions() as $proposition) {
-            $recue = null !== $proposition->getEnvoyeeLe() || null !== $proposition->getConfirmeeLe()
+            $recue = $proposition->estRecueParLeClient()
                 || \in_array($proposition->getStatut(), [StatutProposition::Envoyee, StatutProposition::Confirmee, StatutProposition::Acceptee, StatutProposition::Refusee], true);
             if ($recue) {
                 return null;
@@ -237,7 +241,7 @@ final class PropositionClient
     }
 
     /** « confirmee », « estimee » (envoyée par le conseiller) ou « preparee » (récapitulatif pas encore envoyé). */
-    private static function etat(Proposition $proposition): string
+    public static function etat(Proposition $proposition): string
     {
         return match (true) {
             TypeProposition::Confirmee === $proposition->getType() => 'confirmee',
@@ -258,7 +262,7 @@ final class PropositionClient
         $apercu = self::apercu($demande);
         $versions = array_values(array_filter(
             $demande->getPropositions()->toArray(),
-            static fn (Proposition $p): bool => null !== $p->getEnvoyeeLe() || null !== $p->getConfirmeeLe() || $p === $apercu,
+            static fn (Proposition $p): bool => $p->estRecueParLeClient() || $p === $apercu,
         ));
         usort($versions, static fn (Proposition $a, Proposition $b): int => $a->getVersion() <=> $b->getVersion());
 

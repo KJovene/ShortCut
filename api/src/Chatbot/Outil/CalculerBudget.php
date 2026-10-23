@@ -34,6 +34,8 @@ use Psr\Clock\ClockInterface;
  */
 final class CalculerBudget implements Outil
 {
+    public const NOM = 'calculer_budget';
+
     /** Mention qui suit chaque présentation des totaux au client : l'estimation est datée (charte Détour). */
     public const AVERTISSEMENT = 'Prix estimés le %s à %s d\'après nos tarifs : votre conseiller vérifie chaque prix et chaque place avant de vous les confirmer.';
     public const AVERTISSEMENT_EN = 'Prices estimated on %s at %s from our rates: your advisor checks every price and every place before confirming them.';
@@ -52,7 +54,7 @@ final class CalculerBudget implements Outil
 
     public function nom(): string
     {
-        return 'calculer_budget';
+        return self::NOM;
     }
 
     /**

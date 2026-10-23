@@ -26,6 +26,8 @@ use Psr\Clock\ClockInterface;
  */
 final class ChercherDestinations implements Outil
 {
+    public const NOM = 'chercher_destinations';
+
     private const LIMITE_PAR_DEFAUT = 5;
     /** Au-delà, ce ne sont plus les dates d'un voyage mais une saison : l'agent doit préciser. */
     private const NUITS_MAX = 60;
@@ -42,7 +44,7 @@ final class ChercherDestinations implements Outil
 
     public function nom(): string
     {
-        return 'chercher_destinations';
+        return self::NOM;
     }
 
     public function definition(): array

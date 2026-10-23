@@ -5,10 +5,10 @@ namespace App\Chatbot;
 use App\Chatbot\Outil\ChercherActivites;
 use App\Chatbot\Outil\ChercherDestinations;
 use App\Chatbot\Outil\ChercherLogements;
-use App\Chatbot\Outil\EnregistrerExigences;
 use App\Chatbot\Outil\Outil;
 use App\Chatbot\Outil\RetenirCombinaison;
 use App\Chatbot\Outil\TransmettreAuConseiller;
+use App\Demande\FicheDemande;
 use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
@@ -78,8 +78,8 @@ final class AgentRecherche extends Agent
 
             // Ni combinaison, ni transmission, ni réponse (erreur de l'API, trop d'appels) : le client n'est jamais
             // laissé sans suite, la demande part chez un conseiller (ticket #204).
-            if (null === $tour->sortie('retenir_combinaison') && null === $tour->sortie('transmettre_au_conseiller') && '' === trim($tour->reponse)) {
-                $transmission = $this->outil('transmettre_au_conseiller')->executer($contexte, [
+            if (null === $tour->sortie(RetenirCombinaison::NOM) && null === $tour->sortie(TransmettreAuConseiller::NOM) && '' === trim($tour->reponse)) {
+                $transmission = $this->outil(TransmettreAuConseiller::NOM)->executer($contexte, [
                     'motif' => 'autre',
                     'resume' => 'La recherche automatique n\'a pas abouti (erreur ou réponse incomplète de l\'agent Recherche) : la proposition est à construire à partir de la fiche demande.',
                 ]);
@@ -94,8 +94,8 @@ final class AgentRecherche extends Agent
 
         // Combinaison présentée au client : sa carte suit le message, puis l'agent Rédaction en fait le récapitulatif
         // complet (#207).
-        $combinaison = $tour->sortie('retenir_combinaison');
-        if (null !== $combinaison && null === $tour->sortie('transmettre_au_conseiller')) {
+        $combinaison = $tour->sortie(RetenirCombinaison::NOM);
+        if (null !== $combinaison && null === $tour->sortie(TransmettreAuConseiller::NOM)) {
             $carte = ['type' => 'piste'] + Piste::depuis($combinaison, $demande);
             $this->ajouterALaConversation($conversation, Piste::texte($carte, $demande->getLangue()), $carte);
             yield self::evenement('piste', $carte);
@@ -104,7 +104,7 @@ final class AgentRecherche extends Agent
         }
 
         // Rien ne convenait : le client répond aux ajustements proposés, sauf si la demande est passée à un conseiller.
-        return !$transmise && null === $tour->sortie('transmettre_au_conseiller');
+        return !$transmise && null === $tour->sortie(TransmettreAuConseiller::NOM);
     }
 
     /**
@@ -117,7 +117,7 @@ final class AgentRecherche extends Agent
 
         return (null === $modification ? 'Le client vient de confirmer sa demande.' : $modification->pourLaRecherche())
             ."\n\nFiche demande :\n"
-            .json_encode(EnregistrerExigences::fiche($demande), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
+            .json_encode(FicheDemande::depuis($demande), \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
             ."\n\nMessages du client, dans l'ordre :\n".self::messagesDuClient($conversation)
             .self::langue($demande);
     }

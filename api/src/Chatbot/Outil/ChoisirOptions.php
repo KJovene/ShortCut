@@ -15,11 +15,13 @@ use App\Enum\NiveauBudget;
  */
 final class ChoisirOptions implements Outil
 {
+    public const NOM = 'choisir_options';
+
     public const INCHANGE = 'inchange';
 
     public function nom(): string
     {
-        return 'choisir_options';
+        return self::NOM;
     }
 
     public function definition(): array
