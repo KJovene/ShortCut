@@ -5,7 +5,7 @@ import { EnTetePage } from '@/components/ui/EnTetePage'
 import { TitreMisEnValeur } from '@/components/ui/TitreMisEnValeur'
 import { IconFleche } from '@/components/ui/icons'
 import { TYPES_DE_VOYAGE } from '@/data/catalogue'
-import { destinationsQuery } from '@/features/catalogue/catalogue'
+import { destinationsQuery, fraisDeDossierQuery } from '@/features/catalogue/catalogue'
 import { useOuvrirAssistant } from '@/features/chat/useOuvrirAssistant'
 import {
   decouperContenu,
@@ -44,6 +44,8 @@ function TypesPage() {
   const contenu = decouperContenu(page.contenu)
   // Le nombre de destinations par type s'affiche une fois le catalogue chargé.
   const { data: destinations } = useQuery(destinationsQuery(langue))
+  // Le barème des frais de dossier, modifiable par l'administrateur dans le backoffice.
+  const { data: frais } = useQuery(fraisDeDossierQuery)
 
   return (
     <>
@@ -63,6 +65,7 @@ function TypesPage() {
           )
           const photo = photoNommee(page.photos, t.valeur)
           const nb = destinations?.filter((d) => d.types.includes(t.valeur)).length
+          const fraisDuType = frais?.[t.valeur]
           return (
             <article
               key={t.valeur}
@@ -88,13 +91,17 @@ function TypesPage() {
                     {paragraphe}
                   </p>
                 ))}
-                <p className="m-0 text-sm text-taupe-clair">
-                  {textes.types.fraisDeDossier(t.fraisDossier)}
-                </p>
+                {fraisDuType !== undefined && (
+                  <p className="m-0 text-sm text-taupe-clair">
+                    {textes.types.fraisDeDossier(fraisDuType / 100)}
+                  </p>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2.5">
                   <button
                     type="button"
-                    onClick={() => ouvrirAssistant(textes.types.brouillons[t.valeur], { nouveauVoyage: true })}
+                    onClick={() =>
+                      ouvrirAssistant(textes.types.brouillons[t.valeur], { nouveauVoyage: true })
+                    }
                     className="flex min-h-11 items-center gap-2 rounded-full bg-terre px-5 text-sm font-extrabold text-white hover:bg-rouille"
                   >
                     {textes.construireMonVoyage}

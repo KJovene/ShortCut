@@ -45,7 +45,7 @@ final class PrixAPartirDe
      */
     public function calculer(Destination $destination): array
     {
-        $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
+        $regle = $this->reglesDePrix->courante();
         $aujourdhui = $this->horloge->now()->format('Y-m-d');
 
         $parType = [];

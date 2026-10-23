@@ -3,7 +3,7 @@ import type { TypeDeVoyage } from '@/data/catalogue'
 import type { DestinationPublique } from '@/features/catalogue/catalogue'
 import { ApiError } from '@/lib/api'
 import type { Langue } from '@/lib/langue'
-import type { Demande } from './demande'
+import { codesDuQuestionnaire, type Demande } from './demande'
 
 /**
  * Appels du chatbot à l'API Symfony. Le site ne parle jamais à l'API Claude : POST /api/chat diffuse la
@@ -165,7 +165,11 @@ export async function ouvrirConversation(
   const reponse = await fetch('/api/chat/conversations', {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ preferences, destination, langue }),
+    body: JSON.stringify({
+      questionnaire: preferences && codesDuQuestionnaire(preferences),
+      destination,
+      langue,
+    }),
     signal,
   })
   if (!reponse.ok) throw await erreurApi(reponse)

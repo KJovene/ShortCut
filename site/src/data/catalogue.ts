@@ -4,11 +4,11 @@
  */
 
 export const TYPES_DE_VOYAGE = [
-  { valeur: 'sejour', label: 'Séjour', pluriel: 'Séjours', fraisDossier: 100 },
-  { valeur: 'circuit', label: 'Circuit', pluriel: 'Circuits', fraisDossier: 150 },
-  { valeur: 'groupe', label: 'Groupe', pluriel: 'Groupes', fraisDossier: 200 },
-  { valeur: 'noces', label: 'Voyage de noces', pluriel: 'Noces', fraisDossier: 150 },
-  { valeur: 'entreprise', label: 'Entreprise', pluriel: 'Entreprise', fraisDossier: 200 },
+  { valeur: 'sejour', label: 'Séjour', pluriel: 'Séjours' },
+  { valeur: 'circuit', label: 'Circuit', pluriel: 'Circuits' },
+  { valeur: 'groupe', label: 'Groupe', pluriel: 'Groupes' },
+  { valeur: 'noces', label: 'Voyage de noces', pluriel: 'Noces' },
+  { valeur: 'entreprise', label: 'Entreprise', pluriel: 'Entreprise' },
 ] as const
 
 export type TypeDeVoyage = (typeof TYPES_DE_VOYAGE)[number]['valeur']

@@ -227,7 +227,12 @@ final class ConfirmationTest extends WebTestCase
         $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Demande marquée comme perdue.');
         $this->em->clear();
-        self::assertSame(StatutDemande::Perdue, $this->em->find(Demande::class, $this->demandeId)?->getStatut());
+        $demande = $this->em->find(Demande::class, $this->demandeId);
+        self::assertSame(StatutDemande::Perdue, $demande?->getStatut());
+        // La proposition envoyée au client est refusée (D25).
+        $statuts = array_map(static fn (Proposition $p): StatutProposition => $p->getStatut(), $demande->getPropositions()->toArray());
+        self::assertContains(StatutProposition::Refusee, $statuts);
+        self::assertNotContains(StatutProposition::Envoyee, $statuts);
 
         // Perdue : plus de confirmation possible, plus d'action « perdre ».
         $crawler = $this->client->request('GET', '/admin/demande/'.$this->demandeId);

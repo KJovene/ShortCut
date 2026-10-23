@@ -98,7 +98,7 @@ Le site est créé de zéro : neuf pages présentent l'agence et ses destination
 | Page | Contenu | Données utilisées |
 | --- | --- | --- |
 | Accueil | Accroche, recherche par envie et par mois, destinations mises en avant, accès au chatbot | Contenus du site, destinations mises en avant |
-| Destinations | Liste filtrable par mois, température et type de voyage | Destinations publiées, périodes climatiques |
+| Destinations | Liste filtrable par type de voyage (D24) | Destinations publiées, périodes climatiques |
 | Fiche destination | Climat mois par mois, exemples de logements et d'activités, prix « à partir de », bouton « Construire mon voyage » | Destination, logements, activités, tarifs |
 | Types de voyages | Séjours, circuits, groupes, voyages de noces, entreprise | Contenus du site |
 | L'agence | Présentation, équipe de conseillers, engagements | Contenus du site |
@@ -331,7 +331,7 @@ Dix-neuf user stories, dont treize indispensables pour démontrer le parcours co
 | US14 | En tant que responsable, je suis l'écart entre budgets estimés et prix confirmés | Could | Écart moyen affiché sur le tableau de bord | Après V1 si retard |
 | US15 | En tant que client étranger, je dialogue en anglais avec le chatbot | Could | Conversation et proposition complètes en anglais | Après V1 si retard |
 | US16 | En tant que visiteur, je découvre l'agence et j'ouvre le chatbot depuis n'importe quelle page | Must | Accueil, types de voyages, l'agence et contact accessibles depuis le menu ; bouton du chatbot sur chaque page ; affichage correct de 360 à 1440 px | S1 |
-| US17 | En tant que visiteur, je parcours les destinations et leur climat par mois | Must | Liste filtrable par mois et température, lue dans le backoffice ; une destination retirée disparaît du site sans redéploiement | S2 |
+| US17 | En tant que visiteur, je parcours les destinations et leur climat par mois | Must | Liste filtrable par type de voyage, lue dans le backoffice (D24) ; une destination retirée disparaît du site sans redéploiement | S2 |
 | US18 | En tant qu'administrateur, je modifie les textes et photos du site depuis le backoffice | Should | Une modification enregistrée est visible sur le site au rechargement de la page | S2 |
 | US19 | En tant que visiteur, je consulte les mentions légales, les CGV et la politique de confidentialité | Must | Liens dans le pied de chaque page ; textes de l'agence ou modèles marqués « à valider » | S2 |
 
@@ -518,6 +518,7 @@ Le risque principal est le délai de sept jours ouvrés : la parade est un péri
 | Réponses IA trop lentes en démo | Moyenne | Moyen | Affichage progressif des réponses, demandes de démo testées la veille |
 | Les conseillers perçoivent l'IA comme un remplaçant | Moyenne | Fort | Message « l'IA propose, le conseiller confirme » ; démo sur un cas réel |
 | Une absence bloque un pan du projet | Faible | Fort | Relecture croisée de chaque ticket, documentation minimale dans le README |
+| Un site tiers déconnecte un utilisateur (déconnexion par lien) ou un jeton d'action du backoffice apparaît dans une adresse (D29) | Faible | Faible | Accepté en V1 ; passage en formulaires POST au backlog |
 
 ## 12. Pitch client de trois minutes
 
@@ -573,3 +574,12 @@ Vingt décisions sont prises au 15 octobre, toutes validées ou remplacées ; to
 | D20 | 15/10/2026 | Stack : site en React TypeScript, API et backoffice en Symfony avec EasyAdmin, PostgreSQL via Doctrine ; déploiement reporté, démo en local | Next.js, Prisma et Auth.js (D18) | Choix de l'équipe ; EasyAdmin génère le backoffice depuis les entités et libère du temps pour le site | Équipe | Validée |
 | D21 | 16/10/2026 | Frais de dossier selon le type de voyage : séjour 100 €, voyage de noces 150 €, circuit 150 €, groupe 200 €, entreprise 200 € | Selon le nombre de voyageurs ; au choix du conseiller avec une valeur par défaut | Le chatbot calcule seul des frais exacts dès la première proposition, simples à expliquer au client ; le prix ne bouge pas à la confirmation | Agence | Validée |
 | D22 | 16/10/2026 | Modèle Claude Haiku 5.5 pour l'agent Conversation ; Claude Sonnet 5.5 conservé pour la recherche, le chiffrage et la rédaction | Sonnet 5.5 pour tous les agents | Test des 5 profils (#177) : mêmes résultats que Sonnet (10 exigences sur 10, aucun prix ni disponibilité annoncés, ton 5/5) pour 0,004 $ par conversation au lieu de 0,13 $ ; à revérifier avec les outils (#195) | Équipe | Validée |
+| D23 | 23/10/2026 | Les règles de prix (marge, frais de dossier par type de voyage) se modifient dans le backoffice, par l'administrateur seul ; le site affiche le barème lu dans l'API | Barème figé en V1 ; frais écrits en dur dans le site | Exigence du cahier des charges (règles « modifiables par l'administrateur ») ; un seul barème pour le chiffrage et le site | Kévin | Validée |
+| D24 | 23/10/2026 | La liste des destinations du site se filtre par type de voyage ; le filtre par mois et température est retiré de la page | Remettre les listes « mois » et « température » | Choix de l'équipe lors de la refonte de la charte DÉTOUR ; le climat reste lu dans le backoffice | Kévin | Validée |
+| D25 | 23/10/2026 | Une demande marquée « perdue » passe la proposition reçue par le client en « refusée » | Bouton « Décliner » côté client ; supprimer le statut « refusée » | Pipeline et historique cohérents sans nouveau parcours client | Kévin | Validée |
+| D26 | 23/10/2026 | Le questionnaire d'accueil envoie des codes à l'API ; « Plus de 3 000 € » ne fixe pas de budget cible, l'assistant propose trois fourchettes | Une valeur représentative par tranche ; un budget plancher | « Plus de 3 000 € » visait la même cible que « De 1 500 à 3 000 € » ; les codes ne dépendent plus des libellés affichés | Kévin | Validée |
+| D27 | 23/10/2026 | Les préférences du client (étiquettes) sont saisies par le conseiller dans la fiche client | Calcul automatique depuis les demandes ; supprimer le champ | Exigence du cahier des charges ; le conseiller ne modifie pas les coordonnées du client | Kévin | Validée |
+| D28 | 23/10/2026 | L'API renvoie ses erreurs sous une seule forme : « erreur » (message) ou « erreurs » (champ par champ) | Garder le format par défaut du pare-feu (« error ») | Le site lit une seule forme d'erreur | Kévin | Validée |
+| D29 | 23/10/2026 | La déconnexion par lien et les jetons d'action du backoffice dans l'adresse sont acceptés en V1 | Formulaires POST partout dès la V1 | Risque faible, coût moyen le jour de la livraison ; inscrit au registre des risques | Kévin | Validée |
+| D30 | 23/10/2026 | Les hypothèses de budget restent des phrases, écrites, reconnues et traduites depuis des gabarits communs | Hypothèses structurées (code et paramètres) | Une reformulation ne casse plus la confirmation ni la traduction, sans migrer les propositions existantes | Kévin | Validée |
+| D31 | 23/10/2026 | En production, le site et l'API sont servis sur la même origine (proxy vers /api) | Domaines séparés, avec CORS | Aucune configuration CORS à maintenir ; le jeton du chatbot passe sans réglage | Kévin | Validée |

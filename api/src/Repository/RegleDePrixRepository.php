@@ -15,4 +15,10 @@ class RegleDePrixRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, RegleDePrix::class);
     }
+
+    /** Les règles de prix fixées par l'administrateur ; les valeurs par défaut (D16, D21) tant qu'il n'y en a pas. */
+    public function courante(): RegleDePrix
+    {
+        return $this->findOneBy([], ['id' => 'ASC']) ?? new RegleDePrix();
+    }
 }

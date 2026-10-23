@@ -1,4 +1,4 @@
-import { TYPES_DE_VOYAGE, type TypeDeVoyage } from '@/data/catalogue'
+import { type TypeDeVoyage } from '@/data/catalogue'
 
 /**
  * Catalogue de démo des tests, recopié des premières fixtures de l'API (api/src/DataFixtures/Donnees). Le site
@@ -709,6 +709,15 @@ export const ACTIVITES: Prestation[] = [
 
 const MARGE = 0.2
 
+/** Barème par défaut des frais de dossier (D21), en euros. */
+export const FRAIS_DE_DOSSIER: Record<TypeDeVoyage, number> = {
+  sejour: 100,
+  circuit: 150,
+  groupe: 200,
+  noces: 150,
+  entreprise: 200,
+}
+
 /**
  * Prix indicatif « à partir de » par personne : 7 nuits dans le logement le moins cher pour deux,
  * vol depuis Paris et transferts au bas de la fourchette, marge de 20 % et frais de dossier partagés.
@@ -716,7 +725,7 @@ const MARGE = 0.2
 export function prixAPartirDe(destination: Destination) {
   const logements = LOGEMENTS.filter((l) => l.destination === destination.slug && l.capacite >= 2)
   const nuit = Math.min(...logements.map((l) => l.prix))
-  const frais = TYPES_DE_VOYAGE.find((t) => t.valeur === destination.types[0])!.fraisDossier
+  const frais = FRAIS_DE_DOSSIER[destination.types[0]]
   const parPersonne =
     ((nuit * 7) / 2 + destination.volParis[0] + destination.transfert[0]) * (1 + MARGE) + frais / 2
   return Math.round(parPersonne / 10) * 10

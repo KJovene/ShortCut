@@ -242,6 +242,14 @@ export const destinationQuery = (slug: string, langue: Langue = langueDuSite()) 
     retry: (essais, erreur) => !(erreur instanceof ApiError && erreur.status === 404) && essais < 1,
   })
 
+/** Frais de dossier par type de voyage, en centimes : le barème fixé par l'administrateur (règles de prix). */
+export const fraisDeDossierQuery = queryOptions({
+  queryKey: ['catalogue', 'frais-de-dossier'],
+  queryFn: async () =>
+    z.record(z.string(), z.number()).parse(await lire('frais-de-dossier', {}, 'fr')),
+  staleTime: 5 * 60_000,
+})
+
 /** Type de voyage principal, pour les cartes ; « Sur mesure » si le conseiller n'en a choisi aucun. */
 export function libelleTypePrincipal(d: DestinationPublique, langue: Langue = 'fr') {
   if (d.types[0]) return typeDeVoyage(d.types[0], langue)

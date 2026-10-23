@@ -72,7 +72,7 @@ final class ChatControllerTest extends WebTestCase
             '/api/chat/conversations',
             server: ['CONTENT_TYPE' => 'application/json'],
             content: json_encode([
-                'preferences' => ['Voyage de noces', 'À deux', 'Plus de 3 000 €'],
+                'questionnaire' => ['typeDeVoyage' => 'noces', 'voyageurs' => 'deux', 'budget' => 'de_1500_a_3000'],
             ], \JSON_THROW_ON_ERROR),
         );
         self::assertResponseStatusCodeSame(201);
@@ -82,6 +82,22 @@ final class ChatControllerTest extends WebTestCase
         self::assertSame('noces', $demande->getTypeDeVoyage()?->value);
         self::assertSame(2, $demande->getAdultes());
         self::assertSame(300000, $demande->getBudgetCentimes());
+    }
+
+    /** « Plus de 3 000 € » n'est pas une cible (D26) : l'assistant proposera trois fourchettes. */
+    public function testPlusDeTroisMilleEurosNeFixePasDeBudget(): void
+    {
+        $this->client->request(
+            'POST',
+            '/api/chat/conversations',
+            server: ['CONTENT_TYPE' => 'application/json'],
+            content: '{"questionnaire": {"typeDeVoyage": "sejour", "voyageurs": "famille", "budget": "plus_de_3000"}}',
+        );
+        self::assertResponseStatusCodeSame(201);
+        $demande = $this->em->find(Demande::class, $this->reponse()['demande']);
+
+        self::assertSame('sejour', $demande?->getTypeDeVoyage()?->value);
+        self::assertNull($demande->getBudgetCentimes());
     }
 
     /** 3 voyages en cours au plus par client : le 4e attend qu'un autre soit accepté ou perdu. */

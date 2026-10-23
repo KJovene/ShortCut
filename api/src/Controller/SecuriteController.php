@@ -40,7 +40,7 @@ final class SecuriteController extends AbstractController
     {
         // Requête qui n'est pas du JSON : json_login ne s'est pas déclenché.
         if (null === $utilisateur) {
-            return $this->json(['error' => 'Saisissez votre e-mail et votre mot de passe.'], Response::HTTP_BAD_REQUEST);
+            return $this->json(['erreur' => 'Saisissez votre e-mail et votre mot de passe.'], Response::HTTP_BAD_REQUEST);
         }
 
         return $this->profil($utilisateur);

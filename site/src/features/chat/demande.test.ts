@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { demandeDepuisQuestionnaire, demandeVide, nombreRenseignes, valeurCritere } from './demande'
+import {
+  codesDuQuestionnaire,
+  demandeDepuisQuestionnaire,
+  demandeVide,
+  estRenseigne,
+  nombreRenseignes,
+  valeurCritere,
+} from './demande'
 
 describe('récapitulatif de la demande', () => {
   it('formate les critères renseignés', () => {
@@ -64,17 +71,33 @@ describe('récapitulatif de la demande', () => {
   })
 
   it('convertit les réponses du questionnaire en critères du voyage', () => {
-    const d = demandeDepuisQuestionnaire(['Noces', 'À deux', 'Plus de 3 000 €'], demandeVide())
+    const d = demandeDepuisQuestionnaire(['Noces', 'À deux', 'De 1 500 à 3 000 €'], demandeVide())
 
     expect(d).toMatchObject({
       type: 'noces',
       adultes: 2,
       budget: 3000,
-      budgetIndicatif: 'Plus de 3 000 €',
+      budgetIndicatif: 'De 1 500 à 3 000 €',
       budgetParPersonne: false,
     })
     expect(valeurCritere(d, 'type')).toBe('Voyage de noces')
     expect(valeurCritere(d, 'voyageurs')).toBe('2 adultes · 1 chambre double')
+    expect(valeurCritere(d, 'budget')).toBe('De 1 500 à 3 000 € au total')
+  })
+
+  it('garde « Plus de 3 000 € » sans montant cible (D26)', () => {
+    const d = demandeDepuisQuestionnaire(
+      ['Séjours', 'En famille', 'Plus de 3 000 €'],
+      demandeVide(),
+    )
+
+    expect(d.budget).toBeUndefined()
+    expect(estRenseigne(d, 'budget')).toBe(true)
     expect(valeurCritere(d, 'budget')).toBe('Plus de 3 000 € au total')
+    expect(codesDuQuestionnaire(['Séjours', 'En famille', 'Plus de 3 000 €'])).toEqual({
+      typeDeVoyage: 'sejour',
+      voyageurs: 'famille',
+      budget: 'plus_de_3000',
+    })
   })
 })

@@ -47,35 +47,54 @@ export const demandeVide = (): Demande => ({
   contraintesSignalees: [],
 })
 
-/** Convertit les trois réponses de l'accueil en critères immédiatement visibles dans le récapitulatif. */
+/** Codes envoyés à l'API pour chaque réponse du questionnaire d'accueil (D26), dans l'ordre de ses choix. */
+const CODES_QUESTIONNAIRE = [
+  ['sejour', 'circuit', 'groupe', 'noces', 'entreprise'],
+  ['seul', 'deux', 'famille', 'amis'],
+  ['moins_de_1500', 'de_1500_a_3000', 'plus_de_3000'],
+] as const
+
+/** Réponses enregistrées avant le changement des catégories. */
+const ANCIENS_TYPES: Record<string, TypeDeVoyage> = {
+  'Séjour détente': 'sejour',
+  'Circuit découverte': 'circuit',
+  'Voyage de noces': 'noces',
+}
+
+export interface CodesQuestionnaire {
+  typeDeVoyage?: TypeDeVoyage
+  voyageurs?: (typeof CODES_QUESTIONNAIRE)[1][number]
+  budget?: (typeof CODES_QUESTIONNAIRE)[2][number]
+}
+
+/** Les réponses (libellés français, voir QuestionnaireInvite) en codes, pour l'API et la fiche demande. */
+export function codesDuQuestionnaire(reponses: string[]): CodesQuestionnaire {
+  const code = <T>(codes: readonly T[], rang: number): T | undefined => {
+    const index = TEXTES.fr.questionnaire.choix[rang].indexOf(reponses[rang] ?? '')
+    return index < 0 ? undefined : codes[index]
+  }
+  return {
+    typeDeVoyage: code(CODES_QUESTIONNAIRE[0], 0) ?? ANCIENS_TYPES[reponses[0] ?? ''],
+    voyageurs: code(CODES_QUESTIONNAIRE[1], 1),
+    budget: code(CODES_QUESTIONNAIRE[2], 2),
+  }
+}
+
+/**
+ * Convertit les trois réponses de l'accueil en critères immédiatement visibles dans le récapitulatif. « Plus de
+ * 3 000 € » n'a pas de montant cible : la tranche reste affichée, l'assistant proposera trois fourchettes.
+ */
 export function demandeDepuisQuestionnaire(reponses: string[], precedente: Demande): Demande {
-  const type = {
-    Séjours: 'sejour',
-    Circuits: 'circuit',
-    Groupes: 'groupe',
-    Noces: 'noces',
-    Entreprise: 'entreprise',
-    // Compatibilité avec les réponses enregistrées avant le changement des catégories.
-    'Séjour détente': 'sejour',
-    'Circuit découverte': 'circuit',
-    'Voyage de noces': 'noces',
-  }[reponses[0] ?? ''] as TypeDeVoyage | undefined
-  const adultes = reponses[1] === 'À deux' ? 2 : reponses[1] === 'Seul(e)' ? 1 : undefined
-  const budget =
-    reponses[2] === 'Moins de 1 500 €'
-      ? 1500
-      : reponses[2] === 'De 1 500 à 3 000 €'
-        ? 3000
-        : reponses[2] === 'Plus de 3 000 €'
-          ? 3000
-          : undefined
+  const { typeDeVoyage: type, voyageurs, budget } = codesDuQuestionnaire(reponses)
+  const adultes = voyageurs === 'deux' ? 2 : voyageurs === 'seul' ? 1 : undefined
+  const montant = budget === 'moins_de_1500' ? 1500 : budget === 'de_1500_a_3000' ? 3000 : undefined
 
   return {
     ...precedente,
     ...(type ? { type } : {}),
     ...(adultes !== undefined ? { adultes } : {}),
     ...(budget !== undefined
-      ? { budget, budgetIndicatif: reponses[2], budgetParPersonne: false }
+      ? { budget: montant, budgetIndicatif: reponses[2], budgetParPersonne: false }
       : {}),
   }
 }
@@ -94,7 +113,7 @@ export function estRenseigne(d: Demande, critere: Critere): boolean {
     case 'voyageurs':
       return d.adultes !== undefined
     case 'budget':
-      return d.budget !== undefined
+      return d.budget !== undefined || d.budgetIndicatif !== undefined
     case 'envies':
       return d.envies.length > 0
     case 'contraintes':
@@ -137,8 +156,10 @@ export function valeurCritere(
       return t.adultes(d.adultes) + enfants + chambre
     }
     case 'budget': {
-      if (d.budget === undefined) return undefined
-      const base = `${d.budgetIndicatif ?? formatEuros(d.budget)} ${d.budgetParPersonne ? t.parPersonne : t.auTotal}`
+      const montant =
+        d.budgetIndicatif ?? (d.budget === undefined ? undefined : formatEuros(d.budget))
+      if (montant === undefined) return undefined
+      const base = `${montant} ${d.budgetParPersonne ? t.parPersonne : t.auTotal}`
       return d.depart ? `${base} · ${t.departDe(d.depart)}` : base
     }
     case 'envies':

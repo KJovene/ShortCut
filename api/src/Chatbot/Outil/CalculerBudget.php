@@ -17,7 +17,6 @@ use App\Chiffrage\ResultatChiffrage;
 use App\Entity\Demande;
 use App\Entity\Destination;
 use App\Entity\Prestation;
-use App\Entity\RegleDePrix;
 use App\Enum\Langue;
 use App\Enum\TypePrestataire;
 use App\Enum\TypePrestation;
@@ -159,7 +158,7 @@ final class CalculerBudget implements Outil
             throw new OutilException('La ville de départ du client n\'est pas encore connue : demande-la et enregistre-la avec enregistrer_exigences avant de chiffrer.');
         }
         $destination = $this->destination($entree['destination'] ?? null);
-        $regle = $this->reglesDePrix->findOneBy([]) ?? new RegleDePrix();
+        $regle = $this->reglesDePrix->courante();
 
         try {
             return new DemandeDeChiffrage(

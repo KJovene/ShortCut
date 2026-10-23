@@ -26,7 +26,8 @@ export class ErreurFormulaire extends ApiError {
 }
 
 const ErreursDeChamps = z.object({ erreurs: z.record(z.string(), z.string()) })
-const ErreurDeConnexion = z.object({ error: z.string() })
+/** Toute autre erreur de l'API : un message à montrer tel quel (D28). */
+const ErreurDeLApi = z.object({ erreur: z.string() })
 
 /** Conseillers et administrateur ont accès au backoffice ; les clients restent sur le site. */
 export function accedeAuBackoffice(profil: Profil) {
@@ -49,10 +50,10 @@ async function envoyer(path: string, method: string, corps?: unknown): Promise<R
   if (response.status === 422 && champs.success) {
     throw new ErreurFormulaire(champs.data.erreurs)
   }
-  // Mauvais identifiants : message du pare-feu Symfony (« Identifiants invalides. »).
-  const connexion = ErreurDeConnexion.safeParse(json)
-  if (response.status < 500 && connexion.success) {
-    throw new ApiError(response.status, connexion.data.error)
+  // Mauvais identifiants (« Identifiants invalides. »), trop de tentatives, mot de passe actuel erroné…
+  const erreur = ErreurDeLApi.safeParse(json)
+  if (response.status < 500 && erreur.success) {
+    throw new ApiError(response.status, erreur.data.erreur)
   }
   throw new ApiError(response.status, 'Une erreur est survenue, réessayez dans un instant.')
 }

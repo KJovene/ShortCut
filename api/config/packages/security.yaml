@@ -39,6 +39,7 @@ security:
                 check_path: api_connexion
                 username_path: email
                 password_path: motDePasse
+                failure_handler: App\Security\EchecConnexionHandler
             logout:
                 path: api_deconnexion
             entry_point: App\Security\RedirectionConnexionEntryPoint
