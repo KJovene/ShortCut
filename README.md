@@ -1,5 +1,13 @@
 # ShortCut
 
+Projet réalisé par :
+
+- Cyril Mathé
+- Thomas Marcheschi
+- Devanadhan Codandabany
+- Laurent Dubois
+- Kévin Jovené
+
 Site web d'une agence de voyage avec un chatbot qui prépare des propositions sur mesure, et un backoffice pour les conseillers.
 Version **v1.0.0**, code gelé le 23/10/2026 sur la branche `dev`.
 
