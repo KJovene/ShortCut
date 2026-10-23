@@ -36,7 +36,10 @@ final class EnregistrerExigences implements Outil
         return [
             'name' => $this->nom(),
             'description' => 'Enregistre dans la fiche demande toutes les exigences que contient le dernier message du client : destination ou zone dans lieuOuZone, dates, durée, voyageurs, ville de départ, budget, envies, contraintes. N\'envoie que les champs nouveaux ou modifiés et omets les autres. Une liste (envies, contraintes, âges des enfants) remplace la liste déjà enregistrée : renvoie-la en entier. Passe recapitulatifConfirme à true seulement quand le client a confirmé le récapitulatif. Les textes de la fiche (lieu, ville de départ, envies, contraintes) s\'écrivent toujours en français, même si le client écrit en anglais : « Lisbonne », « plage ».',
-            'strict' => true,
+            // Mode non strict : en strict, l'API impose l'ordre des champs du schéma, et Haiku qui commence par
+            // recapitulatifConfirme et langue (les derniers) ne pouvait plus rien écrire d'autre (essais du 23/10/2026,
+            // 4 appels vides sur 6). Le serveur vérifie lui-même l'entrée (verifier()).
+            'strict' => false,
             'input_schema' => [
                 'type' => 'object',
                 'properties' => [
@@ -73,6 +76,13 @@ final class EnregistrerExigences implements Outil
     public function executer(ContexteAgent $contexte, array $entree): array
     {
         $demande = $contexte->demande;
+        $entree = $this->verifier($entree);
+
+        // Un appel sans exigence enregistre une fiche inchangée sans que le modèle le remarque, et il le recopie
+        // ensuite à chaque message (conversation du 23/10/2026 : envies et dates passées à chercher_destinations seul).
+        if (self::sansExigence($demande, $entree)) {
+            throw new OutilException('Aucune exigence reçue : cet appel ne contient que recapitulatifConfirme et la langue déjà enregistrée, la fiche n\'a pas changé. Renvoie dans leurs champs les informations du dernier message du client (envies, lieuOuZone, dateDebut, nombreDeJours, villeDepart…), y compris celles que tu passes à chercher_destinations. Si son message n\'en contient vraiment aucune, n\'appelle pas cet outil.');
+        }
 
         try {
             $this->appliquer($demande, $entree);
@@ -273,6 +283,61 @@ final class EnregistrerExigences implements Outil
         ];
 
         return array_keys(array_filter($manquants));
+    }
+
+    /**
+     * Ce que le mode strict garantissait : champs connus et de leur type, listes de textes ou d'entiers. Un champ
+     * null vaut absent.
+     *
+     * @param array<mixed> $entree
+     *
+     * @return array<string, mixed>
+     */
+    private function verifier(array $entree): array
+    {
+        $proprietes = $this->definition()['input_schema']['properties'];
+        $verifiees = [];
+        foreach ($entree as $champ => $valeur) {
+            $champ = (string) $champ;
+            $schema = $proprietes[$champ] ?? throw new OutilException(\sprintf('Champ « %s » inconnu : les champs possibles sont %s.', $champ, implode(', ', array_keys($proprietes))));
+            if (null === $valeur) {
+                continue;
+            }
+            $valide = match ($schema['type']) {
+                'string' => \is_string($valeur),
+                'integer' => \is_int($valeur),
+                'boolean' => \is_bool($valeur),
+                'array' => \is_array($valeur) && array_is_list($valeur) && [] === array_filter(
+                    $valeur,
+                    static fn (mixed $v): bool => 'integer' === $schema['items']['type'] ? !\is_int($v) : !\is_string($v),
+                ),
+                'object' => \is_array($valeur) && [] === array_filter($valeur, static fn (mixed $v): bool => null !== $v && !\is_string($v)),
+                default => false,
+            };
+            if (!$valide) {
+                throw new OutilException(\sprintf('Champ « %s » : %s attendu, reçu %s.', $champ, $schema['type'], json_encode($valeur, \JSON_UNESCAPED_UNICODE)));
+            }
+            $verifiees[$champ] = $valeur;
+        }
+
+        return $verifiees;
+    }
+
+    /**
+     * Ni exigence, ni confirmation, ni changement de langue : l'appel n'apporte rien à la fiche.
+     *
+     * @param array<mixed> $entree
+     */
+    private static function sansExigence(Demande $demande, array $entree): bool
+    {
+        if (true === ($entree['recapitulatifConfirme'] ?? false)) {
+            return false;
+        }
+        if (\array_key_exists('langue', $entree) && $entree['langue'] !== $demande->getLangue()->value) {
+            return false;
+        }
+
+        return [] === array_diff(array_keys($entree), ['recapitulatifConfirme', 'langue']);
     }
 
     private static function texte(mixed $valeur, int $longueurMax): ?string

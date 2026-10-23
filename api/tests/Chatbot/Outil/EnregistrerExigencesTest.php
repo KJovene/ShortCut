@@ -9,6 +9,7 @@ use App\Entity\Conversation;
 use App\Entity\Demande;
 use App\Enum\AgentIA;
 use App\Enum\Langue;
+use App\Enum\TypeDeVoyage;
 use Doctrine\Bundle\FixturesBundle\Loader\SymfonyFixturesLoader;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
@@ -64,6 +65,52 @@ final class EnregistrerExigencesTest extends KernelTestCase
         self::assertSame(Langue::Anglais, $this->contexte->demande->getLangue());
         self::assertSame('en', $sortie['langue']);
         self::assertArrayNotHasKey('langue', $sortie['fiche']);
+    }
+
+    public function testUnAppelSansExigenceEstRefuse(): void
+    {
+        try {
+            $this->outil->executer($this->contexte, ['langue' => 'fr', 'recapitulatifConfirme' => false]);
+            self::fail('Un appel avec la seule langue déjà enregistrée doit être refusé.');
+        } catch (OutilException $e) {
+            self::assertStringContainsString('Aucune exigence reçue', $e->getMessage());
+        }
+
+        $this->expectException(OutilException::class);
+        $this->outil->executer($this->contexte, ['recapitulatifConfirme' => false]);
+    }
+
+    public function testLesChampsSontVerifiesParLeServeur(): void
+    {
+        self::assertFalse($this->outil->definition()['strict']);
+
+        foreach ([
+            ['temperatureMin' => 20],
+            ['adultes' => 'deux'],
+            ['datesFlexibles' => 'false'],
+            ['envies' => ['plage', 3]],
+            ['agesEnfants' => ['huit']],
+        ] as $entree) {
+            try {
+                $this->outil->executer($this->contexte, $entree + ['recapitulatifConfirme' => false]);
+                self::fail(\sprintf('Entrée acceptée à tort : %s', json_encode($entree)));
+            } catch (OutilException) {
+            }
+        }
+
+        // Un champ null vaut absent ; dans l'ordre que le modèle veut.
+        $sortie = $this->outil->executer($this->contexte, ['recapitulatifConfirme' => false, 'langue' => 'fr', 'villeDepart' => 'Paris', 'budgetEuros' => null]);
+        self::assertSame('Paris', $sortie['fiche']['villeDepart']);
+        self::assertNull($sortie['fiche']['budgetEuros']);
+    }
+
+    public function testUneConfirmationSeuleEstAcceptee(): void
+    {
+        $this->contexte->demande->setTypeDeVoyage(TypeDeVoyage::Sejour)->setNombreDeJours(5);
+
+        $sortie = $this->outil->executer($this->contexte, ['recapitulatifConfirme' => true]);
+
+        self::assertTrue($sortie['recapitulatifConfirme']);
     }
 
     public function testUneLangueInconnueEstRefusee(): void
