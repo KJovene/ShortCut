@@ -43,16 +43,16 @@ function HomePage() {
   const [theme, setTheme] = useState<Theme>('chaud')
   const [activeSlug, setActiveSlug] = useState('santorin')
   // Carte et bandeau : seulement les voyages mis en avant dans le backoffice, du thème choisi, 10 au plus.
-  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery(langue))
+  const { data: misesEnAvant = [], isPending } = useQuery(destinationsMisesEnAvantQuery())
   const voyages = voyagesDuTheme(misesEnAvant, theme)
   const surCarte = voyages.filter(estSurCarte)
   const active = surCarte.find((d) => d.slug === activeSlug) ?? surCarte[0]
-  const { data: page } = useQuery(pageQuery('accueil', langue))
+  const { data: page } = useQuery(pageQuery('accueil'))
   const titre =
     (theme === 'chaud' ? page?.titre : page?.titreFroid) || t.themes[theme].titreParDefaut
 
   // Polaroïds de la section de l'assistant : ces destinations si elles sont publiées, sinon les premières.
-  const { data: destinations = [] } = useQuery(destinationsQuery(langue))
+  const { data: destinations = [] } = useQuery(destinationsQuery())
   const parSlug = (slug: string) => destinations.find((d) => d.slug === slug)
   const photos = ['santorin', 'bali', 'marrakech', 'islande'].map(
     (slug, i) => parSlug(slug) ?? destinations[i],
