@@ -34,6 +34,7 @@ describe('récapitulatif de la demande', () => {
       ...demandeVide(),
       type: 'noces' as const,
       mois: 5,
+      annee: 2027,
       datesFlexibles: true,
       jours: 7,
       adultes: 2,
@@ -47,6 +48,13 @@ describe('récapitulatif de la demande', () => {
     expect(valeurCritere(d, 'duree', 'en')).toBe('7 days')
     expect(valeurCritere(d, 'voyageurs', 'en')).toBe('2 adults · 1 child')
     expect(valeurCritere(d, 'budget', 'en')).toMatch(/^5\s000 € in total · from Paris$/)
+  })
+
+  it('affiche l’année du départ, et seulement le mois quand l’année est inconnue', () => {
+    expect(valeurCritere({ ...demandeVide(), mois: 11, annee: 2026 }, 'periode')).toBe(
+      'Décembre 2026',
+    )
+    expect(valeurCritere({ ...demandeVide(), mois: 11 }, 'periode')).toBe('Décembre')
   })
 
   it('présente un séjour à deux sans enfant', () => {

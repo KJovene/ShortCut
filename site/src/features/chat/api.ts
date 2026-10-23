@@ -273,6 +273,7 @@ export function ficheVersDemande(
     // Le lieu tel que le client l'a dit, s'il ne désigne pas une destination du catalogue.
     zone: destination ? undefined : (fiche.lieuOuZone ?? undefined),
     mois: fiche.dateDebut ? Number(fiche.dateDebut.slice(5, 7)) - 1 : undefined,
+    annee: fiche.dateDebut ? Number(fiche.dateDebut.slice(0, 4)) : undefined,
     datesFlexibles: fiche.datesFlexibles,
     jours: fiche.nombreDeJours ?? undefined,
     adultes: fiche.adultes,
@@ -287,4 +288,3 @@ export function ficheVersDemande(
     contraintesSignalees: contraintes.filter((c) => A_SIGNALER.test(sansAccents(c))),
   }
 }
- 

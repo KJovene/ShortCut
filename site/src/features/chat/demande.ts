@@ -24,6 +24,8 @@ export interface Demande {
   /** Zone ou envie de lieu exprimée librement (« la Méditerranée »). */
   zone?: string
   mois?: number
+  /** Année du départ, quand la fiche donne une date. */
+  annee?: number
   datesFlexibles?: boolean
   jours?: number
   adultes?: number
@@ -125,7 +127,7 @@ export function valeurCritere(
       return d.destination?.nom ?? d.zone
     case 'periode':
       if (d.mois === undefined) return undefined
-      return `${majuscule(langue === 'en' ? nomDuMois(d.mois, langue) : MOIS[d.mois])} 2027${d.datesFlexibles ? t.datesFlexibles : ''}`
+      return `${majuscule(langue === 'en' ? nomDuMois(d.mois, langue) : MOIS[d.mois])}${d.annee ? ` ${d.annee}` : ''}${d.datesFlexibles ? t.datesFlexibles : ''}`
     case 'duree':
       return d.jours ? t.jours(d.jours) : undefined
     case 'voyageurs': {

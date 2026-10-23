@@ -48,13 +48,13 @@ final class PropositionPdfTest extends WebTestCase
         [$v1] = $this->versions('Santorin');
 
         $debut = microtime(true);
-        $this->client->request('GET', '/api/propositions/'.$v1->getJetonPublic().'/pdf');
+        $this->client->request('GET', '/api/propositions/'.$v1->getJetonPublic().'/versions/2/pdf');
         $duree = microtime(true) - $debut;
 
         self::assertResponseIsSuccessful();
         self::assertLessThan(5, $duree);
         self::assertResponseHeaderSame('Content-Type', 'application/pdf');
-        // Le lien de la version 1 mène à la version qui fait foi.
+        // Le lien de la version 1 donne aussi accès à la version qui fait foi.
         self::assertResponseHeaderSame('Content-Disposition', 'attachment; filename=proposition-santorin-v2.pdf');
         self::assertStringStartsWith('%PDF-', (string) $this->client->getResponse()->getContent());
 
@@ -113,9 +113,9 @@ final class PropositionPdfTest extends WebTestCase
         $service = static::getContainer()->get(ConfirmationService::class);
         $brouillon = $service->versionDeConfirmation($marrakech, $service->estimation($marrakech) ?? throw new \LogicException());
 
-        $this->client->request('GET', '/api/propositions/'.$brouillon->getJetonPublic().'/pdf');
+        $this->client->request('GET', '/api/propositions/'.$brouillon->getJetonPublic().'/versions/'.$brouillon->getVersion().'/pdf');
         self::assertResponseStatusCodeSame(404);
-        $this->client->request('GET', '/api/propositions/'.str_repeat('0', 64).'/pdf');
+        $this->client->request('GET', '/api/propositions/'.str_repeat('0', 64).'/versions/1/pdf');
         self::assertResponseStatusCodeSame(404);
     }
 

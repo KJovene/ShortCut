@@ -113,6 +113,7 @@ describe('fiche de l’API dans le récapitulatif', () => {
       destination: { slug: 'santorin', nom: 'Santorin, Grèce' },
       zone: undefined,
       mois: 5,
+      annee: 2027,
       jours: 7,
       adultes: 2,
       budget: 5000,

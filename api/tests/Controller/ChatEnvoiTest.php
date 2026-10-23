@@ -425,6 +425,7 @@ final class ChatEnvoiTest extends WebTestCase
         $this->envoyer($jeton, 'Un message de trop');
         self::assertResponseStatusCodeSame(429);
         self::assertResponseHasHeader('Retry-After');
+        self::assertStringStartsWith('Vous envoyez trop de messages.', json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR)['erreur']);
         self::assertCount(20, $this->claude->requetes);
     }
 

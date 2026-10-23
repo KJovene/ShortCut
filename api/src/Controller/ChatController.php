@@ -139,22 +139,4 @@ final class ChatController extends AbstractController
             $demande->setLieuOuZone(trim($request->toArray()['destination']));
         }
     }
-
-    /** Récapitulatif de la demande en cours, affiché par le widget. */
-    #[Route('/demandes/{id}', name: 'chat_demande', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function demande(Demande $demande): JsonResponse
-    {
-        $this->denyAccessUnlessGranted(DemandeVoter::VOIR, $demande);
-
-        return $this->json([
-            'id' => $demande->getId(),
-            'statut' => $demande->getStatut()->value,
-            'typeDeVoyage' => $demande->getTypeDeVoyage()?->value,
-            'lieuOuZone' => $demande->getLieuOuZone(),
-            'nombreDeJours' => $demande->getNombreDeJours(),
-            'adultes' => $demande->getAdultes(),
-            'enfants' => $demande->getEnfants(),
-            'envies' => $demande->getEnvies(),
-        ]);
-    }
 }

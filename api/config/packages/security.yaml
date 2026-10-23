@@ -42,6 +42,10 @@ security:
             logout:
                 path: api_deconnexion
             entry_point: App\Security\RedirectionConnexionEntryPoint
+            # Contre le brute force : 5 échecs par e-mail et adresse IP, 25 par adresse IP, toutes les 15 minutes.
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
 
     # Seule la première règle qui correspond s'applique.
     access_control:
